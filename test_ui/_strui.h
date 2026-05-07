@@ -205,7 +205,7 @@ static inline void create_str_suite(
     _libdnml_str_suite *curr_suite, const char *name,
     uint8_t ecount, uint16_t rcount, _libdnml_scase *ebank,
     rcheck_mode mode, str_res *fail_ebuf, const char *log_path,
-    strbump_t ectx
+    strbump_t ectx, rctx_t *rctx
 ) {
     curr_suite->suite_name = name;
     curr_suite->ecount = ecount;
@@ -217,6 +217,7 @@ static inline void create_str_suite(
     curr_suite->fail_eres = fail_ebuf;
     curr_suite->fail_eexp = &fail_ebuf[ecount];
     // Assigning random-case failure fail_ebuf
+    curr_suite->rctx = rctx;
     curr_suite->check_mode = mode;
 }
 

@@ -41,6 +41,7 @@ inline void __BIGINT_INTERNAL_FREE__(bigInt *x) {
 
 /* Safety Utilities */
 inline uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity */
+    if (x == NULL) return 0;
     /* State Validation */
     if (x->limbs == NULL) return 0;
     if (x->cap < 1) return 0;
@@ -52,6 +53,7 @@ inline uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity *
     return 1;
 }
 inline uint8_t __BIGINT_INTERNAL_PVALID__(const bigInt *x) { /* BigInt Pointer State Validity */
+    if (x == NULL) return 0;
     if (x->limbs == NULL) return 0;
     if (x->cap < 1) return 0;
     if (x->n > x->cap) return 0;
@@ -59,16 +61,13 @@ inline uint8_t __BIGINT_INTERNAL_PVALID__(const bigInt *x) { /* BigInt Pointer S
     return 1;
 }
 inline uint8_t __BIGINT_INTERNAL_SVALID__(const bigInt *x) { /* BigInt Storage Validity */
+    if (x == NULL) return 0;
     if (x->limbs == NULL) return 0;
     if (x->cap < 1) return 0;
+    return 1;
 }
 bigInt __BIGINT_ERROR_VALUE__(void) {
-    return (bigInt){
-        .limbs = NULL,
-        .cap   = 0,
-        .n     = 1,
-        .sign  = 0
-    };
+    return (bigInt){ .limbs = NULL, .cap = 0,   /**/   .n = 1, .sign = 0 };
 }
 
 /* General Utilities */

@@ -1,6 +1,33 @@
 // Providing for
 #include "bigInt_func.h"
 
+
+#define test_assert(cond, err_code) do { \
+    if (_DNML_DEBUG_MODE) { \
+        assert(!(cond)); \
+    } else { \
+        if (cond) return err_code; \
+    } \
+} while (0);
+#define test_assert_mut(cond, err, err_code, retval) do { \
+    if (_DNML_DEBUG_MODE) { \
+        assert(!(cond)); \
+    } else { \
+        if (cond) { (*err) = (err_code); return retval; } \
+    } \
+} while (0);
+#define test_assert_pre( \
+    cond, err, err_code, \
+    baseout, base, retsize \
+) do { \
+    if (_DNML_DEBUG_MODE) { \
+        assert(cond); \
+    } else { \
+        if (cond) { (*err) = (err_code); (*baseout) = (base); return retsize; } \
+    } \
+} while (0);
+
+
 /* Global, Thread-local Arena */
 static const uint16_t ___DASI_IO_BUFSIZE = 4096;
 static local_thread char ___DASI_IO_CHUNKBUF_[___DASI_IO_BUFSIZE];
@@ -15,6 +42,7 @@ static inline dnml_arena* _USE_ARENA(void) {
 size_t _finval_char(const char *str, size_t len, uint8_t *base_out) {
     size_t curr_pos = 0; uint8_t sign = 1;
     size_t whspace = _skip_whitespace(str, len, &curr_pos);
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') { *base_out = 2; return 0; }
     unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4 || sign_op_res == 3) { *base_out = 2; return curr_pos - whspace; }
 
@@ -40,6 +68,7 @@ size_t _finval_charb(const char *str, size_t len, uint8_t base) {
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     size_t whspace = _skip_whitespace(str, len, &curr_pos);
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return 0;
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (str[curr_pos] == '\0') return curr_pos - whspace;
@@ -76,8 +105,8 @@ static inline void _ASCII_COLUMN__(limb_t val, char* c) {
 //todo ======================================= 1. CONSTRUCTIONS ======================================= *//
 dnml_status bigInt_strinit(bigInt *x, const char* str) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    if (str == NULL) return STR_NULL;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena* _DASI_STR_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -154,8 +183,9 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
 }
 dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    if (str == NULL) return STR_NULL;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena* _DASI_BASE_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -220,8 +250,8 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
 }
 dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    if (str == NULL) return STR_NULL;
-    if (!len || *str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena* _DASI_STRNLEN_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -302,8 +332,9 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
 }
 dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t base) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    if (str == NULL) return STR_NULL;
-    if (!len || *str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena* _DASI_BASENLEN_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -375,8 +406,8 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
 /* Truncative BigInt --> String */
 dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
     dnml_arena *_DASI_TSET_STRING_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
     size_t str_length = strlen(str); // Early segfault if no NULL-Terminator found
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
     if (str_length <= sign_space) return STR_INVALID_CAP;
@@ -402,9 +433,9 @@ dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
 }
 dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
     dnml_arena *_DASI_TSET_BASE_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
     size_t str_length = strlen(str); // Early segfauly if no NULL-Terminator found
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
     if (str_length <= sign_space) return STR_INVALID_CAP;
@@ -458,8 +489,8 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
 dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
     dnml_arena *_DASI_TSET_BASENLEN_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
     if (len <= sign_space) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; *written++; }
@@ -489,9 +520,9 @@ dnml_status bigInt_tto_strf(
     bool uppercase, size_t *written
 ) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
     dnml_arena *_DASI_TSET_BASENLEN_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
     uint8_t sign_space = (x.sign == -1) ? 1 : 0,
     prefix_space = (base == 2 || base == 8 || base == 16) ? 2 : 0,
     prefix_add = (uppercase) ? 32 : 0, char_add = (uppercase) ? 16 : 0;
@@ -523,8 +554,8 @@ dnml_status bigInt_tto_strf(
 /* Safe BigInt --> String */
 dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
     dnml_arena *_DASI_SET_STRING_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
     size_t str_length = strlen(str);
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
     if (str_length <= sign_space + 1) return STR_INVALID_CAP;
@@ -548,9 +579,9 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
 }
 dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
     dnml_arena *_DASI_SET_BASE_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
     size_t str_length = strlen(str);
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
     if (str_length <= sign_space) return STR_INVALID_CAP;
@@ -575,8 +606,8 @@ dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *writ
 }
 dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *written) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
     dnml_arena *_DASI_SET_STRNLEN_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
     if (len <= sign_space) return STR_INVALID_CAP;
     size_t digit_needed = __BIGINT_COUNTDB__(&x, 10);
@@ -600,9 +631,9 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
 }
 dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
     dnml_arena *_DASI_SET_BASENLEN_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
     if (len <= sign_space) return STR_INVALID_CAP;
     size_t digit_needed = __BIGINT_COUNTDB__(&x, base);
@@ -631,9 +662,9 @@ dnml_status bigInt_to_strf(
     bool uppercase, size_t *written
 ) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
     dnml_arena *_DASI_SET_BASENLEN_ARENA = _USE_ARENA();
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
     uint8_t sign_space = (x.sign == -1) ? 1 : 0,
     prefix_space = (base == 2 || base == 8 || base == 16) ? 2 : 0,
     prefix_add = (uppercase) ? 32 : 0, char_add = (uppercase) ? 16 : 0;
@@ -664,8 +695,9 @@ dnml_status bigInt_to_strf(
 }
 //* -------------------------- BigInt Conversions -------------------------- *//
 bigInt bigInt_from_str(const char* str, dnml_status *err) {
-    assert(err); if (!str) { *err = STR_NULL; return __BIGINT_ERROR_VALUE__(); }
-    if (*str == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
+    assert(err); 
+    test_assert_mut((str == NULL), err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
+    test_assert_mut((*str == '\0'), err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
     bigInt res;
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -730,8 +762,10 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     } return res;
 }
 bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
-    assert(err); if (!str) { *err = STR_NULL; return __BIGINT_ERROR_VALUE__(); }
-    if (*str == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
+    assert(err); 
+    test_assert_mut((str == NULL), err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
+    test_assert_mut((!base), err, STR_INVALID_BASE, (__BIGINT_ERROR_VALUE__()));
+    test_assert_mut((*str == '\0'), err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
     bigInt res;
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -780,8 +814,8 @@ bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
     } return res;
 }
 bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
-    assert(err); if (!str) { *err = STR_NULL; return __BIGINT_ERROR_VALUE__(); }
-    if (*str == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
+    assert(err); test_assert_mut((str == NULL), err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
+    test_assert_mut((!len || *str == '\0'), err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
     bigInt res;
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -847,8 +881,10 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     } return res;
 }
 bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status *err) {
-    assert(err); if (!str) { *err = STR_NULL; return __BIGINT_ERROR_VALUE__(); }
-    if (!len || *str == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
+    assert(err); 
+    test_assert_mut((str == NULL), err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
+    test_assert_mut((!base), err, STR_INVALID_BASE, (__BIGINT_ERROR_VALUE__()));
+    test_assert_mut((!len || *str == '\0'), err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
     bigInt res;
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -904,8 +940,8 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
 }
 //* -------------------------- BigInt Assignments -------------------------- *//
 size_t bigInt_get_size(const char *str, size_t len, uint8_t *baseout, dnml_status *err) {
-    if (str == NULL) { *err = STR_NULL; *baseout = 10; return 0; }
-    if (!len || *str == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
+    test_assert_pre((str == NULL), err, STR_NULL, baseout, 10, 0);
+    test_assert_pre((!len || *str == '\0'), err, STR_EMPTY, baseout, 10, 0);
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
     if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
@@ -945,9 +981,9 @@ size_t bigInt_get_size(const char *str, size_t len, uint8_t *baseout, dnml_statu
     } *err = STR_SUCCESS; *baseout = base; return res;
 } 
 size_t bigInt_get_sizeb(const char *str, size_t len, uint8_t base, dnml_status *err) {
-    if (str == NULL) { *err = STR_NULL; return 0; }
-    if (!len || *str == '\0') { *err = STR_EMPTY; return 0; }
-    if (!base) { *err = STR_INVALID_BASE; return 0; }
+    test_assert_mut((str == NULL), err, STR_NULL, 0);
+    test_assert_mut((!base), err, STR_INVALID_BASE, 0);
+    test_assert_mut((!len || *str == '\0'), err, STR_EMPTY, 0);
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -982,8 +1018,8 @@ size_t bigInt_get_sizesa(
     uint8_t *baseout, size_t bisize, 
     dnml_status *err
 ) {
-    if (str == NULL) { *err = STR_NULL; *baseout = 10; return 0; }
-    if (!len || *str == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
+    test_assert_pre((str == NULL), err, STR_NULL, baseout, 10, 0);
+    test_assert_pre((!len || *str == '\0'), err, STR_EMPTY, baseout, 10, 0);
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
     if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
@@ -1032,9 +1068,9 @@ size_t bigInt_get_sizebsa(
     uint8_t base, size_t bisize, 
     dnml_status *err
 ) {
-    if (str == NULL) { *err = STR_NULL; return 0; }
-    if (!len || *str == '\0') { *err = STR_EMPTY; return 0; }
-    if (!base) { *err = STR_INVALID_BASE; return 0; }
+    test_assert_mut((str == NULL), err, STR_NULL, 0);
+    test_assert_mut((!base), err, STR_INVALID_BASE, 0);
+    test_assert_mut((!len || *str == '\0'), err, STR_EMPTY, 0);
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -1072,8 +1108,8 @@ size_t bigInt_get_sizebsa(
 /* Default String --> BigInt */ /* Grows */
 dnml_status bigInt_get_str(bigInt *x, const char *str) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_GET_STRING_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1134,9 +1170,9 @@ dnml_status bigInt_get_str(bigInt *x, const char *str) {
 }
 dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_GET_BASE_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1187,8 +1223,8 @@ dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
 }
 dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (*str == '\0' || !len) return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_GET_STRNLEN_ARENA = _USE_ARENA();
      //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1249,9 +1285,9 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
 }
 dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
-    if (!len || *str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_GET_BASENLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1302,8 +1338,8 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
 /* Truncative String --> BigInt */ /* Truncates */
 dnml_status bigInt_tget_str(bigInt *x, const char *str) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_TGET_STRING_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1366,9 +1402,9 @@ dnml_status bigInt_tget_str(bigInt *x, const char *str) {
 }
 dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL; 
-    if (!base) return STR_INVALID_BASE;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_TGET_BASE_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1421,8 +1457,8 @@ dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
 }
 dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (!len || *str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_TGET_STRNLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1485,8 +1521,9 @@ dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
 }
 dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL; if (!base) return STR_INVALID_BASE;
-    if (!len || *str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_TGET_BASENLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1541,8 +1578,8 @@ dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
 /* Safe String --> BigInt */ /* Return an Error */
 dnml_status bigInt_sget_str(bigInt *x, const char *str) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_SGET_STRING_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1604,9 +1641,9 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
 }
 dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL; 
-    if (!base) return STR_INVALID_BASE;
-    if (*str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((*str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_SGET_BASE_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1658,8 +1695,8 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
 }
 dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (*str == '\0' || !len) return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_SGET_STRNLEN_ARENA = _USE_ARENA();
      //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1720,9 +1757,9 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
 }
 dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (!base) return STR_INVALID_BASE;
-    if (!len || *str == '\0') return STR_EMPTY;
+    test_assert((str == NULL), STR_NULL);
+    test_assert((!base), STR_INVALID_BASE);
+    test_assert((!len || *str == '\0'), STR_EMPTY);
     dnml_arena *_DASI_SGET_BASENLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
@@ -1803,7 +1840,7 @@ size_t bigInt_fscan_size(FILE *stream, uint8_t *baseout, dnml_status *err) {
     char lexical_comp[3]; size_t res = 0;
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
     size_t parse_res = fread(lexical_comp, sizeof(char), 3, stream);
-    if (ferror(stream)) { *err = FILE_ERR_PARSE; *baseout = 10; return res; }
+    test_assert_pre((ferror(stream)), err, FILE_ERR_PARSE, baseout, 10, res);
     long offset_set = 0;
     uint8_t sign = 1, base = 10, curr_lexpos = 0;
     if (lexical_comp[curr_lexpos] == '-') { 
@@ -1875,6 +1912,7 @@ size_t bigInt_fscan_size(FILE *stream, uint8_t *baseout, dnml_status *err) {
     } *err = STR_SUCCESS; *baseout = base; return res;
 }
 size_t bigInt_fscanb_size(FILE *stream, uint8_t base, dnml_status *err) {
+    test_assert(!base, STR_INVALID_BASE);
     //* Whitespace -> Signs -> Leading Zeros *//
     uint8_t sign = 1; int curr_char; size_t res = 0;
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
@@ -1919,7 +1957,7 @@ size_t bigInt_fscansa_size(FILE *stream, uint8_t *baseout, size_t bi_size, dnml_
     char lexical_comp[3]; size_t res = 0;
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
     size_t parse_res = fread(lexical_comp, sizeof(char), 3, stream);
-    if (ferror(stream)) { *err = FILE_ERR_PARSE; *baseout = 10; return res; }
+    test_assert_pre((ferror(stream)), err, FILE_ERR_PARSE, baseout, 10, res);
     long offset_set = 0;
     uint8_t sign = 1, base = 10, curr_lexpos = 0;
     if (lexical_comp[curr_lexpos] == '-') { 
@@ -2003,6 +2041,7 @@ size_t bigInt_fscansa_size(FILE *stream, uint8_t *baseout, size_t bi_size, dnml_
     } *err = STR_SUCCESS; *baseout = base; return res;
 }
 size_t bigInt_fscanbsa_size(FILE *stream, uint8_t base, size_t bi_size, dnml_status *err) {
+    test_assert(!base, STR_INVALID_BASE);
     //* Whitespace -> Signs -> Leading Zeros *//
     uint8_t sign = 1; int curr_char; size_t res = 0;
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
@@ -2569,6 +2608,7 @@ dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocat
 }
 dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocated Temporary
     assert(__BIGINT_INTERNAL_SVALID__(x));
+    test_assert(!base, STR_INVALID_BASE);
     //* Whitespace, Sign, & Leading zeros *//
     uint16_t current_char = _fskip_whitespace__(stdin); uint8_t sign = 1;
     if (current_char == '-') { sign = -1; current_char = getchar(); }
@@ -2663,6 +2703,7 @@ dnml_status bigInt_sscan(bigInt *x) {
 }
 dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
     assert(__BIGINT_INTERNAL_SVALID__(x));
+    test_assert(!base, STR_INVALID_BASE);
     dnml_arena *_DASI_SGETB_ARENA = _USE_ARENA();
     //* Whitespace, Sign, & Leading Zeros *//
     uint16_t current_char = _fskip_whitespace__(stdin); uint8_t sign = 1;
@@ -2765,6 +2806,7 @@ dnml_status bigInt_tscan(bigInt *x) {
 }
 dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
     assert(__BIGINT_INTERNAL_SVALID__(x));
+    test_assert(!base, STR_INVALID_BASE);
     dnml_arena *_DASI_TGETB_ARENA = _USE_ARENA();
     //* Whitespace, Sign, & Leading zeros *//
     uint16_t current_char = _fskip_whitespace__(stdin); uint8_t sign = 1;
@@ -2816,7 +2858,7 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
     char lexical_comp[3];
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
     size_t parse_res = fread(lexical_comp, sizeof(char), 3, stream);
-    if (ferror(stream)) return FILE_ERR_PARSE;
+    test_assert((ferror(stream)), FILE_ERR_PARSE);
     long offset_set = 0;
     uint8_t sign = 1, base = 10, curr_lexpos = 0;
     if (lexical_comp[curr_lexpos] == '-') { 
@@ -2899,6 +2941,7 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
 }
 dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap-allocated Temporary
     assert(__BIGINT_INTERNAL_SVALID__(x));
+    test_assert(!base, STR_INVALID_BASE);
     //* Whitespace -> Signs -> Leading Zeros *//
     uint8_t sign = 1; int curr_char;
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
@@ -2958,7 +3001,7 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
     char lexical_comp[3];
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
     size_t parse_res = fread(lexical_comp, sizeof(char), 3, stream);
-    if (ferror(stream)) return FILE_ERR_PARSE;
+    test_assert((ferror(stream)), FILE_ERR_PARSE);
     long offset_set = 0;
     uint8_t sign = 1, base = 10, curr_lexpos = 0;
     if (lexical_comp[curr_lexpos] == '-') { 
@@ -3046,6 +3089,7 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
 }
 dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
     assert(__BIGINT_INTERNAL_SVALID__(x));
+    test_assert(!base, STR_INVALID_BASE);
     dnml_arena *_DASI_FSGETB = _USE_ARENA();
     //* Whitespace -> Signs -> Leading Zeros *//
     uint8_t sign = 1; int curr_char;
@@ -3111,7 +3155,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
     char lexical_comp[3];
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
     size_t parse_res = fread(lexical_comp, sizeof(char), 3, stream);
-    if (ferror(stream)) return FILE_ERR_PARSE;
+    test_assert((ferror(stream)), FILE_ERR_PARSE);
     long offset_set = 0;
     uint8_t sign = 1, base = 10, curr_lexpos = 0;
     if (lexical_comp[curr_lexpos] == '-') { 
@@ -3202,6 +3246,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
 }
 dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
     assert(__BIGINT_INTERNAL_SVALID__(x));
+    test_assert(!base, STR_INVALID_BASE);
     dnml_arena *_DASI_FSGETB = _USE_ARENA();
     //* Whitespace -> Signs -> Leading Zeros *//
     uint8_t sign = 1; int curr_char;
