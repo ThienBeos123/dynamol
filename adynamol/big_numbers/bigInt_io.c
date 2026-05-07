@@ -76,11 +76,13 @@ static inline void _ASCII_COLUMN__(limb_t val, char* c) {
 //todo ======================================= 1. CONSTRUCTIONS ======================================= *//
 dnml_status bigInt_strinit(bigInt *x, const char* str) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
+    if (str == NULL) return STR_NULL;
     if (*str == '\0') return STR_EMPTY;
     dnml_arena* _DASI_STR_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
+    if (str[curr_pos] == '\0') return STR_EMPTY;
     unsigned char sign_op_res = _sign_handle_(str, &curr_pos, &sign);
     if (sign_op_res == 4) return STR_INVALID_SIGN;
     else if (sign_op_res == 3) return STR_INCOMPLETE;
@@ -150,8 +152,9 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
     arena_reset(_DASI_STR_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strbinit(bigInt *x, const char* str, uint8_t base) {
+dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
+    if (str == NULL) return STR_NULL;
     if (*str == '\0') return STR_EMPTY;
     dnml_arena* _DASI_BASE_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
@@ -215,13 +218,15 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, uint8_t base) {
     arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strninit(bigInt *x, const char* str, size_t len) {
+dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    if (*str == '\0') return STR_EMPTY;
+    if (str == NULL) return STR_NULL;
+    if (!len || *str == '\0') return STR_EMPTY;
     dnml_arena* _DASI_STRNLEN_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4) return STR_INVALID_SIGN;
     else if (sign_op_res == 3) return STR_INCOMPLETE;
@@ -297,15 +302,16 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, size_t len) {
 }
 dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t base) {
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    if (*str == '\0') return STR_EMPTY;
+    if (str == NULL) return STR_NULL;
+    if (!len || *str == '\0') return STR_EMPTY;
     dnml_arena* _DASI_BASENLEN_INIT_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
-    if (str[curr_pos] == '\0') return STR_INVALID_DIGIT;
-    if (curr_pos == len - 1) return STR_INCOMPLETE;
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_INCOMPLETE;
 
     //* ====== 2. Leading-Zeros Handling ====== *//
     // Skipping all leading zeros
@@ -664,6 +670,7 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
+    if (str[curr_pos] == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
     unsigned char sign_op_res = _sign_handle_(str, &curr_pos, &sign);
     if (sign_op_res == 4) { *err = STR_INVALID_DIGIT; return __BIGINT_ERROR_VALUE__(); }
     else if (sign_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
@@ -729,6 +736,7 @@ bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
+    if (str[curr_pos] == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (str[curr_pos] == '\0') { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
@@ -778,7 +786,10 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') { 
+        *err = STR_EMPTY;
+        return __BIGINT_ERROR_VALUE__(); 
+    } unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4) { *err = STR_INVALID_DIGIT; return __BIGINT_ERROR_VALUE__(); }
     else if (sign_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
 
@@ -837,12 +848,15 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
 }
 bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status *err) {
     assert(err); if (!str) { *err = STR_NULL; return __BIGINT_ERROR_VALUE__(); }
-    if (*str == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
+    if (!len || *str == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
     bigInt res;
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') { 
+        *err = STR_EMPTY;
+        return __BIGINT_ERROR_VALUE__(); 
+    } if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (curr_pos == len - 1 || str[curr_pos] == '\0') { 
         *err = STR_INCOMPLETE; 
@@ -890,10 +904,11 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
 }
 //* -------------------------- BigInt Assignments -------------------------- *//
 size_t bigInt_get_size(const char *str, size_t len, uint8_t *baseout, dnml_status *err) {
-    if (!len) { *err = STR_EMPTY; *baseout = 10; return 0; }
+    if (str == NULL) { *err = STR_NULL; *baseout = 10; return 0; }
+    if (!len || *str == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) { *err = STR_EMPTY; *baseout = 10; return 0; }
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
     unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4) { *err = STR_INVALID_SIGN; *baseout = 10; return res; }
     else if (sign_op_res == 3) { *err = STR_INCOMPLETE; *baseout = 10; return res; }
@@ -930,12 +945,13 @@ size_t bigInt_get_size(const char *str, size_t len, uint8_t *baseout, dnml_statu
     } *err = STR_SUCCESS; *baseout = base; return res;
 } 
 size_t bigInt_get_sizeb(const char *str, size_t len, uint8_t base, dnml_status *err) {
-    if (!len) { *err = STR_EMPTY; return 0; }
+    if (str == NULL) { *err = STR_NULL; return 0; }
+    if (!len || *str == '\0') { *err = STR_EMPTY; return 0; }
     if (!base) { *err = STR_INVALID_BASE; return 0; }
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) { *err = STR_EMPTY; return 0; }
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_EMPTY; return 0; }
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_INCOMPLETE; return res; }
@@ -966,10 +982,11 @@ size_t bigInt_get_sizesa(
     uint8_t *baseout, size_t bisize, 
     dnml_status *err
 ) {
-    if (!len) { *err = STR_EMPTY; *baseout = 10; return 0; }
+    if (str == NULL) { *err = STR_NULL; *baseout = 10; return 0; }
+    if (!len || *str == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) { *err = STR_EMPTY; *baseout = 10; return 0; }
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_EMPTY; *baseout = 10; return 0; }
     unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4) { *err = STR_INVALID_SIGN; *baseout = 10; return res; }
     else if (sign_op_res == 3) { *err = STR_INCOMPLETE; *baseout = 10; return res; }
@@ -1015,12 +1032,13 @@ size_t bigInt_get_sizebsa(
     uint8_t base, size_t bisize, 
     dnml_status *err
 ) {
-    if (!len) { *err = STR_EMPTY; return 0; }
+    if (str == NULL) { *err = STR_NULL; return 0; }
+    if (!len || *str == '\0') { *err = STR_EMPTY; return 0; }
     if (!base) { *err = STR_INVALID_BASE; return 0; }
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0, res = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) { *err = STR_EMPTY; return 0; }
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_EMPTY; return 0; }
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (curr_pos == len - 1 || str[curr_pos] == '\0') { *err = STR_INCOMPLETE; return res; }
@@ -1175,7 +1193,7 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
      //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0'|| curr_pos == len - 1) return STR_EMPTY;
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4) return STR_INVALID_DIGIT;
     else if (sign_op_res == 3) return STR_INCOMPLETE;
@@ -1233,12 +1251,12 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
     assert(__BIGINT_INTERNAL_PVALID__(x));
     if (!str) return STR_NULL;
     if (!base) return STR_INVALID_BASE;
-    if (*str == '\0') return STR_EMPTY;
+    if (!len || *str == '\0') return STR_EMPTY;
     dnml_arena *_DASI_GET_BASENLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) return STR_EMPTY;
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_INVALID_DIGIT;
@@ -1348,7 +1366,8 @@ dnml_status bigInt_tget_str(bigInt *x, const char *str) {
 }
 dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
+    if (!str) return STR_NULL; 
+    if (!base) return STR_INVALID_BASE;
     if (*str == '\0') return STR_EMPTY;
     dnml_arena *_DASI_TGET_BASE_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
@@ -1403,12 +1422,12 @@ dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
 dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
     if (!str) return STR_NULL;
-    if (*str == '\0' || !len) return STR_EMPTY;
+    if (!len || *str == '\0') return STR_EMPTY;
     dnml_arena *_DASI_TGET_STRNLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) return STR_EMPTY;
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4) return STR_INVALID_DIGIT;
     else if (sign_op_res == 3) return STR_INCOMPLETE;
@@ -1466,13 +1485,13 @@ dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
 }
 dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
-    if (*str == '\0' || !len) return STR_EMPTY;
+    if (!str) return STR_NULL; if (!base) return STR_INVALID_BASE;
+    if (!len || *str == '\0') return STR_EMPTY;
     dnml_arena *_DASI_TGET_BASENLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) return STR_EMPTY;
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_INCOMPLETE;
@@ -1585,7 +1604,8 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
 }
 dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
-    if (!str) return STR_NULL;
+    if (!str) return STR_NULL; 
+    if (!base) return STR_INVALID_BASE;
     if (*str == '\0') return STR_EMPTY;
     dnml_arena *_DASI_SGET_BASE_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
@@ -1644,7 +1664,7 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
      //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) return STR_EMPTY;
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
     if (sign_op_res == 4) return STR_INVALID_DIGIT;
     else if (sign_op_res == 3) return STR_INCOMPLETE;
@@ -1701,12 +1721,13 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
 dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
     assert(__BIGINT_INTERNAL_PVALID__(x));
     if (!str) return STR_NULL;
-    if (*str == '\0' || !len) return STR_EMPTY;
+    if (!base) return STR_INVALID_BASE;
+    if (!len || *str == '\0') return STR_EMPTY;
     dnml_arena *_DASI_SGET_BASENLEN_ARENA = _USE_ARENA();
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; uint8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
-    if (str[curr_pos] == '\0' || curr_pos == len - 1) return STR_EMPTY;
+    if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_EMPTY;
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (curr_pos == len - 1 || str[curr_pos] == '\0') return STR_INCOMPLETE;

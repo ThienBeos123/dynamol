@@ -73,7 +73,7 @@ scase ecases_bprefix[27] = {
     /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
     { // 1.         |   ""                              ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
-        .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
+        .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
     }, { // 2.      |   "  "                            ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
         .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
@@ -210,7 +210,7 @@ scase ecases_base[27] = {
     /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
     { // 1.         |   ""                              ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
-        .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
+        .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
     }, { // 2.      |   "  "                            ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
         .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
@@ -349,83 +349,82 @@ scase ecases_base[27] = {
 int main(int argc, char **argv) {
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
-    u8 suite_count = 8;
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
-    _dnml_output_mode init_omode; if (argc >= 2) {
+    _dnml_output_mode conv_omode; if (argc >= 2) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
-        init_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
-    } else init_omode = DNML_VOUT;
-    u8 init_ecount = 27, init_scount = 4;
+        conv_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
+    } else conv_omode = DNML_VOUT;
+    u8 conv_ecount = 27, conv_scount = 4;
     // Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t init_rand_ctx = {0}; str_res *ebuf_slices[init_scount];
-    str_res fail_ebuf[(init_ecount << 1) * init_scount];
-    strbump_t init_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
-    _dist_buf(ebuf_slices, fail_ebuf, init_ecount << 1, init_scount, sizeof(str_res));
+    rctx_t init_rand_ctx = {0}; str_res *ebuf_slices[conv_scount];
+    str_res fail_ebuf[(conv_ecount << 1) * conv_scount];
+    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
-    // strinit() -- Base-prefix, No length param
-    suite strinit_suite = {0};
-    create_str_suite( &strinit_suite, 
-        "strinit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, 
-        INVERSE, ebuf_slices[0], 
-        "../logs/biginit_strinit.txt", init_ectx
+    // from_str() -- Base-prefix, No length param
+    suite from_str_suite = {0};
+    create_str_suite(&from_str_suite,
+        "bigInt_from_str - String Conversion", 
+        conv_scount, rcount, ecases_bprefix,
+        INVERSE, ebuf_slices[0],
+        "../logs/bigint_from_str.txt", conv_ectx
     );
-    fill_suite_rinv(&strinit_suite,
-        &_stobi_init_ingen_nob, &exec_stobi_strinit,
-        &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
-        &fmt_in_strinit, &fmt_recon_stobi
+    fill_suite_rinv(&from_str_suite,
+        &_stobi_conv_ingen_nob, &exec_stobi_from_str,
+        &inv_stobi_conv_nob, &stat_stobi_from_str, &cmp_inv_stobi_conv,
+        &fmt_in_from_str, &fmt_recon_stobi
     );
-    // strninit() -- Base-prefix, Length param
-    suite strninit_suite = {0};
-    create_str_suite( &strninit_suite,
-        "strninit - String Intialization",
-        init_scount, rcount, ecases_bprefix, 
+    // from_strn() -- Base-prefix, Length param
+    suite from_strn_suite = {0};
+    create_str_suite(&from_strn_suite,
+        "bigInt_from_strn - String Conversion",
+        conv_scount, rcount, ecases_bprefix,
         INVERSE, ebuf_slices[1],
-        "../logs/biginit_strinit.txt", init_ectx
+        "../logs/bigint_from_str.txt", conv_ectx
     );
-    fill_suite_rinv(&strinit_suite,
-        &_stobi_init_ingen_nob, &exec_stobi_strninit,
-        &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
-        &fmt_in_strninit, &fmt_recon_stobi
+    fill_suite_rinv(&from_strn_suite,
+        &_stobi_conv_ingen_nob, &exec_stobi_from_strn,
+        &inv_stobi_conv_nob, &stat_stobi_from_strn, &cmp_inv_stobi_conv,
+        &fmt_in_from_strn, &fmt_recon_stobi
     );
-    // strbinit() -- Base-param, No length param
-    suite strbinit_suite = {0};
-    create_str_suite( &strbinit_suite,
-        "strbinit - String Intialization",
-        init_scount, rcount, ecases_base, 
+    // from_strb() -- Base-param, No length param
+    suite from_strb_suite = {0};
+    create_str_suite(&from_strb_suite,
+        "bigInt_from_strb - String Conversion",
+        conv_scount, rcount, ecases_base,
         INVERSE, ebuf_slices[2],
-        "../logs/biginit_strinit.txt", init_ectx
+        "../logs/bigint_from_str.txt", conv_ectx
     );
-    fill_suite_rinv(&strinit_suite,
-        &_stobi_init_ingen_b, &exec_stobi_strbinit,
-        &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
-        &fmt_in_strbinit, &fmt_recon_stobi
+    fill_suite_rinv(&from_str_suite,
+        &_stobi_conv_ingen_b, &exec_stobi_from_strb,
+        &inv_stobi_conv_b, &stat_stobi_from_strb, &cmp_inv_stobi_convb,
+        &fmt_in_from_strb, &fmt_recon_stobi
     );
-    // strnbinit() -- Base-param, Length param
-    suite strnbinit_suite = {0};
-    create_str_suite( &strnbinit_suite,
-        "strninit - String Intialization",
-        init_scount, rcount, ecases_base, 
+    // from_strnb() -- Base-param, Length param
+    suite from_strnb_suite = {0};
+    create_str_suite(&from_strnb_suite,
+        "bigInt_from_strnb - String Conversion",
+        conv_scount, rcount, ecases_base, 
         INVERSE, ebuf_slices[3],
-        "../logs/biginit_strinit.txt", init_ectx
+        "../logs/bigint_from_str.txt", conv_ectx
     );
-    fill_suite_rinv(&strinit_suite,
-        &_stobi_init_ingen_b, &exec_stobi_strnbinit,
-        &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
-        &fmt_in_strnbinit, &fmt_recon_stobi
+    fill_suite_rinv(&from_str_suite,
+        &_stobi_conv_ingen_b, &exec_stobi_from_strnb,
+        &inv_stobi_conv_b, &stat_stobi_from_strnb, &cmp_inv_stobi_convb,
+        &fmt_in_from_strnb, &fmt_recon_stobi
     );
 
 
     //* ---------------------------------- SESSION STARTUP ---------------------------------- *//
-    _libdnml_str_suite init_suite_arr[init_scount];
-    init_suite_arr[0] = strinit_suite;  init_suite_arr[1] = strninit_suite;
-    init_suite_arr[2] = strbinit_suite; init_suite_arr[3] = strnbinit_suite;
-    _libdnml_session strinit_sesh = {0}; create_str_session(
-        &strinit_sesh, "I/O - BigInt String Initialization",
-        100, init_scount, init_suite_arr, init_omode
-    ); start_str_session(&strinit_sesh);
+    _libdnml_str_suite conv_suite_arr[conv_scount];
+    conv_suite_arr[0] = from_str_suite;  conv_suite_arr[1] = from_strn_suite;
+    conv_suite_arr[2] = from_strb_suite; conv_suite_arr[3] = from_strnb_suite;
+    _libdnml_session from_str_sesh = {0}; create_str_session(
+        &from_str_sesh, "I/O - String --> BigInt Conversion",
+        100, conv_scount, conv_suite_arr, conv_omode
+    ); start_str_session(&from_str_sesh);
     return 0;
 }

@@ -73,7 +73,7 @@ scase ecases_bprefix[27] = {
     /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
     { // 1.         |   ""                              ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
-        .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
+        .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
     }, { // 2.      |   "  "                            ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
         .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
@@ -210,7 +210,7 @@ scase ecases_base[27] = {
     /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
     { // 1.         |   ""                              ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
-        .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
+        .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
     }, { // 2.      |   "  "                            ---->   STR_EMPTY                            /
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
         .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
@@ -367,11 +367,11 @@ int main(int argc, char **argv) {
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
     // strinit() -- Base-prefix, No length param
     suite strinit_suite = {0};
-    create_str_suite( &strinit_suite, 
+    create_str_suite(&strinit_suite, 
         "strinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, 
         INVERSE, ebuf_slices[0], 
-        "../logs/biginit_strinit.txt", init_ectx
+        "../logs/bigint_strinit.txt", init_ectx
     );
     fill_suite_rinv(&strinit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strinit,
@@ -384,9 +384,9 @@ int main(int argc, char **argv) {
         "strninit - String Intialization",
         init_scount, rcount, ecases_bprefix, 
         INVERSE, ebuf_slices[1],
-        "../logs/biginit_strinit.txt", init_ectx
+        "../logs/bigint_strinit.txt", init_ectx
     );
-    fill_suite_rinv(&strinit_suite,
+    fill_suite_rinv(&strninit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strninit,
         &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
         &fmt_in_strninit, &fmt_recon_stobi
@@ -397,9 +397,9 @@ int main(int argc, char **argv) {
         "strbinit - String Intialization",
         init_scount, rcount, ecases_base, 
         INVERSE, ebuf_slices[2],
-        "../logs/biginit_strinit.txt", init_ectx
+        "../logs/bigint_strinit.txt", init_ectx
     );
-    fill_suite_rinv(&strinit_suite,
+    fill_suite_rinv(&strbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strbinit,
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
         &fmt_in_strbinit, &fmt_recon_stobi
@@ -410,9 +410,9 @@ int main(int argc, char **argv) {
         "strninit - String Intialization",
         init_scount, rcount, ecases_base, 
         INVERSE, ebuf_slices[3],
-        "../logs/biginit_strinit.txt", init_ectx
+        "../logs/bigint_strinit.txt", init_ectx
     );
-    fill_suite_rinv(&strinit_suite,
+    fill_suite_rinv(&strnbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strnbinit,
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
         &fmt_in_strnbinit, &fmt_recon_stobi
@@ -424,7 +424,7 @@ int main(int argc, char **argv) {
     init_suite_arr[0] = strinit_suite;  init_suite_arr[1] = strninit_suite;
     init_suite_arr[2] = strbinit_suite; init_suite_arr[3] = strnbinit_suite;
     _libdnml_session strinit_sesh = {0}; create_str_session(
-        &strinit_sesh, "I/O - BigInt String Initialization",
+        &strinit_sesh, "I/O - String --> BigInt Initialization",
         100, init_scount, init_suite_arr, init_omode
     ); start_str_session(&strinit_sesh);
     return 0;
