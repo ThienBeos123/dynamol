@@ -49,33 +49,6 @@
 *               its output is also purely base-19 with no base-prefix
 */
 
-
-/* Note 3 - Allocation: ----- OUTDATED
-! ------ NOTE IS OUTDATED ------ 
-*   1) Most of the evaluation and inverse wrappers in bi_eval_fn.h
-*      utilizes scratch allocation seeded from vctx/ctx.
-*   -----> Entails tester and main testing units, when seeding
-*          temporary scratch spaces for testing, to always:
-
-            1. Mark the initial offset:
-
-                    size_t unit_start = dratch_mark(&ctx_);
-
-            2. Reset towards that initial offset at
-               the end of the testing unit:
-
-                    dratch_reset(&ctx_, unit_start);
-
-*   2) Due to there being a lot of functions to test, with a
-*      wide variety of function categories, testers may implement
-*      either a single universal scratch buffer for every functions,
-*      a buffer for each category, or a buffer for each function. The choice
-*      depends on the amount of functions being tested
-
-*   3) For every scratch buffers initialized, its setup and cleanup
-*      MUST follow step 1 to ensure memory-safe and efficient test runs
-*/
-
 // Any settings of other metadata outside of out->status are for safety measures
 #define BITOS_INVALCAP(out) do { \
     out->status = STR_INVALID_CAP;              \

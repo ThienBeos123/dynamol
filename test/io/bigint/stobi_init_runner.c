@@ -49,7 +49,7 @@
 *      preferrably, explicit through type-casting.
 */
 
-/* Note - EDGE CASE SETUP:
+/* Note - UNIT-SPECIFIC:
 *   +) ".base = 0 in ecases_bprefix[27], WHY?"
 *      A noteable oddity is the decision ot set the .base metadata in _libdnml_scases
 *      input of arrays of edge cases in some STOBI Runners, in which is reserved for 
@@ -375,6 +375,7 @@ int main(int argc, char **argv) {
     str_res fail_ebuf[(init_ecount << 1) * init_scount];
     strbump_t init_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, init_ecount << 1, init_scount, sizeof(str_res));
+    input_container init_incon = { .cont_type = CTX, .cont.rctx = &init_rctx };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -382,7 +383,7 @@ int main(int argc, char **argv) {
     suite strinit_suite = {0};
     create_str_suite(&strinit_suite, "strinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rctx
+        "../logs/bigint_strinit.txt", init_ectx, &init_incon
     );
     fill_suite_rinv(&strinit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strinit,
@@ -393,7 +394,7 @@ int main(int argc, char **argv) {
     suite strninit_suite = {0};
     create_str_suite(&strninit_suite, "strninit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rctx
+        "../logs/bigint_strinit.txt", init_ectx, &init_incon
     );
     fill_suite_rinv(&strninit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strninit,
@@ -404,7 +405,7 @@ int main(int argc, char **argv) {
     suite strbinit_suite = {0};
     create_str_suite(&strbinit_suite, "strbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rctx
+        "../logs/bigint_strinit.txt", init_ectx, &init_incon
     );
     fill_suite_rinv(&strbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strbinit,
@@ -415,7 +416,7 @@ int main(int argc, char **argv) {
     suite strnbinit_suite = {0};
     create_str_suite(&strnbinit_suite, "strnbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rctx
+        "../logs/bigint_strinit.txt", init_ectx, &init_incon
     );
     fill_suite_rinv(&strnbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strnbinit,

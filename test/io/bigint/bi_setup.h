@@ -41,48 +41,50 @@ size_t _stobi_scan_insize(void) { return sizeof(stobi_scan_in); }
 size_t _stobi_fread_insize(void) { return sizeof(stobi_fread_in); }
 size_t _stobi_deserialize_insize(void) { return sizeof(stobi_deserialize_in); }
 // Input Buffer Linker - BITOS
-void _bitos_conv_inlink(void *in, rctx_t *rctx) {
+void _bitos_conv_inlink(void *in, input_container *incon) {
     bitos_conv_in* vin = (bitos_conv_in*)in;
-    vin->x.limbs = (limb_t*)rctx->in_buf;
+    vin->x.limbs = (limb_t*)incon->cont.rctx->in_buf;
 }
-void _bitos_print_inlink(void *in, rctx_t *rctx) {
+void _bitos_print_inlink(void *in, input_container *incon) {
     bitos_print_in* vin = (bitos_print_in*)in;
-    vin->x.limbs = (limb_t*)rctx->in_buf;
+    vin->x.limbs = (limb_t*)incon->cont.rctx->in_buf;
 }
-void _bitos_fwrite_inlink(void *in, rctx_t *rctx) {
+void _bitos_fwrite_inlink(void *in, input_container *incon) {
     bitos_fwrite_in* vin = (bitos_fwrite_in*)in;
-    vin->x.limbs = (limb_t*)rctx->in_buf;
+    vin->x.limbs = (limb_t*)incon->cont.rctx->in_buf;
 }
-void _bitos_serialize_inlink(void *in, rctx_t *rctx) {
+void _bitos_serialize_inlink(void *in, input_container *incon) {
     bitos_serialize_in* vin = (bitos_serialize_in*)in;
-    vin->x.limbs = (limb_t*)rctx->in_buf;
+    vin->x.limbs = (limb_t*)incon->cont.rctx->in_buf;
 }
-void _bitos_util_inlink(void *in, rctx_t *rctx) {
+void _bitos_util_inlink(void *in, input_container *incon) {
     bitos_util_in* vin = (bitos_util_in*)in;
-    vin->x.limbs = (limb_t*)rctx->in_buf;
+    vin->x.limbs = (limb_t*)incon->cont.rctx->in_buf;
 }
 // Input Buffer Linker - STOBI
-void _stobi_init_inlink(void *in, rctx_t *rctx) {
+void _stobi_init_inlink(void *in, input_container *incon) {
     stobi_init_in* vin = (stobi_init_in*)in;
-    vin->str = (char*)rctx->in_buf;
+    vin->str = (char*)incon->cont.rctx->in_buf;
 }
-void _stobi_conv_inlink(void *in, rctx_t *rctx) {
+void _stobi_conv_inlink(void *in, input_container *incon) {
     stobi_conv_in* vin = (stobi_conv_in*)in;
-    vin->str = (char*)rctx->in_buf;
+    vin->str = (char*)incon->cont.rctx->in_buf;
 }
-void _stobi_assign_inlink(void *in, rctx_t *rctx) {
+void _stobi_assign_inlink(void *in, input_container *incon) {
     stobi_assign_in* vin = (stobi_assign_in*)in;
-    vin->str = (char*)rctx->in_buf;
+    vin->str = (char*)incon->cont.rctx->in_buf;
 }
-void _stobi_scan_inlink(void *in, rctx_t *rctx) { 
-    /* Does nothing, Main data is stored within a file (FILE*) */ 
+void _stobi_scan_inlink(void *in, input_container *incon) {
+    stobi_scan_in* vin = (stobi_scan_in*)in;
+    vin->stream = incon->cont.stream;
 }
-void _stobi_fread_inlink(void *in, rctx_t *rctx) { 
-    /* Does nothing, Main data is stored within a file (FILE*) */ 
+void _stobi_fread_inlink(void *in, input_container *incon) { 
+    stobi_fread_in* vin = (stobi_fread_in*)in;
+    vin->stream = incon->cont.stream;
 }
-void _stobi_deserialize_inlink(void *in, rctx_t *rctx) {
+void _stobi_deserialize_inlink(void *in, input_container *incon) {
     stobi_deserialize_in* vin = (stobi_deserialize_in*)in;
-    vin->str = (char*)rctx->in_buf;
+    vin->str = (char*)incon->cont.rctx->in_buf;
 }
 
 
@@ -196,7 +198,7 @@ void _stobi_scan_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, r
     // --- String Generation setup
     str_rand_mod config; strgen_init_sesh(&config, true, state);
     strgen_write((char*)(rctx->in_buf), INPUT_BYTE_CAP, &config, true);
-    fputs((char*)(rctx->in_buf), vin->stream);
+    fwrite(rctx->in_buf, sizeof(char), config.str_len, vin->stream);
     memset(rctx->in_buf, 0, INPUT_BYTE_CAP); vin->base = config.base;
     vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
 } 
@@ -210,7 +212,7 @@ void _stobi_scan_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, rct
     // --- String Generation setup
     str_rand_mod config; strgen_init_sesh(&config, false, state);
     strgen_write((char*)(rctx->in_buf), INPUT_BYTE_CAP, &config, false);
-    fputs((char*)(rctx->in_buf), vin->stream);
+    fwrite(rctx->in_buf, sizeof(char), config.str_len, vin->stream);
     memset(rctx->in_buf, 0, INPUT_BYTE_CAP); vin->base = config.base;
     vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
 }

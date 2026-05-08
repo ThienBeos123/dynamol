@@ -49,7 +49,7 @@
 *      preferrably, explicit through type-casting.
 */
 
-/* Note - EDGE CASE SETUP:
+/* Note - UNIT-SPECIFIC:
 *   +) ".base = 0 in ecases_bprefix[27], WHY?"
 *      A noteable oddity is the decision ot set the .base metadata in _libdnml_scases
 *      input of arrays of edge cases in some STOBI Runners, in which is reserved for 
@@ -375,6 +375,7 @@ int main(int argc, char **argv) {
     str_res fail_ebuf[(conv_ecount << 1) * conv_scount];
     strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
+    input_container conv_incon = { .cont_type = CTX, .cont.rctx = &conv_rctx };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -382,7 +383,7 @@ int main(int argc, char **argv) {
     suite from_str_suite = {0};
     create_str_suite(&from_str_suite, "bigInt_from_str - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rctx
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
     );
     fill_suite_rinv(&from_str_suite,
         &_stobi_conv_ingen_nob, &exec_stobi_from_str,
@@ -393,7 +394,7 @@ int main(int argc, char **argv) {
     suite from_strn_suite = {0};
     create_str_suite(&from_strn_suite, "bigInt_from_strn - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rctx
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
     );
     fill_suite_rinv(&from_strn_suite,
         &_stobi_conv_ingen_nob, &exec_stobi_from_strn,
@@ -404,7 +405,7 @@ int main(int argc, char **argv) {
     suite from_strb_suite = {0};
     create_str_suite(&from_strb_suite, "bigInt_from_strb - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rctx
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
     );
     fill_suite_rinv(&from_strb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_from_strb,
@@ -415,7 +416,7 @@ int main(int argc, char **argv) {
     suite from_strnb_suite = {0};
     create_str_suite(&from_strnb_suite, "bigInt_from_strnb - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rctx
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
     );
     fill_suite_rinv(&from_strnb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_from_strnb,

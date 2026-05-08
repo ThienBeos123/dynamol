@@ -15,6 +15,10 @@
 //* =========== TYPE DEFINITIONS =========== *//
 // Small, supporting types
 typedef struct strbump_t { void *ctx; size_t off; size_t size } strbump_t;
+typedef struct input_container { 
+    enum { CTX, STREAM } cont_type;
+    union { rctx_t *rctx; FILE* stream } cont;
+} input_container;
 typedef enum rcap_mode { 
     SATISFACTORY, NEAR_SATISFACTORY, 
     UNSATISFACTORY, FAULTY 
@@ -151,22 +155,22 @@ typedef bool (*dnml_cmp_eval_fn)(const str_res *exp, const str_res *out);
 typedef void (*dnml_fmt_in_fn)(FILE *f, const void *in, int tab_depth);
 typedef void (*dnml_fmt_recon_fn)(FILE *f, const void* recon, int tab_depth);
 typedef size_t (*dnml_voidp_size)(void);
-typedef void (*dnml_voidp_fill)(void *in, rctx_t *rctx);
+typedef void (*dnml_voidp_fill)(void *in, input_container *incon);
 
 static inline void *run_ecase(_libdnml_scase *c, dnml_exec_fn *fn, void *ctx) {
     (*fn)(c->in, &c->res, ctx);
 }
 static inline void *run_case(_libdnml_str_suite *s, dnml_exec_fn *fn, void *in, str_res *out) {
-    (*fn)(in, out, s->rctx->res_buf);
+    (*fn)(in, out, s->rincon->cont.rctx->res_buf);
 }
 static inline void *run_eval(_libdnml_str_suite *s, dnml_eval_fn *fn,  void *in, str_res *aux2) {
-    (*fn)(in, aux2, s->rctx->aux2_buf);
+    (*fn)(in, aux2, s->rincon->cont.rctx->aux2_buf);
 }
 static inline void *run_inverse(
     _libdnml_str_suite *s, dnml_inv_fn *fn,
     void *in, str_res *out, void *aux1
 ) {
-    (*fn)(in, out, aux1, s->rctx->aux1_buf);
+    (*fn)(in, out, aux1, s->rincon->cont.rctx->aux1_buf);
 }
 
 
@@ -196,7 +200,7 @@ typedef struct _libdnml_str_suite {
     // Random cases Handling
     rcheck_mode check_mode;
     uint16_t rcount; uint16_t rcorrect;
-    rctx_t *rctx; int fail_enums[];
+    input_container *rincon; int fail_enums[];
 } _libdnml_str_suite;
 
 
@@ -205,7 +209,7 @@ static inline void create_str_suite(
     _libdnml_str_suite *curr_suite, const char *name,
     uint8_t ecount, uint16_t rcount, _libdnml_scase *ebank,
     rcheck_mode mode, str_res *fail_ebuf, const char *log_path,
-    strbump_t ectx, rctx_t *rctx
+    strbump_t ectx, input_container *rincon
 ) {
     curr_suite->suite_name = name;
     curr_suite->ecount = ecount;
@@ -217,7 +221,7 @@ static inline void create_str_suite(
     curr_suite->fail_eres = fail_ebuf;
     curr_suite->fail_eexp = &fail_ebuf[ecount];
     // Assigning random-case failure fail_ebuf
-    curr_suite->rctx = rctx;
+    curr_suite->rincon = rincon;
     curr_suite->check_mode = mode;
 }
 
@@ -443,16 +447,16 @@ static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_
     for (uint16_t i = 0; i < s->rcount; ++i) {
         // Setting Up Input
         uint8_t voidp_in_buf[(*s->fn_insize)()];
-        in = voidp_in_buf; (*s->fn_infill)(in, s->rctx);
+        in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
         rcap_mode incap = _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->state, incap, s->rctx);
+        (*s->gen_case)(in, &s->state, incap, s->rincon->cont.rctx);
         
         // Setting up Auxillary 1 (Reconstruction) buffers
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];
-        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rctx);
+        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
         // Setting up Evaluation Output buffers
-        out = s->rctx->res_buf;
-        aux2 = s->rctx->aux2_buf;
+        out = s->rincon->cont.rctx->res_buf;
+        aux2 = s->rincon->cont.rctx->aux2_buf;
 
         // ---------------- MAIN EXECUTION PART ----------------
         run_case(s, s->fn_test, in, out);
@@ -465,7 +469,7 @@ static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_
         }
         // INVERSE MODE
         else if (s->check_mode == INVERSE) { run_inverse(s, s->fn_inv, in, out, aux1);
-            if (!(*s->inv_cmp)(in, out, aux1, s->rctx))  {
+            if (!(*s->inv_cmp)(in, out, aux1, s->rincon->cont.rctx))  {
                 __dnml_log_invc(s, i, logf, in, aux1, aux2, out);
             } else s->rcorrect++;
         }
@@ -494,16 +498,16 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
     for (uint16_t i = 0; i < s->rcount; ++i) {
         // Setting Up Input
         uint8_t voidp_in_buf[(*s->fn_insize)()];
-        in = voidp_in_buf; (*s->fn_infill)(in, s->rctx);
+        in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
         rcap_mode incap = _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->state, incap, s->rctx);
+        (*s->gen_case)(in, &s->state, incap, s->rincon->cont.rctx);
 
         // Setting up Auxillary 1 (Reconstruction) buffers
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];
-        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rctx);
+        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
         // Setting up Evaluation Output buffers
-        out = s->rctx->res_buf;
-        aux2 = s->rctx->aux2_buf;
+        out = s->rincon->cont.rctx->res_buf;
+        aux2 = s->rincon->cont.rctx->aux2_buf;
 
         // ---------------- MAIN EXECUTION PART ----------------
         run_case(s, s->fn_test, in, out);
@@ -517,7 +521,7 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
         }
         // INVERSE MODE
         else if (s->check_mode == INVERSE) { run_inverse(s, s->fn_inv, in, out, aux1);
-            if (!(*s->inv_cmp)(in, out, aux1, s->rctx))  {
+            if (!(*s->inv_cmp)(in, out, aux1, s->rincon->cont.rctx))  {
                 __dnml_log_invc(s, i, logf, in, aux1, aux2, out);
                 __dnml_print_invc(s, i, logf, in, aux1, aux2, out, bw, delay_ms);
             } else s->rcorrect++;
