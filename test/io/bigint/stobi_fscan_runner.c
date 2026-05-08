@@ -379,7 +379,7 @@ int main(int argc, char **argv) {
     setup_cases(scan_in_nob, scan_in_b, scan_ecount);
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
     rctx_t scan_rctx = {0}; str_res *ebuf_slices[scan_scount];
-    str_res fail_ebuf[(scan_ecount << 1) * scan_scount << 1]; // x2 on top for safety
+    str_res fail_ebuf[(scan_ecount << 1) * scan_scount]; // x2 on top for safety
     strbump_t scan_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, scan_ecount << 1, scan_scount, sizeof(str_res));
     input_container scan_incon_nob = { .cont_type = STREAM, .cont.stream = scan_in_nob };

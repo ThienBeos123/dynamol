@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
     create_str_suite(&get_str_suite, "bigInt_get_str - String Assignment", 
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
         "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
+    ); get_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_get_str,
         &inv_stobi_assign_nob, &stat_stobi_get_str,
@@ -401,18 +401,18 @@ int main(int argc, char **argv) {
     create_str_suite(&get_strn_suite, "bigInt_get_strn - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
+    ); get_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strn_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_get_strn,
         &inv_stobi_assign_nob, &stat_stobi_get_strn,
         &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi
-    );
+    ); 
     // from_strb() -- Base-param, No length param
     suite get_strb_suite = {0};
     create_str_suite(&get_strb_suite, "bigInt_get_strb - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
+    ); get_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_get_strb,
         &inv_stobi_assign_b, &stat_stobi_get_strb,
@@ -423,7 +423,7 @@ int main(int argc, char **argv) {
     create_str_suite(&get_strnb_suite, "bigInt_get_strnb - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
+    ); get_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strnb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_get_strnb,
         &inv_stobi_assign_b, &stat_stobi_get_strnb, 

@@ -375,74 +375,74 @@ int main(int argc, char **argv) {
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
-    _dnml_output_mode assign_omode; if (argc >= 2) {
+    _dnml_output_mode sassign_omode; if (argc >= 2) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
-        assign_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
-    } else assign_omode = DNML_VOUT;
-    u8 assign_ecount = 27, assign_scount = 4;
+        sassign_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
+    } else sassign_omode = DNML_VOUT;
+    u8 sassign_ecount = 27, sassign_scount = 4;
     // Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t assign_rctx = {0}; str_res *ebuf_slices[assign_scount];
-    str_res fail_ebuf[(assign_ecount << 1) * assign_scount];
-    strbump_t assign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
-    _dist_buf(ebuf_slices, fail_ebuf, assign_ecount << 1, assign_scount, sizeof(str_res));
-    input_container assign_incon = { .cont_type = CTX, .cont.rctx = &assign_rctx };
+    rctx_t sassign_rctx = {0}; str_res *ebuf_slices[sassign_scount];
+    str_res fail_ebuf[(sassign_ecount << 1) * sassign_scount];
+    strbump_t sassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    _dist_buf(ebuf_slices, fail_ebuf, sassign_ecount << 1, sassign_scount, sizeof(str_res));
+    input_container sassign_icon = { .cont_type = CTX, .cont.rctx = &sassign_rctx };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
     // from_str() -- Base-prefix, No length param
-    suite get_str_suite = {0};
-    create_str_suite(&get_str_suite, "bigInt_get_str - String Assignment", 
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
-    fill_suite_rinv(&get_str_suite,
-        &_stobi_assign_ingen_nob, &exec_stobi_get_str,
+    suite sget_str_suite = {0};
+    create_str_suite(&sget_str_suite, "bigInt_tget_str - String Assignment", 
+        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+    ); sget_str_suite.cap_mode = ENOUGH;
+    fill_suite_rinv(&sget_str_suite,
+        &_stobi_assign_ingen_nob, &exec_stobi_sget_str,
         &inv_stobi_assign_nob, &stat_stobi_get_str,
         &cmp_inv_stobi_assign, &fmt_in_get_str, &fmt_recon_stobi
     );
     // from_strn() -- Base-prefix, Length param
-    suite get_strn_suite = {0};
-    create_str_suite(&get_strn_suite, "bigInt_get_strn - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
-    fill_suite_rinv(&get_strn_suite,
-        &_stobi_assign_ingen_nob, &exec_stobi_get_strn,
+    suite sget_strn_suite = {0};
+    create_str_suite(&sget_strn_suite, "bigInt_tget_strn - String Assignment",
+        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+    ); sget_strn_suite.cap_mode = ENOUGH;
+    fill_suite_rinv(&sget_strn_suite,
+        &_stobi_assign_ingen_nob, &exec_stobi_sget_strn,
         &inv_stobi_assign_nob, &stat_stobi_get_strn,
         &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi
     );
     // from_strb() -- Base-param, No length param
-    suite get_strb_suite = {0};
-    create_str_suite(&get_strb_suite, "bigInt_get_strb - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
-    fill_suite_rinv(&get_strb_suite,
-        &_stobi_assign_ingen_b, &exec_stobi_get_strb,
+    suite sget_strb_suite = {0};
+    create_str_suite(&sget_strb_suite, "bigInt_tget_strb - String Assignment",
+        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+    ); sget_strb_suite.cap_mode = ENOUGH;
+    fill_suite_rinv(&sget_strb_suite,
+        &_stobi_assign_ingen_b, &exec_stobi_sget_strb,
         &inv_stobi_assign_b, &stat_stobi_get_strb,
         &cmp_inv_stobi_assignb, &fmt_in_get_strb, &fmt_recon_stobi
     );
     // from_strnb() -- Base-param, Length param
-    suite get_strnb_suite = {0};
-    create_str_suite(&get_strnb_suite, "bigInt_get_strnb - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
-    );
-    fill_suite_rinv(&get_strnb_suite,
-        &_stobi_assign_ingen_b, &exec_stobi_get_strnb,
+    suite sget_strnb_suite = {0};
+    create_str_suite(&sget_strnb_suite, "bigInt_tget_strnb - String Assignment",
+        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+    ); sget_strnb_suite.cap_mode = ENOUGH;
+    fill_suite_rinv(&sget_strnb_suite,
+        &_stobi_assign_ingen_b, &exec_stobi_sget_strnb,
         &inv_stobi_assign_b, &stat_stobi_get_strnb, 
         &cmp_inv_stobi_assignb, &fmt_in_get_strnb, &fmt_recon_stobi
     );
 
 
     //* ---------------------------------- SESSION STARTUP ---------------------------------- *//
-    _libdnml_str_suite assign_suite_arr[assign_scount];
-    assign_suite_arr[0] = get_str_suite;  assign_suite_arr[1] = get_strn_suite;
-    assign_suite_arr[2] = get_strb_suite; assign_suite_arr[3] = get_strnb_suite;
-    _libdnml_session bi_assign_sesh = {0}; create_str_session(
-        &bi_assign_sesh, "I/O - String --> BigInt Assignment",
-        100, assign_scount, assign_suite_arr, assign_omode
-    ); start_str_session(&bi_assign_sesh);
+    _libdnml_str_suite sassign_suite_arr[sassign_scount];
+    sassign_suite_arr[0] = sget_str_suite;  sassign_suite_arr[1] = sget_strn_suite;
+    sassign_suite_arr[2] = sget_strb_suite; sassign_suite_arr[3] = sget_strnb_suite;
+    _libdnml_session bi_sassign_sesh = {0}; create_str_session(
+        &bi_sassign_sesh, "I/O - String --> BigInt Assignment",
+        100, sassign_scount, sassign_suite_arr, sassign_omode
+    ); start_str_session(&bi_sassign_sesh);
     return 0;
 }

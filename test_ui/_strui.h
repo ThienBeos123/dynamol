@@ -179,6 +179,7 @@ static inline void *run_inverse(
 typedef struct _libdnml_str_suite {
     const char *suite_name; const char *log_path;
     xoshiro256_state *state;
+    enum { ENOUGH, RANDOMIZED } cap_mode;
 
     dnml_gen_fn *gen_case;
     dnml_exec_fn *fn_test; 
@@ -448,7 +449,7 @@ static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_
         // Setting Up Input
         uint8_t voidp_in_buf[(*s->fn_insize)()];
         in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
-        rcap_mode incap = _rand_rcap(s->state);
+        rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
         (*s->gen_case)(in, &s->state, incap, s->rincon->cont.rctx);
         
         // Setting up Auxillary 1 (Reconstruction) buffers
@@ -499,7 +500,7 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
         // Setting Up Input
         uint8_t voidp_in_buf[(*s->fn_insize)()];
         in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
-        rcap_mode incap = _rand_rcap(s->state);
+        rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
         (*s->gen_case)(in, &s->state, incap, s->rincon->cont.rctx);
 
         // Setting up Auxillary 1 (Reconstruction) buffers
