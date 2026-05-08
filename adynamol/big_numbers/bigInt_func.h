@@ -13,6 +13,39 @@
 #include "../../util/util.h"
 #include "bigNums.h"
 
+
+// Pre-opreration evaluation asserts
+#define test_assert(cond, err_code) do { \
+    if (_DNML_DEBUG_MODE) { \
+        assert(!(cond)); \
+    } else { \
+        if (cond) return err_code; \
+    } \
+} while (0);
+#define test_assert_mut(cond, err, err_code, retval) do { \
+    if (_DNML_DEBUG_MODE) { \
+        assert(!(cond)); \
+    } else { \
+        if (cond) { (*err) = (err_code); return retval; } \
+    } \
+} while (0);
+#define test_assert_pre(cond, err, err_code, baseout, base, retsize ) do { \
+    if (_DNML_DEBUG_MODE) { \
+        assert(cond); \
+    } else { \
+        if (cond) { (*err) = (err_code); (*baseout) = (base); return retsize; } \
+    } \
+} while (0);
+
+// Stream-based Scanning EOF Handling
+#define scan_eof(curr_char, stream, ret) do { \
+    if (curr_char == EOF) { \
+        if (ferror(stream)) return FILE_ERR_PARSE; \
+        else return ret; \
+    } \
+} while (0);
+
+
 //todo ===================================== NUMERIC FUNCTIONALITIES ===================================== todo//
 //* ------------- CONSTRUCTORS & DESCTRUCTORS -------------- */
 inline void __BIGINT_FREE__(bigInt *x); // Destructor

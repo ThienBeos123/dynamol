@@ -355,8 +355,8 @@ int main(int argc, char **argv) {
     } else init_omode = DNML_VOUT;
     u8 scan_ecount = 27, scan_scount = 4;
     // Buffer and Test Cases Setup
-    scan_in_nob = fopen("in_files/biscan_nob.in", "r");
-    scan_in_b = fopen("in_files/biscan_b.in", "r");
+    scan_in_nob = fopen("input_files/bi_scan_nob.txt", "r");
+    scan_in_b = fopen("input_files/bi_scan_b.txt", "r");
     setup_cases(scan_in_nob, scan_in_b, scan_ecount);
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
     rctx_t init_rctx = {0}; str_res *ebuf_slices[scan_scount];
@@ -366,6 +366,7 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
+    
 
 
     //* --------------------------------- SESSION SETUP --------------------------------- *//

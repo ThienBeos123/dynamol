@@ -6,7 +6,6 @@
 } while (0)
 
 
-uint8_t is_numeric(char c) { return (c <= '9' && c >= '0'); }
 uint16_t _fskip_whitespace__(FILE *stream) {
     uint16_t c;
     while ((c = fgetc(stream)) != EOF && isspace(c));
@@ -41,12 +40,12 @@ uint8_t _arbit_bprefix(const char *str, size_t *curr_pos, uint8_t *base) {
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
     tmp_base *= 10; *curr_pos++;
     if (str[*curr_pos] == '\0') return 2;
-    else if (str[*curr_pos] != '}' || !is_numeric(str[*curr_pos])) return 3;
+    else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
     tmp_base *= 10; *curr_pos++;
     if (str[*curr_pos] == '\0') return 2;
-    else if (str[*curr_pos] != '}' || !is_numeric(str[*curr_pos])) return 3;
+    else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
     tmp_base += (uint16_t)('0' + str[*curr_pos]); *curr_pos++;
     if (str[*curr_pos] != '}') return 3;
@@ -66,15 +65,15 @@ uint8_t _sign_handle_(const char *str, size_t *curr_pos, uint8_t *sign) {
         if (str[*curr_pos] == '\0') return 3;
     }
     // This case forces the next character to be 0->9 for the prefix/a decimal
-    else if (str[*curr_pos] && !is_numeric(str[*curr_pos])) return 4;
+    else if (str[*curr_pos] && !isdigit(str[*curr_pos])) return 4;
     return 0;
 }
 uint8_t _prefix_handle_(const char *str, size_t *curr_pos, uint8_t *base) {
     *base = 10; if (str[*curr_pos] == '\0') return 3; // Ended ("\0")
-    if (is_numeric(str[*curr_pos]) && str[*curr_pos] != '0') return 1; // A decimal (eg: 9...)
+    if (isdigit(str[*curr_pos]) && str[*curr_pos] != '0') return 1; // A decimal (eg: 9...)
     else { *curr_pos++; // The string is currently "0..."
         if (str[*curr_pos] == '\0') return 0; // The string currently is "0\null"
-        else if (is_numeric(str[*curr_pos])) { // The string currently is "0(numerical)" (eg: 0942)
+        else if (isdigit(str[*curr_pos])) { // The string currently is "0(numerical)" (eg: 0942)
             *curr_pos++; // A leading zero --> Decimal
             return 1;
         } else {
@@ -90,7 +89,7 @@ uint8_t _prefix_handle_(const char *str, size_t *curr_pos, uint8_t *base) {
                 case 'O':   *base = 8; *curr_pos++; break;
                 // Arbitrary-base:
                 case '{': {
-                    if (!is_numeric(str[*curr_pos + 1])) { return 2; break; }
+                    if (!isdigit(str[*curr_pos + 1])) { return 2; break; }
                     *curr_pos++;
                     if (str[*curr_pos + 1] != '}') return 2; \
                     if (str[*curr_pos + 2] != '}') return 2; \
@@ -117,12 +116,12 @@ uint8_t _arbit_bprefix_nlen(const char *str, size_t *curr_pos, uint8_t *base, si
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
     tmp_base *= 10; *curr_pos++;
     if (str[*curr_pos] == '\0' || *curr_pos == len - 1) return 2;
-    else if (str[*curr_pos] != '}' || !is_numeric(str[*curr_pos])) return 3;
+    else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
     tmp_base *= 10; *curr_pos++;
     if (str[*curr_pos] == '\0' || *curr_pos == len - 1) return 2;
-    else if (str[*curr_pos] != '}' || !is_numeric(str[*curr_pos])) return 3;
+    else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
     tmp_base += (uint16_t)('0' + str[*curr_pos]); *curr_pos++;
     if (str[*curr_pos] != '}') return 3;
@@ -143,16 +142,16 @@ uint8_t _sign_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *sign, siz
         if (*curr_pos == len - 1 || str[*curr_pos] == '\0') return 3;
     }
     // This case forces the next character to be 0->9 for the prefix/a decimal
-    else if (str[*curr_pos] && !is_numeric(str[*curr_pos])) return 4;
+    else if (str[*curr_pos] && !isdigit(str[*curr_pos])) return 4;
 }
 uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, size_t len) {
     *base = 10; if (*curr_pos == len - 1 || str[*curr_pos] == '\0') return 3; // Ended ("\0")
-    if (is_numeric(str[*curr_pos]) && str[*curr_pos] != '0') return 1; // A decimal (eg: 9...)
+    if (isdigit(str[*curr_pos]) && str[*curr_pos] != '0') return 1; // A decimal (eg: 9...)
     // The string is currently "0..."
     else if (str[*curr_pos] == '0') { *curr_pos++;
         if (*curr_pos == len - 1) return 0; // The string ended as "0"
         else if (str[*curr_pos] == '\0') return 0; // The string currently is "0\null"
-        else if (is_numeric(str[*curr_pos])) { // The string currently is "0(numerical)" (eg: 0942)
+        else if (isdigit(str[*curr_pos])) { // The string currently is "0(numerical)" (eg: 0942)
             *curr_pos += 1; // A leading zero --> Decimal
             return 1;
         } else {
@@ -169,7 +168,7 @@ uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, s
                 // Arbitrary-base:
                 case '{': {
                     if (*curr_pos + 1 == len - 1) return 3;
-                    if (!is_numeric(str[*curr_pos + 1])) { return 2; break; }
+                    if (!isdigit(str[*curr_pos + 1])) { return 2; break; }
                     *curr_pos++;
                     PRECHECK_NLEN(str, curr_pos, 1, '}', len);
                     PRECHECK_NLEN(str, curr_pos, 2, '}', len);
@@ -188,11 +187,11 @@ uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, s
 /* ----------------------------- */
 uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char) {
     *base = 10;
-    if (is_numeric(*curr_char) && *curr_char != 0) return 1;  // A decimal (eg: 9...)
+    if (isdigit(*curr_char) && *curr_char != 0) return 1;  // A decimal (eg: 9...)
     else { // The string is currently "0..."
         *curr_char = fgetc(stream);
         if (*curr_char == EOF || isspace(*curr_char)) return 0; // The string currently is "0\null"
-        else if (is_numeric(*curr_char)) { // The string currently is "0(numerical)" (eg: 0942)
+        else if (isdigit(*curr_char)) { // The string currently is "0(numerical)" (eg: 0942)
             *curr_char = fgetc(stream); // A leading zero --> Decimal
             return 1;
         } else {

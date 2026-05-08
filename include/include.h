@@ -15,5 +15,6 @@
 #include <string.h>
 
 typedef uint64_t max_align_t;
+typedef unsigned char uchar;
 
 #endif

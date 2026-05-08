@@ -28,7 +28,6 @@ inline xoshiro256_state mix_xoshiro256(xoshiro256_state *stateA, xoshiro256_stat
 /* ---------------------- */
 /* str_parse.c */
 /* ---------------------- */
-uint8_t is_numeric(char c);
 uint16_t _fskip_whitespace__(FILE *stream);
 size_t _skip_whitespace(const char *str, size_t len, size_t *pos);
 size_t _skip_leading_zeros(const char *str, size_t len, size_t *pos);
