@@ -30,11 +30,12 @@ uint8_t _is_valid_digit__(uint16_t *curr_char) {
 /* ----------------------- */
 /* --- Normal variants --- */
 /* ----------------------- */
-// _arbit_bprefix returns 
-// either 1 (overflowed) or 0 (didn't overflowed) 
-// and also 2 ---> END OF STRING
-// and also 3 ---> INVALID CHARACTER
-// for the uint8_t base limit
+/* _arbit_bprefix ret: 
+* 0 (SUCESS)
+! 1 ---> OVERFLOW
+! 2 ---> END OF STRING
+! 3 ---> INVALID CHARACTER
+*/
 uint8_t _arbit_bprefix(const char *str, size_t *curr_pos, uint8_t *base) {
     uint16_t tmp_base = 0; *curr_pos += 3;
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
@@ -42,12 +43,14 @@ uint8_t _arbit_bprefix(const char *str, size_t *curr_pos, uint8_t *base) {
     if (str[*curr_pos] == '\0') return 2;
     else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
+
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
     tmp_base *= 10; *curr_pos++;
     if (str[*curr_pos] == '\0') return 2;
     else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
     tmp_base += (uint16_t)('0' + str[*curr_pos]); *curr_pos++;
+    
     if (str[*curr_pos] != '}') return 3;
     if (tmp_base > UINT8_MAX) return 1;
     *base = (uint8_t)(tmp_base); return 0;
@@ -68,6 +71,13 @@ uint8_t _sign_handle_(const char *str, size_t *curr_pos, uint8_t *sign) {
     else if (str[*curr_pos] && !isdigit(str[*curr_pos])) return 4;
     return 0;
 }
+/* _prefix_handle_ ret:
+* 0: Short End (Valid)
+* 1: Clean End (Valid)
+! 2: INVALID DIGIT (INVALID)
+! 3: INCOMPLETE (INVALID)
+! 4: OVERFLOW (INVALID)
+*/
 uint8_t _prefix_handle_(const char *str, size_t *curr_pos, uint8_t *base) {
     *base = 10; if (str[*curr_pos] == '\0') return 3; // Ended ("\0")
     if (isdigit(str[*curr_pos]) && str[*curr_pos] != '0') return 1; // A decimal (eg: 9...)
@@ -87,14 +97,22 @@ uint8_t _prefix_handle_(const char *str, size_t *curr_pos, uint8_t *base) {
                 // Octal
                 case 'o':   *base = 8; *curr_pos++; break;
                 case 'O':   *base = 8; *curr_pos++; break;
+                // Base-64
+                case ',':   *base = 64; *curr_pos++; break;
                 // Arbitrary-base:
                 case '{': {
                     if (!isdigit(str[*curr_pos + 1])) { return 2; break; }
                     *curr_pos++;
-                    if (str[*curr_pos + 1] != '}') return 2; \
-                    if (str[*curr_pos + 2] != '}') return 2; \
-                    if (str[*curr_pos + 3] != '}') return 2; \
-                    _arbit_bprefix(str, curr_pos, base);
+                    if (str[*curr_pos + 1] != '}') return 2;
+                    if (str[*curr_pos + 2] != '}') return 2;
+                    if (str[*curr_pos + 3] != '}') return 2;
+                    uint8_t res = _arbit_bprefix(str, curr_pos, base);
+                    switch (res) {
+                        case 0: return 1; break; // Clean End
+                        case 1: return 4; break; // Overflow
+                        case 2: return 3; break; // Incomplete
+                        case 3: return 2; break; // Invalid Character
+                    }
                 } break;
                 //! INVALID BASE PREFIX
                 default:    return 2; break;
@@ -106,11 +124,12 @@ uint8_t _prefix_handle_(const char *str, size_t *curr_pos, uint8_t *base) {
 /* --------------------- */
 /* --- Nlen variants --- */
 /* --------------------- */
-// _arbit_bprefix_nlen returns 
-// either 1 (overflowed) or 0 (didn't overflowed)
-// and also 2 ---> END OF STRING
-// and also 3 ---> INVALID CHARACTER
-// for the uint8_t base limt
+/* _arbit_bprefix_nlen ret: 
+* 0 (SUCESS)
+! 1 ---> OVERFLOW
+! 2 ---> END OF STRING
+! 3 ---> INVALID CHARACTER
+*/
 uint8_t _arbit_bprefix_nlen(const char *str, size_t *curr_pos, uint8_t *base, size_t len) {
     uint16_t tmp_base = 0; *curr_pos += 3;
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
@@ -118,11 +137,13 @@ uint8_t _arbit_bprefix_nlen(const char *str, size_t *curr_pos, uint8_t *base, si
     if (str[*curr_pos] == '\0' || *curr_pos == len - 1) return 2;
     else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
+
     tmp_base += (uint16_t)('0' + str[*curr_pos]);
     tmp_base *= 10; *curr_pos++;
     if (str[*curr_pos] == '\0' || *curr_pos == len - 1) return 2;
     else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
+
     tmp_base += (uint16_t)('0' + str[*curr_pos]); *curr_pos++;
     if (str[*curr_pos] != '}') return 3;
     if (tmp_base > UINT8_MAX) return 1;
@@ -144,6 +165,13 @@ uint8_t _sign_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *sign, siz
     // This case forces the next character to be 0->9 for the prefix/a decimal
     else if (str[*curr_pos] && !isdigit(str[*curr_pos])) return 4;
 }
+/* _prefix_handle_nlen_ ret:
+* 0: Short End (Valid)
+* 1: Clean End (Valid)
+! 2: INVALID DIGIT (INVALID)
+! 3: INCOMPLETE (INVALID)
+! 4: OVERFLOW (INVALID)
+*/
 uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, size_t len) {
     *base = 10; if (*curr_pos == len - 1 || str[*curr_pos] == '\0') return 3; // Ended ("\0")
     if (isdigit(str[*curr_pos]) && str[*curr_pos] != '0') return 1; // A decimal (eg: 9...)
@@ -165,6 +193,8 @@ uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, s
                 // Octal
                 case 'o':   *base = 8; *curr_pos++; break;
                 case 'O':   *base = 8; *curr_pos++; break;
+                // Base-64
+                case ',':   *base = 64; *curr_pos++; break;
                 // Arbitrary-base:
                 case '{': {
                     if (*curr_pos + 1 == len - 1) return 3;
@@ -173,7 +203,13 @@ uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, s
                     PRECHECK_NLEN(str, curr_pos, 1, '}', len);
                     PRECHECK_NLEN(str, curr_pos, 2, '}', len);
                     PRECHECK_NLEN(str, curr_pos, 3, '}', len);
-                    _arbit_bprefix_nlen(str, curr_pos, base, len);
+                    uint8_t res = _arbit_bprefix_nlen(str, curr_pos, base, len);
+                    switch (res) {
+                        case 0: return 1; break; // Clean End
+                        case 1: return 4; break; // Overflow
+                        case 2: return 3; break; // Incomplete
+                        case 3: return 2; break; // Invalid Character
+                    }
                 } break;
                 //! INVALID BASE PREFIX
                 default:    return 2; break;
@@ -185,12 +221,21 @@ uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, s
 /* ----------------------------- */
 /* --- Stream parse variants --- */
 /* ----------------------------- */
+/* _prefix_handle_stream__ ret:
+* 0: Short-end (VALID)
+* 1: Clean-end (VALID)
+! 2: Invalid Digit (INVALID)
+! 3: Incomplete (INVALID)
+! 4: File Error (Invalid)
+! 5: Overflow
+*/
 uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char) {
     *base = 10;
-    if (isdigit(*curr_char) && *curr_char != 0) return 1;  // A decimal (eg: 9...)
+    if (isdigit(*curr_char) && *curr_char != '0') return 1;  // A decimal (eg: 9...)
     else { // The string is currently "0..."
         *curr_char = fgetc(stream);
-        if (*curr_char == EOF || isspace(*curr_char)) return 0; // The string currently is "0\null"
+        // The string currently is either "0\null or ERROR"
+        if (*curr_char == EOF) return (ferror(stream) ? 4 : 0);
         else if (isdigit(*curr_char)) { // The string currently is "0(numerical)" (eg: 0942)
             *curr_char = fgetc(stream); // A leading zero --> Decimal
             return 1;
@@ -205,7 +250,25 @@ uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char
                 // Octal
                 case 'o':   *base = 8; *curr_char = fgetc(stream); break;
                 case 'O':   *base = 8; *curr_char = fgetc(stream); break;
-                //! INVALID BASE PREFIX
+                // Base-64:
+                case ',':   *base = 64; *curr_char = fgetc(stream); break;
+                // Arbitrary Base:
+                case '{': { uint16_t tmp = 0;
+                    for (uint8_t i = 0; i < 3 && tmp; i++) {
+                        *curr_char = fgetc(stream);
+                        if (*curr_char == EOF) return (ferror(stream) ? 4 : 3);
+                        // The numerical segment handling
+                        if (!i) { if (!isdigit(*curr_char)) return 2; }
+                        else { 
+                            if (*curr_char == '}') return 1;
+                            else if (!isdigit(*curr_char)) return 2;
+                        } tmp *= 10; tmp += (uint16_t)(*curr_char - '0');
+                    }
+                    // End of arbitrary-base / Closage
+                    if (*curr_char != '}') return 2;
+                    return ((tmp <= UINT8_MAX) ? 1 : 5);
+                } break;
+                //! INVALID DIGIT
                 default:    return 2; break;
             }
         }

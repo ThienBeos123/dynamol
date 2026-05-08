@@ -35,7 +35,7 @@
 *           - bufsize: The size of the failure-handling buffer that contains both the
 *                      storage of expected output and output
 *           - MAXIMUM_CAP: The upperbound/most memory usage an edge case could've possible used
-*                          for its output. Setting it as INPUT_BYTE_CAP is only acceptable during
+*                          for its output. Setting it as STR_CAP is only acceptable during
 *                          prototypical stages, and must be replaced with the correct, peak memory
 *                          usage that a case can use for its output
 *           - *_ecount: The amount of edge cases for specific operation 

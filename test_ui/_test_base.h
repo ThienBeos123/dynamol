@@ -22,9 +22,8 @@ typedef struct _libdnml_session {
     int box_width;
 } _libdnml_session;
 
-#define INPUT_BYTE_CAP  512
 // Type-specific Limitations
-#define BIGINT_CAP 64
+#define BIGINT_CAP 48
 #define STR_CAP 512
 #define STR_PREVIEW 64
 #define BIGINT_PREVIEW 4
