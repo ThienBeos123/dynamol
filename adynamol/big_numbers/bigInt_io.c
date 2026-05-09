@@ -2113,7 +2113,8 @@ void bigInt_put(const bigInt x) {
         while (tmp_buf.n > 0) {
             uint8_t numeric_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             putchar((char)('0' + numeric_val));
-        } arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_PUT_ARENA, tmp_mark);
     }
 }
 void bigInt_putb(const bigInt x, uint8_t base) {
@@ -2150,7 +2151,8 @@ void bigInt_putb(const bigInt x, uint8_t base) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] : 
             _DIGIT_SEN_[numerical_val]; putchar(c);
-        } arena_reset(_DASI_PUTB_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_PUTB_ARENA, tmp_mark);
     }
 }
 void bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
@@ -2196,7 +2198,8 @@ void bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] : 
             _DIGIT_SEN_[numerical_val]; putchar(c);
-        } arena_reset(_DASI_PUTF_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_PUTF_ARENA, tmp_mark);
     }
 }
 void bigInt_fput(FILE *stream, const bigInt x) {
@@ -2217,7 +2220,8 @@ void bigInt_fput(FILE *stream, const bigInt x) {
         while (tmp_buf.n > 0) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             fputc((char)('0' + numerical_val), stream);
-        } arena_reset(_DASI_FPUT_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_FPUT_ARENA, tmp_mark);
     }
 }
 void bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
@@ -2254,7 +2258,8 @@ void bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] : 
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
-        } arena_reset(_DASI_FPUTB_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_FPUTB_ARENA, tmp_mark);
     }
 }
 void bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
@@ -2302,7 +2307,8 @@ void bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] : 
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
-        } arena_reset(_DASI_FPUTF_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_FPUTF_ARENA, tmp_mark);
     }
 }
 /* --------- Decimal Buffered OUTPUT ---------  */
@@ -2311,10 +2317,9 @@ void bigInt_sput(const bigInt x) {
     if (x.n == 0) putchar('0\n');
     else if (x.n == 1) printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
     else {
-        uint8_t sign_space = (x.sign == -1) ? 1 : 0;
+        uint8_t sign_space = (x.sign == -1) ? 1 : 0, first_iter = 1;
         size_t str_len = __BIGINT_COUNTDB__(&x, 10) + sign_space;
-        char c[str_len];
-        if (sign_space) c[0] = '-';
+        if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_SPUT_ARENA = _USE_ARENA();
         size_t tmp_mark = arena_mark(_DASI_SPUT_ARENA);
         limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * BYTES_IN_UINT64_T);
@@ -2322,11 +2327,19 @@ void bigInt_sput(const bigInt x) {
             .limbs = tmp_limbs,     .sign = x.sign,
             .cap   = x.n,           .n    = x.n
         }; memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
-        for (size_t i = str_len - 1; i >= sign_space; --i) {
-            uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
-            c[i] = _DIGIT_INSEN_[numerical_value];
-        }
-        printf("%.*s\n", str_len, c); 
+
+        while (tmp_buf.n) {
+            size_t begin = (first_iter) ? sign_space : 0,
+            curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
+            if (first_iter) first_iter = 0;
+
+            for (size_t i = curr_size - 1; i >= begin; --i) {
+                uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
+                ___DASI_IO_CHUNKBUF_[i] = _DIGIT_INSEN_[numerical_value];
+            } 
+            printf("%.*s\n", curr_size, ___DASI_IO_CHUNKBUF_);
+            if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
+        } 
         arena_reset(_DASI_SPUT_ARENA, tmp_mark);
     }
 }
@@ -2357,10 +2370,9 @@ void bigInt_sputb(const bigInt x, uint8_t base) {
             } printf("%.*s", len, c);
         }
     } else {
-        uint8_t sign_space = (x.sign == -1) ? 1 : 0;
+        uint8_t sign_space = (x.sign == -1) ? 1 : 0, first_iter = 1;
         size_t str_len = __BIGINT_COUNTDB__(&x, base) + sign_space;
-        char c[str_len];
-        if (sign_space) c[0] = '-';
+        if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_PUT_ARENA = _USE_ARENA();
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA);
         limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * BYTES_IN_UINT64_T);
@@ -2368,11 +2380,21 @@ void bigInt_sputb(const bigInt x, uint8_t base) {
             .limbs = tmp_limbs,     .sign = x.sign,
             .cap   = x.n,           .n    = x.n
         }; memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
-        for (size_t i = str_len - 1; i >= sign_space; --i) {
-            uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
-            c[i] = (base <= 16) ? _DIGIT_INSEN_[numerical_value] : _DIGIT_SEN_[numerical_value];
+
+        while (tmp_buf.n) {
+            size_t begin = (first_iter) ? sign_space : 0,
+            curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
+            if (first_iter) first_iter = 0;
+
+            for (size_t i = curr_size - 1; i >= begin; --i) {
+                uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
+                ___DASI_IO_CHUNKBUF_[i] = (base <= 16) ? 
+                    _DIGIT_INSEN_[numerical_value] : 
+                    _DIGIT_SEN_[numerical_value];
+            } 
+            printf("%.*s", curr_size, ___DASI_IO_CHUNKBUF_);
+            if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        printf("%.*s", str_len, c);
         arena_reset(_DASI_PUT_ARENA, tmp_mark);
     }
 }
@@ -2433,18 +2455,23 @@ void bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
             .limbs = tmp_limbs,     .sign = x.sign,
             .cap   = x.n,           .n    = x.n
         }; memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+
+        bpsub = 1; // bpsub is re-used to track if the outer while-loop is n its first iteration or not
         while (tmp_buf.n) {
-            size_t begin = (tmp_buf.n == x.n) ? sign_space + prefix_space : 0,
+            size_t begin = (bpsub) ? sign_space + prefix_space : 0,
             curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
+            if (bpsub) bpsub = 0; // Reset bpsub to FALSE
 
             for (size_t i = curr_size - 1; i >= begin; --i) {
                 uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
                 ___DASI_IO_CHUNKBUF_[i] = (base <= 16) ?
                     _DIGIT_INSEN_[numerical_value + addval] :
                     _DIGIT_SEN_[numerical_value];
-            } printf("%.*s\n", curr_size, ___DASI_IO_CHUNKBUF_);
+            } 
+            printf("%.*s\n", curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
-        } arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_PUT_ARENA, tmp_mark);
     }
 }
 void bigInt_sfput(FILE *stream, const bigInt x) {
@@ -2452,10 +2479,9 @@ void bigInt_sfput(FILE *stream, const bigInt x) {
     if (x.n == 0) fputc('0\n', stream);
     else if (x.n == 1) fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
     else {
-        uint8_t sign_space = (x.sign == -1) ? 1 : 0;
+        uint8_t sign_space = (x.sign == -1) ? 1 : 0, first_iter = 1;
         size_t str_len = __BIGINT_COUNTDB__(&x, 10) + sign_space;
-        char c[str_len];
-        if (sign_space) c[0] = '-';
+        if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_SPUT_ARENA = _USE_ARENA();
         size_t tmp_mark = arena_mark(_DASI_SPUT_ARENA);
         limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * BYTES_IN_UINT64_T);
@@ -2463,11 +2489,17 @@ void bigInt_sfput(FILE *stream, const bigInt x) {
             .limbs = tmp_limbs,     .sign = x.sign,
             .cap   = x.n,           .n    = x.n
         }; memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
-        for (size_t i = str_len - 1; i >= sign_space; --i) {
-            uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
-            c[i] = _DIGIT_INSEN_[numerical_value];
+        while (tmp_buf.n) {
+            size_t begin = (first_iter) ? sign_space : 0,
+            curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
+            if (first_iter) first_iter = 0;
+
+            for (size_t i = curr_size - 1; i >= begin; --i) {
+                uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
+                ___DASI_IO_CHUNKBUF_[i] = _DIGIT_INSEN_[numerical_value];
+            } fprintf(stream, "%.*s\n", curr_size, ___DASI_IO_CHUNKBUF_);
+            if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        fprintf(stream, "%.*s\n", str_len, c); 
         arena_reset(_DASI_SPUT_ARENA, tmp_mark);
     }
 }
@@ -2498,10 +2530,9 @@ void bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
             } fprintf(stream, "%.*s\n", len, c);
         }
     } else {
-        uint8_t sign_space = (x.sign == -1) ? 1 : 0;
+        uint8_t sign_space = (x.sign == -1) ? 1 : 0, first_iter = 1;
         size_t str_len = __BIGINT_COUNTDB__(&x, base) + sign_space;
-        char c[str_len];
-        if (sign_space) c[0] = '-';
+        if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_PUT_ARENA = _USE_ARENA();
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA);
         limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * BYTES_IN_UINT64_T);
@@ -2509,11 +2540,20 @@ void bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
             .limbs = tmp_limbs,     .sign = x.sign,
             .cap   = x.n,           .n    = x.n
         }; memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
-        for (size_t i = str_len - 1; i >= sign_space; --i) {
-            uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
-            c[i] = (base <= 16) ? _DIGIT_INSEN_[numerical_value] : _DIGIT_SEN_[numerical_value];
+
+        while (tmp_buf.n) {
+            size_t begin = (first_iter) ? sign_space : 0,
+            curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
+            if (first_iter) first_iter = 0;
+
+            for (size_t i = str_len - 1; i >= sign_space; --i) {
+                uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
+                ___DASI_IO_CHUNKBUF_[i] = (base <= 16) ? 
+                    _DIGIT_INSEN_[numerical_value] :
+                     _DIGIT_SEN_[numerical_value];
+            }
+            fprintf(stream, "%.*s\n", str_len, ___DASI_IO_CHUNKBUF_); 
         }
-        fprintf(stream, "%.*s\n", str_len, c); 
         arena_reset(_DASI_PUT_ARENA, tmp_mark);
     }
 }
@@ -2544,7 +2584,7 @@ void bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
             else fprintf(stream, "%s0{%" PRIu8 "}%.*s\n", (x.sign == -1) ? "-" : "", base, len, c);
         }
     } else {
-        uint8_t sign_space = (x.sign == -1) ? 1 : 0, 
+        uint8_t sign_space = (x.sign == -1) ? 1 : 0,
         add_val = (uppercase) ? 16 : 0, psub = (uppercase) ? 32 : 0;
         uint8_t prefix_space = (base == 10) ? 0 : ((base == 16 || base == 8 || base == 2) ? 2 : 
             (base < 10) ? 4 : ((base < 100) ? 5 : 6)
@@ -2570,19 +2610,24 @@ void bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
         bigInt tmp_buf = {
             .limbs = tmp_limbs,     .sign = x.sign,
             .cap   = x.n,           .n    = x.n
-        }; memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        }; memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T); 
+
+        psub = 1; // Psub is re-used to track if the outer while-loop is on its first iteration or not
         while (tmp_buf.n) {
-            size_t begin = (tmp_buf.n == x.n) ? sign_space + prefix_space : 0,
+            size_t begin = (psub) ? sign_space + prefix_space : 0,
             curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
+            if (psub) psub = 0; // Reset psub to FALSE
 
             for (size_t i = curr_size - 1; i >= begin; --i) {
                 uint8_t numerical_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
                 ___DASI_IO_CHUNKBUF_[i] = (base <= 16) ?
                     _DIGIT_INSEN_[numerical_value + add_val] : 
                     _DIGIT_SEN_[numerical_value];
-            } fprintf(stream, "%.*s\n", curr_size, ___DASI_IO_CHUNKBUF_);
+            }
+            fprintf(stream, "%.*s\n", curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
-        } arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        } 
+        arena_reset(_DASI_PUT_ARENA, tmp_mark);
     }
 }
 /* --------- Standard Stream (stdin) INPUT ---------  */
