@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
-    // from_str() -- Base-prefix, No length param
+    // sget_str() -- Base-prefix, No length param
     suite sget_str_suite = {0};
     create_str_suite(&sget_str_suite, "bigInt_tget_str - String Assignment", 
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
@@ -401,7 +401,7 @@ int main(int argc, char **argv) {
         &inv_stobi_assign_nob, &stat_stobi_get_str,
         &cmp_inv_stobi_assign, &fmt_in_get_str, &fmt_recon_stobi
     );
-    // from_strn() -- Base-prefix, Length param
+    // sget_strn() -- Base-prefix, Length param
     suite sget_strn_suite = {0};
     create_str_suite(&sget_strn_suite, "bigInt_tget_strn - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
@@ -412,7 +412,7 @@ int main(int argc, char **argv) {
         &inv_stobi_assign_nob, &stat_stobi_get_strn,
         &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi
     );
-    // from_strb() -- Base-param, No length param
+    // sget_strb() -- Base-param, No length param
     suite sget_strb_suite = {0};
     create_str_suite(&sget_strb_suite, "bigInt_tget_strb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
@@ -423,7 +423,7 @@ int main(int argc, char **argv) {
         &inv_stobi_assign_b, &stat_stobi_get_strb,
         &cmp_inv_stobi_assignb, &fmt_in_get_strb, &fmt_recon_stobi
     );
-    // from_strnb() -- Base-param, Length param
+    // sget_strnb() -- Base-param, Length param
     suite sget_strnb_suite = {0};
     create_str_suite(&sget_strnb_suite, "bigInt_tget_strnb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],

@@ -1,70 +1,50 @@
 def base64_to_bigint_limbs():
-    # Define the custom character set
     BASE64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
     char_to_val = {char: i for i, char in enumerate(BASE64_CHARS)}
     
-    # Receive input
     try:
         user_input = input("Enter base-64 string: ").strip()
-    except EOFError:
-        return
+    except EOFError: return
     
-    # Validation
     raw_len = len(user_input)
-    if raw_len > 512:
-        print(f"Error: String length ({raw_len}) exceeds 512 character limit.")
-        return
-    
-    if not all(c in char_to_val for c in user_input):
-        print("Error: String contains invalid characters.")
+    if raw_len > 512 or not all(c in char_to_val for c in user_input):
+        print("Error: Invalid input or length exceeds 512.")
         return
 
-    # --- Length Metadata ---
-    # raw_len: The actual base-64 payload
-    # +2 for "0," prefix, +1 for '\0'
-    c_style_buffer_len = raw_len + 2 + 1 
-    
-    print("\n------------------ String Metadata ------------------")
-    print(f"Raw payload length: {raw_len}")
-    print(f"Total buffer length (prefix '0,' + null terminator): {c_style_buffer_len}")
-    print("-----------------------------------------------------")
+    # Metadata
+    truncated = user_input if raw_len <= 24 else f"{user_input[:12]}...{user_input[-12:]}"
+    print("\n--- String Metadata ---")
+    print(f"Truncated:        {truncated}")
+    print(f"Raw payload len:  {raw_len}")
+    print(f"Total buffer len: {raw_len + 3} (includes '0,' and null)")
+    print("-----------------------\n")
 
-    # Step 1: Convert base-64 string to a single large integer
-    # (Operating exclusively on the raw inputted string)
+    # Math
     total_value = 0
     for char in user_input:
         total_value = (total_value << 6) | char_to_val[char]
 
-    # Step 2: Split into base 2^64 limbs
     limbs = []
     bit_mask = (1 << 64) - 1
-    
-    if total_value == 0:
-        if raw_len > 0:
-            limbs.append(0)
-    else:
-        temp_val = total_value
-        while temp_val > 0:
-            limbs.append(temp_val & bit_mask)
-            temp_val >>= 64
+    temp_val = total_value
+    if temp_val == 0 and raw_len > 0: limbs.append(0)
+    while temp_val > 0:
+        limbs.append(temp_val & bit_mask)
+        temp_val >>= 64
 
-    # Step 3: Output Formatting with Bit-Depth detection
-    if limbs or raw_len > 0:
-        print(f"Limb count: {len(limbs)}")
-        for i, value in enumerate(limbs):
-            # Determine the smallest standard fit
-            if value < (1 << 8):
-                bit_size = "8-bit"
-            elif value < (1 << 16):
-                bit_size = "16-bit"
-            elif value < (1 << 32):
-                bit_size = "32-bit"
-            else:
-                bit_size = "64-bit"
-            
-            print(f"[{i}]: {value} ({bit_size})")
-    else:
-        print("Limb count: 0")
+    # Output with Threshold Detection
+    print(f"Limb count: {len(limbs)}")
+    for i, val in enumerate(limbs):
+        if val == (1 << 64) - 1: size, note = "64-bit", " [MAX UINT64]"
+        elif val >= (1 << 32):   size, note = "64-bit", ""
+        elif val == (1 << 32) - 1: size, note = "32-bit", " [MAX UINT32]"
+        elif val >= (1 << 16):   size, note = "32-bit", ""
+        elif val == (1 << 16) - 1: size, note = "16-bit", " [MAX UINT16]"
+        elif val >= (1 << 8):    size, note = "16-bit", ""
+        elif val == (1 << 8) - 1:  size, note = "8-bit",  " [MAX UINT8]"
+        else:                      size, note = "8-bit",  ""
+        
+        print(f"[{i}]: {val} ({size}){note}")
 
 if __name__ == "__main__":
     base64_to_bigint_limbs()
