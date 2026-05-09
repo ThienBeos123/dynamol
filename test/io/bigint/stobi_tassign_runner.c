@@ -398,8 +398,8 @@ int main(int argc, char **argv) {
     ); tget_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_str,
-        &inv_stobi_assign_nob, &stat_stobi_get_str,
-        &cmp_inv_stobi_assign, &fmt_in_get_str, &fmt_recon_stobi
+        &inv_stobi_assign_nob, &stat_stobi_sget_str,
+        &cmp_inv_stobi_assign, &fmt_in_get_sstr, &fmt_recon_stobi
     );
     // tget_strn() -- Base-prefix, Length param
     suite tget_strn_suite = {0};
@@ -409,8 +409,8 @@ int main(int argc, char **argv) {
     ); tget_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tget_strn_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_strn,
-        &inv_stobi_assign_nob, &stat_stobi_get_strn,
-        &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi
+        &inv_stobi_assign_nob, &stat_stobi_sget_strn,
+        &cmp_inv_stobi_assign, &fmt_in_get_sstrn, &fmt_recon_stobi
     );
     // tget_strb() -- Base-param, No length param
     suite tget_strb_suite = {0};
@@ -420,8 +420,8 @@ int main(int argc, char **argv) {
     ); tget_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tget_strb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strb,
-        &inv_stobi_assign_b, &stat_stobi_get_strb,
-        &cmp_inv_stobi_assignb, &fmt_in_get_strb, &fmt_recon_stobi
+        &inv_stobi_assign_b, &stat_stobi_sget_strb,
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrb, &fmt_recon_stobi
     );
     // tget_strnb() -- Base-param, Length param
     suite tget_strnb_suite = {0};
@@ -431,8 +431,8 @@ int main(int argc, char **argv) {
     ); tget_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tget_strnb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strnb,
-        &inv_stobi_assign_b, &stat_stobi_get_strnb, 
-        &cmp_inv_stobi_assignb, &fmt_in_get_strnb, &fmt_recon_stobi
+        &inv_stobi_assign_b, &stat_stobi_sget_strnb,
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrnb, &fmt_recon_stobi
     );
 
 

@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
     fill_suite_rinv(&sget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_str,
         &inv_stobi_assign_nob, &stat_stobi_get_str,
-        &cmp_inv_stobi_assign, &fmt_in_get_str, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_sstr, &fmt_recon_stobi
     );
     // sget_strn() -- Base-prefix, Length param
     suite sget_strn_suite = {0};
@@ -410,7 +410,7 @@ int main(int argc, char **argv) {
     fill_suite_rinv(&sget_strn_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_strn,
         &inv_stobi_assign_nob, &stat_stobi_get_strn,
-        &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_sstrn, &fmt_recon_stobi
     );
     // sget_strb() -- Base-param, No length param
     suite sget_strb_suite = {0};
@@ -421,7 +421,7 @@ int main(int argc, char **argv) {
     fill_suite_rinv(&sget_strb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strb,
         &inv_stobi_assign_b, &stat_stobi_get_strb,
-        &cmp_inv_stobi_assignb, &fmt_in_get_strb, &fmt_recon_stobi
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrb, &fmt_recon_stobi
     );
     // sget_strnb() -- Base-param, Length param
     suite sget_strnb_suite = {0};
@@ -432,7 +432,7 @@ int main(int argc, char **argv) {
     fill_suite_rinv(&sget_strnb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strnb,
         &inv_stobi_assign_b, &stat_stobi_get_strnb, 
-        &cmp_inv_stobi_assignb, &fmt_in_get_strnb, &fmt_recon_stobi
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrnb, &fmt_recon_stobi
     );
 
 

@@ -50,7 +50,7 @@
 */
 
 /* Note - UNIT-SPECIFIC:
-*   +) ".base = 0 in ecases_bprefix[27], WHY?"
+*   +) ".base = 0 in ecases_bprefix, WHY?"
 *      A noteable oddity is the decision ot set the .base metadata in _libdnml_scases
 *      input of arrays of edge cases in some STOBI Runners, in which is reserved for 
 *      function that lacks the parameter/argument for user-input base, being set to 0. 
@@ -76,7 +76,7 @@
 
 // Edge-case VALUE STORAGE - BASE-PREFIX
 limb_t one = 1;
-limb_t small_mulval_bp[35] = {
+limb_t small_mulval_bp[5] = {
     5, // Base-64: 5
     UINT16_C(3965), // Base-64: zz
     UINT64_C(183293895038276755), // Base-64: ABCDEFGHIJ
@@ -651,7 +651,7 @@ int main(int argc, char **argv) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
         sassign_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else sassign_omode = DNML_VOUT;
-    u8 sassign_ecount = 27, sassign_scount = 4;
+    u8 sassign_ecount = 32, sassign_scount = 4;
     // Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
     rctx_t sassign_rctx = {0}; str_res *ebuf_slices[sassign_scount];
@@ -671,7 +671,7 @@ int main(int argc, char **argv) {
     fill_suite_rinv(&sget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_str,
         &inv_stobi_assign_nob, &stat_stobi_sget_str,
-        &cmp_inv_stobi_assign, &fmt_in_get_str, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_sstr, &fmt_recon_stobi
     );
     // sget_strn() -- Base-prefix, Length param
     suite sget_strn_suite = {0};
@@ -682,7 +682,7 @@ int main(int argc, char **argv) {
     fill_suite_rinv(&sget_strn_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_strn,
         &inv_stobi_assign_nob, &stat_stobi_sget_strn,
-        &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_sstrn, &fmt_recon_stobi
     );
     // sget_strb() -- Base-param, No length param
     suite sget_strb_suite = {0};
@@ -693,7 +693,7 @@ int main(int argc, char **argv) {
     fill_suite_rinv(&sget_strb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strb,
         &inv_stobi_assign_b, &stat_stobi_sget_strb,
-        &cmp_inv_stobi_assignb, &fmt_in_get_strb, &fmt_recon_stobi
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrb, &fmt_recon_stobi
     );
     // sget_strnb() -- Base-param, Length param
     suite sget_strnb_suite = {0};
@@ -703,8 +703,8 @@ int main(int argc, char **argv) {
     ); sget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_strnb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strnb,
-        &inv_stobi_assign_b, &stat_stobi_sget_strnb, 
-        &cmp_inv_stobi_assignb, &fmt_in_get_strnb, &fmt_recon_stobi
+        &inv_stobi_assign_b, &stat_stobi_sget_strnb,
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrnb, &fmt_recon_stobi
     );
 
 

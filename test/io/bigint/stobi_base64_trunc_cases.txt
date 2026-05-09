@@ -1,0 +1,482 @@
+================================================================================
+STOBI BASE-64 TRUNCATIVE API EDGE TEST CASES
+Focus: Truncation semantics, incomplete input, invalid digits after truncation
+Input sizes: 64-512 chars (practical range)
+BigInt capacities: 2-16 limbs
+Base-64 charset: 0-9, A-Z, a-z, ., /
+Prefix format: 0, (with prefix) or none (without prefix)
+================================================================================
+
+NOTES ON TRUNCATION SEMANTICS:
+- Truncative API keeps low limbs (least-significant digits)
+- Status: STR_TRUNC_SUCCESS if overflow detected
+- Data is still valid (filled to capacity, remainder ignored)
+- Incomplete input (sign-only, no digits) returns STR_INCOMPLETE
+- Invalid digits after fill point are ignored (truncation already occurred)
+- Invalid digits BEFORE fill point return STR_INVALID_DIGIT
+
+LIMB CAPACITY vs INPUT LENGTH:
+- 2 limbs → ~21 chars safe, 22+ chars trigger truncation
+- 4 limbs → ~43 chars safe, 44+ chars trigger truncation
+- 6 limbs → ~65 chars safe, 66+ chars trigger truncation
+- 8 limbs → ~87 chars safe, 88+ chars trigger truncation
+- 10 limbs → ~109 chars safe, 110+ chars trigger truncation
+- 12 limbs → ~131 chars safe, 132+ chars trigger truncation
+- 16 limbs → ~175 chars safe, 176+ chars trigger truncation
+
+
+================================================================================
+SUITE A: BASE-64 WITH PREFIX (0,)
+32 test cases
+================================================================================
+
+EASY SUCCESS CASES (20% - 6 cases)
+All inputs fit without truncation
+
+1. Single Digit, Capacity 2
+   Input: "0,5"
+   Capacity: 2 limbs
+   Expected Status: STR_SUCCESS
+   Expected Result: 5 (fits completely)
+
+2. 10 Chars, Capacity 2
+   Input: "0,ABCDEFGHIJ"
+   Capacity: 2 limbs
+   Expected Status: STR_SUCCESS
+   Expected Result: parsed value (fits, no truncation)
+
+3. Exactly 21 Chars, Capacity 2 (exact fit)
+   Input: "0,0123456789ABCDEFGHIJk"
+   Capacity: 2 limbs
+   Expected Status: STR_SUCCESS
+   Expected Result: complete parse of 21 chars
+
+4. Negative, 10 Chars, Capacity 2
+   Input: "-0,ABCDEF01"
+   Capacity: 2 limbs
+   Expected Status: STR_SUCCESS
+   Expected Result: negative value
+
+5. 43 Chars, Capacity 4 (exact fit)
+   Input: "0," + 43 base-64 chars
+   Capacity: 4 limbs
+   Expected Status: STR_SUCCESS
+   Expected Result: complete 43-char parse
+
+6. Leading Zeros (16 zeros + 1), Capacity 2
+   Input: "0,0000000000000000001"
+   Capacity: 2 limbs
+   Expected Status: STR_SUCCESS
+   Expected Result: 1 (zeros stripped)
+
+
+INCOMPLETE CASES (Lexical-only, no digits) (20% - 6 cases)
+No numerical segment, only signs/whitespace/zeros
+
+7. Sign Only, No Digits
+   Input: "0,+"
+   Capacity: 4 limbs
+   Expected Status: STR_INCOMPLETE
+   Expected Result: no value stored
+
+8. Negative Sign Only
+   Input: "0,-"
+   Capacity: 4 limbs
+   Expected Status: STR_INCOMPLETE
+   Expected Result: no value stored
+
+9. Whitespace + Sign, No Digits
+   Input: "0,   -"
+   Capacity: 4 limbs
+   Expected Status: STR_INCOMPLETE
+   Expected Result: no value stored
+
+10. Only Leading Zeros (all zeros, no other digits)
+    Input: "0,0000000000000000000"
+    Capacity: 4 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: 0 (all zeros reduce to zero)
+
+11. Negative Zero (sign + zeros only)
+    Input: "0,-0000000000000000000"
+    Capacity: 4 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: 0 (negative zero normalizes to positive)
+
+12. Only Whitespace After Prefix
+    Input: "0,    "
+    Capacity: 4 limbs
+    Expected Status: STR_INCOMPLETE
+    Expected Result: no value stored
+
+
+TRUNCATION CASES (40% - 16 cases)
+Input overflows capacity; low limbs preserved, remainder ignored
+
+13. 22 Chars (overflow by 1), Capacity 2
+    Input: "0,0123456789ABCDEFGHIJKl"
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs (0,0123456789ABCDEFGHIJKl % 2^128)
+    Note: 22nd char 'l' is truncated
+
+14. 64 Chars (6 limbs needed, 4 available), Capacity 4
+    Input: "0," + 64 'A's
+    Capacity: 4 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 4 limbs, top 2 limbs discarded
+
+15. 128 Chars (10 limbs needed, 8 available), Capacity 8
+    Input: "0," + 128 base-64 chars (mixed)
+    Capacity: 8 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 8 limbs, top 2 limbs discarded
+
+16. 192 Chars (12 limbs needed, 6 available), Capacity 6
+    Input: "0," + 192 'z's
+    Capacity: 6 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 6 limbs, top 6 limbs discarded
+
+17. Negative Overflow (3 limbs, 2 available), Capacity 2
+    Input: "-0,0123456789ABCDEFGHIJKl"
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative value, low 2 limbs, sign preserved
+
+18. Invalid Digit AFTER Truncation Point
+    Input: "0," + 44 'A's + "XYZ" (invalid base-64 chars)
+    Capacity: 4 limbs (44 chars fill 4 limbs)
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 4 limbs (XYZ never scanned, already truncated)
+
+19. Invalid Digit (mid-parse), Capacity 1
+    Input: "0,ABCD#EFG"
+    Capacity: 1 limb (10 chars safe, # at position 5)
+    Expected Status: STR_INVALID_DIGIT
+    Expected Result: error on first invalid char (before truncation point)
+
+20. Truncation with Negative Sign + Invalid Digit
+    Input: "-0," + 44 'A's + "###"
+    Capacity: 4 limbs (fills at 44 chars)
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative low 4 limbs (### never reached)
+
+21. 256 Chars (16 limbs), Capacity 10
+    Input: "0," + 256 'z's
+    Capacity: 10 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 10 limbs, top 6 limbs discarded
+
+22. 256 Chars with Invalid at End
+    Input: "0," + 250 'A's + "INVALID_CHARS_HERE"
+    Capacity: 10 limbs (250 chars → ~15-16 limbs, fills 10 limbs early)
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 10 limbs (invalid chars never scanned)
+
+23. Mixed Valid + Invalid, Truncates Before Invalid
+    Input: "0," + 43 'A's + "##" (44 chars total)
+    Capacity: 4 limbs (exactly 43 chars fits in 4)
+    Expected Status: STR_TRUNC_SUCCESS or STR_INVALID_DIGIT
+    Note: depends on implementation (## at char 45, but capacity reached at 44)
+    Expected Result: if truncated first: low 4 limbs; if invalid first: error
+
+24. Exactly at Truncation Boundary, Then Invalid
+    Input: "0," + (chars filling exactly 2 limbs) + "##"
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs (## never reached)
+
+25. Very Large Input, Small Capacity
+    Input: "0," + 512 'A's (max length)
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs, 30 limbs discarded
+
+26. 512 Chars, Capacity 8 (partial fill)
+    Input: "0," + 512 'z's
+    Capacity: 8 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 8 limbs, top 24 limbs discarded
+
+27. Truncation Preserves Low Limbs Correctly
+    Input: "0,0000000000000000001AAAAAAAAAAAAAAAA"
+    Capacity: 2 limbs (22 chars)
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs contain the 'A' portion (least significant)
+
+28. Negative Truncation Preserves Sign
+    Input: "-0," + 87 'z's
+    Capacity: 8 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative, low 8 limbs preserved
+
+29. Truncation with All Same Digit
+    Input: "0," + 128 '9's
+    Capacity: 4 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 4 limbs of repeating '9' pattern
+
+30. Null Terminator in Middle (string not properly terminated)
+    Input: "0,ABCD\0EFG" (null at position 6)
+    Capacity: 4 limbs
+    Expected Status: STR_SUCCESS (stops at \0)
+    Expected Result: only "ABCD" parsed (4 chars, 1 limb)
+    Note: \0 acts as delimiter, not an error
+
+31. Capacity Boundary: Exactly Filled, Then EOF
+    Input: "0," + (exactly 21 chars) + EOF
+    Capacity: 2 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: complete parse (no truncation, exact fit)
+
+32. Large Negative with Truncation
+    Input: "-0," + 192 'z's + "INVALID"
+    Capacity: 12 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative, low 12 limbs (INVALID never reached)
+
+
+================================================================================
+SUITE B: BASE-64 WITHOUT PREFIX
+32 test cases
+================================================================================
+
+EASY SUCCESS CASES (20% - 6 cases)
+
+33. Single Digit, Capacity 2
+    Input: "5"
+    Capacity: 2 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: 5
+
+34. 10 Chars, Capacity 2
+    Input: "ABCDEFGHIJ"
+    Capacity: 2 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: parsed value
+
+35. Exactly 21 Chars, Capacity 2 (exact fit)
+    Input: "0123456789ABCDEFGHIJk"
+    Capacity: 2 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: complete 21-char parse
+
+36. Negative, 10 Chars, Capacity 2
+    Input: "-ABCDEF01"
+    Capacity: 2 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: negative value
+
+37. 43 Chars, Capacity 4 (exact fit)
+    Input: (43 base-64 chars)
+    Capacity: 4 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: complete 43-char parse
+
+38. Leading Zeros (16 zeros + 1), Capacity 2
+    Input: "0000000000000000001"
+    Capacity: 2 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: 1 (zeros stripped)
+
+
+INCOMPLETE CASES (Lexical-only, no digits) (20% - 6 cases)
+
+39. Sign Only, No Digits
+    Input: "+"
+    Capacity: 4 limbs
+    Expected Status: STR_INCOMPLETE
+    Expected Result: no value stored
+
+40. Negative Sign Only
+    Input: "-"
+    Capacity: 4 limbs
+    Expected Status: STR_INCOMPLETE
+    Expected Result: no value stored
+
+41. Whitespace + Sign, No Digits
+    Input: "   -"
+    Capacity: 4 limbs
+    Expected Status: STR_INCOMPLETE
+    Expected Result: no value stored
+
+42. Only Leading Zeros (all zeros, no other digits)
+    Input: "0000000000000000000"
+    Capacity: 4 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: 0
+
+43. Negative Zero (sign + zeros only)
+    Input: "-0000000000000000000"
+    Capacity: 4 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: 0 (normalizes to positive)
+
+44. Only Whitespace
+    Input: "    "
+    Capacity: 4 limbs
+    Expected Status: STR_INCOMPLETE
+    Expected Result: no value stored
+
+
+TRUNCATION CASES (40% - 16 cases)
+
+45. 22 Chars (overflow by 1), Capacity 2
+    Input: "0123456789ABCDEFGHIJKl"
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs, 22nd char 'l' truncated
+
+46. 64 Chars (6 limbs needed, 4 available), Capacity 4
+    Input: (64 'A's)
+    Capacity: 4 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 4 limbs, top 2 discarded
+
+47. 128 Chars (10 limbs, 8 available), Capacity 8
+    Input: (128 mixed base-64 chars)
+    Capacity: 8 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 8 limbs, top 2 discarded
+
+48. 192 Chars (12 limbs, 6 available), Capacity 6
+    Input: (192 'z's)
+    Capacity: 6 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 6 limbs, top 6 discarded
+
+49. Negative Overflow (3 limbs, 2 available), Capacity 2
+    Input: "-0123456789ABCDEFGHIJKl"
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative, low 2 limbs, sign preserved
+
+50. Invalid Digit AFTER Truncation Point
+    Input: (44 'A's) + "XYZ"
+    Capacity: 4 limbs (44 chars fill 4)
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 4 limbs (XYZ never scanned)
+
+51. Invalid Digit BEFORE Truncation, Capacity 1
+    Input: "ABCD#EFG"
+    Capacity: 1 limb (10 chars safe, # at position 5)
+    Expected Status: STR_INVALID_DIGIT
+    Expected Result: error on first invalid char
+
+52. Truncation + Negative + Invalid Digit at End
+    Input: "-" + (44 'A's) + "###"
+    Capacity: 4 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative low 4 limbs (### never reached)
+
+53. 256 Chars (16 limbs), Capacity 10
+    Input: (256 'z's)
+    Capacity: 10 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 10 limbs, top 6 discarded
+
+54. 256 Chars with Invalid at End
+    Input: (250 'A's) + "INVALID_CHARS"
+    Capacity: 10 limbs (250 chars → fills 10 limbs early)
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 10 limbs (invalid never scanned)
+
+55. Mixed Valid + Invalid, Truncates Before Invalid
+    Input: (43 'A's) + "##"
+    Capacity: 4 limbs (43 chars = ~3-4 limbs)
+    Expected Status: STR_TRUNC_SUCCESS or STR_INVALID_DIGIT
+    Expected Result: if truncated: low 4 limbs; if invalid first: error
+
+56. Exactly at Truncation Boundary, Then Invalid
+    Input: (chars exactly filling 2 limbs) + "##"
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs (## never reached)
+
+57. Very Large Input (512 chars), Small Capacity
+    Input: (512 'A's)
+    Capacity: 2 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs, 30 limbs discarded
+
+58. 512 Chars, Capacity 8 (partial fill)
+    Input: (512 'z's)
+    Capacity: 8 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 8 limbs, top 24 discarded
+
+59. Truncation Preserves Low Limbs (pattern test)
+    Input: "0000000000000000001AAAAAAAAAAAAAAAA"
+    Capacity: 2 limbs (22 chars)
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 2 limbs contain 'A' portion (least significant)
+
+60. Negative Truncation Preserves Sign
+    Input: "-" + (87 'z's)
+    Capacity: 8 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative, low 8 limbs
+
+61. Truncation with Repeating Digit
+    Input: (128 '9's)
+    Capacity: 4 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: low 4 limbs of '9's pattern
+
+62. Null Terminator in Middle
+    Input: "ABCD\0EFG"
+    Capacity: 4 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: only "ABCD" (4 chars, stops at \0)
+
+63. Capacity Boundary: Exactly Filled, Then EOF
+    Input: (exactly 21 chars) + EOF
+    Capacity: 2 limbs
+    Expected Status: STR_SUCCESS
+    Expected Result: complete parse (no truncation, exact fit)
+
+64. Large Negative with Truncation
+    Input: "-" + (192 'z's) + "INVALID"
+    Capacity: 12 limbs
+    Expected Status: STR_TRUNC_SUCCESS
+    Expected Result: negative, low 12 limbs (INVALID never reached)
+
+
+================================================================================
+SUMMARY
+================================================================================
+
+SUITE A (WITH PREFIX 0,): 32 test cases
+  - 6 easy success (20%)
+  - 6 incomplete (lexical-only) (20%)
+  - 16 truncation cases (40%)
+  - Cases 18, 20, 22: special invalid-digit-post-truncation handling
+  - Cases 23, 24, 30: boundary conditions
+
+SUITE B (WITHOUT PREFIX): 32 test cases
+  - 6 easy success (20%)
+  - 6 incomplete (lexical-only) (20%)
+  - 16 truncation cases (40%)
+  - Cases 50, 52, 54: special invalid-digit-post-truncation handling
+  - Cases 55, 56, 62: boundary conditions
+
+TOTAL: 64 comprehensive base-64 truncative API test cases
+
+KEY TESTING ASPECTS:
+1. Truncation semantics: low limbs preserved (modulo behavior)
+2. Incomplete input handling: sign-only, whitespace-only, leading-zero-only
+3. Zero normalization: -0 becomes +0
+4. Invalid digits AFTER truncation point: ignored (not errors)
+5. Invalid digits BEFORE truncation point: error (STR_INVALID_DIGIT)
+6. Sign preservation in truncation
+7. Null terminator handling (acts as delimiter)
+8. Capacity boundary cases (exact fits, off-by-one)
+9. Very large inputs (512 chars) with small capacities
+10. Negative sign combined with all edge cases
+
+TRUNCATION SEMANTICS VERIFICATION:
+- Input overflowing capacity should result in STR_TRUNC_SUCCESS
+- Low limbs preserved exactly (implementer must verify via modulo)
+- Remainder discarded without error
+- Sign always preserved if present

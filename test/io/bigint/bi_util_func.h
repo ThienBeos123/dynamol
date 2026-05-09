@@ -551,7 +551,7 @@ stinl void fmt_in_get_strnb(FILE *f, cvoid *vin, int tab_depth) {
     for (int i = 0; i < tab_depth; ++i) fputs(TAB, f); 
     fputs("\n>", f);
 }
-stinl void fmt_in_get_strnb(FILE *f, cvoid *vin, int tab_depth) {
+stinl void fmt_in_get_sstrnb(FILE *f, cvoid *vin, int tab_depth) {
     const stobi_assign_in *in = (stobi_assign_in*)vin;
     fputs("< -- STOBI_ASSIGN --\n", f);
 
