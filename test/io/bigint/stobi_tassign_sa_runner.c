@@ -76,11 +76,11 @@
 
 // Edge-case VALUE STORAGE - BASE-PREFIX
 limb_t one = 1, zero = 0;
-limb_t small_mulval_bp[35] = {
+limb_t small_mulval_bp[4] = {
     5, // Base-64: 5
     UINT64_C(183293895038276755), // Base-64: ABCDEFGHIJ
     UINT64_C(44749486092289), // Base-64: ABCDEF01
-    UINT64_C(290481608618505), // Base-64: 0123456789
+    UINT64_C(39285586473),
 };
 limb_t case_3[2] = {
     // Base-64: 0123456789ABCDEFGHIJk
@@ -129,23 +129,67 @@ limb_t case_16[12] = {
     UINT64_C(2443908551039927766), UINT64_C(6469035043450316832), UINT64_C(18131315169999544359),
     
 };
-limb_t case_18[6] = {
-    UINT64_C(11712218459498128010),
-    UINT64_C(9955385690573408808),
-    UINT64_C(2928054614874532002),
-    UINT64_C(11712218459498128010),
-    UINT64_C(9955385690573408808),
-    UINT64_C(2928054614874532002),
+limb_t case_17[2] = {
+    // Base-64: 0123456789ABCDEFGHIJKL//
+    UINT64_C(15244474820299153407),
+    UINT64_C(9444138059404839728)
 };
-limb_t case_20[12] = {
-    UINT64_C(6423701355093973285), /* 0 */ UINT64_C(2707324343907067282), /* 1 */
-    UINT64_C(10545501312955814489), /* 2 */ UINT64_C(6423701355093973285), /* 3 */
-    UINT64_C(2707324343907067282), /* 4 */ UINT64_C(10545501312955814489), /* 5 */
-    UINT64_C(6423701355093973285), /* 6 */ UINT64_C(2707324343907067282), /* 7 */
-    UINT64_C(10545501312955814489), /* 8 */ UINT64_C(6423701355093973285), /* 9 */
-    UINT64_C(2707324343907067282), /* 10 */ UINT64_C(10545501312955814489) /* 11 */
+limb_t case_18[5] = {
+    // Base-64: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz++-
+    UINT64_C(16104300381809926013),
+    UINT64_C(9076969306111049207),
+    UINT64_C(17861133150734645215),
+    UINT64_C(16104300381809926013),
+    UINT64_C(9076969306111049207),
+};
+limb_t case_20[8] = {
+    /* Base-64:
+    *  "////////////////////////////////
+    *   ////////////////////////////////
+    *   //////////////////////////////// ?1?""
+    */
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX
+};
+limb_t case_21[6] = {
+    // Base-64:
+    //  "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+    //   zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+    UINT64_C(16104300381809926013), UINT64_C(9076969306111049207),
+    UINT64_C(17861133150734645215), UINT64_C(16104300381809926013),
+    UINT64_C(9076969306111049207), UINT64_C(17861133150734645215),
+};
+limb_t case_22[18] = {
+    /* Base-64:
+    *  "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd
+    *   abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd
+    *   abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd
+    *   abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd
+    *   ~^^+~"
+    */
+    UINT64_C(6460293104247396775), UINT64_C(12074812127183480722), UINT64_C(10545644249475945049),
+    UINT64_C(6460293104247396775), UINT64_C(12074812127183480722), UINT64_C(10545644249475945049),
+    UINT64_C(6460293104247396775), UINT64_C(12074812127183480722), UINT64_C(10545644249475945049),
+    UINT64_C(6460293104247396775), UINT64_C(12074812127183480722), UINT64_C(10545644249475945049),
+    UINT64_C(6460293104247396775), UINT64_C(12074812127183480722), UINT64_C(10545644249475945049),
+    UINT64_C(6460293104247396775), UINT64_C(12074812127183480722), UINT64_C(10545644249475945049),
+};
+limb_t case_26[2] = {
+    // Base-64: 1AAAAAAAAAAAAAAAA
+    UINT64_C(11712218459498128010), 
+    UINT64_C(4976708136) 
 };
 limb_t case_final[48] = {
+    /* Base-64:
+    *  "////////////////////////////////
+    *   ////////////////////////////////
+    *   ////////////////////////////////
+    *   ////////////////////////////////
+    *   ////////////////////////////////
+    *   ////////////////////////////////
+    *   ////////////////////////////////
+    *   ////////////////////////////////"
+    */   
     UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
     UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
     UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
@@ -153,60 +197,50 @@ limb_t case_final[48] = {
     UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
     UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
     UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_C(70368744177663),
-};
-limb_t base_param_final[48] = {
     UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
-    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX
 };
 // Edge-case VALUE STORAGE - BASE-PARAMETER
 
 // Edge-case STORAGE
-scase ecases_bprefix[32] = {
+scase ecases_bprefix[28] = {
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
-    /* Case Number  | Input                                         | Required Size | Output size   |   Expected Ouput                      */
+    /* Case Number  | Input                                         | Required      | Capacity      |   Expected Ouput                      */
     /* -------------------------------------------------------- EASY SUCCESS CASE --------------------------------------------------------- */
     { /* 1.         | "0,5"                                         | 1             | 2         ---->   STR_SUCCESS (5)                     */
-        .in = &(stobi_assign_in){ .str = "0,5", .len = 4, .base = 0, .bi_size = 2 },
+        .in = &(stobi_assign_in){ .str = "0,5", .len = 3, .base = 0, .bi_size = 2 },
         .exp = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
             .data.bi = { .limbs = &small_mulval_bp[0], .n = 1, .cap = 1, .sign = 1 }
         }
     }, { /* 2.      | "0,ABCDEFGHIJ"                                | 1             | 2         ---->   STR_SUCCESS (183293895038276755)    */
-        .in = &(stobi_assign_in){ .str = "0,ABCDEFGHIJ", .len = 13, .base = 0, .bi_size = 2 },
+        .in = &(stobi_assign_in){ .str = "0,ABCDEFGHIJ", .len = 12, .base = 0, .bi_size = 2 },
         .exp = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
             .data.bi = { .limbs = &small_mulval_bp[1], .n = 1, .cap = 1, .sign = 1 }
         }
-    }, { /* 3.      | "0,0123456789ABCDEFGHIJk"                     | 2             | 2         ---->   STR_SUCCESS (too long)              */ 
-        .in = &(stobi_assign_in){ .str = "0,0123456789ABCDEFGHIJk", .len = 24, .base = 0, .bi_size = 2 },
+    }, { /* 3.      | "0,0123456789ABCDEFGHIJk"                     | 2             | 2         ---->   STR_SUCCESS (too long)              */
+        .in = &(stobi_assign_in){ .str = "0,0123456789ABCDEFGHIJk", .len = 23, .base = 0, .bi_size = 2 },
         .exp = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
             .data.bi = { .limbs = case_3, .n = 2, .cap = 2, .sign = 1 }
         }
-    }, { /* 4.      | "-0,ABCDEF01"                                 | 1             | 2         ---->   STR_SUCCESS (-44749486092289)       */ 
-        .in = &(stobi_assign_in){ .str = "-0,ABCDEF01", .len = 11, .base = 0, .bi_size = 2 },
+    }, { /* 4.      | "-0,ABCDEF01"                                 | 1             | 2         ---->   STR_SUCCESS (-44749486092289)       */
+        .in = &(stobi_assign_in){ .str = "-0,ABCDEF01", .len = 10, .base = 0, .bi_size = 2 },
         .exp = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
             .data.bi = { .limbs = &small_mulval_bp[2], .n = 1, .cap = 1, .sign = -1 }
         }
-    }, { /* 5.      | "0,PIQv29.Sop5w...KnN1UxovFGvP"               | 1             | 4         ---->   STR_SUCCESS (290481608618505)       */ 
+    }, { /* 5.      | "0,PIQv29.Sop5w...KnN1UxovFGvP"               | 1             | 4         ---->   STR_SUCCESS (290481608618505)       */
         .in = &(stobi_assign_in){ 
             .str = "0,PIQv29.Sop5wYEzB8mbYnoryDDJmX8Au4rpzKnN1UxovFGvP", 
-            .len = 51, .base = 0, .bi_size = 5
+            .len = 50, .base = 0, .bi_size = 5
         },
         .exp = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
             .data.bi = { .limbs = case_5, .n = 5, .cap = 5, .sign = 1 }
         }
     }, { /* 6.      | "0,0000000001"                                | 1             | 2         ---->   STR_SUCCESS (1)                     */ 
-        .in = &(stobi_assign_in){ .str = "0,0000000001", .len = 13, .base = 0, .bi_size = 2 },
+        .in = &(stobi_assign_in){ .str = "0,0000000001", .len = 12, .base = 0, .bi_size = 2 },
         .exp = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
             .data.bi = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
@@ -214,18 +248,18 @@ scase ecases_bprefix[32] = {
     }, 
     /* ---------------------------------------------------------- INCOMPLETE CASE --------------------------------------------------------- */
     { /* 7.         | "0,+"                                         | ??            | 1         ---->   STR_INCOMPLETE                      */ 
-        .in = &(stobi_assign_in){ .str = "0,+", .len = 4, .base = 0, .bi_size = 1 },
+        .in = &(stobi_assign_in){ .str = "0,+", .len = 3, .base = 0, .bi_size = 1 },
         .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
     }, { /* 8.      | "0,-"                                         | ??            | 1         ---->   STR_INCOMPLETE                      */ 
-        .in = &(stobi_assign_in){ .str = "0,-", .len = 4, .base = 0, .bi_size = 1 },
+        .in = &(stobi_assign_in){ .str = "0,-", .len = 3, .base = 0, .bi_size = 1 },
         .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
     }, { /* 9.      | "        0,+"                                 | ??            | 1         ---->   STR_INCOMPLETE                      */
-        .in = &(stobi_assign_in){ .str = "        0,+", .len = 12, .base = 0, .bi_size = 1 },
+        .in = &(stobi_assign_in){ .str = "        0,+", .len = 11, .base = 0, .bi_size = 1 },
         .exp = { .type = BIGINT, .status = STR_SUCCESS, .cap = 0, INVAL_BI() }
     }, { /* 10.     | "0,0000000000000000000"                       | 1             | 1         ---->   STR_SUCCESS (0)                     */
         .in = &(stobi_assign_in){ 
             .str = "0,0000000000000000000",
-            .len = 22, .base = 0, .bi_size = 1
+            .len = 21, .base = 0, .bi_size = 1
         },
         .exp = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
@@ -234,13 +268,13 @@ scase ecases_bprefix[32] = {
     }, { /* 10.     | "0,-0000000000000000000"                      | ??            | 1         ---->   STR_INVALID_SIGN                    */
         .in = &(stobi_assign_in){ 
             .str = "0,-0000000000000000000",
-            .len = 23, .base = 0, .bi_size = 1
+            .len = 22, .base = 0, .bi_size = 1
         },
         .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
     }, { /* 12.     | "               0,-+012"                      | 1             | 1         ---->   STR_INVALID_DIGIT                   */
         .in = &(stobi_assign_in){
             .str = "               0,-+012", 
-            .len = 23, .base = 0, .bi_size = 1 
+            .len = 22, .base = 0, .bi_size = 1 
         },
         .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
     }, 
@@ -248,7 +282,7 @@ scase ecases_bprefix[32] = {
     { /* 13.        | "0,ncgwFYphl3NqaSA9Rck5f1R.IoJEQd"            | 3             | 2         ---->   STR_TRUNC_SUCCESS                   */
         .in = &(stobi_assign_in){ 
             .str = "0,ncgwFYphl3NqaSA9Rck5f1R.IoJEQd", 
-            .len = 33, .base = 0, .bi_size = 2 // Needs 3 limbs
+            .len = 32, .base = 0, .bi_size = 2 // Needs 3 limbs
         },
         .exp = { 
             .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
@@ -257,7 +291,7 @@ scase ecases_bprefix[32] = {
     }, { /* 14.     | "0,AAAAAAAAAAAA...AAAAAAAAAAAA" (truncated)   | 6             | 4         ---->   STR_TRUNC_SUCCESS                   */
         .in = &(stobi_assign_in){
             .str = "0,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 
-            .len = 67, .base = 0, .bi_size = 4 // Needs 6 limbs
+            .len = 66, .base = 0, .bi_size = 4 // Needs 6 limbs
         },
         .exp = { 
             .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
@@ -268,7 +302,7 @@ scase ecases_bprefix[32] = {
             .str = "0,"
                 "/49ln9OVrlc/H2iWWmMsnzNqgapOqVdv9gZaGDcPTqtSi.tYGx0FQetwxgk/hXxR"
                 "q2CBC/VIplL4td8unHK.TuzGKCnPiff/OjVKtpX2XIjP/ibpsdo3ewrMbxMaIKyk",
-            .len = 131, .base = 0, .bi_size = 8 // Needs 12 limbs
+            .len = 130, .base = 0, .bi_size = 8 // Needs 12 limbs
         },
         .exp = {
             .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
@@ -280,150 +314,374 @@ scase ecases_bprefix[32] = {
                 "KHGIVkEr0/nVU1Jy93oDfIKvU5GUYo5ZP.V7XabRM99Hv8SRxVdw5NqP7mXQ03yK"
                 ".vzV5L9vO2TPng4O/6Ze827gWU3uHaNMnQH3NewjRDxpT7jqM4xJH2V2YAwowQw6"
                 "n8QcSW8jcf9kowA23W8W.jJfwO6eO4Gyjz5pFh07Qj3pG9ijVoTQZMUu0xgSiLIt",
-            .len = 196, .base = 0, .bi_size = 12
+            .len = 195, .base = 0, .bi_size = 12 // Needs 18 limbs
         },
         .exp = { 
             .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
             .data.bi = { .limbs = case_16, .n = 12, .cap = 12, .sign = -1 }
         }
-    }, 
-    //todo FINISHES THESE REMAINING CASES BELOW:
-    { /* 17.     | "-0,0123456789ABCDEFGHIJKL//"                 | 3             | 2         ---->   BIGINT_ERR_RANGE                    */
+    }, { /* 17.     | "-0,0123456789ABCDEFGHIJKL//"                 | 3             | 2         ---->   STR_TRUNC_SUCCESS                   */
         .in = &(stobi_assign_in){ 
             .str = "-0,0123456789ABCDEFGHIJKL//",
-            .len = 28, .base = 0, .bi_size = 2
+            .len = 27, .base = 0, .bi_size = 2 // Needs 3 limbs
         },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 18.     | "0,AAAAAAAAAAAA...AAAAAAAAAAAA" (truncated)   | 6             | 6         ---->   STR_SUCCESS (too large)             */
-        .in = &(stobi_assign_in){ 
-            .str = "0,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            .len = 67, .base = 0, .bi_size = 6
-        },
-        .exp = { 
-            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
-            .data.bi = { .limbs = case_18, .n = 6, .cap = 6, .sign = 1 }
+        .exp = {
+            .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0,
+            .data.bi = { .limbs = case_17, .n = 2, .cap = 2, .sign = -1 }
         }
-    }, { /* 19.     | "0,FFFFFFFFFFFF...FFFFFFFFFFFF" (truncated)   | 6             | 5         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){ 
-            .str = "0,FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-            .len = 67, .base = 0, .bi_size = 5
-        },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 20.     | "0,abababababab...abababababab" (truncated)   | 12            | 12        ---->   STR_SUCCESS (too large)             */
-        .in = &(stobi_assign_in){ 
-            .str = "0,"
-                "abababababababababababababababab"
-                "abababababababababababababababab"
-                "abababababababababababababababab"
-                "abababababababababababababababab",
-            .len = 131, .base = 0, .bi_size = 12
-        },
-        .exp = { 
-            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
-            .data.bi = { .limbs = case_20, .n = 12, .cap = 12, .sign = 1 }
-        }
-    }, { /* 21.     | "0,zzzzzzzzzzzz...zzzzzzzzzzzz" (truncated)   | 12            | 11        ---->   BIGINT_ERR_RANGE                    */
+    }, { /* 18.     | "0,zzzzzzzzzzzz...zzzzzzzzz++-" (truncated)   | 7             | 5         ---->   STR_TRUNC_SUCCESS                   */
         .in = &(stobi_assign_in){ 
             .str = "0,"
                 "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
-                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
-                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
-                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", 
-            .len = 131, .base = 0, .bi_size = 11
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz++-",
+            .len = 69, .base = 0, .bi_size = 5 // Needs 7 limbs
+            // (Technically 6, but the preprocessing of size also counts for the invalid digits)
         },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 22.     | "0,0123456789ABCDEFGHIJkl"                    | 2             | 1         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){ 
-            .str = "0,0123456789ABCDEFGHIJk", 
-            .len = 25, .base = 0, .bi_size = 1 // Needs 2 limbs
-        },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 23.     | "0,0123456789ABCDEFGHIJKLMNOPQRSTUVW"         | 3             | 1         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){
-            .str = "0,0123456789ABCDEFGHIJKLMNOPQRSTUVW",
-            .len = 36, .base = 0, .bi_size = 1 // Needs 3 limbs
-        },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 24.     | "0,W0duRnMbTl9r...ol9FjIrhpfJB" (truncated)   | 5             | 2         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){
-            .str = "0,W0duRnMbTl9rKlPogNgirSOY9Ve/ZDj/ol9FjIrhpfJB",
-            .len = 47, .base = 0, .bi_size = 2 // Needs 5 limbs
-        },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 25.     | "0,YgWrUX3AMTJq...nmGbGrHoaI2y" (truncated)   | 6             | 3         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){
-            .str = "0,YgWrUX3AMTJqUIxpRrTRfhALGcKNNxvcP8ATlIyizJ.nmGbGrHoaI2y",
-            .len = 58, .base = 0, .bi_size = 3 // Needs 6 limbs
-        },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 26.     | "0,YGSR6yo3f6J/...BkWDEgAv3GVf" (truncated)   | 7             | 3         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){
-            .str = "0,YGSR6yo3f6J/64Ay/qqro0aan2OGGnZCMoiSeJ4x.IJj6jGG1DKSwXBkWDEgAv3GVf",
-            .len = 69, .base = 0, .bi_size = 3 // Needs 7 limbs
-        },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 27.     | "0,DY9k6Ck5wyJL...d/RXMBq3gn/E" (truncated)   | 9             | 5         ---->   BIGINT_ERR_RANGE                    */
+        .exp = {
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_18, .n = 5, .cap = 5, .sign = 1 }
+        }
+    }, { /* 19.     | "0,1ab##efg"                                  | ??            | 1         ---->   STR_INVALID_DIGIT                   */
+        .in = &(stobi_assign_in){ .str = "0,1ab##efg", .len = 10, .base = 0, .bi_size = 1 },
+        .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
+    }, { /* 20.     | "-0,///////////...//////// ?!?" (truncated)   | 10            | 8         ---->   STR_TRUNC_SUCCESS                   */
         .in = &(stobi_assign_in){
             .str = "-0,"
-                "DY9k6Ck5wyJLdC7YJVzfpE26qhqlkiQdxlr7DfzAr.ObGc9x"
-                "8nkuRrUjiDrk49tiPnkVet1LCuWBqWMylhpCd/RXMBq3gn/E", 
-            .len = 100, .base = 0, .bi_size = 5 // Needs 9 limbs
+                "////////////////////////////////"
+                "////////////////////////////////"
+                "//////////////////////////////// ?!?",
+            .len = 103, .base = 0, .bi_size = 8 // Needs 10 limbs
+            // (Technically 9, but the preprocessing of size also counts for the invalid digits)
         },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 28.     | "0,kOnBoy/D6Boq...PJFE5BQZX646" (truncated)   | 12            | 7         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){
+        .exp = {
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_20, .n = 8, .cap = 8, .sign = -1 }
+        }
+    }, { /* 21.     | "0,zzzzzzzzzzzz...zzzzzzzzzzzz" (truncated)   | 12            | 6         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){ 
             .str = "0,"
-                "kOnBoy/D6Boq1N2QZDJDxZBcGoplbyu1"
-                "UzYYaEFd0OdigRogduD1WNTwgVbPF.j."
-                "wg8P.osJcEd01SG/wON.dLehyzgZTQ1x"
-                "9cS1N7v/m1KKFHIYnsFkPJFE5BQZX646",
-            .len = 131, .base = 0, .bi_size = 7 // Needs 12 limbs
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+            .len = 130, .base = 0, .bi_size = 6 // Needs 12 limbs
         },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 29.     | "0,4uPRVSViikpw...clCaaH65NeHD" (truncated)   | 18            | 12        ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){
-            .str = "-0,"
-                "4uPRVSViikpwy7tf.XCxyAYCuHAq.vJCHJEDOiznJs7uELlk"
-                "zCHGn4155gKYcu6MmQlgRn0DV/6Yra1TVm62jpmRZba7R4Nz"
-                "BPjyq.UDnuhjj6wNsvSxuGsBEpio/gMugqwtpN4MnAXalhMg"
-                "NpJGehC0/y/xkuQ82V8mn.yuJSS8Tz3wxr9TclCaaH65NeHD",
-            .len = 196, .base = 0, .bi_size = 12 // Needs 18 limbs
-        },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 30.     | "0,abc"                                       | 1             | 0         ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){ .str = "0,abc", .len = 6, .base = 0, .bi_size = 0 },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 31.     | "0,c1p3VosXkxu...eMcVWYbIvWu" (truncated)     | 48            | 47        ---->   BIGINT_ERR_RANGE                    */
-        .in = &(stobi_assign_in){ .str = "0,"
-            "c1p3VosXkxuHRNIZzsrErMFUEqxwpEfi5i.a8yCTd1zpph70QSVRhQIXHCew8HhL"
-            "VxHkIQoCBAWgsthtdvxuy87Nc0v5J.cm5.hEK0RO1DHi0rlz/Xcy6LdqvLnnHEJa"
-            "H/.dy8/qXfccJDMeK45hfMvJBP3elo4H6pYae2Fey/VGrJ89ietg4sChmHyv8eET"
-            "B2aatGeCtGaAy1bAnKoxdOqIfjmpIzBDRCXYUoLalH2zElHLomPRJdxy2jcUjve9"
-            "ZNKLv/GgIWCYO9rxc.UxdQx4geyR3AlrbByyBPHcNj9G..vyO/V27eq6hJAO02pD"
-            "0dP4pG2N.9XEOna18Q0oxnHrSda0OhSW.EpzW5yMTMERIkbguiUPOVUunLMCI0fE"
-            ".HLhujMSp2b2Swb/Dbk9nLlDlHoKuOzWwaCqFi3AhzqAO9noVYhTOlcitagkj47V"
-            "rA5zDuWEDeMQbLB8Q.ym6vC6SfDWrJPDoKN8okl78EyuB18eqoeMcVWYbIvWu",
-        .len = 512, .base = 0, .bi_size = 47 },
-        .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 32.     | "0,//////////.../////////" (truncated)        | 48            | 48        ---->   STR_STATUS (woah big ig)            */
-        .in = &(stobi_assign_in){ .str = "0,"
-            "////////////////////////////////////////////////////////////////"
-            "////////////////////////////////////////////////////////////////"
-            "////////////////////////////////////////////////////////////////"
-            "////////////////////////////////////////////////////////////////"
-            "////////////////////////////////////////////////////////////////"
-            "////////////////////////////////////////////////////////////////"
-            "////////////////////////////////////////////////////////////////"
-            "/////////////////////////////////////////////////////////////",
-        .len = 512, .base = 0, .bi_size = 48 },
         .exp = { 
             .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0,
-            .data.bi = { .limbs = case_final, .n = 48, .cap = 48, .sign = 1 }
+            .data.bi = { .limbs = case_21, .n = 6, .cap = 6, .sign = 1 }
         }
-    }, 
+    }, { /* 22.     | "-0,abcdabcdabc...abcdabcdabcd"               | 24            | 18        ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){ 
+            .str = "-0,"
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd~^^+~",
+            .len = 264, .base = 0, .bi_size = 18 // Needs 24 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_22, .n = 18, .cap = 18, .sign = -1 }
+        }
+    }, { /* 23.     | "0,JvtNiXYhkiNR...S/gwnVpMujv:" (truncated)   | 4             | 4         ---->   STR_INVALID_DIGIT                   */
+        .in = &(stobi_assign_in){
+            .str = "0,JvtNiXYhkiNRR7i0IOO/T2CsUG.kIS/gwnVpMujv:",
+            .len = 43, .base = 0, .bi_size = 4 // Needs 4 limbs
+        },
+        .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
+    }, { /* 24.     | "0,uxYp.uBNtioOVqHcZXQj "                     | 2             | 2         ---->   STR_INVALID_DIGIT                   */
+        .in = &(stobi_assign_in){
+            .str = "0,uxYp.uBNtioOVqHcZXQj ",
+            .len = 23, .base = 0, .bi_size = 2 // Needs 2 limbs
+        },
+        .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
+    }, { /* 25.     | "-0,////////////...////////////" (truncated)  | 24            | 8         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){
+            .str = "-0,"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////",
+            .len = 259, .base = 0, .bi_size = 8 // Needs 24 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_20 /* uses the same values */, .n = 8, .cap = 8, .sign = -1 }
+        }
+    }, { /* 26.     | "-0,0000000000000000001AAAAAAAAAAAAAAAA"      | 2             | 2         ---->   STR_SUCCESS                         */
+        .in = &(stobi_assign_in){
+            .str = "-0,0000000000000000001AAAAAAAAAAAAAAAA",
+            .len = 38, .base = 0, .bi_size = 2 // Needs 2 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_26, .n = 2, .cap = 2, .sign = -1 }
+        }
+    }, { /* 27.     | "-0,abcdef\0ghijklmnop"                       | 1             | 1         ---->   STR_SUCCESS                         */
+        .in = &(stobi_assign_in){
+            .str = "-0,abcdef\0ghijklmnop",
+            .len = 21, .base = 0, .bi_size = 1
+        },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = &small_mulval_bp[3], .n = 1, .cap = 1, .sign = -1}
+        }
+    }, { /* 28.     | "-0,///////////...////////////" (truncated)   | 48            | 48        ---->   STR_SUCCESS                         */
+        .in = &(stobi_assign_in){
+            .str = "-0,"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////",
+            .len = 515, .base = 0, .bi_size = 48 // Needs 48 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_final, .n = 48, .sign = -1 }
+        }
+    },
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
 };
-scase ecases_base[32] = {};
+scase ecases_base[28] = {
+    /* ---------------------------------------------------------------------------------------------------------------------------------- */
+    /* Case Number  | Input                                       | Required      | Capacity      |   Expected Ouput                      */
+    /* ------------------------------------------------------- EASY SUCCESS CASE -------------------------------------------------------- */
+    { /* 1.         | "5"                                         | 1             | 2         ---->   STR_SUCCESS (5)                     */
+        .in = &(stobi_assign_in){ .str = "5", .len = 1, .base = 64, .bi_size = 2 },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = &small_mulval_bp[0], .n = 1, .cap = 1, .sign = 1 }
+        }
+    }, { /* 2.      | "ABCDEFGHIJ"                                | 1             | 2         ---->   STR_SUCCESS (183293895038276755)    */
+        .in = &(stobi_assign_in){ .str = "ABCDEFGHIJ", .len = 10, .base = 64, .bi_size = 2 },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = &small_mulval_bp[1], .n = 1, .cap = 1, .sign = 1 }
+        }
+    }, { /* 3.      | "0123456789ABCDEFGHIJk"                     | 2             | 2         ---->   STR_SUCCESS (too long)              */
+        .in = &(stobi_assign_in){ .str = "0123456789ABCDEFGHIJk", .len = 21, .base = 64, .bi_size = 2 },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_3, .n = 2, .cap = 2, .sign = 1 }
+        }
+    }, { /* 4.      | "-ABCDEF01"                                 | 1             | 2         ---->   STR_SUCCESS (-44749486092289)       */
+        .in = &(stobi_assign_in){ .str = "-ABCDEF01", .len = 8, .base = 64, .bi_size = 2 },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = &small_mulval_bp[2], .n = 1, .cap = 1, .sign = -1 }
+        }
+    }, { /* 5.      | "PIQv29.Sop5w...KnN1UxovFGvP"               | 1             | 4         ---->   STR_SUCCESS (290481608618505)       */
+        .in = &(stobi_assign_in){ 
+            .str = "PIQv29.Sop5wYEzB8mbYnoryDDJmX8Au4rpzKnN1UxovFGvP", 
+            .len = 48, .base = 64, .bi_size = 5
+        },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_5, .n = 5, .cap = 5, .sign = 1 }
+        }
+    }, { /* 6.      | "0000000001"                                | 1             | 2         ---->   STR_SUCCESS (1)                     */ 
+        .in = &(stobi_assign_in){ .str = "0000000001", .len = 10, .base = 64, .bi_size = 2 },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
+        }
+    }, 
+    /* --------------------------------------------------------- INCOMPLETE CASE -------------------------------------------------------- */
+    { /* 7.         | "+"                                         | ??            | 1         ---->   STR_INCOMPLETE                      */ 
+        .in = &(stobi_assign_in){ .str = "+", .len = 1, .base = 64, .bi_size = 1 },
+        .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
+    }, { /* 8.      | "-"                                         | ??            | 1         ---->   STR_INCOMPLETE                      */ 
+        .in = &(stobi_assign_in){ .str = "0,-", .len = 1, .base = 64, .bi_size = 1 },
+        .exp = { .type = BIGINT, .status = STR_INCOMPLETE, .cap = 0, INVAL_BI() }
+    }, { /* 9.      | "        +"                                 | ??            | 1         ---->   STR_INCOMPLETE                      */
+        .in = &(stobi_assign_in){ .str = "        +", .len = 9, .base = 64, .bi_size = 1 },
+        .exp = { .type = BIGINT, .status = STR_SUCCESS, .cap = 0, INVAL_BI() }
+    }, { /* 10.     | "0000000000000000000"                       | 1             | 1         ---->   STR_SUCCESS (0)                     */
+        .in = &(stobi_assign_in){ 
+            .str = "0000000000000000000",
+            .len = 19, .base = 64, .bi_size = 1
+        },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
+        }
+    }, { /* 10.     | "-0000000000000000000"                      | ??            | 1         ---->   STR_INVALID_SIGN                    */
+        .in = &(stobi_assign_in){ 
+            .str = "-0000000000000000000",
+            .len = 20, .base = 64, .bi_size = 1
+        },
+        .exp = { .type = BIGINT, .status = STR_INVALID_SIGN, .cap = 0, INVAL_BI() }
+    }, { /* 12.     | "               -+012"                      | 1             | 1         ---->   STR_INVALID_DIGIT                   */
+        .in = &(stobi_assign_in){
+            .str = "               -+012", 
+            .len = 20, .base = 64, .bi_size = 1 
+        },
+        .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
+    }, 
+    /* ------------------------------------------------------ MAIN / TRUNCATION CASE ---------------------------------------------------- */
+    { /* 13.        | "ncgwFYphl3NqaSA9Rck5f1R.IoJEQd"            | 3             | 2         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){ 
+            .str = "ncgwFYphl3NqaSA9Rck5f1R.IoJEQd", 
+            .len = 30, .base = 64, .bi_size = 2 // Needs 3 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_13, .n = 2, .cap = 2, .sign = 1 }
+        }
+    }, { /* 14.     | "AAAAAAAAAAAA...AAAAAAAAAAAA" (truncated)   | 6             | 4         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){
+            .str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 
+            .len = 64, .base = 64, .bi_size = 4 // Needs 6 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_14, .n = 4, .cap = 4, .sign = 1 }
+        }
+    }, { /* 15.     | "/49ln9OVrlc/...ewrMbxMaIKyk" (truncated)   | 12            | 8         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){
+            .str = "/49ln9OVrlc/H2iWWmMsnzNqgapOqVdv9gZaGDcPTqtSi.tYGx0FQetwxgk/hXxR"
+                "q2CBC/VIplL4td8unHK.TuzGKCnPiff/OjVKtpX2XIjP/ibpsdo3ewrMbxMaIKyk",
+            .len = 128, .base = 64, .bi_size = 8 // Needs 12 limbs
+        },
+        .exp = {
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_15, .n = 8, .cap = 8, .sign = 1 }
+        }
+    }, { /* 16.     | "-KHGIVkEr0/nV...ZMUu0xgSiLIt" (truncated)  | 18            | 12        ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){
+            .str = "-KHGIVkEr0/nVU1Jy93oDfIKvU5GUYo5ZP.V7XabRM99Hv8SRxVdw5NqP7mXQ03yK"
+                ".vzV5L9vO2TPng4O/6Ze827gWU3uHaNMnQH3NewjRDxpT7jqM4xJH2V2YAwowQw6"
+                "n8QcSW8jcf9kowA23W8W.jJfwO6eO4Gyjz5pFh07Qj3pG9ijVoTQZMUu0xgSiLIt",
+            .len = 193, .base = 64, .bi_size = 12 // Needs 18 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_16, .n = 12, .cap = 12, .sign = -1 }
+        }
+    }, { /* 17.     | "-0123456789ABCDEFGHIJKL//"                 | 3             | 2         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){ 
+            .str = "-0123456789ABCDEFGHIJKL//",
+            .len = 25, .base = 64, .bi_size = 2 // Needs 3 limbs
+        },
+        .exp = {
+            .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0,
+            .data.bi = { .limbs = case_17, .n = 2, .cap = 2, .sign = -1 }
+        }
+    }, { /* 18.     | "zzzzzzzzzzzz...zzzzzzzzz++-" (truncated)   | 7             | 5         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){ 
+            .str = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz++-",
+            .len = 67, .base = 64, .bi_size = 5 // Needs 7 limbs
+            // (Technically 6, but the preprocessing of size also counts for the invalid digits)
+        },
+        .exp = {
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_18, .n = 5, .cap = 5, .sign = 1 }
+        }
+    }, { /* 19.     | "1ab##efg"                                  | ??            | 1         ---->   STR_INVALID_DIGIT                   */
+        .in = &(stobi_assign_in){ .str = "1ab##efg", .len = 8, .base = 64, .bi_size = 1 },
+        .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
+    }, { /* 20.     | "////////////...//////// ?!?" (truncated)   | 10            | 8         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){
+            .str = "////////////////////////////////"
+                "////////////////////////////////"
+                "//////////////////////////////// ?!?",
+            .len = 101, .base = 64, .bi_size = 8 // Needs 10 limbs
+            // (Technically 9, but the preprocessing of size also counts for the invalid digits)
+        },
+        .exp = {
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_20, .n = 8, .cap = 8, .sign = -1 }
+        }
+    }, { /* 21.     | "zzzzzzzzzzzz...zzzzzzzzzzzz" (truncated)   | 12            | 6         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){ 
+            .str = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+            .len = 128, .base = 0, .bi_size = 6 // Needs 12 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0,
+            .data.bi = { .limbs = case_21, .n = 6, .cap = 6, .sign = 1 }
+        }
+    }, { /* 22.     | "-abcdabcdabc...abcdabcdabcd"               | 24            | 18        ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){ 
+            .str = "-abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd~^^+~",
+            .len = 262, .base = 64, .bi_size = 18 // Needs 24 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_22, .n = 18, .cap = 18, .sign = -1 }
+        }
+    }, { /* 23.     | "JvtNiXYhkiNR...S/gwnVpMujv:" (truncated)   | 4             | 4         ---->   STR_INVALID_DIGIT                   */
+        .in = &(stobi_assign_in){
+            .str = "JvtNiXYhkiNRR7i0IOO/T2CsUG.kIS/gwnVpMujv:",
+            .len = 41, .base = 64, .bi_size = 4 // Needs 4 limbs
+        },
+        .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
+    }, { /* 24.     | "uxYp.uBNtioOVqHcZXQj "                     | 2             | 2         ---->   STR_INVALID_DIGIT                   */
+        .in = &(stobi_assign_in){
+            .str = "uxYp.uBNtioOVqHcZXQj ",
+            .len = 21, .base = 64, .bi_size = 2 // Needs 2 limbs
+        },
+        .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
+    }, { /* 25.     | "-///////////...////////////" (truncated)   | 24            | 8         ---->   STR_TRUNC_SUCCESS                   */
+        .in = &(stobi_assign_in){
+            .str = "-////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////",
+            .len = 257, .base = 64, .bi_size = 8 // Needs 24 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_TRUNC_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_20 /* uses the same values */, .n = 8, .cap = 8, .sign = -1 }
+        }
+    }, { /* 26.     | "-0000000000000000001AAAAAAAAAAAAAAAA"      | 2             | 2         ---->   STR_SUCCESS                         */
+        .in = &(stobi_assign_in){
+            .str = "-0000000000000000001AAAAAAAAAAAAAAAA",
+            .len = 36, .base = 64, .bi_size = 2 // Needs 2 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_26, .n = 2, .cap = 2, .sign = -1 }
+        }
+    }, { /* 27.     | "-abcdef\0ghijklmnop"                       | 1             | 1         ---->   STR_SUCCESS                         */
+        .in = &(stobi_assign_in){
+            .str = "-abcdef\0ghijklmnop",
+            .len = 19, .base = 64, .bi_size = 1
+        },
+        .exp = {
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = &small_mulval_bp[3], .n = 1, .cap = 1, .sign = -1}
+        }
+    }, { /* 28.     | "-///////////...////////////" (truncated)   | 48            | 48        ---->   STR_SUCCESS                         */
+        .in = &(stobi_assign_in){
+            .str = "-////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////"
+                "////////////////////////////////////////////////////////////////",
+            .len = 513, .base = 64, .bi_size = 48 // Needs 48 limbs
+        },
+        .exp = { 
+            .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
+            .data.bi = { .limbs = case_final, .n = 48, .sign = -1 }
+        }
+    },
+    /* ------------------------------------------------------------------------------------------------------------------------------------ */
+};
 
 
 // Main Code
