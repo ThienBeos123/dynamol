@@ -3,7 +3,7 @@
 #include <system/sys.h>
 // Main Components
 #include "../../../test_ui/_strui.h"
-#include "../case_gen/case_gen.h"
+#include "../../case_gen/case_gen.h"
 #include "../_ioconv.h"
 // Function wrappers
 #include "bi_indef.h"
@@ -377,7 +377,7 @@ int main(int argc, char **argv) {
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
-    rand_container conv_rcon = { 
+    rand_container conv_rcon = {
         .in_cont_type = CTX,
         .in_cont.rctx = &conv_in_rctx,
         .res_cont = &conv_res_rctx
@@ -396,7 +396,8 @@ int main(int argc, char **argv) {
         &inv_stobi_conv_nob, &stat_stobi_from_str, 
         &cmp_inv_stobi_conv, &fmt_in_from_str, &fmt_recon_stobi,
         &_stobi_conv_inlink, &_stobi_conv_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // from_strn() -- Base-prefix, Length param
     suite from_strn_suite = {0};
@@ -409,7 +410,8 @@ int main(int argc, char **argv) {
         &inv_stobi_conv_nob, &stat_stobi_from_strn,
         &cmp_inv_stobi_conv, &fmt_in_from_strn, &fmt_recon_stobi,
         &_stobi_conv_inlink, &_stobi_conv_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // from_strb() -- Base-param, No length param
     suite from_strb_suite = {0};
@@ -422,7 +424,8 @@ int main(int argc, char **argv) {
         &inv_stobi_conv_b, &stat_stobi_from_strb, 
         &cmp_inv_stobi_convb, &fmt_in_from_strb, &fmt_recon_stobi,
         &_stobi_conv_inlink, &_stobi_conv_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // from_strnb() -- Base-param, Length param
     suite from_strnb_suite = {0};
@@ -435,7 +438,8 @@ int main(int argc, char **argv) {
         &inv_stobi_conv_b, &stat_stobi_from_strnb, 
         &cmp_inv_stobi_convb, &fmt_in_from_strnb, &fmt_recon_stobi,
         &_stobi_conv_inlink, &_stobi_conv_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
 
 

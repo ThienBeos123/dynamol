@@ -3,7 +3,7 @@
 #include <system/sys.h>
 // Main Components
 #include "../../../test_ui/_strui.h"
-#include "../case_gen/case_gen.h"
+#include "../../case_gen/case_gen.h"
 #include "../_ioconv.h"
 // Function wrappers
 #include "bi_indef.h"
@@ -396,7 +396,8 @@ int main(int argc, char **argv) {
         &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
         &fmt_in_strinit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // strninit() -- Base-prefix, Length param
     suite strninit_suite = {0};
@@ -409,7 +410,8 @@ int main(int argc, char **argv) {
         &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
         &fmt_in_strninit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // strbinit() -- Base-param, No length param
     suite strbinit_suite = {0};
@@ -422,7 +424,8 @@ int main(int argc, char **argv) {
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
         &fmt_in_strbinit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // strnbinit() -- Base-param, Length param
     suite strnbinit_suite = {0};
@@ -435,7 +438,8 @@ int main(int argc, char **argv) {
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
         &fmt_in_strnbinit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
 
 

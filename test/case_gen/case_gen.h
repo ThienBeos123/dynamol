@@ -4,10 +4,10 @@
 
 #include <include.h>
 #include <char_tables.h>
-#include "../../../test_ui/_strui.h"
-#include "../../../test_ui/_test_base.h"
-#include "../../../intrinsics/intrinsics.h"
-#include "../../../util/util.h"
+#include "../../test_ui/_strui.h"
+#include "../../test_ui/_test_base.h"
+#include "../../intrinsics/intrinsics.h"
+#include "../../util/util.h"
 
 #define u64 uint64_t
 #define STV static void

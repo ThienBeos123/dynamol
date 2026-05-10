@@ -393,7 +393,7 @@ inline void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_stat
     config->base_state = mix_xoshiro256(&config->base_state, add_state);
     xoshiro256pp_next(&config->base_state); // Further scramble
 }
-inline size_t strgen_len(void) { return INPUT_BYTE_CAP; }
+inline size_t strgen_len(void) { return STR_CAP; }
 void strgen_write(char *buf, size_t len, str_rand_mod* config, bool bprefix) {
     // Setup
     config->str_len = __rng_skrange(&config->base_state, 0, strgen_len(), 0.7f);

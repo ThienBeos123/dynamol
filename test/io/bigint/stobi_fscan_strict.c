@@ -3,7 +3,7 @@
 #include <system/sys.h>
 // Main Components
 #include "../../../test_ui/_strui.h"
-#include "../case_gen/case_gen.h"
+#include "../../case_gen/case_gen.h"
 #include "../_ioconv.h"
 // Function wrappers
 #include "bi_indef.h"
@@ -523,7 +523,8 @@ int main(int argc, char **argv) {
         &inv_stobi_scan_nob, &stat_stobi_fscan_nobsa,
         &cmp_inv_stobi_scan, &fmt_in_fsscan, &fmt_recon_stobi,
         &_stobi_scan_inlink, &_stobi_scan_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // fsscanb() -- Base-param, No length param
     suite fsscanb_suite = {0};
@@ -536,7 +537,8 @@ int main(int argc, char **argv) {
         &inv_stobi_scan_b, &stat_stobi_fscan_bsa,
         &cmp_inv_stobi_scanb, &fmt_in_fsscanb, &fmt_recon_stobi,
         &_stobi_scan_inlink, &_stobi_scan_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
 
 

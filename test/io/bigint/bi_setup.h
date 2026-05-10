@@ -6,12 +6,12 @@
 #include "../../../test_ui/_strui.h"
 #include "../../../test_ui/str_ctx.h"
 #include "../../../intrinsics/intrinsics.h"
-#include "../case_gen/case_gen.h"
+#include "../../case_gen/case_gen.h"
 #include "bi_indef.h"
 #include <include.h>
 #include <system/sys.h>
 
-//* ===================== RECONSTRUCTION SETUP FUNCTIONS ===================== *//
+//* ===================== AUXILLARY SETUP FUNCTIONS ===================== *//
 // Auxillary 1 Size returner
 size_t _stobi_recon_size(void) { return sizeof(unsigned char*); }
 size_t _bitos_recon_size(void) { return sizeof(bigInt); }
@@ -88,6 +88,46 @@ void _stobi_deserialize_inlink(void *in, rand_container *incon) {
 }
 
 
+//* ===================== OUTPUT SETUP FUNCTIONS ===================== *//
+// Output Buffer Linker - BITOS
+void _bitos_outlink(str_res *out, rand_container *rcon) {
+    out = (str_res*)(rcon->res_cont->res_buf);
+    out->type = STRING; out->cap = STR_CAP;
+    out->data.len = 0;
+}
+void _bitos_aux2link(str_res *out, rand_container *rcon) {
+    out = (str_res*)(rcon->res_cont->aux2_buf);
+    out->type = STRING; out->cap = STR_CAP;
+    out->data.len = 0;
+}
+// Output Buffer Linker - STOBI
+void _stobi_outlink(str_res *out, rand_container *rcon) {
+    out = (str_res*)(rcon->res_cont->res_buf);
+    limb_t *limb = (limb_t*)(
+        rcon->res_cont->res_buf 
+      + ALIGN_UP(sizeof(str_res), _Alignof(max_align_t))
+    );
+    out->type = BIGINT; out->cap = 0; // cap refers to the FAM string buffer
+    out->data.bi.limbs = limb;
+    out->data.bi.n = 0;
+    out->data.bi.cap = BIGINT_CAP;
+    out->data.bi.sign = 1;
+}
+void _stobi_aux2link(str_res *aux2, rand_container *rcon) {
+    aux2 = (str_res*)(rcon->res_cont->aux2_buf);
+    limb_t *limb = (limb_t*)(
+        rcon->res_cont->aux2_buf 
+      + ALIGN_UP(sizeof(str_res), _Alignof(max_align_t))
+    );
+    aux2->type = BIGINT; aux2->cap = 0; // cap refers to the FAM string buffer
+    aux2->data.bi.limbs = limb;
+    aux2->data.bi.n = 0;
+    aux2->data.bi.cap = BIGINT_CAP;
+    aux2->data.bi.sign = 1;
+}
+
+
+
 //* ===================== INPUT GENERATION FUNCTIONS ===================== *//
 size_t bisize_to_rcap_dist(size_t len, uint8_t base, rcap_mode mode, xoshiro256_state *state) {
     switch (mode) {
@@ -113,6 +153,11 @@ size_t bisize_to_rcap_dist(size_t len, uint8_t base, rcap_mode mode, xoshiro256_
     }
 }
 // Input Random Generatioon - BITOS
+void _bitos_conv_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
+void _bitos_print_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
+void _bitos_fwrite_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
+void _bitos_serialize_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
+void _bitos_util_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
 // Input Random Generatioon - STOBI
 void _stobi_init_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
     stobi_init_in *vin = (stobi_init_in*)in;

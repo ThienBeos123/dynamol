@@ -3,7 +3,7 @@
 #include <system/sys.h>
 // Main Components
 #include "../../../test_ui/_strui.h"
-#include "../case_gen/case_gen.h"
+#include "../../case_gen/case_gen.h"
 #include "../_ioconv.h"
 // Function wrappers
 #include "bi_indef.h"
@@ -575,7 +575,8 @@ int main(int argc, char **argv) {
     fill_suite_reval(&ftscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_ftscan,
         &eval_stobi_ftscan, &stat_stobi_fscan_nobsa,
-        &cmp_eval_stobi, &_stobi_scan_inlink, &_stobi_scan_insize
+        &cmp_eval_stobi, &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // fsscanb() -- Base-param, No length param
     suite ftscanb_suite = {0};
@@ -586,7 +587,8 @@ int main(int argc, char **argv) {
     fill_suite_reval(&ftscanb_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_ftscanb,
         &eval_stobi_ftscanb, &stat_stobi_fscan_bsa, 
-        &cmp_eval_stobi, &_stobi_scan_inlink, &_stobi_scan_insize
+        &cmp_eval_stobi, &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_outlink, &_stobi_aux2link
     );
 
 

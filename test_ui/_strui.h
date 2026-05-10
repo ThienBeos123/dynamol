@@ -152,11 +152,13 @@ typedef void (*dnml_inv_fn)(const void *in, const str_res *out, void *reconstruc
 typedef bool (*dnml_stat_fn)(const void *in, dnml_status res_stat, str_res *out);
 typedef bool (*dnml_cmp_inv_fn)(const void *original, const str_res *out, const void *recon, void *ctx);
 typedef bool (*dnml_cmp_eval_fn)(const str_res *exp, const str_res *out);
-// Printing & Formatting & Utilites
+// Printing & Formatting
 typedef void (*dnml_fmt_in_fn)(FILE *f, const void *in, int tab_depth);
 typedef void (*dnml_fmt_recon_fn)(FILE *f, const void* recon, int tab_depth);
+// Buffer Linkers
 typedef size_t (*dnml_voidp_size)(void);
 typedef void (*dnml_voidp_fill)(void *in, rand_container *incon);
+typedef void (*dnml_sres_fill)(str_res *res, rand_container *rcon);
 
 static inline void *run_ecase(_libdnml_scase *c, dnml_exec_fn *fn, void *ctx) {
     (*fn)(c->in, &c->res, ctx);
@@ -185,14 +187,14 @@ typedef struct _libdnml_str_suite {
     dnml_gen_fn *gen_case;
     dnml_exec_fn *fn_test; 
     // Random Case Oracle Functions
-    dnml_voidp_size *fn_insize; dnml_voidp_size *fn_aux1size;
     dnml_inv_fn *fn_inv; dnml_eval_fn *fn_eval;
     dnml_cmp_inv_fn *inv_cmp; dnml_cmp_eval_fn *eval_cmp;     
     dnml_fmt_in_fn *fmtin_fn; dnml_stat_fn *fn_stat;
-    dnml_fmt_recon_fn *fmtrecon_fn; 
+    dnml_fmt_recon_fn *fmtrecon_fn;
+    // Buffer Linkage Functions
+    dnml_voidp_size *fn_insize; dnml_voidp_size *fn_aux1size;
     dnml_voidp_fill *fn_infill; dnml_voidp_fill *fn_aux1fill;
-    // Property Case Functions
-    dnml_prop_fn *fn_prop;
+    dnml_sres_fill *fn_outfill; dnml_sres_fill *fn_aux2fill;
 
     // Edge cases storage
     _libdnml_scase *edge; strbump_t ectx;
@@ -228,18 +230,14 @@ static inline void create_str_suite(
 }
 
 
-// Suite-specific setup (function evaluation-based)
-// fill_suite_prop is unfinished
-static inline void fill_suite_prop(_libdnml_str_suite *curr_suite, bool *prop_fn) {
-    curr_suite->fn_prop = prop_fn;
-}
 static inline void fill_suite_rinv(
     _libdnml_str_suite *curr_suite, 
     void *case_gen, void *fn_test,
     void *fn_inv, bool *fn_stat,
     bool *cmp_inv, void *fmtin_fn, void *fmtrecon_fn,
     void *inbuf_linker, void *inbuf_size,
-    void *reconbuf_linker, void *reconbuf_size
+    void *reconbuf_linker, void *reconbuf_size,
+    void *outbuf_linker, void *aux2buf_linker
 ) {
     curr_suite->gen_case = (dnml_gen_fn*)(case_gen);
     curr_suite->fn_test = (dnml_exec_fn*)(fn_test);
@@ -255,13 +253,16 @@ static inline void fill_suite_rinv(
     curr_suite->fn_insize = (dnml_voidp_size*)(inbuf_size);
     curr_suite->fn_aux1fill = (dnml_voidp_fill*)(reconbuf_linker);
     curr_suite->fn_aux1size = (dnml_voidp_size*)(reconbuf_size);
+    curr_suite->fn_outfill = (dnml_sres_fill*)(outbuf_linker);
+    curr_suite->fn_aux2fill = (dnml_sres_fill*)(aux2buf_linker);
 
 }
 static inline void fill_suite_reval(
     _libdnml_str_suite *curr_suite,
     void *case_gen, void *fn_test, void *fn_eval,
     bool *fn_stat, bool *cmp_eval,
-    void *inbuf_linker, void *inbuf_size
+    void *inbuf_linker, void *inbuf_size,
+    void *outbuf_linker, void *aux2buf_linker
 ) {
     curr_suite->gen_case = (dnml_gen_fn*)(case_gen);
     curr_suite->fn_test = (dnml_exec_fn*)(fn_test);
@@ -272,6 +273,8 @@ static inline void fill_suite_reval(
     // Buffer Linkage
     curr_suite->fn_infill = (dnml_voidp_fill*)(inbuf_linker);
     curr_suite->fn_insize = (dnml_voidp_size*)(inbuf_size);
+    curr_suite->fn_outfill = (dnml_sres_fill*)(outbuf_linker);
+    curr_suite->fn_aux2fill = (dnml_sres_fill*)(aux2buf_linker);
 }
 
 
@@ -520,8 +523,8 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];
         aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
         // Setting up Evaluation Output buffers
-        out = s->rincon->res_cont->res_buf;
-        aux2 = s->rincon->res_cont->aux2_buf;
+        (*s->fn_outfill)(out, s->rincon);
+        (*s->fn_aux2fill)(aux2, s->rincon);
 
         // ---------------- MAIN EXECUTION PART ----------------
         run_case(s, s->fn_test, in, out);

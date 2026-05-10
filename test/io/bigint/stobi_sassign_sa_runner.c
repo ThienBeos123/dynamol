@@ -3,7 +3,7 @@
 #include <system/sys.h>
 // Main Components
 #include "../../../test_ui/_strui.h"
-#include "../case_gen/case_gen.h"
+#include "../../case_gen/case_gen.h"
 #include "../_ioconv.h"
 // Function wrappers
 #include "bi_indef.h"
@@ -680,7 +680,8 @@ int main(int argc, char **argv) {
         &inv_stobi_assign_nob, &stat_stobi_sget_str,
         &cmp_inv_stobi_assign, &fmt_in_get_sstr, &fmt_recon_stobi,
         &_stobi_assign_inlink, &_stobi_assign_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // sget_strn() -- Base-prefix, Length param
     suite sget_strn_suite = {0};
@@ -693,7 +694,8 @@ int main(int argc, char **argv) {
         &inv_stobi_assign_nob, &stat_stobi_sget_strn,
         &cmp_inv_stobi_assign, &fmt_in_get_sstrn, &fmt_recon_stobi,
         &_stobi_assign_inlink, &_stobi_assign_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // sget_strb() -- Base-param, No length param
     suite sget_strb_suite = {0};
@@ -706,7 +708,8 @@ int main(int argc, char **argv) {
         &inv_stobi_assign_b, &stat_stobi_sget_strb,
         &cmp_inv_stobi_assignb, &fmt_in_get_sstrb, &fmt_recon_stobi,
         &_stobi_assign_inlink, &_stobi_assign_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // sget_strnb() -- Base-param, Length param
     suite sget_strnb_suite = {0};
@@ -719,7 +722,8 @@ int main(int argc, char **argv) {
         &inv_stobi_assign_b, &stat_stobi_sget_strnb,
         &cmp_inv_stobi_assignb, &fmt_in_get_sstrnb, &fmt_recon_stobi,
         &_stobi_assign_inlink, &_stobi_assign_insize,
-        &_stobi_recon_linker, &_stobi_recon_size
+        &_stobi_recon_linker, &_stobi_recon_size,
+        &_stobi_outlink, &_stobi_aux2link
     );
 
 

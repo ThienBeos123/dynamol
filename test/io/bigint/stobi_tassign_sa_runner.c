@@ -3,7 +3,7 @@
 #include <system/sys.h>
 // Main Components
 #include "../../../test_ui/_strui.h"
-#include "../case_gen/case_gen.h"
+#include "../../case_gen/case_gen.h"
 #include "../_ioconv.h"
 // Function wrappers
 #include "bi_indef.h"
@@ -719,7 +719,8 @@ int main(int argc, char **argv) {
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_str,
         &eval_stobi_tget_str, &stat_stobi_sget_str, 
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // tget_strn() -- Base-prefix, Length param
     suite tget_strn_suite = {0};
@@ -730,7 +731,8 @@ int main(int argc, char **argv) {
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_strn,
         &eval_stobi_tget_str, &stat_stobi_sget_strn, 
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // tget_strb() -- Base-param, No length param
     suite tget_strb_suite = {0};
@@ -741,7 +743,8 @@ int main(int argc, char **argv) {
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strb,
         &eval_stobi_tget_strb, &stat_stobi_sget_strb, 
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_outlink, &_stobi_aux2link
     );
     // tget_strnb() -- Base-param, Length param
     suite tget_strnb_suite = {0};
@@ -752,7 +755,8 @@ int main(int argc, char **argv) {
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strnb,
         &eval_stobi_tget_strb, &stat_stobi_sget_strnb,
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_outlink, &_stobi_aux2link
     );
 
 
