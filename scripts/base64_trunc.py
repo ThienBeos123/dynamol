@@ -24,7 +24,7 @@ def base64_to_bounded_bigint():
     print("\n--- String Metadata ---")
     print(f"Truncated Preview: {truncated_str}")
     print(f"Raw payload len:   {raw_len}")
-    print(f"Total buffer len:  {raw_len + 3} (includes '0,' and null)")
+    print(f"Total buffer len:  {raw_len + 2} (includes '0,' prefix)")
     print(f"Target Capacity:   {capacity} limbs ({capacity * 64} bits)")
     print("-----------------------\n")
 

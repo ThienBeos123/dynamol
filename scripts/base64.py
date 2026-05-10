@@ -16,7 +16,7 @@ def base64_to_bigint_limbs():
     print("\n--- String Metadata ---")
     print(f"Truncated:        {truncated}")
     print(f"Raw payload len:  {raw_len}")
-    print(f"Total buffer len: {raw_len + 3} (includes '0,' and null)")
+    print(f"Total buffer len: {raw_len + 2} (includes '0,' prefix)")
     print("-----------------------\n")
 
     # Math

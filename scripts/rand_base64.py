@@ -18,7 +18,7 @@ def randomize_and_convert_base64():
     print(f"Full String:      {random_str}")
     print(f"Truncated:        {truncated}")
     print(f"Raw payload len:  {input_len}")
-    print(f"Total buffer len: {input_len + 3}")
+    print(f"Total buffer len: {input_len + 2}")
     print("-----------------------\n")
 
     char_to_val = {char: i for i, char in enumerate(BASE64_CHARS)}
