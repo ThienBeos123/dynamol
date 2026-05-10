@@ -693,14 +693,14 @@ int main(int argc, char **argv) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
         tassign_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else tassign_omode = DNML_VOUT;
-    u8 tassign_ecount = 32, tassign_scount = 4;
+    u8 tassign_ecount = 28, tassign_scount = 4;
     // Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
     rctx_t tassign_rctx = {0}; str_res *ebuf_slices[tassign_scount];
     str_res fail_ebuf[(tassign_ecount << 1) * tassign_scount];
     strbump_t tassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, tassign_ecount << 1, tassign_scount, sizeof(str_res));
-    input_container tassign_icon = { .cont_type = CTX, .cont.rctx = &tassign_rctx };
+    input_container tassign_incon = { .cont_type = CTX, .cont.rctx = &tassign_rctx };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -708,7 +708,7 @@ int main(int argc, char **argv) {
     suite tget_str_suite = {0};
     create_str_suite(&tget_str_suite, "bigInt_tget_str - String Assignment", 
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_icon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
     ); tget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_str,
@@ -718,7 +718,7 @@ int main(int argc, char **argv) {
     suite tget_strn_suite = {0};
     create_str_suite(&tget_strn_suite, "bigInt_tget_strn - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_icon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
     ); tget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_strn,
@@ -728,7 +728,7 @@ int main(int argc, char **argv) {
     suite tget_strb_suite = {0};
     create_str_suite(&tget_strb_suite, "bigInt_tget_strb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_icon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
     ); tget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strb,
@@ -738,7 +738,7 @@ int main(int argc, char **argv) {
     suite tget_strnb_suite = {0};
     create_str_suite(&tget_strnb_suite, "bigInt_tget_strnb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_icon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
     ); tget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strnb,

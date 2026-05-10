@@ -63,12 +63,14 @@
 *
 *   +) This runner has all edge test cases with the bigInt output buffer at the maximum
 *      capacity (512 bytes / 64 limbs), for this runner is utilized for parsing and
-*      numerical-handling correctness. Size-handling API testing is tested in the file
-*      "stobi_fscan_sa_runner.c"
+*      numerical-handling correctness. For size-handling API testing, please refer to:
+*
+*       +) "stobi_fscan_strict.c"
+*       +) "stobi_fscan_trunc.c"
 */
 
 // THESE HAS TO BE INITIATED IN main()
-FILE *scan_in_nob, *scan_in_b;
+FILE *scan_in_nob, *scan_in_b, *scan_randin;
 
 // Test cases and Values
 limb_t multi_val[7] = {123, 255, 42, 63, 0, 17720, 22875};
@@ -376,14 +378,18 @@ int main(int argc, char **argv) {
     // Buffer and Test Cases Setup
     scan_in_nob = fopen("input_files/bi_scan_nob.txt", "r");
     scan_in_b = fopen("input_files/bi_scan_b.txt", "r");
+    scan_randin = fopen("input_files/bi_rand_io.txt", "r+");
+    DNML_FOPEN_ERR(scan_in_nob, "bi_scan_nob.txt", "input_files/bi_scan_nob.txt");
+    DNML_FOPEN_ERR(scan_in_b, "bi_scan_b.txt", "input_files/bi_scan_b.txt");
+    DNML_FOPEN_ERR(scan_randin, "bi_rand_io.txt", "input_files/bi_rand_io.txt");
     setup_cases(scan_in_nob, scan_in_b, scan_ecount);
+    
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
     rctx_t scan_rctx = {0}; str_res *ebuf_slices[scan_scount];
-    str_res fail_ebuf[(scan_ecount << 1) * scan_scount]; // x2 on top for safety
+    str_res fail_ebuf[(scan_ecount << 1) * scan_scount];
     strbump_t scan_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, scan_ecount << 1, scan_scount, sizeof(str_res));
-    input_container scan_incon_nob = { .cont_type = STREAM, .cont.stream = scan_in_nob };
-    input_container scan_incon_b = { .cont_type = STREAM, .cont.stream = scan_in_b };
+    input_container scan_incon = { .cont_type = STREAM, .cont.stream = scan_randin };
 
 
     //* ---------------------------------- STANDARD API SUITE ---------------------------------- *//
@@ -391,8 +397,8 @@ int main(int argc, char **argv) {
     suite fscan_suite = {0};
     create_str_suite(&fscan_suite, "bigInt_fscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon_nob
-    );
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+    ); fscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_fscan,
         &inv_stobi_scan_nob, &stat_stobi_fscan_nob,
@@ -402,8 +408,8 @@ int main(int argc, char **argv) {
     suite fscanb_suite = {0};
     create_str_suite(&fscanb_suite, "bigInt_fscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon_b
-    );
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+    ); fscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fscanb_suite,
         &_stobi_scan_ingen_b, &exec_stobi_fscanb,
         &inv_stobi_scan_b, &stat_stobi_fscan_b, 
@@ -415,8 +421,8 @@ int main(int argc, char **argv) {
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon_nob
-    );
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+    ); fsscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fsscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_fsscan,
         &inv_stobi_scan_nob, &stat_stobi_fscan_nobsa,
@@ -426,8 +432,8 @@ int main(int argc, char **argv) {
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon_b
-    );
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+    ); fsscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fsscanb_suite,
         &_stobi_scan_ingen_b, &exec_stobi_fsscanb,
         &inv_stobi_scan_b, &stat_stobi_fscan_bsa,
@@ -439,8 +445,8 @@ int main(int argc, char **argv) {
     suite ftscan_suite = {0};
     create_str_suite(&ftscan_suite, "bigInt_ftscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon_nob
-    );
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+    ); ftscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&ftscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_ftscan,
         &inv_stobi_scan_nob, &stat_stobi_fscan_nobsa,
@@ -450,8 +456,8 @@ int main(int argc, char **argv) {
     suite ftscanb_suite = {0};
     create_str_suite(&ftscanb_suite, "bigInt_ftscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon_b
-    );
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+    ); ftscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&ftscanb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_ftscanb,
         &inv_stobi_scan_b, &stat_stobi_fscan_bsa,

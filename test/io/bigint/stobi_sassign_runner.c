@@ -386,7 +386,7 @@ int main(int argc, char **argv) {
     str_res fail_ebuf[(sassign_ecount << 1) * sassign_scount];
     strbump_t sassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, sassign_ecount << 1, sassign_scount, sizeof(str_res));
-    input_container sassign_icon = { .cont_type = CTX, .cont.rctx = &sassign_rctx };
+    input_container sassign_incon = { .cont_type = CTX, .cont.rctx = &sassign_rctx };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -394,7 +394,7 @@ int main(int argc, char **argv) {
     suite sget_str_suite = {0};
     create_str_suite(&sget_str_suite, "bigInt_tget_str - String Assignment", 
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_incon
     ); sget_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_str,
@@ -405,7 +405,7 @@ int main(int argc, char **argv) {
     suite sget_strn_suite = {0};
     create_str_suite(&sget_strn_suite, "bigInt_tget_strn - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_incon
     ); sget_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_strn_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_strn,
@@ -416,7 +416,7 @@ int main(int argc, char **argv) {
     suite sget_strb_suite = {0};
     create_str_suite(&sget_strb_suite, "bigInt_tget_strb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_incon
     ); sget_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_strb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strb,
@@ -427,7 +427,7 @@ int main(int argc, char **argv) {
     suite sget_strnb_suite = {0};
     create_str_suite(&sget_strnb_suite, "bigInt_tget_strnb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_incon
     ); sget_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_strnb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strnb,

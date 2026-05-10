@@ -381,7 +381,7 @@ scase ecases_bprefix[32] = {
             "rA5zDuWEDeMQbLB8Q.ym6vC6SfDWrJPDoKN8okl78EyuB18eqoeMcVWYbIvWu",
         .len = 511, .base = 0, .bi_size = 47 },
         .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 32.        | "0,//////////.../////////" (truncated)     | 48            | 48        ---->   STR_STATUS (woah big ig)            */
+    }, { /* 32.     | "0,//////////.../////////" (truncated)     | 48            | 48        ---->   STR_STATUS (woah big ig)            */
         .in = &(stobi_assign_in){ .str = "0,"
             "////////////////////////////////////////////////////////////////"
             "////////////////////////////////////////////////////////////////"
@@ -595,7 +595,7 @@ scase ecases_base[32] = {
             .len = 128, .base = 64, .bi_size = 7 // Needs 12 limbs
         },
         .exp = { .type = BIGINT, .status = BIGINT_ERR_RANGE, .cap = 0, INVAL_BI() }
-    }, { /* 29.     | "0,4uPRVSViikpw...clCaaH65NeHD" (truncated)   | 18            | 12        ---->   BIGINT_ERR_RANGE                    */
+    }, { /* 29.     | "4uPRVSViikpw...clCaaH65NeHD" (truncated)     | 18            | 12        ---->   BIGINT_ERR_RANGE                    */
         .in = &(stobi_assign_in){
             .str = "-4uPRVSViikpwy7tf.XCxyAYCuHAq.vJCHJEDOiznJs7uELlk"
                 "zCHGn4155gKYcu6MmQlgRn0DV/6Yra1TVm62jpmRZba7R4Nz"

@@ -17,6 +17,12 @@
     fputs("TERMINATING SESSION...", stderr); abort(); \
 } while(0)
 
+#define DNML_FOPEN_ERR(fp, name, path) do { \
+    if (likely(fp != NULL)) break; \
+    fprintf(stderr, "CRITICAL ERROR: Unable to open %s at %s\n", name, path); \
+    fputs("Aborting the program immediately...", stderr); abort(); \
+} while(0)
+
 //* ===================== INPUT STRUCT DEFINITION ===================== *//
 // BITOS Input Structs
 typedef struct { size_t len; bigInt x; uint8_t base; bool uppercase; } bitos_conv_in;
