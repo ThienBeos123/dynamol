@@ -265,9 +265,9 @@ scase ecases_bprefix[28] = {
             .type = BIGINT, .status = STR_SUCCESS, .cap = 0,
             .data.bi = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
         }
-    }, { /* 10.     | "0,-0000000000000000000"                      | ??            | 1         ---->   STR_INVALID_SIGN                    */
+    }, { /* 10.     | "-0,0000000000000000000"                      | ??            | 1         ---->   STR_INVALID_SIGN                    */
         .in = &(stobi_assign_in){ 
-            .str = "0,-0000000000000000000",
+            .str = "-0,0000000000000000000",
             .len = 22, .base = 0, .bi_size = 1
         },
         .exp = { .type = BIGINT, .status = STR_INVALID_DIGIT, .cap = 0, INVAL_BI() }
@@ -694,13 +694,19 @@ int main(int argc, char **argv) {
         tassign_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else tassign_omode = DNML_VOUT;
     u8 tassign_ecount = 28, tassign_scount = 4;
-    // Buffer Setup
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t tassign_rctx = {0}; str_res *ebuf_slices[tassign_scount];
-    str_res fail_ebuf[(tassign_ecount << 1) * tassign_scount];
-    strbump_t tassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+
+    // Edge-case Buffer Setup
+    limb_t ectx_buf[128]; // Edge-case Memory Usage: 1024 bytes / 1kb
+    str_res *ebuf_slices[tassign_scount], fail_ebuf[(tassign_ecount << 1) * tassign_scount];
+    strbump_t tassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 128 };
     _dist_buf(ebuf_slices, fail_ebuf, tassign_ecount << 1, tassign_scount, sizeof(str_res));
-    input_container tassign_incon = { .cont_type = CTX, .cont.rctx = &tassign_rctx };
+    // Random-case Buffer Setup
+    rctx_res_t tassign_res_rctx = {0}; rctx_input_t tassign_in_rctx = {0};
+    rand_container tassign_rcon = { 
+        .in_cont = CTX, 
+        .in_cont.rctx = &tassign_in_rctx,
+        .res_cont = &tassign_res_rctx 
+    };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -708,41 +714,45 @@ int main(int argc, char **argv) {
     suite tget_str_suite = {0};
     create_str_suite(&tget_str_suite, "bigInt_tget_str - String Assignment", 
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
     ); tget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_str,
-        &eval_stobi_tget_str, &stat_stobi_sget_str, &cmp_eval_stobi
+        &eval_stobi_tget_str, &stat_stobi_sget_str, 
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
     );
     // tget_strn() -- Base-prefix, Length param
     suite tget_strn_suite = {0};
     create_str_suite(&tget_strn_suite, "bigInt_tget_strn - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
     ); tget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_strn,
-        &eval_stobi_tget_str, &stat_stobi_sget_strn, &cmp_eval_stobi
+        &eval_stobi_tget_str, &stat_stobi_sget_strn, 
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
     );
     // tget_strb() -- Base-param, No length param
     suite tget_strb_suite = {0};
     create_str_suite(&tget_strb_suite, "bigInt_tget_strb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
     ); tget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strb,
-        &eval_stobi_tget_strb, &stat_stobi_sget_strb, &cmp_eval_stobi
+        &eval_stobi_tget_strb, &stat_stobi_sget_strb, 
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
     );
     // tget_strnb() -- Base-param, Length param
     suite tget_strnb_suite = {0};
     create_str_suite(&tget_strnb_suite, "bigInt_tget_strnb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_incon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
     ); tget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strnb,
-        &eval_stobi_tget_strb, &stat_stobi_sget_strnb, &cmp_eval_stobi
+        &eval_stobi_tget_strb, &stat_stobi_sget_strnb,
+        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize
     );
 
 

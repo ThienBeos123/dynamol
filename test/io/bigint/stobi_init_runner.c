@@ -369,13 +369,19 @@ int main(int argc, char **argv) {
         init_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else init_omode = DNML_VOUT;
     u8 init_ecount = 27, init_scount = 4;
-    // Buffer Setup
+
+    // Edge-case Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t init_rctx = {0}; str_res *ebuf_slices[init_scount];
-    str_res fail_ebuf[(init_ecount << 1) * init_scount];
+    str_res *ebuf_slices[init_scount], fail_ebuf[(init_ecount << 1) * init_scount];
     strbump_t init_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, init_ecount << 1, init_scount, sizeof(str_res));
-    input_container init_incon = { .cont_type = CTX, .cont.rctx = &init_rctx };
+    // Rand-case Buffer Setup:
+    rctx_res_t init_res_rctx = {0}; rctx_input_t init_in_rctx = {0};
+    rand_container init_rcon = { 
+        .in_cont_type = CTX,
+        .in_cont.rctx = &init_in_rctx,
+        .res_cont = &init_res_rctx
+    };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -383,45 +389,53 @@ int main(int argc, char **argv) {
     suite strinit_suite = {0};
     create_str_suite(&strinit_suite, "strinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_incon
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
     );
     fill_suite_rinv(&strinit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strinit,
         &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
-        &fmt_in_strinit, &fmt_recon_stobi
+        &fmt_in_strinit, &fmt_recon_stobi,
+        &_stobi_init_inlink, &_stobi_init_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // strninit() -- Base-prefix, Length param
     suite strninit_suite = {0};
     create_str_suite(&strninit_suite, "strninit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_incon
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
     );
     fill_suite_rinv(&strninit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strninit,
         &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
-        &fmt_in_strninit, &fmt_recon_stobi
+        &fmt_in_strninit, &fmt_recon_stobi,
+        &_stobi_init_inlink, &_stobi_init_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // strbinit() -- Base-param, No length param
     suite strbinit_suite = {0};
     create_str_suite(&strbinit_suite, "strbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_incon
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
     );
     fill_suite_rinv(&strbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strbinit,
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
-        &fmt_in_strbinit, &fmt_recon_stobi
+        &fmt_in_strbinit, &fmt_recon_stobi,
+        &_stobi_init_inlink, &_stobi_init_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // strnbinit() -- Base-param, Length param
     suite strnbinit_suite = {0};
     create_str_suite(&strnbinit_suite, "strnbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_incon
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
     );
     fill_suite_rinv(&strnbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strnbinit,
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
-        &fmt_in_strnbinit, &fmt_recon_stobi
+        &fmt_in_strnbinit, &fmt_recon_stobi,
+        &_stobi_init_inlink, &_stobi_init_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
 

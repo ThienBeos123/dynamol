@@ -653,13 +653,19 @@ int main(int argc, char **argv) {
         sassign_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else sassign_omode = DNML_VOUT;
     u8 sassign_ecount = 32, sassign_scount = 4;
-    // Buffer Setup
+
+    // Edge-case Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t sassign_rctx = {0}; str_res *ebuf_slices[sassign_scount];
-    str_res fail_ebuf[(sassign_ecount << 1) * sassign_scount];
-    strbump_t sassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    str_res *ebuf_slices[sassign_scount], fail_ebuf[(sassign_ecount << 1) * sassign_scount];
+    strbump_t sassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 88 };
     _dist_buf(ebuf_slices, fail_ebuf, sassign_ecount << 1, sassign_scount, sizeof(str_res));
-    input_container sassign_icon = { .cont_type = CTX, .cont.rctx = &sassign_rctx };
+    // Rand-case Buffer Setup:
+    rctx_res_t sassign_res_rctx = {0}; rctx_input_t sassign_in_rctx = {0};
+    rand_container sassign_rcon = { 
+        .in_cont_type = CTX,
+        .in_cont.rctx = &sassign_in_rctx,
+        .res_cont = &sassign_res_rctx
+    };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -667,45 +673,53 @@ int main(int argc, char **argv) {
     suite sget_str_suite = {0};
     create_str_suite(&sget_str_suite, "bigInt_sget_str - String Assignment", 
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_rcon
     ); sget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_str,
         &inv_stobi_assign_nob, &stat_stobi_sget_str,
-        &cmp_inv_stobi_assign, &fmt_in_get_sstr, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_sstr, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // sget_strn() -- Base-prefix, Length param
     suite sget_strn_suite = {0};
     create_str_suite(&sget_strn_suite, "bigInt_sget_strn - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_rcon
     ); sget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_strn_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_sget_strn,
         &inv_stobi_assign_nob, &stat_stobi_sget_strn,
-        &cmp_inv_stobi_assign, &fmt_in_get_sstrn, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_sstrn, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // sget_strb() -- Base-param, No length param
     suite sget_strb_suite = {0};
     create_str_suite(&sget_strb_suite, "bigInt_sget_strb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_rcon
     ); sget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_strb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strb,
         &inv_stobi_assign_b, &stat_stobi_sget_strb,
-        &cmp_inv_stobi_assignb, &fmt_in_get_sstrb, &fmt_recon_stobi
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrb, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // sget_strnb() -- Base-param, Length param
     suite sget_strnb_suite = {0};
     create_str_suite(&sget_strnb_suite, "bigInt_sget_strnb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_icon
+        "../logs/bigInt_get_strsa.txt", sassign_ectx, &sassign_rcon
     ); sget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_strnb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_sget_strnb,
         &inv_stobi_assign_b, &stat_stobi_sget_strnb,
-        &cmp_inv_stobi_assignb, &fmt_in_get_sstrnb, &fmt_recon_stobi
+        &cmp_inv_stobi_assignb, &fmt_in_get_sstrnb, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
 

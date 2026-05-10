@@ -369,13 +369,19 @@ int main(int argc, char **argv) {
         conv_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else conv_omode = DNML_VOUT;
     u8 conv_ecount = 27, conv_scount = 4;
-    // Buffer Setup
+
+    // Edge-case Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t conv_rctx = {0}; str_res *ebuf_slices[conv_scount];
-    str_res fail_ebuf[(conv_ecount << 1) * conv_scount];
+    str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
     strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
-    input_container conv_incon = { .cont_type = CTX, .cont.rctx = &conv_rctx };
+    // Rand-case Buffer Setup:
+    rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
+    rand_container conv_rcon = { 
+        .in_cont_type = CTX,
+        .in_cont.rctx = &conv_in_rctx,
+        .res_cont = &conv_res_rctx
+    };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -383,45 +389,53 @@ int main(int argc, char **argv) {
     suite from_str_suite = {0};
     create_str_suite(&from_str_suite, "bigInt_from_str - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
     );
     fill_suite_rinv(&from_str_suite,
         &_stobi_conv_ingen_nob, &exec_stobi_from_str,
-        &inv_stobi_conv_nob, &stat_stobi_from_str, &cmp_inv_stobi_conv,
-        &fmt_in_from_str, &fmt_recon_stobi
+        &inv_stobi_conv_nob, &stat_stobi_from_str, 
+        &cmp_inv_stobi_conv, &fmt_in_from_str, &fmt_recon_stobi,
+        &_stobi_conv_inlink, &_stobi_conv_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // from_strn() -- Base-prefix, Length param
     suite from_strn_suite = {0};
     create_str_suite(&from_strn_suite, "bigInt_from_strn - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
     );
     fill_suite_rinv(&from_strn_suite,
         &_stobi_conv_ingen_nob, &exec_stobi_from_strn,
-        &inv_stobi_conv_nob, &stat_stobi_from_strn, &cmp_inv_stobi_conv,
-        &fmt_in_from_strn, &fmt_recon_stobi
+        &inv_stobi_conv_nob, &stat_stobi_from_strn,
+        &cmp_inv_stobi_conv, &fmt_in_from_strn, &fmt_recon_stobi,
+        &_stobi_conv_inlink, &_stobi_conv_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // from_strb() -- Base-param, No length param
     suite from_strb_suite = {0};
     create_str_suite(&from_strb_suite, "bigInt_from_strb - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
     );
     fill_suite_rinv(&from_strb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_from_strb,
-        &inv_stobi_conv_b, &stat_stobi_from_strb, &cmp_inv_stobi_convb,
-        &fmt_in_from_strb, &fmt_recon_stobi
+        &inv_stobi_conv_b, &stat_stobi_from_strb, 
+        &cmp_inv_stobi_convb, &fmt_in_from_strb, &fmt_recon_stobi,
+        &_stobi_conv_inlink, &_stobi_conv_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // from_strnb() -- Base-param, Length param
     suite from_strnb_suite = {0};
     create_str_suite(&from_strnb_suite, "bigInt_from_strnb - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_incon
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
     );
     fill_suite_rinv(&from_strnb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_from_strnb,
-        &inv_stobi_conv_b, &stat_stobi_from_strnb, &cmp_inv_stobi_convb,
-        &fmt_in_from_strnb, &fmt_recon_stobi
+        &inv_stobi_conv_b, &stat_stobi_from_strnb, 
+        &cmp_inv_stobi_convb, &fmt_in_from_strnb, &fmt_recon_stobi,
+        &_stobi_conv_inlink, &_stobi_conv_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
 

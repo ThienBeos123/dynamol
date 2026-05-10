@@ -375,13 +375,19 @@ int main(int argc, char **argv) {
         assign_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else assign_omode = DNML_VOUT;
     u8 assign_ecount = 27, assign_scount = 4;
-    // Buffer Setup
+
+    // Edge-case Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t assign_rctx = {0}; str_res *ebuf_slices[assign_scount];
-    str_res fail_ebuf[(assign_ecount << 1) * assign_scount];
+    str_res *ebuf_slices[assign_scount], fail_ebuf[(assign_ecount << 1) * assign_scount];
     strbump_t assign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, assign_ecount << 1, assign_scount, sizeof(str_res));
-    input_container assign_incon = { .cont_type = CTX, .cont.rctx = &assign_rctx };
+    // Rand-case Buffer Setup:
+    rctx_res_t assign_res_rctx = {0}; rctx_input_t assign_in_rctx = {0};
+    rand_container assign_rcon = { 
+        .in_cont_type = CTX,
+        .in_cont.rctx = &assign_in_rctx,
+        .res_cont = &assign_res_rctx
+    };
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -389,45 +395,53 @@ int main(int argc, char **argv) {
     suite get_str_suite = {0};
     create_str_suite(&get_str_suite, "bigInt_get_str - String Assignment", 
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
+        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon
     ); get_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_get_str,
         &inv_stobi_assign_nob, &stat_stobi_get_str,
-        &cmp_inv_stobi_assign, &fmt_in_get_str, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_str, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // get_strn() -- Base-prefix, Length param
     suite get_strn_suite = {0};
     create_str_suite(&get_strn_suite, "bigInt_get_strn - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
+        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon
     ); get_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strn_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_get_strn,
         &inv_stobi_assign_nob, &stat_stobi_get_strn,
-        &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi
+        &cmp_inv_stobi_assign, &fmt_in_get_strn, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     ); 
     // get_strb() -- Base-param, No length param
     suite get_strb_suite = {0};
     create_str_suite(&get_strb_suite, "bigInt_get_strb - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
+        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon
     ); get_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_get_strb,
         &inv_stobi_assign_b, &stat_stobi_get_strb,
-        &cmp_inv_stobi_assignb, &fmt_in_get_strb, &fmt_recon_stobi
+        &cmp_inv_stobi_assignb, &fmt_in_get_strb, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // get_strnb() -- Base-param, Length param
     suite get_strnb_suite = {0};
     create_str_suite(&get_strnb_suite, "bigInt_get_strnb - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_incon
+        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon
     ); get_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strnb_suite,
         &_stobi_assign_ingen_b, &exec_stobi_get_strnb,
         &inv_stobi_assign_b, &stat_stobi_get_strnb, 
-        &cmp_inv_stobi_assignb, &fmt_in_get_strnb, &fmt_recon_stobi
+        &cmp_inv_stobi_assignb, &fmt_in_get_strnb, &fmt_recon_stobi,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
 

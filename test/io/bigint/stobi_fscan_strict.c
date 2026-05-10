@@ -482,7 +482,7 @@ int main(int argc, char **argv) {
         sscan_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else sscan_omode = DNML_VOUT;
     u8 sscan_ecount = 32, sscan_scount = 2;
-    // Buffer and Test Cases Setup
+    // Test Cases Setup
     sscan_in_nob = fopen("input_files/bi_strict_scansa_nob.txt", "r");
     sscan_in_b = fopen("input_files/bi_strict_scansa_b.txt", "r");
     sscan_randin = fopen("input_files/bi_rand_io.txt", "r+");
@@ -497,12 +497,18 @@ int main(int argc, char **argv) {
     DNML_FOPEN_ERR(sscan_randin, "bi_rand_io.txt", "input_files/bi_rand_io.txt");
     setup_cases(sscan_in_nob, sscan_in_b, sscan_ecount);
     
+    // Edge Case Buffer Setup
     limb_t ectx_buf[88]; // Edge-case Memory Usage: 704 bytes
-    rctx_t sscan_rctx = {0}; str_res *ebuf_slices[sscan_scount];
-    str_res fail_ebuf[(sscan_ecount << 1) * sscan_scount];
-    strbump_t sscan_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    str_res *ebuf_slices[sscan_scount], fail_ebuf[(sscan_ecount << 1) * sscan_scount];
+    strbump_t sscan_ectx = { .ctx = ectx_buf, .off = 0, .size = 88 };
     _dist_buf(ebuf_slices, fail_ebuf, sscan_ecount << 1, sscan_scount, sizeof(str_res));
-    input_container scan_incon = { .cont_type = STREAM, .cont.stream = sscan_randin };
+    // Random Case Buffer Setup
+    rctx_res_t sscan_res_rctx = {0};
+    rand_container sscan_rcon = { 
+        .in_cont_type = STREAM,
+        .in_cont.stream = sscan_randin,
+        .res_cont = &sscan_res_rctx
+    };
 
 
     //* ---------------------------------- STRICT API SUITE ---------------------------------- *//
@@ -510,23 +516,27 @@ int main(int argc, char **argv) {
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan",
         sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", sscan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", sscan_ectx, &sscan_rcon
     ); fsscan_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&fsscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_fsscan,
         &inv_stobi_scan_nob, &stat_stobi_fscan_nobsa,
-        &cmp_inv_stobi_scan, &fmt_in_fsscan, &fmt_recon_stobi
+        &cmp_inv_stobi_scan, &fmt_in_fsscan, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // fsscanb() -- Base-param, No length param
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan",
         sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", sscan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", sscan_ectx, &sscan_rcon
     ); fsscanb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&fsscanb_suite,
         &_stobi_scan_ingen_b, &exec_stobi_fsscanb,
         &inv_stobi_scan_b, &stat_stobi_fscan_bsa,
-        &cmp_inv_stobi_scanb, &fmt_in_fsscanb, &fmt_recon_stobi
+        &cmp_inv_stobi_scanb, &fmt_in_fsscanb, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
 

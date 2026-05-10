@@ -384,12 +384,18 @@ int main(int argc, char **argv) {
     DNML_FOPEN_ERR(scan_randin, "bi_rand_io.txt", "input_files/bi_rand_io.txt");
     setup_cases(scan_in_nob, scan_in_b, scan_ecount);
     
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
-    rctx_t scan_rctx = {0}; str_res *ebuf_slices[scan_scount];
-    str_res fail_ebuf[(scan_ecount << 1) * scan_scount];
+    // Edge Case Buffer Setup
+    limb_t ectx_buf[19]; // Edge-case Memory Usage: 704 bytes
+    str_res *ebuf_slices[scan_scount], fail_ebuf[(scan_ecount << 1) * scan_scount];
     strbump_t scan_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, scan_ecount << 1, scan_scount, sizeof(str_res));
-    input_container scan_incon = { .cont_type = STREAM, .cont.stream = scan_randin };
+    // Random Case Buffer Setup
+    rctx_res_t scan_res_rctx = {0};
+    rand_container scan_rcon = {
+        .in_cont_type = STREAM,
+        .in_cont.stream = scan_randin,
+        .res_cont = &scan_res_rctx
+    };
 
 
     //* ---------------------------------- STANDARD API SUITE ---------------------------------- *//
@@ -397,23 +403,27 @@ int main(int argc, char **argv) {
     suite fscan_suite = {0};
     create_str_suite(&fscan_suite, "bigInt_fscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
     ); fscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_fscan,
         &inv_stobi_scan_nob, &stat_stobi_fscan_nob,
-        &cmp_inv_stobi_scan, &fmt_in_fscan, &fmt_recon_stobi
+        &cmp_inv_stobi_scan, &fmt_in_fscan, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // fscanb() -- Base-param, No length param
     suite fscanb_suite = {0};
     create_str_suite(&fscanb_suite, "bigInt_fscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
     ); fscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fscanb_suite,
         &_stobi_scan_ingen_b, &exec_stobi_fscanb,
         &inv_stobi_scan_b, &stat_stobi_fscan_b, 
-        &cmp_inv_stobi_scanb, &fmt_in_fscanb, &fmt_recon_stobi
+        &cmp_inv_stobi_scanb, &fmt_in_fscanb, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
     //* ---------------------------------- STRICT API SUITE ---------------------------------- *//
@@ -421,23 +431,27 @@ int main(int argc, char **argv) {
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
     ); fsscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fsscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_fsscan,
         &inv_stobi_scan_nob, &stat_stobi_fscan_nobsa,
-        &cmp_inv_stobi_scan, &fmt_in_fsscan, &fmt_recon_stobi
+        &cmp_inv_stobi_scan, &fmt_in_fsscan, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // fsscanb() -- Base-param, No length param
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
     ); fsscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fsscanb_suite,
         &_stobi_scan_ingen_b, &exec_stobi_fsscanb,
         &inv_stobi_scan_b, &stat_stobi_fscan_bsa,
-        &cmp_inv_stobi_scanb, &fmt_in_fsscanb, &fmt_recon_stobi
+        &cmp_inv_stobi_scanb, &fmt_in_fsscanb, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
     //* ---------------------------------- TRUNCATIVE API SUITE ---------------------------------- *//
@@ -445,23 +459,27 @@ int main(int argc, char **argv) {
     suite ftscan_suite = {0};
     create_str_suite(&ftscan_suite, "bigInt_ftscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
     ); ftscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&ftscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_ftscan,
         &inv_stobi_scan_nob, &stat_stobi_fscan_nobsa,
-        &cmp_inv_stobi_scan, &fmt_in_fsscan, &fmt_recon_stobi
+        &cmp_inv_stobi_scan, &fmt_in_fsscan, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
     // ftscanb() -- Base-param, No length param
     suite ftscanb_suite = {0};
     create_str_suite(&ftscanb_suite, "bigInt_ftscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_incon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
     ); ftscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&ftscanb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_ftscanb,
         &inv_stobi_scan_b, &stat_stobi_fscan_bsa,
-        &cmp_inv_stobi_scanb, &fmt_in_fsscanb, &fmt_recon_stobi
+        &cmp_inv_stobi_scanb, &fmt_in_fsscanb, &fmt_recon_stobi,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_recon_linker, &_stobi_recon_size
     );
 
 
