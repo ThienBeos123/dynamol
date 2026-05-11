@@ -22,9 +22,10 @@ typedef struct _libdnml_session {
     int box_width;
 } _libdnml_session;
 
-// Type-specific Limitations
+// Type-specific Limitations - INPUT
 #define BIGINT_CAP 48
 #define STR_CAP 512
+// Type-specific Limitations - PRINTING
 #define STR_PREVIEW 64
 #define BIGINT_PREVIEW 4
 

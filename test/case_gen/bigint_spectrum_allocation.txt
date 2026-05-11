@@ -1,0 +1,525 @@
+================================================================================
+BIGINT RANDOMIZATION - BALANCED PROBABILITY SPECTRUM
+Focus: Discrete case enum with probability ranges that sum to 100%
+================================================================================
+
+KEY INSIGHT:
+Instead of independent float probabilities (sum > 100%), use a spectrum:
+- Assign min/max range for each case type
+- Seed one probability value per case
+- Redistribute surplus/deficit across other cases
+- Result: sum always = 100%, distribution controlled by ranges
+
+
+================================================================================
+1. CASE TYPE ENUM (DISCRETE)
+================================================================================
+
+typedef enum {
+    // VALID CANONICAL CASES (Target: 15-25%)
+    CASE_ZERO,                 // All limbs = 0, n = 1
+    CASE_ONE,                  // limbs[0] = 1, n = 1
+    CASE_NEGATIVE_ONE,         // limbs[0] = 1, n = 1, sign = -1
+    CASE_SMALL_POSITIVE,       // Single limb, value in [2, 2^32)
+    CASE_SMALL_NEGATIVE,       // Single limb, negative
+    
+    // SIZE BOUNDARIES (Target: 20-30%)
+    CASE_SINGLE_LIMB_NONZERO,  // n = 1, limbs[0] != 0
+    CASE_EXACTLY_CAPACITY,     // n == cap
+    CASE_NEAR_CAPACITY,        // n == cap - 1
+    CASE_SPARSE_QUARTER,       // n == cap / 4
+    CASE_SPARSE_HALF,          // n == cap / 2
+    
+    // LIMB PATTERNS (Target: 25-35%)
+    CASE_ALL_ZEROS,            // All limbs = 0
+    CASE_ALL_ONES,             // All limbs = 0xFFFF...
+    CASE_ALTERNATING,          // 0x5555.../0xAAAA...
+    CASE_HIGH_BIT_SET,         // All MSB = 1
+    CASE_LOW_BIT_SET,          // All LSB = 1
+    CASE_MIXED_MAGNITUDE,      // Varied limb sizes
+    CASE_POWER_OF_TWO,         // Single bit set
+    
+    // SIGN & REPRESENTATION (Target: 15-20%)
+    CASE_LEADING_ZERO_LIMBS,   // High limbs = 0, n > 1
+    CASE_NEGATIVE_MAX,         // -(all 0xFFFF...)
+    CASE_SIGN_BOUNDARY,        // 2^64-1, 2^64, etc.
+    CASE_ZERO_NEGATIVE,        // -0 edge case
+    
+    // BASE-SPECIFIC (Target: 5-15%)
+    CASE_POWER_OF_BASE_2,      // 2^K
+    CASE_POWER_OF_BASE_8,      // 8^K
+    CASE_POWER_OF_BASE_10,     // 10^K
+    CASE_POWER_OF_BASE_16,     // 16^K
+    
+    BIGINT_CASE_COUNT          // Total count (24 cases)
+} bigint_case_type;
+
+
+================================================================================
+2. PROBABILITY RANGE CONFIGURATION STRUCT
+================================================================================
+
+typedef struct {
+    // Min/max probability range (as percentages 0-100) for each case
+    struct {
+        uint8_t min;
+        uint8_t max;
+    } prob_range[BIGINT_CASE_COUNT];
+    
+} bigint_case_spectrum;
+
+
+================================================================================
+3. PROBABILITY ALLOCATION RESULT STRUCT
+================================================================================
+
+typedef struct {
+    // Assigned probability for each case (sum always = 100%)
+    uint8_t probability[BIGINT_CASE_COUNT];
+    
+} bigint_case_allocation;
+
+
+================================================================================
+4. PRESET CONFIGURATIONS
+================================================================================
+
+/**
+ * Balanced configuration: all case types equally likely
+ */
+bigint_case_spectrum spectrum_balanced(void) {
+    bigint_case_spectrum spec = {0};
+    
+    // Each case gets roughly equal range (4-6% each)
+    // CANONICAL (5 cases): 3-6% each
+    spec.prob_range[CASE_ZERO].min = 3;
+    spec.prob_range[CASE_ZERO].max = 6;
+    spec.prob_range[CASE_ONE].min = 3;
+    spec.prob_range[CASE_ONE].max = 6;
+    spec.prob_range[CASE_NEGATIVE_ONE].min = 3;
+    spec.prob_range[CASE_NEGATIVE_ONE].max = 6;
+    spec.prob_range[CASE_SMALL_POSITIVE].min = 3;
+    spec.prob_range[CASE_SMALL_POSITIVE].max = 6;
+    spec.prob_range[CASE_SMALL_NEGATIVE].min = 3;
+    spec.prob_range[CASE_SMALL_NEGATIVE].max = 6;
+    
+    // SIZE BOUNDARIES (5 cases): 3-6% each
+    spec.prob_range[CASE_SINGLE_LIMB_NONZERO].min = 3;
+    spec.prob_range[CASE_SINGLE_LIMB_NONZERO].max = 6;
+    spec.prob_range[CASE_EXACTLY_CAPACITY].min = 3;
+    spec.prob_range[CASE_EXACTLY_CAPACITY].max = 6;
+    spec.prob_range[CASE_NEAR_CAPACITY].min = 3;
+    spec.prob_range[CASE_NEAR_CAPACITY].max = 6;
+    spec.prob_range[CASE_SPARSE_QUARTER].min = 3;
+    spec.prob_range[CASE_SPARSE_QUARTER].max = 6;
+    spec.prob_range[CASE_SPARSE_HALF].min = 3;
+    spec.prob_range[CASE_SPARSE_HALF].max = 6;
+    
+    // PATTERNS (8 cases): 3-6% each
+    spec.prob_range[CASE_ALL_ZEROS].min = 3;
+    spec.prob_range[CASE_ALL_ZEROS].max = 6;
+    spec.prob_range[CASE_ALL_ONES].min = 3;
+    spec.prob_range[CASE_ALL_ONES].max = 6;
+    spec.prob_range[CASE_ALTERNATING].min = 3;
+    spec.prob_range[CASE_ALTERNATING].max = 6;
+    spec.prob_range[CASE_HIGH_BIT_SET].min = 3;
+    spec.prob_range[CASE_HIGH_BIT_SET].max = 6;
+    spec.prob_range[CASE_LOW_BIT_SET].min = 3;
+    spec.prob_range[CASE_LOW_BIT_SET].max = 6;
+    spec.prob_range[CASE_MIXED_MAGNITUDE].min = 3;
+    spec.prob_range[CASE_MIXED_MAGNITUDE].max = 6;
+    spec.prob_range[CASE_POWER_OF_TWO].min = 3;
+    spec.prob_range[CASE_POWER_OF_TWO].max = 6;
+    
+    // SIGN & REPRESENTATION (4 cases): 3-6% each
+    spec.prob_range[CASE_LEADING_ZERO_LIMBS].min = 3;
+    spec.prob_range[CASE_LEADING_ZERO_LIMBS].max = 6;
+    spec.prob_range[CASE_NEGATIVE_MAX].min = 3;
+    spec.prob_range[CASE_NEGATIVE_MAX].max = 6;
+    spec.prob_range[CASE_SIGN_BOUNDARY].min = 3;
+    spec.prob_range[CASE_SIGN_BOUNDARY].max = 6;
+    spec.prob_range[CASE_ZERO_NEGATIVE].min = 3;
+    spec.prob_range[CASE_ZERO_NEGATIVE].max = 6;
+    
+    // BASE-SPECIFIC (4 cases): 3-6% each
+    spec.prob_range[CASE_POWER_OF_BASE_2].min = 3;
+    spec.prob_range[CASE_POWER_OF_BASE_2].max = 6;
+    spec.prob_range[CASE_POWER_OF_BASE_8].min = 3;
+    spec.prob_range[CASE_POWER_OF_BASE_8].max = 6;
+    spec.prob_range[CASE_POWER_OF_BASE_10].min = 3;
+    spec.prob_range[CASE_POWER_OF_BASE_10].max = 6;
+    spec.prob_range[CASE_POWER_OF_BASE_16].min = 3;
+    spec.prob_range[CASE_POWER_OF_BASE_16].max = 6;
+    
+    return spec;
+}
+
+/**
+ * Edge-case focused: prioritize boundaries and patterns
+ */
+bigint_case_spectrum spectrum_edge_focused(void) {
+    bigint_case_spectrum spec = {0};
+    
+    // CANONICAL (5 cases): 2-4% each (lower priority)
+    for (int i = CASE_ZERO; i <= CASE_SMALL_NEGATIVE; i++) {
+        spec.prob_range[i].min = 2;
+        spec.prob_range[i].max = 4;
+    }
+    
+    // SIZE BOUNDARIES (5 cases): 8-12% each (high priority)
+    for (int i = CASE_SINGLE_LIMB_NONZERO; i <= CASE_SPARSE_HALF; i++) {
+        spec.prob_range[i].min = 8;
+        spec.prob_range[i].max = 12;
+    }
+    
+    // PATTERNS (8 cases): 5-8% each (medium-high priority)
+    for (int i = CASE_ALL_ZEROS; i <= CASE_POWER_OF_TWO; i++) {
+        spec.prob_range[i].min = 5;
+        spec.prob_range[i].max = 8;
+    }
+    
+    // SIGN & REPRESENTATION (4 cases): 6-10% each (medium-high priority)
+    for (int i = CASE_LEADING_ZERO_LIMBS; i <= CASE_ZERO_NEGATIVE; i++) {
+        spec.prob_range[i].min = 6;
+        spec.prob_range[i].max = 10;
+    }
+    
+    // BASE-SPECIFIC (4 cases): 3-6% each (lower priority)
+    for (int i = CASE_POWER_OF_BASE_2; i <= CASE_POWER_OF_BASE_16; i++) {
+        spec.prob_range[i].min = 3;
+        spec.prob_range[i].max = 6;
+    }
+    
+    return spec;
+}
+
+/**
+ * Clean/simple: prioritize canonical and single-limb cases
+ */
+bigint_case_spectrum spectrum_clean(void) {
+    bigint_case_spectrum spec = {0};
+    
+    // CANONICAL (5 cases): 10-15% each (very high priority)
+    for (int i = CASE_ZERO; i <= CASE_SMALL_NEGATIVE; i++) {
+        spec.prob_range[i].min = 10;
+        spec.prob_range[i].max = 15;
+    }
+    
+    // SIZE BOUNDARIES (5 cases): 8-12% each (high priority)
+    for (int i = CASE_SINGLE_LIMB_NONZERO; i <= CASE_SPARSE_HALF; i++) {
+        spec.prob_range[i].min = 8;
+        spec.prob_range[i].max = 12;
+    }
+    
+    // PATTERNS (8 cases): 2-5% each (low priority)
+    for (int i = CASE_ALL_ZEROS; i <= CASE_POWER_OF_TWO; i++) {
+        spec.prob_range[i].min = 2;
+        spec.prob_range[i].max = 5;
+    }
+    
+    // SIGN & REPRESENTATION (4 cases): 2-5% each (low priority)
+    for (int i = CASE_LEADING_ZERO_LIMBS; i <= CASE_ZERO_NEGATIVE; i++) {
+        spec.prob_range[i].min = 2;
+        spec.prob_range[i].max = 5;
+    }
+    
+    // BASE-SPECIFIC (4 cases): 1-3% each (very low priority)
+    for (int i = CASE_POWER_OF_BASE_2; i <= CASE_POWER_OF_BASE_16; i++) {
+        spec.prob_range[i].min = 1;
+        spec.prob_range[i].max = 3;
+    }
+    
+    return spec;
+}
+
+
+================================================================================
+5. PROBABILITY ALLOCATION ALGORITHM
+================================================================================
+
+/**
+ * Allocate probabilities to sum exactly to 100%
+ * 
+ * Algorithm:
+ *   1. Seed each case with random probability in its [min, max] range
+ *   2. Calculate total (likely != 100)
+ *   3. For each case, redistribute surplus/deficit proportionally
+ *   4. Verify sum == 100
+ * 
+ * Time: O(n) where n = case count (24)
+ */
+bigint_case_allocation bigint_allocate_spectrum(
+    const bigint_case_spectrum *spec,
+    xoshiro256_state *entropy
+) {
+    bigint_case_allocation alloc = {0};
+    int total = 0;
+    
+    // Step 1: Seed initial probabilities within ranges
+    for (int i = 0; i < BIGINT_CASE_COUNT; i++) {
+        uint8_t min = spec->prob_range[i].min;
+        uint8_t max = spec->prob_range[i].max;
+        
+        // Ensure valid range
+        if (min > max) {
+            min = max;
+        }
+        if (min == max) {
+            alloc.probability[i] = min;
+        } else {
+            alloc.probability[i] = __rng_range(entropy, min, max);
+        }
+        
+        total += alloc.probability[i];
+    }
+    
+    // Step 2: Calculate surplus/deficit
+    int delta = 100 - total;  // Positive = need to add, negative = need to remove
+    
+    // Step 3: Redistribute proportionally across cases
+    if (delta != 0) {
+        bigint_redistribute_delta(&alloc, spec, delta);
+    }
+    
+    // Step 4: Verify and clamp (safety)
+    int final_total = 0;
+    for (int i = 0; i < BIGINT_CASE_COUNT; i++) {
+        final_total += alloc.probability[i];
+    }
+    assert(final_total == 100);
+    
+    return alloc;
+}
+
+
+/**
+ * Redistribute delta across cases while respecting [min, max] bounds
+ * 
+ * Algorithm:
+ *   - While delta != 0:
+ *     - Pick random case that can accept adjustment
+ *     - Increase/decrease its probability by 1
+ *     - Update delta
+ *   - Repeat until balanced
+ * 
+ * Ensures no case exceeds max or goes below min
+ */
+static void bigint_redistribute_delta(
+    bigint_case_allocation *alloc,
+    const bigint_case_spectrum *spec,
+    int delta
+) {
+    xoshiro256_state temp_entropy = {0};  // TODO: pass entropy properly
+    
+    while (delta != 0) {
+        // Pick random case to adjust
+        int case_idx = __rng_range(&temp_entropy, 0, BIGINT_CASE_COUNT - 1);
+        
+        uint8_t min = spec->prob_range[case_idx].min;
+        uint8_t max = spec->prob_range[case_idx].max;
+        uint8_t current = alloc->probability[case_idx];
+        
+        if (delta > 0) {
+            // Need to add probability
+            if (current < max) {
+                alloc->probability[case_idx]++;
+                delta--;
+            }
+        } else {
+            // Need to remove probability
+            if (current > min) {
+                alloc->probability[case_idx]--;
+                delta++;
+            }
+        }
+    }
+}
+
+
+/**
+ * Alternative: Greedy redistribution (faster, simpler)
+ * Adjust cases in order until balanced
+ */
+static void bigint_redistribute_delta_greedy(
+    bigint_case_allocation *alloc,
+    const bigint_case_spectrum *spec,
+    int delta
+) {
+    if (delta > 0) {
+        // Add probability: iterate forward
+        for (int i = 0; i < BIGINT_CASE_COUNT && delta > 0; i++) {
+            uint8_t max = spec->prob_range[i].max;
+            uint8_t current = alloc->probability[i];
+            
+            uint8_t available = max - current;
+            uint8_t to_add = (available < delta) ? available : delta;
+            
+            alloc->probability[i] += to_add;
+            delta -= to_add;
+        }
+    } else {
+        // Remove probability: iterate backward
+        for (int i = BIGINT_CASE_COUNT - 1; i >= 0 && delta < 0; i--) {
+            uint8_t min = spec->prob_range[i].min;
+            uint8_t current = alloc->probability[i];
+            
+            uint8_t available = current - min;
+            uint8_t to_remove = (available < -delta) ? available : -delta;
+            
+            alloc->probability[i] -= to_remove;
+            delta += to_remove;
+        }
+    }
+}
+
+
+================================================================================
+6. CASE SELECTION FROM ALLOCATION
+================================================================================
+
+/**
+ * Select a case type based on allocated probabilities
+ * 
+ * Uses weighted sampling: generate uniform random [0, 100],
+ * accumulate probabilities, return first case that exceeds threshold
+ */
+bigint_case_type bigint_select_case(
+    const bigint_case_allocation *alloc,
+    xoshiro256_state *entropy
+) {
+    uint8_t threshold = __rng_range(entropy, 0, 99);
+    uint8_t cumulative = 0;
+    
+    for (int i = 0; i < BIGINT_CASE_COUNT; i++) {
+        cumulative += alloc->probability[i];
+        if (threshold < cumulative) {
+            return (bigint_case_type)i;
+        }
+    }
+    
+    // Fallback (should not happen if sum == 100)
+    return CASE_ZERO;
+}
+
+
+================================================================================
+7. RANDOMIZATION CONFIG STRUCT (SIMPLIFIED)
+================================================================================
+
+typedef struct {
+    // RNG state
+    xoshiro256_state base_state;
+    
+    // Case distribution strategy
+    bigint_case_spectrum spectrum;
+    bigint_case_allocation allocation;  // Computed once at init
+    
+    // Generation parameters
+    size_t min_cap;
+    size_t max_cap;
+    
+    // Determinism & logging
+    bool verbose;
+    
+} bigint_rand_mod;
+
+
+/**
+ * Initialize randomization config
+ */
+void bigint_rand_config_init(
+    bigint_rand_mod *cfg,
+    xoshiro256_state *entropy,
+    const bigint_case_spectrum *spectrum
+) {
+    cfg->base_state = *entropy;
+    cfg->spectrum = *spectrum;
+    cfg->allocation = bigint_allocate_spectrum(spectrum, entropy);
+    cfg->min_cap = 1;
+    cfg->max_cap = 48;
+    cfg->verbose = false;
+    
+    if (cfg->verbose) {
+        printf("Probability Allocation:\n");
+        for (int i = 0; i < BIGINT_CASE_COUNT; i++) {
+            printf("  Case %d: %u%%\n", i, cfg->allocation.probability[i]);
+        }
+    }
+}
+
+
+================================================================================
+8. USAGE EXAMPLE
+================================================================================
+
+void run_bitos_randomized_tests(void) {
+    xoshiro256_state entropy = entropy_init();
+    
+    // Choose spectrum (or create custom)
+    bigint_case_spectrum spectrum = spectrum_edge_focused();
+    
+    // Initialize randomization config (computes allocation)
+    bigint_rand_mod cfg = {0};
+    bigint_rand_config_init(&cfg, &entropy, &spectrum);
+    
+    // Generate 10000 test cases
+    for (int test = 0; test < 10000; test++) {
+        // Select case type based on allocation
+        bigint_case_type case_type = bigint_select_case(&cfg.allocation, &cfg.base_state);
+        
+        // Generate bigint for this case type
+        uint64_t limbs[48];
+        bigint_gen_context ctx = { .limbs = limbs };
+        bigint_rand_generate_case(&cfg, case_type, &ctx);
+        
+        // Test each base
+        for (int base = 2; base <= 64; base += (base == 2 ? 6 : base == 8 ? 2 : 
+                                                   base == 10 ? 6 : base == 16 ? 48 : 0)) {
+            char buf[3072];
+            dnml_status res = bitos_strict(
+                ctx.limbs, ctx.n, ctx.sign,
+                buf, 3072, base
+            );
+            
+            // Verify...
+        }
+    }
+}
+
+
+================================================================================
+9. VERIFY ALLOCATION
+================================================================================
+
+/**
+ * Debug function: verify allocation sums to 100 and respects bounds
+ */
+bool bigint_verify_allocation(
+    const bigint_case_allocation *alloc,
+    const bigint_case_spectrum *spec
+) {
+    int total = 0;
+    
+    for (int i = 0; i < BIGINT_CASE_COUNT; i++) {
+        uint8_t prob = alloc->probability[i];
+        uint8_t min = spec->prob_range[i].min;
+        uint8_t max = spec->prob_range[i].max;
+        
+        // Check bounds
+        if (prob < min || prob > max) {
+            printf("ERROR: Case %d probability %u out of range [%u, %u]\n",
+                   i, prob, min, max);
+            return false;
+        }
+        
+        total += prob;
+    }
+    
+    // Check sum
+    if (total != 100) {
+        printf("ERROR: Total probability %d != 100\n", total);
+        return false;
+    }
+    
+    return true;
+}

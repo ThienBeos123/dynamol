@@ -167,7 +167,12 @@ void _stobi_init_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, r
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, true, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, true, state);
     strgen_write(vin->str, STR_CAP, &config, true);
     vin->len = config.str_len; vin->base = config.base; // Base is set for safety
 }
@@ -179,7 +184,12 @@ void _stobi_init_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, ran
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, false, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, false, state);
     strgen_write(vin->str, STR_CAP, &config, false);
     vin->len = config.str_len; vin->base = config.base;
 }
@@ -191,7 +201,12 @@ void _stobi_conv_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, r
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, true, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, true, state);
     strgen_write(vin->str, STR_CAP, &config, true);
     vin->len = config.str_len; vin->base = config.base; // Base is set for safety
 }
@@ -203,7 +218,12 @@ void _stobi_conv_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, ran
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, false, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, false, state);
     strgen_write(vin->str, STR_CAP, &config, false);
     vin->len = config.str_len; vin->base = config.base;
 }
@@ -215,7 +235,12 @@ void _stobi_assign_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap,
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, true, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, true, state);
     strgen_write(vin->str, STR_CAP, &config, true);
     vin->len = config.str_len; vin->base = config.base; // Base is set for safety
     vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
@@ -228,7 +253,12 @@ void _stobi_assign_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, r
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, false, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, false, state);
     strgen_write(vin->str, STR_CAP, &config, false);
     vin->len = config.str_len; vin->base = config.base;
     vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
@@ -241,7 +271,12 @@ void _stobi_scan_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, r
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, true, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, true, state);
     strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, true);
     fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config.str_len, vin->stream);
     memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config.base;
@@ -255,7 +290,12 @@ void _stobi_scan_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, ran
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; strgen_init_sesh(&config, false, state);
+    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    switch (rand_gmode) {
+        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_init_sesh(&config, false, state);
     strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, false);
     fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config.str_len, vin->stream);
     memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config.base;

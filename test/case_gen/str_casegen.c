@@ -23,22 +23,21 @@
 *          or another specialized entropy-collection function that supports
 *          at least the dispatching of MacOS, Linux, AND Windows (64 bit).
 *
-*   - Note 2 - str_casegen.h SPECIFIC
-*       +) It is expected that any usage of str_casegen.h must first use the
+*   - Note 2 - str_casegen.c SPECIFIC
+*       +) It is expected that any usage of str_casegen.c must first use the
 *          function strgen_init_sesh() to initialize a string generation instance
-*          with satisfactory, entropy-filled base-state from our simple PRNG.
+*          with satisfactory, entropy-filled base-state for our simple PRNG.
 *
 *       +) It is expected that any buffer regarding the containment of a randomly-
-*          generated numerical-string instance from str_casegen.h / strgen_write()
-*          must be initialized with the size of 512 BYTES, as specifically returned
-*          from strgen_len(). Additionally, it is preferred for the container/buffer
-*          for the randomly-generated numerical string to be newly initialized 
-*          (whether stack, arena, or heap) AND/OR empty
+*          generated numerical-string instance from str_casegen.c / strgen_write()
+*          must be initialized with the size of 512 BYTES. Additionally, it is preferred 
+*          for the container/buffer of the randomly-generated numerical string to be newly 
+*          initialized (whether stack, arena, or heap) AND/OR empty
 */
 
 //* ----------------------------------- TYPES & CONTAINERS ----------------------------------- *//
 const component_prob_t prob_matrix[3][8] = {
-    [ CLEAN_MODE ] = {
+    [ STR_CLEAN_MODE ] = {
         {5.2f, 1, 1}, {0, 0, 0},
         {50.0f, 1, 1, 0.0f, 0.0f}, // Signs 
         {50.0f, 1, 1, 0.0f, 0.0f}, // Base-prefix
@@ -47,7 +46,7 @@ const component_prob_t prob_matrix[3][8] = {
         {0.0f, 0, 0, 0.0f, 0.0f}, // Early Null
         {0.0f} // Shuffle Chance
     },
-    [ STANDARD_MODE ] = {
+    [ STR_STANDARD_MODE ] = {
         {30.5f, 2, 4}, {27.6f, 1, 6},
         {75.0f, 1, 1, 0.0f, 0.0f}, // Signs
         {67.67f, 1, 2, 0.4f, 5.7f}, // Base-prefix
@@ -56,7 +55,7 @@ const component_prob_t prob_matrix[3][8] = {
         {0.01f, 0, 0, 0.0001f, 0.005f}, // Early Null
         {0.00004f} // Shuffle Chance
     },
-    [ FAULTY_MODE ] = {
+    [ STR_FAULTY_MODE ] = {
         {50.0f, 2, 10}, {50.0f, 2, 16},
         {95.0f, 1, 2, 12.34f, 45.25f}, // Sign
         {90.0f, 1, 4, 45.25f, 78.6f}, // Base-prefix
@@ -67,9 +66,9 @@ const component_prob_t prob_matrix[3][8] = {
     },
 };
 const uint8_t drift_vector[3][4] = {
-    [ CLEAN_MODE ] = {0, 0, 0, 0},
-    [ STANDARD_MODE ] = {3, 6, 7, 16},
-    [ FAULTY_MODE ] = {1, 2, 3, 24}
+    [ STR_CLEAN_MODE ] = {0, 0, 0, 0},
+    [ STR_STANDARD_MODE ] = {3, 6, 7, 16},
+    [ STR_FAULTY_MODE ] = {1, 2, 3, 24}
 };
 char junk_candidates[256] = {0};
 uint8_t junk_pool_size = 0;
@@ -120,7 +119,7 @@ static inline char __get_valdigit(uint8_t base, xoshiro256_state *state) {
 }
 // Component Determinators
 SLV _strgen_rseed_include(str_rand_mod* config, bool bprefix) {
-    gen_mode i = config->mod_gen_mode;
+    str_gen_mode i = config->mod_gen_mode;
     float curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
     // ----- 1. Collateral Component Inclusion Filling -----
     config->whitespace = (curr_roll < prob_matrix[i][0].chance) ? true : false;
@@ -144,7 +143,7 @@ SLV _strgen_rseed_include(str_rand_mod* config, bool bprefix) {
     config->inval_digit = (curr_roll < prob_matrix[i][5].chance) ? true : false;
 }
 SLV _strgen_rseed_quant(str_rand_mod* config, bool bprefix) {
-    gen_mode i = config->mod_gen_mode; float curr_roll = 0;
+    str_gen_mode i = config->mod_gen_mode; float curr_roll = 0;
     // ----- 1. Whitespace & Leading Zeros -----
     config->wscount = (config->whitespace) ? __rng_range(&config->base_state,
     prob_matrix[i][0].low_qbound, prob_matrix[i][0].high_qbound) : 0;
@@ -188,7 +187,7 @@ SLV _strgen_rseed_quant(str_rand_mod* config, bool bprefix) {
 }
 SLV _strgen_bias_shuffle(str_rand_mod *config, str_areas *order) {
     float roll = xoshiro256pp_fnext01(&config->base_state);
-    gen_mode i = config->mod_gen_mode;
+    str_gen_mode i = config->mod_gen_mode;
     if (roll > prob_matrix[i][7].chance) return;
     roll = xoshiro256pp_fnext01(&config->base_state);
     if (roll < 0.6f) {

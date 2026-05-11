@@ -1,0 +1,483 @@
+================================================================================
+BIGINT RANDOMIZATION FRAMEWORK FOR DNML TESTING (REVISED)
+Focus: Valid and edge cases only (no faulty/corrupted states)
+Struct: limb_t *limbs, size_t n, size_t cap, int8_t sign
+================================================================================
+
+KEY CHANGE:
+Removed FAULTY cases (n > cap, invalid sign) that trigger assert() failures.
+Added more EDGE cases that are valid but reveal subtle bugs:
+- Limb patterns (zeros, max, alternating, sparse, dense)
+- Sign transitions and negative zero handling
+- Boundary conditions (n == cap, n == 1, n == cap-1)
+- Base-specific edge cases (binary leading 1, octal alignment, etc.)
+
+
+================================================================================
+1. CASE CATEGORIES FOR BIGINT GENERATION (VALID + EDGE ONLY)
+================================================================================
+
+typedef enum {
+    // VALID CANONICAL CASES (20%)
+    CASE_ZERO,                 // All limbs = 0, n = 1, sign = 1 (zero)
+    CASE_ONE,                  // limbs[0] = 1, n = 1, sign = 1
+    CASE_NEGATIVE_ONE,         // limbs[0] = 1, n = 1, sign = -1
+    CASE_SMALL_POSITIVE,       // Single limb, value in [2, 2^32)
+    CASE_SMALL_NEGATIVE,       // Single limb, value in [2, 2^32), sign = -1
+    
+    // EDGE CASES: SIZE BOUNDARIES (25%)
+    CASE_SINGLE_LIMB_NONZERO,  // n = 1, limbs[0] != 0, sign in {-1, 1}
+    CASE_EXACTLY_CAPACITY,     // n == cap (fully packed)
+    CASE_NEAR_CAPACITY,        // n == cap - 1 (one limb away from full)
+    CASE_SPARSE_QUARTER,       // n == cap / 4 (sparse: 25% utilized)
+    CASE_SPARSE_HALF,          // n == cap / 2 (half utilized)
+    
+    // EDGE CASES: LIMB PATTERNS (25%)
+    CASE_ALL_ZEROS,            // All limbs = 0 (but mathematically zero)
+    CASE_ALL_ONES,             // All limbs = 0xFFFFFFFFFFFFFFFF (max value)
+    CASE_ALTERNATING_PATTERN,  // Limbs alternate 0x5555... and 0xAAAA...
+    CASE_HIGH_BIT_SET,         // All limbs have MSB = 1 (0x8000... and variants)
+    CASE_LOW_BIT_SET,          // All limbs have LSB = 1 (odd values)
+    CASE_MIXED_MAGNITUDE,      // First limbs large, last limbs small (or vice versa)
+    CASE_POWER_OF_TWO,         // Value = 2^K for some K (single bit set)
+    
+    // EDGE CASES: REPRESENTATION & SIGN (20%)
+    CASE_LEADING_ZERO_LIMBS,   // High limbs = 0, but n > 1 (redundant representation)
+    CASE_NEGATIVE_MAX,         // -(all limbs = 0xFFFF...) (minimum value)
+    CASE_SIGN_BOUNDARY,        // Value near sign change (e.g., 2^64-1 to 2^64)
+    CASE_ZERO_NEGATIVE,        // Zero with sign = -1 (edge: -0 normalizes to +0)
+    
+    // EDGE CASES: BASE-SPECIFIC (10%)
+    CASE_POWER_OF_BASE_2,      // Value = 2^K (powers of binary base)
+    CASE_POWER_OF_BASE_8,      // Value = 8^K (powers of octal base)
+    CASE_POWER_OF_BASE_10,     // Value = 10^K (powers of decimal base)
+    CASE_POWER_OF_BASE_16,     // Value = 16^K (powers of hex base)
+} bigint_case_type;
+
+
+================================================================================
+2. GENERATION MODES (CLEAN AND EDGE ONLY)
+================================================================================
+
+typedef enum {
+    GEN_CLEAN,                 // Only simple valid cases (ZERO, ONE, small values)
+    GEN_EDGE,                  // Edge cases: boundaries, patterns, sign edge cases
+    GEN_MIXED                  // 60% CLEAN, 40% EDGE (realistic distribution)
+} bigint_gen_mode;
+
+
+================================================================================
+3. RANDOMIZATION CONFIG STRUCT
+================================================================================
+
+typedef struct {
+    // RNG state
+    xoshiro256_state base_state;
+    
+    // Generation parameters
+    bigint_gen_mode mode;
+    
+    // Capacity bounds (for new bigint allocation)
+    size_t min_cap;            // e.g., 1
+    size_t max_cap;            // e.g., 48
+    
+    // Size distribution (only for valid cases)
+    // How to distribute n uniformly in [1, cap]
+    float density;             // 0.0 = always n=1, 1.0 = always n=cap
+    bool force_exact_fit;      // If true, always n == cap
+    bool force_sparse;         // If true, always n in [1, cap/4]
+    
+    // Value patterns (what to put in limbs)
+    float prob_zero_limb;      // Probability any single limb = 0
+    float prob_max_limb;       // Probability any single limb = 0xFFFF...FFFF
+    float prob_alternating;    // Probability of pattern 0x5555.../0xAAAA...
+    float prob_random;         // Probability of full entropy per limb
+    float prob_power_of_two;   // Probability value = 2^K
+    
+    // Sign distribution
+    float prob_negative;       // Probability sign = -1 (vs. +1)
+    
+    // Edge case injection (EDGE and MIXED modes)
+    float prob_leading_zeros;  // High limbs = 0 despite n > 1
+    float prob_near_capacity;  // Force n == cap - k for some small k
+    float prob_power_of_base;  // Inject power-of-base values
+    
+    // Verbosity
+    bool verbose;              // Log generated cases
+    
+} bigint_rand_mod;
+
+
+================================================================================
+4. GENERATION CONTEXT (OUTPUT)
+================================================================================
+
+typedef struct {
+    // The generated bigint
+    size_t cap;
+    size_t n;
+    int8_t sign;
+    uint64_t *limbs;           // Caller allocates and owns
+    
+    // Metadata about generation
+    bigint_case_type case_type;
+    const char *case_name;     // "ZERO", "POWER_OF_TWO", etc.
+    
+    // Optional: for validation/debugging
+    float numerical_magnitude; // Approximate log value (for cross-checks)
+    
+} bigint_gen_context;
+
+
+================================================================================
+5. GENERATION FUNCTIONS (API)
+================================================================================
+
+/**
+ * Initialize randomization config with sensible defaults
+ */
+void bigint_rand_config_init(
+    bigint_rand_mod *cfg,
+    xoshiro256_state *entropy,
+    bigint_gen_mode mode
+);
+
+/**
+ * Generate a random bigint case into pre-allocated context
+ * Caller provides limbs buffer of size cfg->max_cap
+ */
+void bigint_rand_generate(
+    const bigint_rand_mod *cfg,
+    bigint_gen_context *out
+);
+
+/**
+ * Generate specific case type (deterministic choice)
+ */
+void bigint_rand_generate_case(
+    const bigint_rand_mod *cfg,
+    bigint_case_type case,
+    bigint_gen_context *out
+);
+
+/**
+ * Generate batch of N random cases with weighted distribution
+ */
+void bigint_rand_generate_batch(
+    const bigint_rand_mod *cfg,
+    size_t count,
+    bigint_gen_context *out_cases
+);
+
+/**
+ * Pretty-print a generated case for debugging
+ */
+void bigint_rand_print_case(const bigint_gen_context *ctx);
+
+
+================================================================================
+6. GENERATION LOGIC (PSEUDOCODE)
+================================================================================
+
+FUNCTION generate_case(cfg, out):
+    // 1. Decide capacity (always valid: cap >= 1)
+    capacity = rng_range(cfg->min_cap, cfg->max_cap)
+    
+    // 2. Decide size (n) - always valid: 1 <= n <= cap
+    SWITCH cfg->mode:
+        CASE GEN_CLEAN:
+            // Favor small cases
+            IF rng_prob(0.5):
+                n = 1  // Single limb (50% of time)
+            ELSE:
+                n = rng_range(2, min(capacity, 8))  // Up to 8 limbs
+            
+        CASE GEN_EDGE:
+            // Distribute across entire valid range
+            IF rng_prob(cfg->prob_near_capacity):
+                n = max(1, capacity - rng_range(0, 3))  // Near capacity
+            ELSE IF rng_prob(cfg->prob_leading_zeros):
+                n = rng_range(1, capacity)  // Will fill sparsely later
+            ELSE:
+                n = rng_skrange(1, capacity, cfg->density)
+            
+        CASE GEN_MIXED:
+            // 70% clean, 30% edge
+            IF rng_prob(0.7):
+                n = rng_range(1, min(capacity, 8))
+            ELSE:
+                n = rng_range(1, capacity)
+    
+    // 3. Fill limbs (generate valid patterns only)
+    FOR i = 0 TO n-1:
+        limb_value = generate_limb_value(cfg, i, n, capacity)
+        limbs[i] = limb_value
+    
+    // 4. Handle leading zeros (for edge cases)
+    IF rng_prob(cfg->prob_leading_zeros) AND n > 1:
+        high_zero_count = rng_range(1, n-1)
+        FOR i = (n - high_zero_count) TO n-1:
+            limbs[i] = 0
+    
+    // 5. Decide sign (always valid: -1 or +1)
+    IF (n == 1 AND limbs[0] == 0):
+        sign = 1  // Zero is always positive
+    ELSE:
+        sign = rng_prob(cfg->prob_negative) ? -1 : 1
+    
+    // 6. Set output
+    out->cap = capacity
+    out->n = n
+    out->sign = sign
+    out->limbs = limbs
+    
+    // 7. Classify case for test strategy
+    out->case_type = classify_case(capacity, n, sign, limbs)
+    out->case_name = case_name_str(out->case_type)
+
+
+FUNCTION generate_limb_value(cfg, index, size, capacity) -> uint64_t:
+    r = rng_prob()
+    
+    IF r < cfg->prob_zero_limb:
+        RETURN 0
+    ELSE IF r < cfg->prob_max_limb:
+        RETURN 0xFFFFFFFFFFFFFFFF
+    ELSE IF r < cfg->prob_alternating:
+        RETURN (index % 2) ? 0x5555555555555555 : 0xAAAAAAAAAAAAAAAA
+    ELSE IF r < cfg->prob_power_of_two:
+        bit_pos = rng_range(0, 63)
+        RETURN 1 << bit_pos
+    ELSE:
+        RETURN rng_u64()  // Full entropy
+
+
+FUNCTION classify_case(capacity, n, sign, limbs) -> bigint_case_type:
+    // Determine which case this is
+    
+    // Check canonical cases first
+    IF n == 1 AND limbs[0] == 0:
+        RETURN CASE_ZERO
+    
+    IF n == 1 AND limbs[0] == 1 AND sign == 1:
+        RETURN CASE_ONE
+    
+    IF n == 1 AND limbs[0] == 1 AND sign == -1:
+        RETURN CASE_NEGATIVE_ONE
+    
+    // Check size boundaries
+    IF n == 1:
+        RETURN (sign == -1) ? CASE_SMALL_NEGATIVE : CASE_SMALL_POSITIVE
+    
+    IF n == capacity:
+        RETURN CASE_EXACTLY_CAPACITY
+    
+    IF n == capacity - 1:
+        RETURN CASE_NEAR_CAPACITY
+    
+    IF n <= capacity / 4:
+        RETURN CASE_SPARSE_QUARTER
+    
+    IF n <= capacity / 2:
+        RETURN CASE_SPARSE_HALF
+    
+    // Check patterns
+    all_zeros = TRUE
+    all_ones = TRUE
+    all_odd = TRUE
+    all_msb_set = TRUE
+    
+    FOR each limb:
+        IF limb != 0: all_zeros = FALSE
+        IF limb != 0xFFFF...: all_ones = FALSE
+        IF (limb & 1) == 0: all_odd = FALSE
+        IF (limb & 0x8000...) == 0: all_msb_set = FALSE
+    
+    IF all_zeros:
+        RETURN CASE_ALL_ZEROS
+    IF all_ones:
+        RETURN CASE_ALL_ONES
+    IF all_odd:
+        RETURN CASE_LOW_BIT_SET
+    IF all_msb_set:
+        RETURN CASE_HIGH_BIT_SET
+    
+    // Check for leading zeros
+    IF limbs[n-1] == 0:
+        RETURN CASE_LEADING_ZERO_LIMBS
+    
+    // Power of two check
+    IF is_power_of_two(limbs, n):
+        RETURN CASE_POWER_OF_TWO
+    
+    // Default: mixed/generic
+    RETURN CASE_MIXED_MAGNITUDE
+
+
+================================================================================
+7. EXAMPLE CONFIGURATIONS FOR DIFFERENT TEST STRATEGIES
+================================================================================
+
+// Configuration 1: Thorough coverage (all cases equally)
+bigint_rand_mod cfg_thorough = {
+    .mode = GEN_MIXED,
+    .min_cap = 1,
+    .max_cap = 48,
+    .density = 0.5f,
+    .prob_zero_limb = 0.2f,
+    .prob_max_limb = 0.1f,
+    .prob_alternating = 0.1f,
+    .prob_random = 0.6f,
+    .prob_negative = 0.5f,
+    .prob_leading_zeros = 0.15f,
+    .prob_near_capacity = 0.2f,
+    .prob_power_of_two = 0.1f,
+    .verbose = false
+};
+
+// Configuration 2: Edge case focused
+bigint_rand_mod cfg_edge = {
+    .mode = GEN_EDGE,
+    .min_cap = 2,
+    .max_cap = 48,
+    .density = 0.7f,
+    .prob_zero_limb = 0.3f,
+    .prob_max_limb = 0.2f,
+    .prob_alternating = 0.2f,
+    .prob_random = 0.3f,
+    .prob_negative = 0.5f,
+    .prob_leading_zeros = 0.3f,
+    .prob_near_capacity = 0.4f,
+    .prob_power_of_two = 0.25f,
+    .verbose = true
+};
+
+// Configuration 3: Clean/simple (for baseline testing)
+bigint_rand_mod cfg_clean = {
+    .mode = GEN_CLEAN,
+    .min_cap = 1,
+    .max_cap = 16,
+    .density = 0.3f,
+    .prob_zero_limb = 0.1f,
+    .prob_max_limb = 0.05f,
+    .prob_alternating = 0.05f,
+    .prob_random = 0.8f,
+    .prob_negative = 0.3f,
+    .prob_leading_zeros = 0.05f,
+    .prob_near_capacity = 0.0f,
+    .prob_power_of_two = 0.05f,
+    .verbose = false
+};
+
+
+================================================================================
+8. BITOS TESTING WITH RANDOMIZED BIGINTS
+================================================================================
+
+FUNCTION run_bitos_randomized_tests():
+    // Setup
+    xoshiro256_state entropy = entropy_init()
+    
+    bigint_rand_mod cfg = cfg_thorough
+    cfg.base_state = entropy
+    
+    // Results tracking
+    tests_run = 0
+    tests_passed = 0
+    
+    // Run 5000 random cases across all bases
+    FOR iteration = 0 TO 4999:
+        // Generate random bigint (cap 1-48, n <= cap, valid sign)
+        uint64_t limb_storage[48]
+        bigint_gen_context bigint_case = { .limbs = limb_storage }
+        bigint_rand_generate(&cfg, &bigint_case)
+        
+        // Test each base: 2, 8, 10, 16, 64
+        FOR base IN [2, 8, 10, 16, 64]:
+            tests_run++
+            
+            char output_buf[3072]  // Max for binary representation
+            
+            dnml_status res = bitos_strict(
+                bigint_case.limbs,
+                bigint_case.n,
+                bigint_case.sign,
+                output_buf,
+                3072,
+                base
+            )
+            
+            // Verify result
+            IF verify_bitos_output(&bigint_case, output_buf, base, res):
+                tests_passed++
+            ELSE:
+                log_failure(iteration, &bigint_case, base, output_buf, res)
+    
+    printf("BITOS: %zu/%zu passed\n", tests_passed, tests_run)
+
+
+================================================================================
+9. VERIFICATION STRATEGY FOR BITOS
+================================================================================
+
+FUNCTION verify_bitos_output(bigint_case, output_buf, base, status) -> bool:
+    // 1. Check status is success
+    IF status != STR_SUCCESS:
+        RETURN false
+    
+    // 2. Check output is not empty
+    IF strlen(output_buf) == 0:
+        RETURN false
+    
+    // 3. Check sign representation
+    IF bigint_case->sign == -1:
+        IF output_buf[0] != '-':
+            RETURN false
+    ELSE:
+        IF output_buf[0] == '-':
+            RETURN false
+    
+    // 4. Check all characters are valid for base
+    FOR each char in output_buf:
+        IF NOT is_valid_digit_for_base(char, base):
+            RETURN false
+    
+    // 5. Cross-check: parse back (if STOBI available)
+    // stobi_result = stobi_strict(output_buf, base)
+    // Verify stobi_result matches low limbs of original bigint
+    // (or exact match if n didn't overflow)
+    
+    RETURN true
+
+
+================================================================================
+10. KEY EDGE CASES COVERED
+================================================================================
+
+VALID CASES (Always succeed):
+[ ] Zero (n=1, limbs[0]=0, sign=1)
+[ ] One (n=1, limbs[0]=1, sign=1)
+[ ] Negative one (n=1, limbs[0]=1, sign=-1)
+[ ] Single non-zero limb
+[ ] Max value (all limbs = 0xFFFF..., n varies)
+[ ] Sparse (n << cap)
+[ ] Dense (n == cap)
+[ ] Near capacity (n == cap-1)
+[ ] Alternating bit patterns
+[ ] All odd/even values
+[ ] High bit set across limbs
+[ ] Low bit set (test LSB in all bases)
+[ ] Power of two values (single bit set)
+
+EDGE CASES (Reveal subtle bugs):
+[ ] Leading zero limbs (redundant representation)
+[ ] Sign transitions (very small negatives)
+[ ] Negative zero handling (-0 → +0)
+[ ] Base-specific patterns (powers of 2, 8, 10, 16)
+[ ] Varying capacities with same size
+[ ] Maximum 48-limb representation in binary (3072 chars)
+
+NO FAULTY CASES:
+- No n > cap (triggers assert)
+- No invalid sign (triggers assert)
+- Only valid: 1 <= n <= cap, sign in {-1, 1}

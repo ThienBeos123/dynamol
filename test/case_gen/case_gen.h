@@ -9,6 +9,7 @@
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
 
+//* ================================ GENERIC RANDOM GENERATION TOOLS ================================ *//
 #define u64 uint64_t
 #define STV static void
 #define SLV static inline void
@@ -56,15 +57,77 @@ static inline float __seed_to_float(xoshiro256_state *state) {
 
 
 
+//* ================================ BIGINT GENERATION - bi_casegen.c ================================ *//
+typedef enum { BI_CLEAN_GEN, BI_EDGE_GEN, BI_MIXED_GEN } bi_gen_mode;
+typedef enum {
+    SINGULAR_LIMB,      // One Singular Limb ---> n = 1
+    EXACT_CAPACITY,     // Every limb filled ---> n = cap
+    NEAR_CAPACITY,      // Every limbed filled except the last --> n = cap - 1
+    QUARTERLY_SPARSE,   // Quarter of the limbs is filled --> n = cap / 4
+    HALF_SPARSE,        // Half of the limbs is filled --> n = cap / 2
+
+    // Automatic tracking of case-counts
+    BICAP_CASE_COUNT
+} bi_cap_cases;
+typedef enum {
+    // VALID CANONICAL CASES
+    CASE_ZERO,                 // n = 0, sign = 1 (zero)
+    CASE_ONE,                  // limbs[0] = 1, n = 1, sign = 1
+    CASE_NEGATIVE_ONE,         // limbs[0] = 1, n = 1, sign = -1
+    CASE_SMALL_POSITIVE,       // Single limb, value in [2, 2^64 - 1)
+    CASE_SMALL_NEGATIVE,       // Single limb, value in [2, 2^64 - 1), sign = -1
+    
+    // EDGE CASES: LIMB PATTERNS
+    CASE_MAX,                  // All limbs = 0xFFFFFFFFFFFFFFFF (max value)
+    CASE_NEGATIVE_MAX,         // -(all limbs = 0xFFFF...) (minimum value)
+    CASE_ALTERNATING_PATTERN,  // Limbs alternate 0x5555... and 0xAAAA...
+    CASE_HIGH_BIT_SET,         // All limbs have MSB = 1 (0x8000... and variants)
+    CASE_LOW_BIT_SET,          // All limbs have LSB = 1 (odd values)
+    CASE_MIXED_MAGNITUDE,      // First limbs large, last limbs small (or vice versa)
+    
+    // EDGE CASES: BASE-SPECIFIC
+    CASE_POWER_OF_2,      // Value = 2^K (powers of binary base)
+    CASE_POWER_OF_8,      // Value = 8^K (powers of octal base)
+    CASE_POWER_OF_10,     // Value = 10^K (powers of decimal base)
+    CASE_POWER_OF_16,     // Value = 16^K (powers of hex base)
+
+    // Automatic tracking of case-counts
+    BIGINT_CASE_COUNT
+} bi_cases;
+typedef struct { 
+    uint8_t low_qbound, high_qbound;
+    float low_pbound, high_pbound; 
+} case_prange;
+
+//* MAIN CONFIG STRUCT *//
+typedef struct {
+    xoshiro256_state *state;
+    bi_gen_mode mod_gen_mode;
+
+    // Metadata AND Data's Probability & Distribution
+    bi_cap_cases cap_case; size_t cap; 
+    bool neg; bi_cases data_case;
+    // Limb-individual cases/anomalies
+    float limb_zero, limb_max;
+    float limb_alter, limb_power;
+    float limb_rand;
+} bi_rand_mod;
+typedef struct {
+    float cap_prob_spectrum[BICAP_CASE_COUNT];
+    float data_prob_spectrum[BIGINT_CASE_COUNT];
+    bi_rand_mod *mod;
+} bigInt_gen_ctx;
+
+
 
 //* ================================ STRING GENERATION - str_casegen.c ================================ *//
 typedef enum { WHITESPACE, LEADING_ZEROS, SIGNS, BASE_PREFIX } str_areas;
+typedef enum { STR_CLEAN_MODE, STR_STANDARD_MODE, STR_FAULTY_MODE } str_gen_mode;
 typedef struct { 
     float chance; 
     uint8_t low_qbound; uint8_t high_qbound; // Quantitative Bounds
     float low_pbound; float high_pbound; // Probability Bounds
 } component_prob_t;
-typedef enum { CLEAN_MODE, STANDARD_MODE, FAULTY_MODE } gen_mode;
 typedef struct {
     xoshiro256_state base_state;
     size_t str_len; uint8_t base; // base?
@@ -81,7 +144,7 @@ typedef struct {
     uint8_t inval_digit_drift; float enull_chance;
 
     // Further Configuration Settings
-    gen_mode mod_gen_mode;
+    str_gen_mode mod_gen_mode;
 } str_rand_mod;
 
 inline void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_state *add_state);
