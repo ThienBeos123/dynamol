@@ -43,3 +43,28 @@ inline xoshiro256_state mix_xoshiro256(xoshiro256_state *stateA, xoshiro256_stat
         ); res.s[i] = rotl(res.s[i], 31) ^ (stateA->s[i] + stateB->s[i]); // further scramble
     } return res;
 }
+
+
+//* ---------- RANDOM-NUMBER GENERATION TOOLS ---------- *//
+// RNG Functions
+static inline uint64_t __rng_skrange(xoshiro256_state *state, uint64_t min, uint64_t max, float median_dist) {
+    float u = __seed_to_float(state);
+    float skewed_u = powf(u, median_dist);
+    return min + (uint64_t)((max - min) * skewed_u);
+}
+static inline uint64_t __rng_range(xoshiro256_state *state, uint64_t min, uint64_t max) {
+    uint64_t range = max - min + 1, r;
+    uint64_t limit = UINT64_MAX - (UINT64_MAX % range);
+    do { r = xoshiro256pp_next(state); } while (r >= limit);
+    return min + (r % range);
+}
+static inline float __rng_frange(xoshiro256_state *state, float min, float max) {
+    float log_min = logf(min <= 0 ? 1e-7f : min);
+    float log_max = logf(max);
+    float r = xoshiro256pp_fnext01(state);
+    return expf(log_min + r * (log_max - log_min));
+}
+static inline float __seed_to_float(xoshiro256_state *state) {
+    uint64_t raw = xoshiro256pp_next(state);
+    return (float)(raw >> 11) * (1.0f / 9007199254740992.0f);
+}

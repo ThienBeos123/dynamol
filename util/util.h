@@ -23,6 +23,10 @@ void seed_xoshiro256(xoshiro256_state *state, uint64_t x);
 inline uint64_t xoshiro256pp_next(xoshiro256_state *state);
 inline float xoshiro256pp_fnext01(xoshiro256_state *state);
 inline xoshiro256_state mix_xoshiro256(xoshiro256_state *stateA, xoshiro256_state *stateB);
+static inline uint64_t __rng_skrange(xoshiro256_state *state, uint64_t min, uint64_t max, float median_dist);
+static inline uint64_t __rng_range(xoshiro256_state *state, uint64_t min, uint64_t max);
+static inline float __rng_frange(xoshiro256_state *state, float min, float max);
+static inline float __seed_to_float(xoshiro256_state *state);
 
 
 /* ---------------------- */
