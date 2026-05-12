@@ -382,6 +382,15 @@ int main(int argc, char **argv) {
         .in_cont.rctx = &init_in_rctx,
         .res_cont = &init_res_rctx
     };
+    // Randomization Configuration
+    xoshiro256_state init_rstate = {0}; u64 side_mix = 0;
+    __GET_ENTROPY_FAST(init_rstate.s, sizeof(u64) << 2);
+    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    seed_xoshiro256(&init_rstate, side_mix);
+    str_rand_mod init_rconfig = {0}, // Base-parameter / Non-base-prefix
+    init_bp_rconfig = {0}; // Base-prefix / Non-base-parameter
+    strgen_init_sesh(&init_rconfig, false, &init_rstate);
+    strgen_init_sesh(&init_bp_rconfig, true, &init_rstate);
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -389,8 +398,9 @@ int main(int argc, char **argv) {
     suite strinit_suite = {0};
     create_str_suite(&strinit_suite, "strinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
-    );
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        &init_bp_rconfig, &init_rstate
+    ); strinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strinit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strinit,
         &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
@@ -403,8 +413,9 @@ int main(int argc, char **argv) {
     suite strninit_suite = {0};
     create_str_suite(&strninit_suite, "strninit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
-    );
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        &init_bp_rconfig, &init_rstate
+    ); strninit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strninit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strninit,
         &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
@@ -417,8 +428,9 @@ int main(int argc, char **argv) {
     suite strbinit_suite = {0};
     create_str_suite(&strbinit_suite, "strbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
-    );
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        &init_rconfig, &init_rstate
+    ); strbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strbinit,
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
@@ -431,8 +443,9 @@ int main(int argc, char **argv) {
     suite strnbinit_suite = {0};
     create_str_suite(&strnbinit_suite, "strnbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon
-    );
+        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        &init_rconfig, &init_rstate
+    ); strnbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strnbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strnbinit,
         &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,

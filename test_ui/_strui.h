@@ -142,7 +142,7 @@ static inline void _print_str_res(const str_res *a, FILE *f, int tab_depth) {
 
 
 //* =================== FUNCTION-GENERALIZATION DISPATCHER =================== *//
-typedef void (*dnml_gen_fn)(void *in, xoshiro256_state *state, rcap_mode cap_mode, rand_container *rcont);
+typedef void (*dnml_gen_fn)(void *in, void *rconfig, xoshiro256_state *state, rcap_mode cap_mode, rand_container *rcont);
 typedef void (*dnml_exec_fn)(const void *in, str_res *out, void *ctx);
 typedef bool (*dnml_prop_fn)(const void *in, str_res *out);
 // Evaluators & Inverses
@@ -181,7 +181,7 @@ static inline void *run_inverse(
 //* =================== TEST CREATION FUNFCTIONS =================== *//
 typedef struct _libdnml_str_suite {
     const char *suite_name; const char *log_path;
-    xoshiro256_state *state;
+    xoshiro256_state *state; void *rconfig;
     enum { ENOUGH, RANDOMIZED } cap_mode;
 
     dnml_gen_fn *gen_case;
@@ -213,18 +213,21 @@ static inline void create_str_suite(
     _libdnml_str_suite *curr_suite, const char *name,
     uint8_t ecount, uint16_t rcount, _libdnml_scase *ebank,
     rcheck_mode mode, str_res *fail_ebuf, const char *log_path,
-    strbump_t ectx, rand_container *rincon
+    strbump_t ectx, rand_container *rincon,
+    void *rconfig, xoshiro256_state *state
 ) {
     curr_suite->suite_name = name;
     curr_suite->ecount = ecount;
     curr_suite->rcount = rcount;
     curr_suite->log_path = log_path;
+    curr_suite->state = state;
     // Filling in the banks
     curr_suite->edge = ebank;
     curr_suite->ectx = ectx;
     curr_suite->fail_eres = fail_ebuf;
     curr_suite->fail_eexp = &fail_ebuf[ecount];
     // Assigning random-case failure fail_ebuf
+    curr_suite->rconfig = rconfig;
     curr_suite->rincon = rincon;
     curr_suite->check_mode = mode;
 }
@@ -459,14 +462,20 @@ static inline void _dnml_run_edge(_libdnml_str_suite *s) {
     }
 }
 static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_ms) {
-    fprintf(logf, "======== %s RNG-CASES FAIL LOG ========", s->suite_name);
+    FILE *logf = fopen(s->log_path, "w");
+    fprintf(logf, "======== %s RNG-CASES FAIL LOG ========\n", s->suite_name);
+    fputs("Suite's Base-state (xoshiro256++):\n", logf);
+    fprintf(logf, "- [0/1]: %" PRIu64 "\n", s->state->s[0]);
+    fprintf(logf, "- [1/2]: %" PRIu64 "\n", s->state->s[1]);
+    fprintf(logf, "- [2/3]: %" PRIu64 "\n", s->state->s[2]);
+    fprintf(logf, "- [3/4]: %" PRIu64 "\n", s->state->s[3]);
     void *in, *aux1; str_res *out, *aux2;
     for (uint16_t i = 0; i < s->rcount; ++i) {
         // Setting Up Input
         uint8_t voidp_in_buf[(*s->fn_insize)()];
         in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
         rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->state, incap, s->rincon);
+        (*s->gen_case)(in, &s->rconfig, &s->state, incap, s->rincon);
         
         // Setting up Auxillary 1 (Reconstruction) buffers
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];
@@ -510,14 +519,19 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
             - Reconstruction: <...> (whatever the top-layer format is)
     */
     FILE *logf = fopen(s->log_path, "w");
-    fprintf(logf, "======== %s RNG-CASES FAIL LOG ========", s->suite_name);
+    fprintf(logf, "======== %s RNG-CASES FAIL LOG ========\n", s->suite_name);
+    fputs("Suite's Base-state (xoshiro256++):\n", logf);
+    fprintf(logf, "- [0/1]: %" PRIu64 "\n", s->state->s[0]);
+    fprintf(logf, "- [1/2]: %" PRIu64 "\n", s->state->s[1]);
+    fprintf(logf, "- [2/3]: %" PRIu64 "\n", s->state->s[2]);
+    fprintf(logf, "- [3/4]: %" PRIu64 "\n", s->state->s[3]);
     void *in, *aux1; str_res *out, *aux2;
     for (uint16_t i = 0; i < s->rcount; ++i) {
         // Setting Up Input
         uint8_t voidp_in_buf[(*s->fn_insize)()];
         in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
         rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->state, incap, s->rincon->in_cont.rctx);
+        (*s->gen_case)(in, &s->state, &s->state, incap, s->rincon->in_cont.rctx);
 
         // Setting up Auxillary 1 (Reconstruction) buffers
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];

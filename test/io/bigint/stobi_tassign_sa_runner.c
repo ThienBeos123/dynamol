@@ -707,6 +707,15 @@ int main(int argc, char **argv) {
         .in_cont.rctx = &tassign_in_rctx,
         .res_cont = &tassign_res_rctx 
     };
+    // Randomization Configuration
+    xoshiro256_state assign_rstate = {0}; u64 side_mix = 0;
+    __GET_ENTROPY_FAST(assign_rstate.s, sizeof(u64) << 2);
+    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    seed_xoshiro256(&assign_rstate, side_mix);
+    str_rand_mod assign_rconfig = {0}, // Base-parameter / Non-base-prefix
+    assign_bp_rconfig = {0}; // Base-prefix / Non-base-parameter
+    strgen_init_sesh(&assign_rconfig, false, &assign_rstate);
+    strgen_init_sesh(&assign_bp_rconfig, true, &assign_rstate);
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -714,7 +723,8 @@ int main(int argc, char **argv) {
     suite tget_str_suite = {0};
     create_str_suite(&tget_str_suite, "bigInt_tget_str - String Assignment", 
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        &assign_bp_rconfig, &assign_rstate
     ); tget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_str,
@@ -726,7 +736,8 @@ int main(int argc, char **argv) {
     suite tget_strn_suite = {0};
     create_str_suite(&tget_strn_suite, "bigInt_tget_strn - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        &assign_bp_rconfig, &assign_rstate
     ); tget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_strn,
@@ -738,7 +749,8 @@ int main(int argc, char **argv) {
     suite tget_strb_suite = {0};
     create_str_suite(&tget_strb_suite, "bigInt_tget_strb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        &assign_rconfig, &assign_rstate
     ); tget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strb,
@@ -750,7 +762,8 @@ int main(int argc, char **argv) {
     suite tget_strnb_suite = {0};
     create_str_suite(&tget_strnb_suite, "bigInt_tget_strnb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon
+        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        &assign_rconfig, &assign_rstate
     ); tget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strnb,

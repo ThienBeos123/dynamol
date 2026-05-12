@@ -58,13 +58,14 @@ static inline float __seed_to_float(xoshiro256_state *state) {
 
 
 //* ================================ BIGINT GENERATION - bi_casegen.c ================================ *//
-typedef enum { BI_CLEAN_GEN, BI_EDGE_GEN, BI_MIXED_GEN } bi_gen_mode;
+typedef enum { BI_CLEAN_GEN, BI_EDGE_GEN, BI_MIXED_GEN, BIGEN_CNT } bi_gen_mode;
 typedef enum {
     SINGULAR_LIMB,      // One Singular Limb ---> n = 1
     EXACT_CAPACITY,     // Every limb filled ---> n = cap
     NEAR_CAPACITY,      // Every limbed filled except the last --> n = cap - 1
     QUARTERLY_SPARSE,   // Quarter of the limbs is filled --> n = cap / 4
     HALF_SPARSE,        // Half of the limbs is filled --> n = cap / 2
+    CAP_RANDOM,         // Absolutely RANDOM
 
     // Automatic tracking of case-counts
     BICAP_CASE_COUNT
@@ -83,13 +84,15 @@ typedef enum {
     CASE_ALTERNATING_PATTERN,  // Limbs alternate 0x5555... and 0xAAAA...
     CASE_HIGH_BIT_SET,         // All limbs have MSB = 1 (0x8000... and variants)
     CASE_LOW_BIT_SET,          // All limbs have LSB = 1 (odd values)
-    CASE_MIXED_MAGNITUDE,      // First limbs large, last limbs small (or vice versa)
+    CASE_WIDE_BOTTOM,          // First limbs large, last limbs small
+    CASE_WIDE_TOP,             // First limbs small, last limbs large
     
     // EDGE CASES: BASE-SPECIFIC
     CASE_POWER_OF_2,      // Value = 2^K (powers of binary base)
     CASE_POWER_OF_8,      // Value = 8^K (powers of octal base)
     CASE_POWER_OF_10,     // Value = 10^K (powers of decimal base)
     CASE_POWER_OF_16,     // Value = 16^K (powers of hex base)
+    CASE_RANDOM,          // COMPLETELY RANDOM ON EVERY LIMB
 
     // Automatic tracking of case-counts
     BIGINT_CASE_COUNT

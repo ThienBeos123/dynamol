@@ -396,6 +396,15 @@ int main(int argc, char **argv) {
         .in_cont.stream = scan_randin,
         .res_cont = &scan_res_rctx
     };
+    // Randomization Configuration
+    xoshiro256_state scan_rstate = {0}; u64 side_mix = 0;
+    __GET_ENTROPY_FAST(scan_rstate.s, sizeof(u64) << 2);
+    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    seed_xoshiro256(&scan_rstate, side_mix);
+    str_rand_mod scan_rconfig = {0}, // Base-parameter / Non-base-prefix
+    scan_bp_rconfig = {0}; // Base-prefix / Non-base-parameter
+    strgen_init_sesh(&scan_rconfig, false, &scan_rstate);
+    strgen_init_sesh(&scan_bp_rconfig, true, &scan_rstate);
 
 
     //* ---------------------------------- STANDARD API SUITE ---------------------------------- *//
@@ -403,7 +412,8 @@ int main(int argc, char **argv) {
     suite fscan_suite = {0};
     create_str_suite(&fscan_suite, "bigInt_fscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon,
+        &scan_bp_rconfig, &scan_rstate
     ); fscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_fscan,
@@ -417,7 +427,8 @@ int main(int argc, char **argv) {
     suite fscanb_suite = {0};
     create_str_suite(&fscanb_suite, "bigInt_fscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon,
+        &scan_rconfig, &scan_rstate
     ); fscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fscanb_suite,
         &_stobi_scan_ingen_b, &exec_stobi_fscanb,
@@ -433,7 +444,8 @@ int main(int argc, char **argv) {
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon,
+        &scan_bp_rconfig, &scan_rstate
     ); fsscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fsscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_fsscan,
@@ -447,7 +459,8 @@ int main(int argc, char **argv) {
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon,
+        &scan_rconfig, &scan_rstate
     ); fsscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fsscanb_suite,
         &_stobi_scan_ingen_b, &exec_stobi_fsscanb,
@@ -463,7 +476,8 @@ int main(int argc, char **argv) {
     suite ftscan_suite = {0};
     create_str_suite(&ftscan_suite, "bigInt_ftscan - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon,
+        &scan_rconfig, &scan_rstate
     ); ftscan_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&ftscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_ftscan,
@@ -477,7 +491,8 @@ int main(int argc, char **argv) {
     suite ftscanb_suite = {0};
     create_str_suite(&ftscanb_suite, "bigInt_ftscanb - String Stream Scan", 
         scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon
+        "../logs/bigInt_fscan.txt", scan_ectx, &scan_rcon,
+        &scan_bp_rconfig, &scan_rstate
     ); ftscanb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&ftscanb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_ftscanb,

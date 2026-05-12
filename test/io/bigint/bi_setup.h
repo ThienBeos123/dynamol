@@ -7,9 +7,12 @@
 #include "../../../test_ui/str_ctx.h"
 #include "../../../intrinsics/intrinsics.h"
 #include "../../case_gen/case_gen.h"
+#include "../_ioconv.h"
 #include "bi_indef.h"
 #include <include.h>
 #include <system/sys.h>
+
+typedef rcap_mode cmode;
 
 //* ===================== AUXILLARY SETUP FUNCTIONS ===================== *//
 // Auxillary 1 Size returner
@@ -129,7 +132,7 @@ void _stobi_aux2link(str_res *aux2, rand_container *rcon) {
 
 
 //* ===================== INPUT GENERATION FUNCTIONS ===================== *//
-size_t bisize_to_rcap_dist(size_t len, uint8_t base, rcap_mode mode, xoshiro256_state *state) {
+size_t bisize_to_rcap_dist(size_t len, uint8_t base, cmode mode, rstate *state) {
     switch (mode) {
         case SATISFACTORY: {
             size_t bits = __BITCOUNT___(len, base);
@@ -153,156 +156,158 @@ size_t bisize_to_rcap_dist(size_t len, uint8_t base, rcap_mode mode, xoshiro256_
     }
 }
 // Input Random Generatioon - BITOS
-void _bitos_conv_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
-void _bitos_print_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
-void _bitos_fwrite_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
-void _bitos_serialize_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
-void _bitos_util_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {}
+void _bitos_conv_ingen(void *in, rstate *state, cmode incap, rand_container *rcont) {}
+void _bitos_print_ingen(void *in, rstate *state, cmode incap, rand_container *rcont) {}
+void _bitos_fwrite_ingen(void *in, rstate *state, cmode incap, rand_container *rcont) {}
+void _bitos_serialize_ingen(void *in, rstate *state, cmode incap, rand_container *rcont) {}
+void _bitos_util_ingen(void *in, rstate *state, cmode incap, rand_container *rcont) {}
 // Input Random Generatioon - STOBI
-void _stobi_init_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_init_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_init_in *vin = (stobi_init_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, true, state);
-    strgen_write(vin->str, STR_CAP, &config, true);
-    vin->len = config.str_len; vin->base = config.base; // Base is set for safety
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_write(vin->str, STR_CAP, &config, true);
+    vin->len = config->str_len; vin->base = config->base; // Base is set for safety
 }
-void _stobi_init_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_init_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_init_in *vin = (stobi_init_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, false, state);
-    strgen_write(vin->str, STR_CAP, &config, false);
-    vin->len = config.str_len; vin->base = config.base;
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_write(vin->str, STR_CAP, &config, false);
+    vin->len = config->str_len; vin->base = config->base;
 }
-void _stobi_conv_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_conv_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_conv_in *vin = (stobi_conv_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, true, state);
-    strgen_write(vin->str, STR_CAP, &config, true);
-    vin->len = config.str_len; vin->base = config.base; // Base is set for safety
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_write(vin->str, STR_CAP, &config, true);
+    vin->len = config->str_len; vin->base = config->base; // Base is set for safety
 }
-void _stobi_conv_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_conv_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_conv_in *vin = (stobi_conv_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, false, state);
-    strgen_write(vin->str, STR_CAP, &config, false);
-    vin->len = config.str_len; vin->base = config.base;
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_write(vin->str, STR_CAP, &config, false);
+    vin->len = config->str_len; vin->base = config->base;
 }
-void _stobi_assign_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_assign_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_assign_in *vin = (stobi_assign_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, true, state);
-    strgen_write(vin->str, STR_CAP, &config, true);
-    vin->len = config.str_len; vin->base = config.base; // Base is set for safety
-    vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_write(vin->str, STR_CAP, &config, true);
+    vin->len = config->str_len; vin->base = config->base; // Base is set for safety
+    vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
 }
-void _stobi_assign_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_assign_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_assign_in *vin = (stobi_assign_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, false, state);
-    strgen_write(vin->str, STR_CAP, &config, false);
-    vin->len = config.str_len; vin->base = config.base;
-    vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    } strgen_write(vin->str, STR_CAP, &config, false);
+    vin->len = config->str_len; vin->base = config->base;
+    vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
 }
-void _stobi_scan_ingen_nob(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_scan_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_scan_in *vin = (stobi_scan_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, true, state);
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    }
     strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, true);
-    fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config.str_len, vin->stream);
-    memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config.base;
-    vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
+    fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config->str_len, vin->stream);
+    memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config->base;
+    vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
 } 
-void _stobi_scan_ingen_b(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) {
+void _stobi_scan_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_scan_in *vin = (stobi_scan_in*)in;
+    str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- Random Generation
     uint64_t scramble_eggs; // haha very funny 😂😂😂😂
     __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
     __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
     seed_xoshiro256(state, scramble_eggs);
     // --- String Generation setup
-    str_rand_mod config; uint8_t rand_gmode = __rng_range(state, 0, 2);
+    uint8_t rand_gmode = __rng_range(state, 0, 2);
     switch (rand_gmode) {
-        case 0: config.mod_gen_mode = STR_CLEAN_MODE;
-        case 1: config.mod_gen_mode = STR_STANDARD_MODE;
-        case 2: config.mod_gen_mode = STR_FAULTY_MODE;
-    } strgen_init_sesh(&config, false, state);
+        case 0: config->mod_gen_mode = STR_CLEAN_MODE;
+        case 1: config->mod_gen_mode = STR_STANDARD_MODE;
+        case 2: config->mod_gen_mode = STR_FAULTY_MODE;
+    }
     strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, false);
-    fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config.str_len, vin->stream);
-    memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config.base;
-    vin->bi_size = bisize_to_rcap_dist(config.str_len, config.base, incap, state);
+    fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config->str_len, vin->stream);
+    memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config->base;
+    vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
 }
-void _stobi_fread_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) { DNML_UNFINISHED(); }
-void _stobi_deserialize_ingen(void *in, xoshiro256_state *state, rcap_mode incap, rand_container *rcont) { DNML_UNFINISHED(); }
+void _stobi_fread_ingen(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) { DNML_UNFINISHED(); }
+void _stobi_deserialize_ingen(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) { DNML_UNFINISHED(); }
 
 
 

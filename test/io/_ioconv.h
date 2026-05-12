@@ -4,6 +4,7 @@
 
 
 #include "../../test_ui/_strui.h"
+#include "../../util/util.h"
 // STDLIB utilities
 #include <time.h>
 #include <stdint.h>
@@ -14,13 +15,14 @@
 #define cvoid const void
 #define csres const str_res
 
-#define suite _libdnml_str_suite
-#define scase _libdnml_scase
-#define result str_res
-#define u64 uint64_t
-#define u32 uint32_t
-#define u16 uint16_t
-#define u8 uint8_t
+typedef xoshiro256_state rstate;
+typedef _libdnml_str_suite suite;
+typedef _libdnml_scase scase;
+typedef str_res result;
+typedef uint64_t u64;
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint8_t u8;
 
 #define INVAL_BI() .data.bi = { .limbs = NULL, .n = 1, .cap = 0, .sign = 0 }
 #define BITOS_OUTPUT_MAX 3072 // 48 libms --> 3072 binary digits (Base-2)

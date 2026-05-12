@@ -563,6 +563,15 @@ int main(int argc, char **argv) {
         .in_cont.stream = tscan_randin,
         .res_cont = &tscan_res_rctx
     };
+    // Randomization Configuration
+    xoshiro256_state scan_rstate = {0}; u64 side_mix = 0;
+    __GET_ENTROPY_FAST(scan_rstate.s, sizeof(u64) << 2);
+    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    seed_xoshiro256(&scan_rstate, side_mix);
+    str_rand_mod scan_rconfig = {0}, // Base-parameter / Non-base-prefix
+    scan_bp_rconfig = {0}; // Base-prefix / Non-base-parameter
+    strgen_init_sesh(&scan_rconfig, false, &scan_rstate);
+    strgen_init_sesh(&scan_bp_rconfig, true, &scan_rstate);
 
 
     //* ---------------------------------- STRICT API SUITE ---------------------------------- *//
@@ -570,7 +579,8 @@ int main(int argc, char **argv) {
     suite ftscan_suite = {0};
     create_str_suite(&ftscan_suite, "bigInt_ftscan - String Stream Scan",
         tscan_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", tscan_ectx, &tscan_rcon
+        "../logs/bigInt_fscan.txt", tscan_ectx, &tscan_rcon,
+        &scan_bp_rconfig, &scan_rstate
     ); ftscan_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&ftscan_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_ftscan,
@@ -582,7 +592,8 @@ int main(int argc, char **argv) {
     suite ftscanb_suite = {0};
     create_str_suite(&ftscanb_suite, "bigInt_ftscanb - String Stream Scan",
         tscan_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", tscan_ectx, &tscan_rcon
+        "../logs/bigInt_fscan.txt", tscan_ectx, &tscan_rcon,
+        &scan_rconfig, &scan_rstate
     ); ftscanb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&ftscanb_suite,
         &_stobi_scan_ingen_nob, &exec_stobi_ftscanb,

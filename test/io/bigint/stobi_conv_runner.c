@@ -382,6 +382,16 @@ int main(int argc, char **argv) {
         .in_cont.rctx = &conv_in_rctx,
         .res_cont = &conv_res_rctx
     };
+    // Randomization Configuration
+    xoshiro256_state conv_rstate = {0}; u64 side_mix = 0;
+    __GET_ENTROPY_FAST(conv_rstate.s, sizeof(u64) << 2);
+    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    seed_xoshiro256(&conv_rstate, side_mix);
+    str_rand_mod conv_rconfig = {0}, // Base-parameter / Non-base-prefix
+    conv_bp_rconfig = {0}; // Base-prefix / Non-base-parameter
+    strgen_init_sesh(&conv_rconfig, false, &conv_rstate);
+    strgen_init_sesh(&conv_bp_rconfig, true, &conv_rstate);
+
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
@@ -389,8 +399,9 @@ int main(int argc, char **argv) {
     suite from_str_suite = {0};
     create_str_suite(&from_str_suite, "bigInt_from_str - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
-    );
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        &conv_bp_rconfig, &conv_rstate
+    ); from_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_str_suite,
         &_stobi_conv_ingen_nob, &exec_stobi_from_str,
         &inv_stobi_conv_nob, &stat_stobi_from_str, 
@@ -403,8 +414,9 @@ int main(int argc, char **argv) {
     suite from_strn_suite = {0};
     create_str_suite(&from_strn_suite, "bigInt_from_strn - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
-    );
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        &conv_bp_rconfig, &conv_rstate
+    ); from_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_strn_suite,
         &_stobi_conv_ingen_nob, &exec_stobi_from_strn,
         &inv_stobi_conv_nob, &stat_stobi_from_strn,
@@ -417,8 +429,9 @@ int main(int argc, char **argv) {
     suite from_strb_suite = {0};
     create_str_suite(&from_strb_suite, "bigInt_from_strb - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
-    );
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        &conv_rconfig, &conv_rstate
+    ); from_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_strb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_from_strb,
         &inv_stobi_conv_b, &stat_stobi_from_strb, 
@@ -431,8 +444,9 @@ int main(int argc, char **argv) {
     suite from_strnb_suite = {0};
     create_str_suite(&from_strnb_suite, "bigInt_from_strnb - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon
-    );
+        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        &conv_rconfig, &conv_rstate
+    ); from_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_strnb_suite,
         &_stobi_conv_ingen_b, &exec_stobi_from_strnb,
         &inv_stobi_conv_b, &stat_stobi_from_strnb, 
