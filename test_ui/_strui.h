@@ -9,29 +9,96 @@
 #include "../sconfigs/memory/_scratch.h"
 #include "../util/util.h"
 #include "_test_base.h"
-#include "str_ctx.h"
 
 
-//* =========== TYPE DEFINITIONS =========== *//
-// Small, supporting types
-typedef struct strbump_t { void *ctx; size_t off; size_t size } strbump_t;
-typedef struct rand_container { 
-    enum { CTX, STREAM } in_cont_type;
-    union { rctx_input_t *rctx; FILE* stream } in_cont;
-    rctx_res_t *res_cont;
-} rand_container;
+//* ================= SMALL SIDE-TYPES DEFINITIONS ================= *//
+typedef enum res_type { BIGINT, STRING, OP_NONE } operated_types;
+typedef enum rcheck_mode { INVERSE, EVAL, NONE } rcheck_mode;
+typedef struct strbump_t { void *ctx; size_t off; size_t size; } strbump_t;
 typedef enum rcap_mode { 
     SATISFACTORY, NEAR_SATISFACTORY, 
     UNSATISFACTORY, FAULTY 
 } rcap_mode;
 
-// Cases & Suites
+typedef struct str_res {
+    /* Notes:
+        Instead of using a union to store
+        the varying return types of I/O operations,
+        we seperate results into entirely different struct fields.
+        This is for:
+            - Using a union won't allow for the definition
+                of an incomplete array, forcing the usage of pointers
+                ----> Complicated testing and storing 
+
+            - Incomplete struct fields allow for the independent
+                storage of the string by the struct header, simplifying
+                string storage instead of relying on external storage
+    */
+    operated_types type;
+    dnml_status status;
+    union { bigInt bi; size_t len; } data;
+    size_t cap;
+    char str[];
+} str_res;
+
+
+//* ================= CONTEXT CONTAINER DEFINITIONS ================= *//
+#define ALIGN_UP(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
+#define RES_BUF_SIZE ((ALIGN_UP(sizeof(str_res), alignof(limb_t))) + STR_CAP)
+typedef struct {
+    uint8_t res_buf[RES_BUF_SIZE]; // FAM-based
+    uint8_t aux2_buf[RES_BUF_SIZE]; // FAM-based
+} rctx_res_t;
+
+typedef struct {
+    uint8_t in_buf[STR_CAP];
+    uint8_t aux1_buf[STR_CAP];
+} rctx_input_t;
+
+typedef struct rand_container { 
+    enum { CTX, STREAM } in_cont_type;
+    union { rctx_input_t *rctx; FILE* stream; } in_cont;
+    rctx_res_t *res_cont;
+} rand_container;
+
+
+//* ================= BIG DATA CONTAINING DEFINITIONS ================= *//
 typedef struct _libdnml_scase {
     void* in;
     str_res exp;
     str_res res;
     void* recons;
 } _libdnml_scase;
+
+typedef struct _libdnml_str_suite {
+    const char *suite_name; const char *log_path;
+    xoshiro256_state *state; void *rconfig;
+    enum { ENOUGH, RANDOMIZED } cap_mode;
+
+    dnml_gen_fn *gen_case;
+    dnml_exec_fn *fn_test; 
+    // Random Case Oracle Functions
+    dnml_inv_fn *fn_inv; dnml_eval_fn *fn_eval;
+    dnml_cmp_inv_fn *inv_cmp; dnml_cmp_eval_fn *eval_cmp;     
+    dnml_fmt_in_fn *fmtin_fn; dnml_stat_fn *fn_stat;
+    dnml_fmt_recon_fn *fmtrecon_fn;
+    // Buffer Linkage Functions
+    dnml_voidp_size *fn_insize; dnml_voidp_size *fn_aux1size;
+    dnml_voidp_fill *fn_infill; dnml_voidp_fill *fn_aux1fill;
+    dnml_sres_fill *fn_outfill; dnml_sres_fill *fn_aux2fill;
+
+    // Edge cases storage
+    _libdnml_scase *edge; strbump_t ectx;
+    uint8_t ecount; uint8_t ecorrect;
+    str_res *fail_eres; str_res *fail_eexp;
+
+    // Random cases Handling
+    rcheck_mode check_mode;
+    uint16_t rcount; uint16_t rcorrect;
+    rand_container *rincon; int fail_enums[];
+} _libdnml_str_suite;
+
+
 
 //* =========== TYPE-SPECIFIC UTILITIES =========== *//
 static inline int move_forward(strbump_t *ctx, str_res *out) {
@@ -45,7 +112,7 @@ static inline int move_forward(strbump_t *ctx, str_res *out) {
     ctx += amount; return 0;
 }
 static inline rcap_mode _rand_rcap(xoshiro256_state *state) {
-    float roll = fmodf(__seed_to_float(state), 100.0f);
+    float roll = fmodf(__froll(state), 100.0f);
     if (roll < 25.0f) return FAULTY;
     else if (roll >= 25.0f && roll < 50.0f) return UNSATISFACTORY;
     else if (roll >= 50.0f && roll < 75.0f) return NEAR_SATISFACTORY;
@@ -179,35 +246,6 @@ static inline void *run_inverse(
 
 
 //* =================== TEST CREATION FUNFCTIONS =================== *//
-typedef struct _libdnml_str_suite {
-    const char *suite_name; const char *log_path;
-    xoshiro256_state *state; void *rconfig;
-    enum { ENOUGH, RANDOMIZED } cap_mode;
-
-    dnml_gen_fn *gen_case;
-    dnml_exec_fn *fn_test; 
-    // Random Case Oracle Functions
-    dnml_inv_fn *fn_inv; dnml_eval_fn *fn_eval;
-    dnml_cmp_inv_fn *inv_cmp; dnml_cmp_eval_fn *eval_cmp;     
-    dnml_fmt_in_fn *fmtin_fn; dnml_stat_fn *fn_stat;
-    dnml_fmt_recon_fn *fmtrecon_fn;
-    // Buffer Linkage Functions
-    dnml_voidp_size *fn_insize; dnml_voidp_size *fn_aux1size;
-    dnml_voidp_fill *fn_infill; dnml_voidp_fill *fn_aux1fill;
-    dnml_sres_fill *fn_outfill; dnml_sres_fill *fn_aux2fill;
-
-    // Edge cases storage
-    _libdnml_scase *edge; strbump_t ectx;
-    uint8_t ecount; uint8_t ecorrect;
-    str_res *fail_eres; str_res *fail_eexp;
-
-    // Random cases Handling
-    rcheck_mode check_mode;
-    uint16_t rcount; uint16_t rcorrect;
-    rand_container *rincon; int fail_enums[];
-} _libdnml_str_suite;
-
-
 // Main Suite Setup
 static inline void create_str_suite(
     _libdnml_str_suite *curr_suite, const char *name,
@@ -337,13 +375,13 @@ static inline void __dnml_print_stcase(RAND_PARAM_CONV, int bw, uint32_t delay_m
     freopen(NULL, "w", tmp);
     fputs("    - Expected: ", tmp);
     _print_dnml_status(aux_2->status, tmp);
-    _dnml_box_line(tmp, bw); putchar('\n');
+    _dnml_box_line(fail_line, bw); putchar('\n');
 
     // Printing out the Result Status
     freopen(NULL, "w", tmp);
     fputs("    - Got: ", tmp);
     _print_dnml_status(out->status, tmp);
-    _dnml_box_line(tmp, bw); putchar('\n');
+    _dnml_box_line(fail_line, bw); putchar('\n');
 
     _dnml_delay_ms(delay_ms);
 }
@@ -436,13 +474,13 @@ static inline void __dnml_print_evalc(RAND_PARAM_CONV, int bw, uint32_t delay_ms
     freopen(NULL, "w", tmp);
     fputs("    - Expected: ", tmp);
     _print_str_res(aux_2, tmp, 1);
-    _dnml_box_line(tmp, bw); putchar('\n');
+    _dnml_box_line(fail_line, bw); putchar('\n');
 
     // Printing out the Result Status
     freopen(NULL, "w", tmp);
     fputs("    - Got: ", tmp);
     _print_str_res(out, tmp, 1);
-    _dnml_box_line(tmp, bw); putchar('\n');
+    _dnml_box_line(fail_line, bw); putchar('\n');
 
     _dnml_delay_ms(delay_ms);
 }
@@ -475,7 +513,7 @@ static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_
         uint8_t voidp_in_buf[(*s->fn_insize)()];
         in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
         rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->rconfig, &s->state, incap, s->rincon);
+        (*s->gen_case)(in, &s->rconfig, s->state, incap, s->rincon);
         
         // Setting up Auxillary 1 (Reconstruction) buffers
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];
@@ -531,7 +569,7 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
         uint8_t voidp_in_buf[(*s->fn_insize)()];
         in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
         rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->state, &s->state, incap, s->rincon->in_cont.rctx);
+        (*s->gen_case)(in, &s->state, s->state, incap, s->rincon->in_cont.rctx);
 
         // Setting up Auxillary 1 (Reconstruction) buffers
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];

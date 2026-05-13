@@ -402,9 +402,9 @@ inline void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_stat
 inline size_t strgen_len(void) { return STR_CAP; }
 void strgen_write(char *buf, size_t len, str_rand_mod* config, bool bprefix) {
     // Setup
-    config->str_len = __rng_skrange(&config->base_state, 0, strgen_len(), 0.7f);
-    config->base = __rng_range(&config->base_state, 1, 64);
     config->mod_gen_mode = _strgen_roll_gmode(&config->base_state);
+    config->str_len = __rng_skrange(&config->base_state, 0, strgen_len(), 0.7f);
+    config->base = __rng_range(&config->base_state, STR_MIN_BASE, STR_MAX_BASE);
     _strgen_rseed_include(config, bprefix); _strgen_rseed_quant(config, bprefix);
     str_areas order[4] = {WHITESPACE, SIGNS, BASE_PREFIX, LEADING_ZEROS};
     _strgen_bias_shuffle(config, order); size_t cursor = 0;

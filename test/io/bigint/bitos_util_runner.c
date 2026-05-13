@@ -47,3 +47,12 @@
 *      for _strui.h automatically interprets such inputted buffers for edge case as str_res, or,
 *      preferrably, explicit through type-casting.
 */
+
+int main(int argc, char **argv) {
+    fputs(stderr, 
+        "This test unit is yet to be implemented or finished due to:\n \
+        - The feature in the main-unit that is being tested has yet to be implemented \
+        - Test wrappers for this feature has yet to be implemented \
+        - Testing API has yet to stabilized/formalized for this feature"
+    ); return 0;
+}

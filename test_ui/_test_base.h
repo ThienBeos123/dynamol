@@ -3,6 +3,8 @@
 
 #include <include.h>
 #include <system/sys.h>
+#include "../adynamol/big_numbers/bigNums.h"
+#include "../sconfigs/dnml_status.h"
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
 #elif defined(__unix__) || defined(__APPLE__)
@@ -24,10 +26,14 @@ typedef struct _libdnml_session {
 
 // Type-specific Limitations - INPUT
 #define BIGINT_CAP 48
-#define STR_CAP 512
+#define STR_CAP 518
 // Type-specific Limitations - PRINTING
 #define STR_PREVIEW 64
 #define BIGINT_PREVIEW 4
+// Type-specific Limitations - Output
+#define STR_OUT_CAP 3078
+#define STR_MIN_BASE 2
+#define STR_MAX_BASE 64
 
 
 //* =================== INTERFACE/UI TEXT =================== *//
@@ -136,30 +142,6 @@ static inline int _dnml_box_width(void) {
     return tw - 4;
 }
 
-
-//* ========================== _STRUI.H BASE TYPES ========================== *//
-typedef enum res_type { BIGINT, STRING, OP_NONE } operated_types;
-typedef enum rcheck_mode { INVERSE, EVAL, NONE } rcheck_mode;
-typedef struct str_res {
-    /* Notes:
-        Instead of using a union to store
-        the varying return types of I/O operations,
-        we seperate results into entirely different struct fields.
-        This is for:
-            - Using a union won't allow for the definition
-                of an incomplete array, forcing the usage of pointers
-                ----> Complicated testing and storing 
-
-            - Incomplete struct fields allow for the independent
-                storage of the string by the struct header, simplifying
-                string storage instead of relying on external storage
-    */
-    operated_types type;
-    dnml_status status;
-    union { bigInt bi; size_t len; } data;
-    size_t cap;
-    char str[];
-} str_res;
 
 
 #endif
