@@ -26,7 +26,7 @@ inline xoshiro256_state mix_xoshiro256(xoshiro256_state *stateA, xoshiro256_stat
 static inline uint64_t __rng_skrange(xoshiro256_state *state, uint64_t min, uint64_t max, float median_dist);
 static inline uint64_t __rng_range(xoshiro256_state *state, uint64_t min, uint64_t max);
 static inline float __rng_frange(xoshiro256_state *state, float min, float max);
-static inline float __seed_to_float(xoshiro256_state *state);
+static inline float __froll(xoshiro256_state *state);
 
 
 /* ---------------------- */
@@ -51,6 +51,7 @@ inline uint8_t __BASEN_DCOUNT__(uint64_t val, uint8_t base);
 inline uint64_t __MAG_I64__(int64_t val);
 inline uint64_t _stou64(const char *buf, int buflen);
 inline int _itosn(uint64_t x, char *buf, int buflen);
+inline int _dnml_ipower(uint64_t *base, uint8_t power);
 
 
 /* ---------------------- */

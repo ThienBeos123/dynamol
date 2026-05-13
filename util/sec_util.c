@@ -64,7 +64,7 @@ static inline float __rng_frange(xoshiro256_state *state, float min, float max) 
     float r = xoshiro256pp_fnext01(state);
     return expf(log_min + r * (log_max - log_min));
 }
-static inline float __seed_to_float(xoshiro256_state *state) {
+static inline float __froll(xoshiro256_state *state) {
     uint64_t raw = xoshiro256pp_next(state);
     return (float)(raw >> 11) * (1.0f / 9007199254740992.0f);
 }

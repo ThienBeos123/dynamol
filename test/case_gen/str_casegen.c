@@ -36,7 +36,7 @@
 */
 
 //* ----------------------------------- TYPES & CONTAINERS ----------------------------------- *//
-const component_prob_t prob_matrix[3][8] = {
+const component_prob_t prob_matrix[STR_GMODE_CNT][8] = {
     [ STR_CLEAN_MODE ] = {
         {5.2f, 1, 1}, {0, 0, 0},
         {50.0f, 1, 1, 0.0f, 0.0f}, // Signs 
@@ -65,7 +65,7 @@ const component_prob_t prob_matrix[3][8] = {
         {0.05f} // Shuffle Chance
     },
 };
-const uint8_t drift_vector[3][4] = {
+const uint8_t drift_vector[STR_GMODE_CNT][4] = {
     [ STR_CLEAN_MODE ] = {0, 0, 0, 0},
     [ STR_STANDARD_MODE ] = {3, 6, 7, 16},
     [ STR_FAULTY_MODE ] = {1, 2, 3, 24}
@@ -118,28 +118,34 @@ static inline char __get_valdigit(uint8_t base, xoshiro256_state *state) {
     return _DIGIT_SEN_[rand_val];
 }
 // Component Determinators
+static inline str_gen_mode _strgen_roll_gmode(xoshiro256_state *state) {
+    float roll = (float)(fmod(__froll(state), 100));
+    if (roll <= 20.0f) return STR_CLEAN_MODE;
+    else if (roll <= 70.0f) return STR_STANDARD_MODE;
+    else return STR_FAULTY_MODE;
+}
 SLV _strgen_rseed_include(str_rand_mod* config, bool bprefix) {
     str_gen_mode i = config->mod_gen_mode;
-    float curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    float curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     // ----- 1. Collateral Component Inclusion Filling -----
     config->whitespace = (curr_roll < prob_matrix[i][0].chance) ? true : false;
-    curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     config->lzeros = (curr_roll < prob_matrix[i][1].chance) ? true : false;
 
     // ----- 2. Small Lexical Component Inclusion Filling -----
-    curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     config->sign = (curr_roll < prob_matrix[i][2].chance) ? true : false;
     if (!bprefix) {
-        curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+        curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
         config->bprefix = (curr_roll < prob_matrix[i][3].chance) ? true : false;
     }
-    curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     config->early_null = (curr_roll < prob_matrix[i][5].chance) ? true : false;
 
     // ----- 3. Main Numerical Component Inclusion Filling -----
-    curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     config->junk = (curr_roll < prob_matrix[i][4].chance) ? true : false;
-    curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     config->inval_digit = (curr_roll < prob_matrix[i][5].chance) ? true : false;
 }
 SLV _strgen_rseed_quant(str_rand_mod* config, bool bprefix) {
@@ -152,13 +158,13 @@ SLV _strgen_rseed_quant(str_rand_mod* config, bool bprefix) {
 
     // ----- 2. Sign, Base-prefix Counts, & Early Null -----
     float mixed_sign_prob = __rng_frange(&config->base_state, prob_matrix[i][2].low_pbound, prob_matrix[i][2].high_pbound);
-    curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     config->mixed_sign = (config->sign) ? ((curr_roll < mixed_sign_prob) ? true : false) : false;
     if (!bprefix) {
         float mixed_bprefix_prob = __rng_frange(&config->base_state, 
             prob_matrix[i][3].low_pbound, 
             prob_matrix[i][3].high_pbound
-        ); curr_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+        ); curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
         config->mixed_bp = (config->bprefix) ? ((curr_roll < mixed_sign_prob) ? true : false) : false;
         config->bprefix_cnt = (config->bprefix) ? __rng_range(&config->base_state,
         prob_matrix[i][3].low_qbound, prob_matrix[i][3].high_qbound) : 0;
@@ -213,7 +219,7 @@ STV _strgen_write_ws_(char *buf, size_t len, str_rand_mod* config, size_t *curso
     float enull_roll;
     for (size_t i = 0; i < config->wscount; ++i) {
         if (*cursor >= config->str_len) { *term = true; return; }
-        enull_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+        enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
         if (config->early_null && enull_roll < config->enull_chance) {
             buf[*cursor] = '\0'; *term = true; return;
         } buf[*cursor] = ' '; *cursor++;
@@ -222,7 +228,7 @@ STV _strgen_write_ws_(char *buf, size_t len, str_rand_mod* config, size_t *curso
 STV _strgen_write_sign_(char *buf, size_t len, str_rand_mod* config, size_t *cursor, bool *term) {
     if (!config->sign) return;
     if (*cursor >= config->str_len) { *term = true; return; }
-    float enull_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    float enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
     if (config->early_null && enull_roll < config->enull_chance) { 
         buf[*cursor] = '\0'; *term = true; return;
     } int8_t sign = (__rng_range(&config->base_state, 1, 2) == 1) ? 1 : -1;
@@ -230,7 +236,7 @@ STV _strgen_write_sign_(char *buf, size_t len, str_rand_mod* config, size_t *cur
 
     if (config->mixed_sign) {
         if (*cursor >= config->str_len) { *term = true; return; }
-        enull_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+        enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
         if (config->early_null && enull_roll < config->enull_chance) { 
             buf[*cursor] = '\0'; *term = true; return;
         } buf[*cursor] = (sign == 1) ? '-' : '+'; *cursor++;
@@ -241,7 +247,7 @@ STV _strgen_write_lz_(char *buf, size_t len, str_rand_mod* config, size_t *curso
     float enull_roll;
     for (size_t i = 0; i < config->lzcount; ++i) {
         if (*cursor >= config->str_len) { *term = true; return; }
-        enull_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+        enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
         if (config->early_null && enull_roll < config->enull_chance) {
             buf[*cursor] = '\0'; *term = true; return;
         } buf[*cursor] = '0'; *cursor++;
@@ -250,7 +256,7 @@ STV _strgen_write_lz_(char *buf, size_t len, str_rand_mod* config, size_t *curso
 STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *cursor, bool *term) {
     if (!config->bprefix) return;
     if (*cursor >= config->str_len) { *term = true; return; }
-    float enull_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+    float enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
     if (config->early_null && enull_roll < config->enull_chance) { 
         buf[*cursor] = '\0'; *term = true; return;
     } uint8_t upsub = (__rng_range(&config->base_state, 1, 10) == 1) ? 32 : 0;
@@ -350,12 +356,12 @@ STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *curs
         if (*cursor >= config->str_len) { *term = true; return; }
         // Rolling for Early Null
         if (config->early_null) {
-            enull_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+            enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
             if (enull_roll < config->enull_chance) { buf[*cursor] = '\0'; *term = true; return; }
         }
         // Rolling for Invalid Digit
         if (config->inval_digit && config->inval_digit_cnt) {
-            inval_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+            inval_roll = (float)(fmodf(__froll(&config->base_state), 100));
             if (inval_roll < config->init_inval_chance) {
                 buf[*cursor] = __get_inval_digit(
                     config->base, 
@@ -369,7 +375,7 @@ STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *curs
         }
         // Rolling for Junk
         if (config->junk && config->max_junk_cnt) {
-            junk_roll = (float)(fmodf(__seed_to_float(&config->base_state), 100));
+            junk_roll = (float)(fmodf(__froll(&config->base_state), 100));
             if (junk_roll < config->junk_chance) {
                 buf[*cursor] = __get_junk(&config->base_state);
                 config->max_junk_cnt--; *cursor++;
@@ -381,13 +387,14 @@ STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *curs
 }
 // Main Functions
 inline void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_state *add_state) {
-    // Generation State
-    uint64_t base_seed; __GET_ENTROPY_FAST(&base_seed, sizeof(base_seed));
-    config->base_state = (xoshiro256_state){0}; 
-    seed_xoshiro256(&config->base_state, base_seed);
+    // Generation of State
+    uint64_t side_mix = 0;
+    config->base_state = (xoshiro256_state){0};
+    __GET_ENTROPY_FAST(config->base_state.s, sizeof(uint64_t) << 2);
+    __GET_ENTROPY_FAST(&side_mix, sizeof(uint64_t));
+    seed_xoshiro256(&config->base_state, side_mix);
     // Base-prefix Option handling
     if (!bprefix) config->bprefix = false;
-    config->base = __rng_range(&config->base_state, 1, 64);
     // State Mixing --> Further randomization
     config->base_state = mix_xoshiro256(&config->base_state, add_state);
     xoshiro256pp_next(&config->base_state); // Further scramble
@@ -396,12 +403,14 @@ inline size_t strgen_len(void) { return STR_CAP; }
 void strgen_write(char *buf, size_t len, str_rand_mod* config, bool bprefix) {
     // Setup
     config->str_len = __rng_skrange(&config->base_state, 0, strgen_len(), 0.7f);
+    config->base = __rng_range(&config->base_state, 1, 64);
+    config->mod_gen_mode = _strgen_roll_gmode(&config->base_state);
     _strgen_rseed_include(config, bprefix); _strgen_rseed_quant(config, bprefix);
     str_areas order[4] = {WHITESPACE, SIGNS, BASE_PREFIX, LEADING_ZEROS};
     _strgen_bias_shuffle(config, order); size_t cursor = 0;
     bool end_signal = false;
 
-    // Main writing
+    // Main writing loop
     for (uint8_t i = 0; i < 5; ++i) {
         if (end_signal || cursor >= config->str_len) break;
         if (i < 5) { switch (order[i]) {
