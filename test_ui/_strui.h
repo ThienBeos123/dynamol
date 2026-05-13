@@ -301,12 +301,13 @@ static inline void fill_suite_rinv(
 static inline void fill_suite_reval(
     _libdnml_str_suite *curr_suite,
     void *case_gen, void *fn_test, void *fn_eval,
-    bool *fn_stat, bool *cmp_eval,
+    bool *fn_stat, bool *cmp_eval, void *fmtin_fn,
     void *inbuf_linker, void *inbuf_size,
     void *outbuf_linker, void *aux2buf_linker
 ) {
     curr_suite->gen_case = (dnml_gen_fn*)(case_gen);
     curr_suite->fn_test = (dnml_exec_fn*)(fn_test);
+    curr_suite->fmtin_fn = (dnml_fmt_in_fn*)(fmtin_fn);
     // Evaluators
     curr_suite->fn_eval = (dnml_eval_fn*)(fn_eval);
     curr_suite->fn_stat = (dnml_stat_fn*)(fn_stat);

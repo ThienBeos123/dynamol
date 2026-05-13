@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
     suite get_str_suite = {0};
     create_str_suite(&get_str_suite, "bigInt_get_str - String Assignment", 
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); get_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_str_suite,
@@ -419,7 +419,7 @@ int main(int argc, char **argv) {
     suite get_strn_suite = {0};
     create_str_suite(&get_strn_suite, "bigInt_get_strn - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); get_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strn_suite,
@@ -433,8 +433,8 @@ int main(int argc, char **argv) {
     // get_strb() -- Base-param, No length param
     suite get_strb_suite = {0};
     create_str_suite(&get_strb_suite, "bigInt_get_strb - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
         &assign_rconfig, &assign_rstate
     ); get_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strb_suite,
@@ -448,8 +448,8 @@ int main(int argc, char **argv) {
     // get_strnb() -- Base-param, Length param
     suite get_strnb_suite = {0};
     create_str_suite(&get_strnb_suite, "bigInt_get_strnb - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
+        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
         &assign_rconfig, &assign_rstate
     ); get_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strnb_suite,

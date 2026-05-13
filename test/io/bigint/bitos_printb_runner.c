@@ -85,32 +85,32 @@ int main(int argc, char **argv) {
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
-    // fput() - Stream-based Printing
-    suite fput_suite = {0};
-    create_str_suite(&fput_suite, "fput - BigInt Printing", 
+    // fputb() - Stream-based Printing
+    suite fputb_suite = {0};
+    create_str_suite(&fputb_suite, "fputb - BigInt Printing", 
         print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", print_ectx, &print_rcon,
+        "../logs/bi_logs/bigInt_fputb.txt", print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
-    ); fput_suite.cap_mode = ENOUGH;
-    fill_suite_rinv(&fput_suite,
-        &_bitos_print_ingen, &exec_bitos_fput,
-        &inv_bitos_fput_nob, NULL, 
-        &cmp_inv_bitos_put, &fmt_in_fput, &fmt_recon_bitos,
+    ); fputb_suite.cap_mode = ENOUGH;
+    fill_suite_rinv(&fputb_suite,
+        &_bitos_print_ingen, &exec_bitos_fputb,
+        &inv_bitos_fput_b, NULL, 
+        &cmp_inv_bitos_put, &fmt_in_fputb, &fmt_recon_bitos,
         &_bitos_print_inlink, &_bitos_print_insize,
         &_bitos_recon_linker, &_bitos_recon_size,
         &_bitos_outlink, &_bitos_aux2link
     );
-    // sfput() - Buffered Printing
-    suite sfput_suite = {0};
-    create_str_suite(&sfput_suite, "sfput - BigInt Printing", 
+    // sfputb() - Buffered Printing
+    suite sfputb_suite = {0};
+    create_str_suite(&sfputb_suite, "sfputb - BigInt Printing", 
         print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", print_ectx, &print_rcon,
+        "../logs/bi_logs/bigInt_fputb.txt", print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
-    ); sfput_suite.cap_mode = ENOUGH;
-    fill_suite_rinv(&sfput_suite,
-        &_bitos_print_ingen, &exec_bitos_sfput,
-        &inv_bitos_fput_nob, NULL,
-        &cmp_inv_bitos_put, &fmt_in_fput, &fmt_recon_bitos,
+    ); sfputb_suite.cap_mode = ENOUGH;
+    fill_suite_rinv(&sfputb_suite,
+        &_bitos_print_ingen, &exec_bitos_sfputb,
+        &inv_bitos_fput_b, NULL,
+        &cmp_inv_bitos_put, &fmt_in_fputb, &fmt_recon_bitos,
         &_bitos_conv_inlink, &_bitos_conv_insize,
         &_bitos_recon_linker, &_bitos_recon_size,
         &_bitos_outlink, &_bitos_aux2link
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 
     //* ---------------------------------- SESSION STARTUP ---------------------------------- *//
     _libdnml_str_suite print_suite_arr[print_scount];
-    print_suite_arr[0] = fput_suite;  print_suite_arr[1] = sfput_suite;
+    print_suite_arr[0] = fputb_suite;  print_suite_arr[1] = sfputb_suite;
     _libdnml_session bi_print_sesh = {0}; create_str_session(
         &bi_print_sesh, "I/O - BigInt --> String Printing",
         100, print_scount, print_suite_arr, print_omode

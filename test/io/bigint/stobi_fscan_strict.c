@@ -525,7 +525,7 @@ int main(int argc, char **argv) {
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan",
         sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", sscan_ectx, &sscan_rcon,
+        "../logs/bi_logs/bigInt_fscan_sa.txt", sscan_ectx, &sscan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); fsscan_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&fsscan_suite,
@@ -539,8 +539,8 @@ int main(int argc, char **argv) {
     // fsscanb() -- Base-param, No length param
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan",
-        sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", sscan_ectx, &sscan_rcon,
+        sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        "../logs/bi_logs/bigInt_fscan_sa.txt", sscan_ectx, &sscan_rcon,
         &scan_rconfig, &scan_rstate
     ); fsscanb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&fsscanb_suite,

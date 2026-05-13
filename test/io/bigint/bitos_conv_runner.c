@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
         conv_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else conv_omode = DNML_VOUT;
-    u8 conv_ecount = 27, conv_scount = 4;
+    u8 conv_ecount = 35, conv_scount = 4;
 
     // Edge-case Buffer Setup
     limb_t ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
     suite to_str_suite = {0};
     create_str_suite(&to_str_suite, "to_str - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
         &conv_rconfig_nob, &conv_rstate
     ); to_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_str_suite,
@@ -106,8 +106,8 @@ int main(int argc, char **argv) {
     // to_strb() - Base-parameter, No length param
     suite to_strb_suite = {0};
     create_str_suite(&to_strb_suite, "to_strb - BigInt Conversion", 
-        conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[1], 
+        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
         &conv_rconfig_b, &conv_rstate
     ); to_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strb_suite,
@@ -121,8 +121,8 @@ int main(int argc, char **argv) {
     // to_strn() - Non-base-parameter, length param
     suite to_strn_suite = {0};
     create_str_suite(&to_strn_suite, "to_strn - BigInt Conversion", 
-        conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[2], 
+        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
         &conv_rconfig_nob, &conv_rstate
     ); to_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strn_suite,
@@ -136,8 +136,8 @@ int main(int argc, char **argv) {
     // to_strnb() - Base-parameter, length param
     suite to_strnb_suite = {0};
     create_str_suite(&to_strnb_suite, "to_strnb - BigInt Conversion",
-        conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[0],
-        "../logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[3],
+        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
         &conv_rconfig_b, &conv_rstate
     ); to_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strnb_suite,

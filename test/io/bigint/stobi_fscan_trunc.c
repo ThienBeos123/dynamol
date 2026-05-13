@@ -579,26 +579,26 @@ int main(int argc, char **argv) {
     suite ftscan_suite = {0};
     create_str_suite(&ftscan_suite, "bigInt_ftscan - String Stream Scan",
         tscan_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", tscan_ectx, &tscan_rcon,
+        "../logs/bi_logs/bigInt_ftscan_sa.txt", tscan_ectx, &tscan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); ftscan_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&ftscan_suite,
-        &_stobi_scan_ingen_nob, &exec_stobi_ftscan,
-        &eval_stobi_ftscan, &stat_stobi_fscan_nobsa,
-        &cmp_eval_stobi, &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_scan_ingen_nob, &exec_stobi_ftscan, &eval_stobi_ftscan, 
+        &stat_stobi_fscan_nobsa, &cmp_eval_stobi, &fmt_in_fsscan,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
         &_stobi_outlink, &_stobi_aux2link
     );
     // fsscanb() -- Base-param, No length param
     suite ftscanb_suite = {0};
     create_str_suite(&ftscanb_suite, "bigInt_ftscanb - String Stream Scan",
-        tscan_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_fscan.txt", tscan_ectx, &tscan_rcon,
+        tscan_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
+        "../logs/bi_logs/bigInt_ftscan_sa.txt", tscan_ectx, &tscan_rcon,
         &scan_rconfig, &scan_rstate
     ); ftscanb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&ftscanb_suite,
-        &_stobi_scan_ingen_nob, &exec_stobi_ftscanb,
-        &eval_stobi_ftscanb, &stat_stobi_fscan_bsa, 
-        &cmp_eval_stobi, &_stobi_scan_inlink, &_stobi_scan_insize,
+        &_stobi_scan_ingen_nob, &exec_stobi_ftscanb, &eval_stobi_ftscanb, 
+        &stat_stobi_fscan_bsa, &cmp_eval_stobi, &fmt_in_fsscanb,
+        &_stobi_scan_inlink, &_stobi_scan_insize,
         &_stobi_outlink, &_stobi_aux2link
     );
 

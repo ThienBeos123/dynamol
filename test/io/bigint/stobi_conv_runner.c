@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
     suite from_str_suite = {0};
     create_str_suite(&from_str_suite, "bigInt_from_str - String Conversion", 
         conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
         &conv_bp_rconfig, &conv_rstate
     ); from_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_str_suite,
@@ -413,8 +413,8 @@ int main(int argc, char **argv) {
     // from_strn() -- Base-prefix, Length param
     suite from_strn_suite = {0};
     create_str_suite(&from_strn_suite, "bigInt_from_strn - String Conversion", 
-        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        "../logs/bi_logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
         &conv_bp_rconfig, &conv_rstate
     ); from_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_strn_suite,
@@ -428,8 +428,8 @@ int main(int argc, char **argv) {
     // from_strb() -- Base-param, No length param
     suite from_strb_suite = {0};
     create_str_suite(&from_strb_suite, "bigInt_from_strb - String Conversion", 
-        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        "../logs/bi_logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); from_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_strb_suite,
@@ -443,8 +443,8 @@ int main(int argc, char **argv) {
     // from_strnb() -- Base-param, Length param
     suite from_strnb_suite = {0};
     create_str_suite(&from_strnb_suite, "bigInt_from_strnb - String Conversion", 
-        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
+        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
+        "../logs/bi_logs/bigint_from_str.txt", conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); from_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&from_strnb_suite,

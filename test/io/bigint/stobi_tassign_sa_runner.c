@@ -723,52 +723,56 @@ int main(int argc, char **argv) {
     suite tget_str_suite = {0};
     create_str_suite(&tget_str_suite, "bigInt_tget_str - String Assignment", 
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_str,
         &eval_stobi_tget_str, &stat_stobi_sget_str, 
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &cmp_eval_stobi, &fmt_in_get_sstr,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
         &_stobi_outlink, &_stobi_aux2link
     );
     // tget_strn() -- Base-prefix, Length param
     suite tget_strn_suite = {0};
     create_str_suite(&tget_strn_suite, "bigInt_tget_strn - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_nob, &exec_stobi_tget_strn,
         &eval_stobi_tget_str, &stat_stobi_sget_strn, 
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &cmp_eval_stobi, &fmt_in_get_sstrn,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
         &_stobi_outlink, &_stobi_aux2link
     );
     // tget_strb() -- Base-param, No length param
     suite tget_strb_suite = {0};
     create_str_suite(&tget_strb_suite, "bigInt_tget_strb - String Assignment",
-        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[2],
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strb,
         &eval_stobi_tget_strb, &stat_stobi_sget_strb, 
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &cmp_eval_stobi, &fmt_in_get_sstrb,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
         &_stobi_outlink, &_stobi_aux2link
     );
     // tget_strnb() -- Base-param, Length param
     suite tget_strnb_suite = {0};
     create_str_suite(&tget_strnb_suite, "bigInt_tget_strnb - String Assignment",
-        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bigInt_get_strsa.txt", tassign_ectx, &tassign_rcon,
+        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[3],
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
         &_stobi_assign_ingen_b, &exec_stobi_tget_strnb,
         &eval_stobi_tget_strb, &stat_stobi_sget_strnb,
-        &cmp_eval_stobi, &_stobi_assign_inlink, &_stobi_assign_insize,
+        &cmp_eval_stobi, &fmt_in_get_sstrnb,
+        &_stobi_assign_inlink, &_stobi_assign_insize,
         &_stobi_outlink, &_stobi_aux2link
     );
 

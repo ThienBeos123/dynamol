@@ -49,7 +49,7 @@
 */
 
 int main(int argc, char **argv) {
-    fputs(stderr, 
+    fputs(stderr,
         "This test unit is yet to be implemented or finished due to:\n \
         - The feature in the main-unit that is being tested has yet to be implemented \
         - Test wrappers for this feature has yet to be implemented \

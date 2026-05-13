@@ -406,9 +406,9 @@ int main(int argc, char **argv) {
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
     // sget_str() -- Base-prefix, No length param
     suite sget_str_suite = {0};
-    create_str_suite(&sget_str_suite, "bigInt_tget_str - String Assignment", 
+    create_str_suite(&sget_str_suite, "bigInt_sget_str - String Assignment", 
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_rcon,
+        "../logs/bi_logs/bigInt_sget_str.txt", sassign_ectx, &sassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); sget_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_str_suite,
@@ -421,9 +421,9 @@ int main(int argc, char **argv) {
     );
     // sget_strn() -- Base-prefix, Length param
     suite sget_strn_suite = {0};
-    create_str_suite(&sget_strn_suite, "bigInt_tget_strn - String Assignment",
+    create_str_suite(&sget_strn_suite, "bigInt_sget_strn - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_rcon,
+        "../logs/bi_logs/bigInt_sget_str.txt", sassign_ectx, &sassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); sget_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_strn_suite,
@@ -436,9 +436,9 @@ int main(int argc, char **argv) {
     );
     // sget_strb() -- Base-param, No length param
     suite sget_strb_suite = {0};
-    create_str_suite(&sget_strb_suite, "bigInt_tget_strb - String Assignment",
-        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_rcon,
+    create_str_suite(&sget_strb_suite, "bigInt_sget_strb - String Assignment",
+        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        "../logs/bi_logs/bigInt_sget_str.txt", sassign_ectx, &sassign_rcon,
         &assign_rconfig, &assign_rstate
     ); sget_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_strb_suite,
@@ -451,9 +451,9 @@ int main(int argc, char **argv) {
     );
     // sget_strnb() -- Base-param, Length param
     suite sget_strnb_suite = {0};
-    create_str_suite(&sget_strnb_suite, "bigInt_tget_strnb - String Assignment",
-        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bigInt_get_str.txt", sassign_ectx, &sassign_rcon,
+    create_str_suite(&sget_strnb_suite, "bigInt_sget_strnb - String Assignment",
+        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
+        "../logs/bi_logs/bigInt_sget_str.txt", sassign_ectx, &sassign_rcon,
         &assign_rconfig, &assign_rstate
     ); sget_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sget_strnb_suite,

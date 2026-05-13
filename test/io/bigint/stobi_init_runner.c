@@ -398,7 +398,7 @@ int main(int argc, char **argv) {
     suite strinit_suite = {0};
     create_str_suite(&strinit_suite, "strinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
         &init_bp_rconfig, &init_rstate
     ); strinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strinit_suite,
@@ -412,8 +412,8 @@ int main(int argc, char **argv) {
     // strninit() -- Base-prefix, Length param
     suite strninit_suite = {0};
     create_str_suite(&strninit_suite, "strninit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1], 
+        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
         &init_bp_rconfig, &init_rstate
     ); strninit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strninit_suite,
@@ -427,8 +427,8 @@ int main(int argc, char **argv) {
     // strbinit() -- Base-param, No length param
     suite strbinit_suite = {0};
     create_str_suite(&strbinit_suite, "strbinit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
         &init_rconfig, &init_rstate
     ); strbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strbinit_suite,
@@ -442,8 +442,8 @@ int main(int argc, char **argv) {
     // strnbinit() -- Base-param, Length param
     suite strnbinit_suite = {0};
     create_str_suite(&strnbinit_suite, "strnbinit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3], 
+        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
         &init_rconfig, &init_rstate
     ); strnbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strnbinit_suite,
