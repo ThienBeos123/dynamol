@@ -2103,7 +2103,7 @@ size_t bigInt_fscanbsa_size(FILE *stream, uint8_t base, size_t bi_size, dnml_sta
     } *err = STR_SUCCESS; return res;
 }
 /* --------- Decimal Instant OUTPUT ---------  */
-void bigInt_put(const bigInt x) {
+dnml_status bigInt_put(const bigInt x) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
@@ -2123,10 +2123,11 @@ void bigInt_put(const bigInt x) {
             putchar((char)('0' + numeric_val));
         } 
         arena_reset(_DASI_PUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_putb(const bigInt x, uint8_t base) {
+dnml_status bigInt_putb(const bigInt x, uint8_t base) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) putchar('-');
@@ -2161,10 +2162,11 @@ void bigInt_putb(const bigInt x, uint8_t base) {
             _DIGIT_SEN_[numerical_val]; putchar(c);
         } 
         arena_reset(_DASI_PUTB_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) putchar('-');
@@ -2208,9 +2210,9 @@ void bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
             _DIGIT_SEN_[numerical_val]; putchar(c);
         } 
         arena_reset(_DASI_PUTF_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_fput(FILE *stream, const bigInt x) {
+dnml_status bigInt_fput(FILE *stream, const bigInt x) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
     if (x.n == 0) fputc('0', stream);
     else if (x.n == 1) {
@@ -2230,10 +2232,11 @@ void bigInt_fput(FILE *stream, const bigInt x) {
             fputc((char)('0' + numerical_val), stream);
         } 
         arena_reset(_DASI_FPUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
+dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) fputc('-', stream);
@@ -2268,10 +2271,11 @@ void bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
         } 
         arena_reset(_DASI_FPUTB_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) fputc('-', stream);
@@ -2317,10 +2321,10 @@ void bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
         } 
         arena_reset(_DASI_FPUTF_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
 /* --------- Decimal Buffered OUTPUT ---------  */
-void bigInt_sput(const bigInt x) {
+dnml_status bigInt_sput(const bigInt x) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
     if (x.n == 0) putchar('0\n');
     else if (x.n == 1) printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2349,10 +2353,11 @@ void bigInt_sput(const bigInt x) {
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         } 
         arena_reset(_DASI_SPUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_sputb(const bigInt x, uint8_t base) {
+dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) putchar('0\n');
     else if (x.n == 1) {
         if (base == 10)         printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2404,10 +2409,11 @@ void bigInt_sputb(const bigInt x, uint8_t base) {
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
         arena_reset(_DASI_PUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) putchar('0\n');
     else if (x.n == 1) {
         if (base == 10)         printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2480,9 +2486,9 @@ void bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         } 
         arena_reset(_DASI_PUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_sfput(FILE *stream, const bigInt x) {
+dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
     if (x.n == 0) fputc('0\n', stream);
     else if (x.n == 1) fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2509,10 +2515,11 @@ void bigInt_sfput(FILE *stream, const bigInt x) {
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
         arena_reset(_DASI_SPUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
+dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) fputc('0\n', stream);
     else if (x.n == 1) {
         if (base == 10)         fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2563,10 +2570,11 @@ void bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
             fprintf(stream, "%.*s\n", str_len, ___DASI_IO_CHUNKBUF_); 
         }
         arena_reset(_DASI_PUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
-void bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
     assert(__BIGINT_INTERNAL_VALID__(&x));
+    test_assert((!base), STR_INVALID_BASE);
     if (x.n == 0) fputc('0\n', stream);
     else if (x.n == 1) {
         if (base == 10)         fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2636,7 +2644,7 @@ void bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         } 
         arena_reset(_DASI_PUT_ARENA, tmp_mark);
-    }
+    } return STR_SUCCESS;
 }
 /* --------- Standard Stream (stdin) INPUT ---------  */
 dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocated Temporary

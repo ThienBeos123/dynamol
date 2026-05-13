@@ -477,19 +477,19 @@ size_t bigInt_fscanb_size(FILE *stream, uint8_t base, dnml_status *err);
 size_t bigInt_fscansa_size(FILE *stream, uint8_t *baseout, size_t bi_size, dnml_status *err);
 size_t bigInt_fscanbsa_size(FILE *stream, uint8_t base, size_t bi_size, dnml_status *err);
 /* --------- Decimal Instant OUTPUT ---------  */
-void bigInt_put(const bigInt x);
-void bigInt_putb(const bigInt x, uint8_t base);
-void bigInt_putf(const bigInt x, uint8_t base, bool uppercase);
-void bigInt_fput(FILE *stream, const bigInt x);
-void bigInt_fputb(FILE *stream, const bigInt x, uint8_t base);
-void bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase);
+dnml_status bigInt_put(const bigInt x);
+dnml_status bigInt_putb(const bigInt x, uint8_t base);
+dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase);
+dnml_status bigInt_fput(FILE *stream, const bigInt x);
+dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base);
+dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase);
 /* --------- Decimal Buffered OUTPUT ---------  */
-void bigInt_sput(const bigInt x);
-void bigInt_sputb(const bigInt x, uint8_t base);
-void bigInt_sputf(const bigInt x, uint8_t base, bool uppercase);
-void bigInt_sfput(FILE *stream, const bigInt x);
-void bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base);
-void bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase);
+dnml_status bigInt_sput(const bigInt x);
+dnml_status bigInt_sputb(const bigInt x, uint8_t base);
+dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase);
+dnml_status bigInt_sfput(FILE *stream, const bigInt x);
+dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base);
+dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase);
 /* --------- Standard Stream (stdin) INPUT ---------  */
 dnml_status bigInt_scan(bigInt *x);
 dnml_status bigInt_scanb(bigInt *x, uint8_t base);

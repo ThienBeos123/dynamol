@@ -72,6 +72,9 @@
 
 //* ========================= BITOS EVALUATION WRAPPERS ======================= *//
 // BITOS Status Checkers
+stinl bool stat_bitos_print(cvoid *vin, dnml_status res_status, str_res *out) { 
+    return (res_status == STR_SUCCESS); 
+}
 stinl bool stat_bitos_conv_nob(cvoid *vin, dnml_status res_status, str_res *out) {
     bitos_conv_in *in = (bitos_conv_in*)vin;
     uint8_t sign_space = (in->x.sign == -1) ? 1 : 0;
@@ -370,6 +373,35 @@ stinl void eval_stobi_ftread(cvoid *vin, str_res *exp, void *vctx) { DNML_UNFINI
 } while (0);
 
 //* ========================= STOBI STATUS CHECKING WRAPPERS ======================= *//
+// STOBI_INIT Status Checkers
+stinl bool stat_stobi_strinit(cvoid *vin, dnml_status res_status, str_res *out) {
+    stobi_init_in *in = (stobi_init_in*)vin;
+    dnml_status exp; uint8_t base = 0;
+    bigInt_get_size(in->str, strlen(in->str), &base, &exp);
+    STOBI_STAT_SETOUT(out, exp);
+    return (res_status == exp);
+}
+stinl bool stat_stobi_strbinit(cvoid *vin, dnml_status res_status, str_res *out) {
+    stobi_init_in *in = (stobi_init_in*)vin;
+    dnml_status exp; uint8_t base = 0;
+    bigInt_get_sizeb(in->str, strlen(in->str), in->base, &exp);
+    STOBI_STAT_SETOUT(out, exp);
+    return (res_status == exp);
+}
+stinl bool stat_stobi_strninit(cvoid *vin, dnml_status res_status, str_res *out) {
+    stobi_init_in *in = (stobi_init_in*)vin;
+    dnml_status exp; uint8_t base = 0;
+    bigInt_get_size(in->str, in->len, &base, &exp);
+    STOBI_STAT_SETOUT(out, exp);
+    return (res_status == exp);
+}
+stinl bool stat_stobi_strnbinit(cvoid *vin, dnml_status res_status, str_res *out) {
+    stobi_init_in *in = (stobi_init_in*)vin;
+    dnml_status exp; uint8_t base = 0;
+    bigInt_get_sizeb(in->str, in->len, in->base, &exp);
+    STOBI_STAT_SETOUT(out, exp);
+    return (res_status == exp);
+}
 // STOBI_CONV Status Checkers
 stinl bool stat_stobi_from_str(cvoid *vin, dnml_status res_status, str_res *out) {
     stobi_conv_in *in = (stobi_conv_in*)vin;

@@ -124,7 +124,8 @@ static inline void exec_bitos_fput(const void *vin, str_res *out, void *vctx) {
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
-    } bigInt_fput(tmp, in->x);
+    } 
+    dnml_status stat = bigInt_fput(tmp, in->x);
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) { size_t n = fread(
@@ -132,7 +133,7 @@ static inline void exec_bitos_fput(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = STR_SUCCESS;
+    } out->str[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_fputb(const void *vin, str_res *out, void *vctx) {
@@ -140,7 +141,8 @@ static inline void exec_bitos_fputb(const void *vin, str_res *out, void *vctx) {
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
-    } bigInt_fputb(tmp, in->x, in->base);
+    } 
+    dnml_status stat = bigInt_fputb(tmp, in->x, in->base);
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
@@ -149,7 +151,7 @@ static inline void exec_bitos_fputb(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = STR_SUCCESS;
+    } out->str[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_fputf(const void *vin, str_res *out, void *vctx) {
@@ -157,7 +159,8 @@ static inline void exec_bitos_fputf(const void *vin, str_res *out, void *vctx) {
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
-    } bigInt_fputf(tmp, in->x, in->base, in->uppercase);
+    } 
+    dnml_status stat = bigInt_fputf(tmp, in->x, in->base, in->uppercase);
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
@@ -166,7 +169,7 @@ static inline void exec_bitos_fputf(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = STR_SUCCESS;
+    } out->str[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 // Buffered Printing - sfput
@@ -175,7 +178,8 @@ static inline void exec_bitos_sfput(const void *vin, str_res *out, void *vctx) {
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
-    } bigInt_sfput(tmp, in->x);
+    } 
+    dnml_status stat = bigInt_sfput(tmp, in->x);
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
@@ -184,7 +188,7 @@ static inline void exec_bitos_sfput(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = STR_SUCCESS;
+    } out->str[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_sfputb(const void *vin, str_res *out, void *vctx) {
@@ -192,7 +196,8 @@ static inline void exec_bitos_sfputb(const void *vin, str_res *out, void *vctx) 
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
-    } bigInt_sfputb(tmp, in->x, in->base);
+    } 
+    dnml_status stat = bigInt_sfputb(tmp, in->x, in->base);
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
@@ -201,7 +206,7 @@ static inline void exec_bitos_sfputb(const void *vin, str_res *out, void *vctx) 
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = STR_SUCCESS;
+    } out->str[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_sfputf(const void *vin, str_res *out, void *vctx) {
@@ -209,7 +214,8 @@ static inline void exec_bitos_sfputf(const void *vin, str_res *out, void *vctx) 
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
-    } bigInt_sfputf(tmp, in->x, in->base, in->uppercase);
+    }
+    dnml_status stat = bigInt_sfputf(tmp, in->x, in->base, in->uppercase);
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
@@ -218,7 +224,7 @@ static inline void exec_bitos_sfputf(const void *vin, str_res *out, void *vctx) 
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = STR_SUCCESS;
+    } out->str[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 // Stream-based Raw Output - fwrite

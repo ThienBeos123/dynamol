@@ -403,7 +403,7 @@ int main(int argc, char **argv) {
     ); strinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strinit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strinit,
-        &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
+        &inv_stobi_init_nob, &stat_stobi_strinit, &cmp_inv_stobi_init,
         &fmt_in_strinit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
         &_stobi_recon_linker, &_stobi_recon_size,
@@ -418,7 +418,7 @@ int main(int argc, char **argv) {
     ); strninit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strninit_suite,
         &_stobi_init_ingen_nob, &exec_stobi_strninit,
-        &inv_stobi_init_nob, NULL, &cmp_inv_stobi_init,
+        &inv_stobi_init_nob, &stat_stobi_strninit, &cmp_inv_stobi_init,
         &fmt_in_strninit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
         &_stobi_recon_linker, &_stobi_recon_size,
@@ -433,7 +433,7 @@ int main(int argc, char **argv) {
     ); strbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strbinit,
-        &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
+        &inv_stobi_init_b, &stat_stobi_strbinit, &cmp_inv_stobi_initb,
         &fmt_in_strbinit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
         &_stobi_recon_linker, &_stobi_recon_size,
@@ -448,7 +448,7 @@ int main(int argc, char **argv) {
     ); strnbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strnbinit_suite,
         &_stobi_init_ingen_b, &exec_stobi_strnbinit,
-        &inv_stobi_init_b, NULL, &cmp_inv_stobi_initb,
+        &inv_stobi_init_b, &stat_stobi_strnbinit, &cmp_inv_stobi_initb,
         &fmt_in_strnbinit, &fmt_recon_stobi,
         &_stobi_init_inlink, &_stobi_init_insize,
         &_stobi_recon_linker, &_stobi_recon_size,

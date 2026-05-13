@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     ); fputb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fputb_suite,
         &_bitos_print_ingen, &exec_bitos_fputb,
-        &inv_bitos_fput_b, NULL, 
+        &inv_bitos_fput_b, &stat_bitos_print, 
         &cmp_inv_bitos_put, &fmt_in_fputb, &fmt_recon_bitos,
         &_bitos_print_inlink, &_bitos_print_insize,
         &_bitos_recon_linker, &_bitos_recon_size,
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     ); sfputb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sfputb_suite,
         &_bitos_print_ingen, &exec_bitos_sfputb,
-        &inv_bitos_fput_b, NULL,
+        &inv_bitos_fput_b, &stat_bitos_print,
         &cmp_inv_bitos_put, &fmt_in_fputb, &fmt_recon_bitos,
         &_bitos_conv_inlink, &_bitos_conv_insize,
         &_bitos_recon_linker, &_bitos_recon_size,
