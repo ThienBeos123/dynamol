@@ -371,7 +371,7 @@ int main(int argc, char **argv) {
     u8 init_ecount = 27, init_scount = 4;
 
     // Edge-case Buffer Setup
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
+    limb_t ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
     str_res *ebuf_slices[init_scount], fail_ebuf[(init_ecount << 1) * init_scount];
     strbump_t init_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, init_ecount << 1, init_scount, sizeof(str_res));

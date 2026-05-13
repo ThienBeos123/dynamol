@@ -44,7 +44,7 @@ typedef struct str_res {
 
 //* ================= CONTEXT CONTAINER DEFINITIONS ================= *//
 #define ALIGN_UP(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
-#define RES_BUF_SIZE ((ALIGN_UP(sizeof(str_res), alignof(limb_t))) + STR_CAP)
+#define RES_BUF_SIZE ((ALIGN_UP(sizeof(str_res), alignof(limb_t))) + STR_OUT_CAP)
 typedef struct {
     uint8_t res_buf[RES_BUF_SIZE]; // FAM-based
     uint8_t aux2_buf[RES_BUF_SIZE]; // FAM-based
