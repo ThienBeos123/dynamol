@@ -49,8 +49,146 @@
 */
 
 
-scase ecases_nob[35] = {};
-scase ecases_b[35] = {};
+// INPUT DATA STORAGE SITE
+limb_t zero = 0, one = 1;
+limb_t small_mulval[35] = {
+    255, // ecases_nob Case 4
+    UINT16_C(999), // ecases_nob Case 5
+    UINT64_MAX, // ecases_nob Case 6 & 7 
+    UINT32_C(1000000000), // ecases_nob Case 13
+};
+limb_t case_8[2] = { 0, 1 }; // 2^64
+limb_t case_9[2] = { 1, 1 }; // 2^64 + 1
+limb_t case_10[2] = { UINT64_MAX, UINT64_MAX };
+limb_t case_12[3] = { UINT64_C(0x1234567890ABCDEF), UINT64_C(0xFEDCBA0987654321), 1 };
+limb_t case_15[2] = { UINT64_C(0x5555555555555555), UINT64_C(0xAAAAAAAAAAAAAAAA) };
+limb_t case_16[2] = { UINT64_C(0x8000000000000000), UINT64_C(0x8000000000000000) };
+
+
+scase ecases_nob[32] = {
+    /* ------------------------------------------------------------------------------------------------------------ */
+    /* Case Number  | Input                                     | Expected Ouput                                    */
+    /* ---------------------------------------------- TRIVIAL CASES ----------------------------------------------- */
+    { /* 1          | 0 (n = 0)                                 | "0"                                               */
+        .in = &(bitos_conv_in){ 
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 1, .cap = 1, .pstr = "0" }
+    }, { /* 2       | 1 (n = 1)                                 | "1"                                               */
+        .in = &(bitos_conv_in){ 
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 1, .cap = 1, .pstr = "1" }
+    }, { /* 3       | -1 (n = 1, sign = -1)                     | "-1"                                              */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .data.len = 2, .cap = 2, .pstr = "-1" }
+    }, { /* 4       | 255 (n = 1)                               | "255"                                             */
+        .in = &(bitos_conv_in){ 
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 3, .cap = 3, .pstr = "255" }
+    }, { /* 5       | -999 (n = 1, sign = -1)                   | "-999"                                            */
+        .in = &(bitos_conv_in){ 
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .data.len = 4, .cap = 4, .pstr = "-999" }
+    }, { /* 6       | 2^64 - 1 (n = 1)                          | "18446744073709551616"                            */
+        .in = &(bitos_conv_in){ 
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 20, .cap = 20, .pstr = "18446744073709551616" }
+    }, 
+    { /* 7          | -(2^64 - 1) (n = 1, sign = -1)            | "-18446744073709551616"                           */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .data.len = 21, .cap = 21, .pstr = "-18446744073709551616" }
+    },
+    /* ----------------------------------------------- EDGE CASES ------------------------------------------------- */
+    { /* 8          | 2^64 (n = 2)                              | "18446744073709551617"                            */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_8, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = { .type = STRING, .cap = 20, .data.len = 20, .pstr = "18446744073709551617" }
+    }, { /* 9       | 2^64 + 1 (n = 2)                          | "18446744073709551618"                            */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_9, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = { .type = STRING, .cap = 20, .data.len = 20, .pstr = "18446744073709551618" }
+    }, { /* 10      | 2^128 - 1 (n = 2)                         | "340282366920938463463374607431768211455"         */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 39, .data.len = 39, 
+            .pstr = "340282366920938463463374607431768211455" 
+        }
+    }, { /* 11      | -(2^128 - 1) (n = 2)                      | "-340282366920938463463374607431768211455"        */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = -1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 40, .data.len = 40, 
+            .pstr = "-340282366920938463463374607431768211455" 
+        }
+    }, { /* 12      | idk Random ig (n = 3)                     | "-679052356442...456469093871" (truncated)        */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_12, .cap = 3, .n = 3, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 39, .data.len = 39, 
+            .pstr = "679052356442327393940567539456469093871" 
+        }
+    }, { /* 13      | 1000000000 (n = 1)                        | "1000000000"                                      */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .cap = 10, .data.len = 10,  .pstr = "1000000000" }
+    }, { /* 14      | -1000000000 (n = 1, sign = -1)            | "-1000000000"                                     */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .cap = 11, .data.len = 11,  .pstr = "-1000000000" }
+    }, { /* 15      | Alt Limbs (n = 2)                         | "226854911280...263275623765" (truncated)         */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_15, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 39, .data.len = 39,
+            .pstr = "226854911280625642302767490263275623765"
+        }
+    }, { /* 16      | MSB Limbs (n = 2)                         | "170141183460...752738881536" (truncated)         */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_16, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 39, .data.len = 39,
+            .pstr = "170141183460469231740910675752738881536"
+        }
+    },
+};
+scase ecases_b[35] = {
+    /* -------------------------------------------------------------------------------------------- */
+    /* Case Number  |   Input               |   Base        |   Expected Ouput                      */
+};
 
 
 // Main Code
@@ -65,13 +203,13 @@ int main(int argc, char **argv) {
     u8 conv_ecount = 35, conv_scount = 4;
 
     // Edge-case Buffer Setup
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
+    char ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
     str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
     strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
-    rand_container conv_rcon = { 
+    rand_container conv_rcon = {
         .in_cont_type = CTX,
         .in_cont.rctx = &conv_in_rctx,
         .res_cont = &conv_res_rctx

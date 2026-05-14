@@ -37,7 +37,7 @@ typedef struct str_res {
     operated_types type;
     dnml_status status;
     union { bigInt bi; size_t len; } data;
-    size_t cap;
+    size_t cap; char *pstr; // For string literals
     char str[];
 } str_res;
 
