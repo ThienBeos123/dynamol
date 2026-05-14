@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 def truncate_string(s):
     """Truncates string to '12 digits...12 digits' if longer than 34 chars."""
@@ -74,7 +75,9 @@ def main():
         log_content += format_large_string(label, val_str)
 
     try:
-        with open("bitos.py/bi_limbs.txt", "w") as f:
+        # Gets the absolute directory of the current script
+        script_dir = Path(__file__).resolve().parent
+        with open(str(script_dir) + os.sep + "bi_limbs.txt", "w") as f:
             f.write(log_content)
         print("Full data successfully logged to 'bi_limbs.txt'.")
     except Exception as e:
