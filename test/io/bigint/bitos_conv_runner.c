@@ -50,7 +50,7 @@
 
 
 
-// INPUT DATA STORAGE SITE - NON-BASE-PARAMETER
+// INPUT DATA STORAGE SITE
 limb_t zero = 0, one = 1;
 limb_t small_mulval[35] = {
     255, // ecases_nob Case 4
@@ -86,7 +86,7 @@ limb_t case_final[48] = {
 };
 
 
-scase ecases_nob[25] = {
+scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
     /* ------------------------------------------------------------------------------------------------------------ */
     /* Case Number  | Input                                     | Expected Ouput                                    */
     /* ---------------------------------------------- TRIVIAL CASES ----------------------------------------------- */
@@ -324,7 +324,7 @@ scase ecases_nob[25] = {
     },
     /* ------------------------------------------------------------------------------------------------------------ */
 };
-scase ecases_b[25] = {
+scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
     /* -------------------------------------------------------------------------------------------------------------------- */
     /* Case Number  | Input                             | Base          | Expected Ouput                                    */
     /* -------------------------------------------------- TRIVIAL CASES --------------------------------------------------- */
@@ -431,7 +431,7 @@ scase ecases_b[25] = {
             .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = -1 }
         },
         .exp = { .type = STRING, .cap = 11, .data.len = 11,  .pstr = "-1000000000" }
-    }, { /* 15      | Alt Limbs (n = 2)                 | 16            | "226854911280...263275623765" (truncated)         */
+    }, { /* 15      | Alt Limbs (n = 2)                 | 16            | "AAAAAAAAAAAAAAAA5555555555555555"                */
         .in = &(bitos_conv_in){
             .base = 16, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_15, .cap = 2, .n = 2, .sign = 1 }
@@ -461,7 +461,7 @@ scase ecases_b[25] = {
             .type = STRING, .cap = 33, .data.len = 33,
             .pstr = "100000000000000000000000000000000"
         }
-    }, { /* 18      | 2^192 (n = 4)                     | 32            | "400000000000000000000000000000000000000"         */
+    }, { /* 18      | 2^192 (n = 4)                     | 32            | "-400000000000000000000000000000000000000"        */
         .in = &(bitos_conv_in){
             .base = 32, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_18, .cap = 4, .n = 4, .sign = -1 }
@@ -523,7 +523,7 @@ scase ecases_b[25] = {
                     "M7EA6c7Sab58AMlgSUj37diZj6URTfak"
                     "GMJW"
         }
-    }, { /* 24      | 2^3072 - 1 (n = 48)               | 16            | "580960599536...567329693695" (truncated)         */
+    }, { /* 24      | 2^3072 - 1 (n = 48)               | 16            | "ffffffffffff...ffffffffffff" (truncated)         */
         .in = &(bitos_conv_in){
             .base = 16, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_final, .cap = 48, .n = 48, .sign = 1 }
@@ -576,9 +576,9 @@ int main(int argc, char **argv) {
     u8 conv_ecount = 25, conv_scount = 4;
 
     // Edge-case Buffer Setup
-    char ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
+    char ectx_buf[2700]; // Edge-case Memory Usage: 2700 bytes
     str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
-    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 2700 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
@@ -592,10 +592,8 @@ int main(int argc, char **argv) {
     __GET_ENTROPY_FAST(conv_rstate.s, sizeof(u64) << 2);
     __GET_ENTROPY_FAST(side_mix, sizeof(u64));
     seed_xoshiro256(&conv_rstate, side_mix);
-    str_rand_mod conv_rconfig_nob = {0}, // Non-base parameter / Base-10
-    conv_rconfig_b = {0}; // Base-prefix / Base-parameter / Base-N
-    strgen_init_sesh(&conv_rconfig_nob, false, &conv_rstate);
-    strgen_init_sesh(&conv_rconfig_b, true, &conv_rstate);
+    bi_rand_mod conv_rconfig = {0}; // Non-base-prefix
+    bigen_init_sesh(&conv_rconfig, &conv_rstate);
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
@@ -604,7 +602,7 @@ int main(int argc, char **argv) {
     create_str_suite(&to_str_suite, "to_str - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
         "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_nob, &conv_rstate
+        &conv_rconfig, &conv_rstate
     ); to_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_str_suite,
         &_bitos_conv_ingen, &exec_bitos_to_str,
@@ -619,11 +617,11 @@ int main(int argc, char **argv) {
     create_str_suite(&to_strb_suite, "to_strb - BigInt Conversion", 
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[1], 
         "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_b, &conv_rstate
+        &conv_rconfig, &conv_rstate
     ); to_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strb_suite,
         &_bitos_conv_ingen, &exec_bitos_to_strb,
-        &inv_bitos_conv_b, &stat_bitos_conv_b, 
+        &inv_bitos_conv_b, &stat_bitos_conv_b,
         &cmp_inv_bitos_conv, &fmt_in_to_strb, &fmt_recon_bitos,
         &_bitos_conv_inlink, &_bitos_conv_insize,
         &_bitos_recon_linker, &_bitos_recon_size,
@@ -634,7 +632,7 @@ int main(int argc, char **argv) {
     create_str_suite(&to_strn_suite, "to_strn - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[2], 
         "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_nob, &conv_rstate
+        &conv_rconfig, &conv_rstate
     ); to_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strn_suite,
         &_bitos_conv_ingen, &exec_bitos_to_strn,
@@ -649,7 +647,7 @@ int main(int argc, char **argv) {
     create_str_suite(&to_strnb_suite, "to_strnb - BigInt Conversion",
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[3],
         "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_b, &conv_rstate
+        &conv_rconfig, &conv_rstate
     ); to_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strnb_suite,
         &_bitos_conv_ingen, &exec_bitos_to_strnb,

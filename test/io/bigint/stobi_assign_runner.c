@@ -81,7 +81,7 @@ limb_t multi_valb[6] = {
     UINT64_C(11976055582626787546),
     UINT64_C(2537941837315),
 };
-scase ecases_bprefix[27] = {
+scase ecases_bprefix[27] = { // 19 limbs ---> 152 bytes
     /* -------------------------------------------------------------------------------------------- */
     /* Case Number  |   Input                               |   Expected Ouput                      */
     /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
@@ -221,7 +221,7 @@ scase ecases_bprefix[27] = {
     }, 
     /* -------------------------------------------------------------------------------------------- */
 };
-scase ecases_base[27] = {
+scase ecases_base[27] = { // 19 limbs ---> 152 bytes
     /* -------------------------------------------------------------------------------------------- */
     /* Case Number  |   Input                               |   Expected Ouput                      */
     /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
@@ -377,7 +377,7 @@ int main(int argc, char **argv) {
     u8 assign_ecount = 27, assign_scount = 4;
 
     // Edge-case Buffer Setup
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
+    limb_t ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
     str_res *ebuf_slices[assign_scount], fail_ebuf[(assign_ecount << 1) * assign_scount];
     strbump_t assign_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
     _dist_buf(ebuf_slices, fail_ebuf, assign_ecount << 1, assign_scount, sizeof(str_res));

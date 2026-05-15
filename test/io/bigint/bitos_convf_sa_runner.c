@@ -49,7 +49,8 @@
 */
 
 
-scase ecases[35] = {};
+scase ecases_strict[30] = {};
+scase ecases_trunc[30] = {};
 
 
 // Main Code
@@ -57,72 +58,70 @@ int main(int argc, char **argv) {
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
-    _dnml_output_mode print_omode; if (argc >= 2) {
+    _dnml_output_mode conv_omode; if (argc >= 2) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
-        print_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
-    } else print_omode = DNML_VOUT;
-    u8 print_ecount = 35, print_scount = 2;
+        conv_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
+    } else conv_omode = DNML_VOUT;
+    u8 conv_ecount = 30, conv_scount = 4;
 
     // Edge-case Buffer Setup
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
-    str_res *ebuf_slices[print_scount], fail_ebuf[(print_ecount << 1) * print_scount];
-    strbump_t print_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
-    _dist_buf(ebuf_slices, fail_ebuf, print_ecount << 1, print_scount, sizeof(str_res));
+    char ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
+    str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
+    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
-    rctx_res_t print_res_rctx = {0}; rctx_input_t print_in_rctx = {0};
-    rand_container print_rcon = {
+    rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
+    rand_container conv_rcon = { 
         .in_cont_type = CTX,
-        .in_cont.rctx = &print_in_rctx,
-        .res_cont = &print_res_rctx
+        .in_cont.rctx = &conv_in_rctx,
+        .res_cont = &conv_res_rctx
     };
     // Randomization Configuration
-    xoshiro256_state print_rstate = {0}; u64 side_mix = 0;
-    __GET_ENTROPY_FAST(print_rstate.s, sizeof(u64) << 2);
+    xoshiro256_state conv_rstate = {0}; u64 side_mix = 0;
+    __GET_ENTROPY_FAST(conv_rstate.s, sizeof(u64) << 2);
     __GET_ENTROPY_FAST(side_mix, sizeof(u64));
-    seed_xoshiro256(&print_rstate, side_mix);
-    bi_rand_mod print_rconfig = {0}; // Non-base parameter / Base-10
-    bigen_init_sesh(&print_rconfig, &print_rstate);
+    seed_xoshiro256(&conv_rstate, side_mix);
+    bi_rand_mod conv_rconfig = {0}; // Base-prefix
+    bigen_init_sesh(&conv_rconfig, &conv_rstate);
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
-    // fputb() - Stream-based Printing
-    suite fputb_suite = {0};
-    create_str_suite(&fputb_suite, "fputb - BigInt Printing", 
-        print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fputb.txt", print_ectx, &print_rcon,
-        &print_rconfig, &print_rstate
-    ); fputb_suite.cap_mode = ENOUGH;
-    fill_suite_rinv(&fputb_suite,
-        &_bitos_print_ingen, &exec_bitos_fputb,
-        &inv_bitos_fput_b, &stat_bitos_print, 
-        &cmp_inv_bitos_put, &fmt_in_fputb, &fmt_recon_bitos,
-        &_bitos_print_inlink, &_bitos_print_insize,
+    // to_strf() - Size-aware Testing
+    suite to_sstrf_suite = {0};
+    create_str_suite(&to_sstrf_suite, "to_strf - BigInt Conversion", 
+        conv_scount, rcount, ecases_strict, INVERSE, ebuf_slices[2], 
+        "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
+        &conv_rconfig, &conv_rstate
+    ); to_sstrf_suite.cap_mode = RANDOMIZED;
+    fill_suite_rinv(&to_sstrf_suite,
+        &_bitos_convf_ingen, &exec_bitos_to_strf,
+        &inv_bitos_conv_b, &stat_bitos_conv_b,
+        &cmp_inv_bitos_conv, &fmt_in_to_strf, &fmt_recon_bitos,
+        &_bitos_conv_inlink, &_bitos_conv_insize,
         &_bitos_recon_linker, &_bitos_recon_size,
         &_bitos_outlink, &_bitos_aux2link
     );
-    // sfputb() - Buffered Printing
-    suite sfputb_suite = {0};
-    create_str_suite(&sfputb_suite, "sfputb - BigInt Printing", 
-        print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fputb.txt", print_ectx, &print_rcon,
-        &print_rconfig, &print_rstate
-    ); sfputb_suite.cap_mode = ENOUGH;
-    fill_suite_rinv(&sfputb_suite,
-        &_bitos_print_ingen, &exec_bitos_sfputb,
-        &inv_bitos_fput_b, &stat_bitos_print,
-        &cmp_inv_bitos_put, &fmt_in_fputb, &fmt_recon_bitos,
+    // tto_strf() - Size-aware Testing
+    suite tto_sstrf_suite = {0};
+    create_str_suite(&tto_sstrf_suite, "tto_strf - BigInt Conversion",
+        conv_scount, rcount, ecases_trunc, INVERSE, ebuf_slices[3],
+        "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
+        &conv_rconfig, &conv_rstate
+    ); tto_sstrf_suite.cap_mode = RANDOMIZED;
+    fill_suite_reval(&tto_sstrf_suite,
+        &_bitos_convf_ingen, &exec_bitos_tto_strf, &eval_bitos_tto_strf,
+        &stat_bitos_tconv_b, &cmp_eval_bitos, &fmt_in_to_strf,
         &_bitos_conv_inlink, &_bitos_conv_insize,
-        &_bitos_recon_linker, &_bitos_recon_size,
         &_bitos_outlink, &_bitos_aux2link
     );
 
 
     //* ---------------------------------- SESSION STARTUP ---------------------------------- *//
-    _libdnml_str_suite print_suite_arr[print_scount];
-    print_suite_arr[0] = fputb_suite;  print_suite_arr[1] = sfputb_suite;
-    _libdnml_session bi_print_sesh = {0}; create_str_session(
-        &bi_print_sesh, "I/O - BigInt --> String Printing",
-        100, print_scount, print_suite_arr, print_omode
-    ); start_str_session(&bi_print_sesh);
+    _libdnml_str_suite conv_suite_arr[conv_scount];
+    conv_suite_arr[0] = to_sstrf_suite; conv_suite_arr[1] = tto_sstrf_suite;
+    _libdnml_session bi_conv_sesh = {0}; create_str_session(
+        &bi_conv_sesh, "I/O - BigInt --> String Conversion (Formatted)",
+        100, conv_scount, conv_suite_arr, conv_omode
+    ); start_str_session(&bi_conv_sesh);
     return 0;
 }

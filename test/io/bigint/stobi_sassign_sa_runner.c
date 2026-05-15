@@ -154,7 +154,7 @@ limb_t base_param_final[48] = {
 // Edge-case VALUE STORAGE - BASE-PARAMETER
 
 // Edge-case STORAGE
-scase ecases_bprefix[32] = {
+scase ecases_bprefix[32] = { // 88 limbs --> 704 bytes
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
     /* Case Number  | Input                                         | Required Size | Output size   |   Expected Ouput                      */
     /* -------------------------------------------------------- EASY SUCCESS CASE --------------------------------------------------------- */
@@ -399,7 +399,7 @@ scase ecases_bprefix[32] = {
     }, 
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
 };
-scase ecases_base[32] = {
+scase ecases_base[32] = { // 88 limbs --> 704 bytes
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
     /* Case Number  | Input                                         | Required Size | Output size   |   Expected Ouput                      */
     /* -------------------------------------------------------- EASY SUCCESS CASE --------------------------------------------------------- */
@@ -655,7 +655,7 @@ int main(int argc, char **argv) {
     u8 sassign_ecount = 32, sassign_scount = 4;
 
     // Edge-case Buffer Setup
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 128 bytes
+    limb_t ectx_buf[88]; // Edge-case Memory Usage: 704 bytes
     str_res *ebuf_slices[sassign_scount], fail_ebuf[(sassign_ecount << 1) * sassign_scount];
     strbump_t sassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 88 };
     _dist_buf(ebuf_slices, fail_ebuf, sassign_ecount << 1, sassign_scount, sizeof(str_res));

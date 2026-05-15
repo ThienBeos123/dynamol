@@ -49,10 +49,288 @@
 */
 
 
-scase ecases_strict[30] = {};
-scase ecases_trunc[30] = {};
-scase ecases_strict_sa[30] = {};
-scase ecases_trunc_sa[30] = {};
+// INPUT DATA STORAGE SITE
+limb_t zero = 0, one = 1;
+limb_t small_mulval[35] = {
+    255, // ecases_nob Case 4
+    UINT16_C(999), // ecases_nob Case 5
+    UINT64_MAX, // ecases_nob Case 6 & 7 
+    UINT32_C(1000000000), // ecases_nob Case 13
+};
+limb_t case_8[2] = { 0, 1 }; // 2^64
+limb_t case_9[2] = { 1, 1 }; // 2^64 + 1
+limb_t case_10[2] = { UINT64_MAX, UINT64_MAX };
+limb_t case_12[3] = { UINT64_C(0x1234567890ABCDEF), UINT64_C(0xFEDCBA0987654321), 1 };
+limb_t case_15[2] = { UINT64_C(0x5555555555555555), UINT64_C(0xAAAAAAAAAAAAAAAA) };
+limb_t case_16[2] = { UINT64_C(0x8000000000000000), UINT64_C(0x8000000000000000) };
+limb_t case_17[2] = { 0, UINT32_MAX + 1 }, case_18[4] = { 0, 0, 0, 1 };
+limb_t case_19[5] = { UINT64_MAX, UINT64_MAX, 0, 0, 1 };
+limb_t case_20[5] = { 0, 1, 2, 3, 4 };
+limb_t case_21[4] = { UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX };
+limb_t case_22[2] = { UINT64_MAX, UINT64_C(0x7FFFFFFFFFFFFFFF) };
+limb_t case_23[6] = {
+    UINT64_C(3846025213140126128), UINT64_C(1334182037947790491),
+    UINT64_C(16447488665830626805), UINT64_C(14852190203560883297),
+    UINT64_C(13521263668617507741), UINT64_C(34838838833726957)
+};
+limb_t case_final[48] = {
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+};
+
+
+scase ecases[25] = { // 2270 bytes of memory
+    /* ------------------------------------------------------------------------------------------------------------------------ */
+    /* Case Number  | Input                             | Base          | Expected Ouput                                        */
+    /* -------------------------------------------------- TRIVIAL CASES ------------------------------------------------------- */
+    { /* 1          | 0 (n = 0)                         | 2             | "0b0"                                                 */
+        .in = &(bitos_conv_in){ 
+            .base = 2, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 3, .cap = 3, .pstr = "0b0" }
+    }, { /* 2       | 1 (n = 1)                         | 8             | "0o1"                                                 */
+        .in = &(bitos_conv_in){ 
+            .base = 8, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 3, .cap = 3, .pstr = "0o1" }
+    }, { /* 3       | -1 (n = 1, sign = -1)             | 16            | "-0x1"                                                */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .data.len = 4, .cap = 4, .pstr = "-0x1" }
+    }, { /* 4       | 255 (n = 1)                       | 10            | "255"                                                 */
+        .in = &(bitos_conv_in){ 
+            .base = 10, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 3, .cap = 3, .pstr = "255" }
+    }, { /* 5       | -999 (n = 1, sign = -1)           | 10            | "-999"                                                */
+        .in = &(bitos_conv_in){ 
+            .base = 10, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .data.len = 4, .cap = 4, .pstr = "-999" }
+    }, { /* 6       | 2^64 - 1 (n = 1)                  | 16            | "0xFFFFFFFFFFFFFFFF"                                  */
+        .in = &(bitos_conv_in){ 
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .data.len = 18, .cap = 18, .pstr = "0xFFFFFFFFFFFFFFFF" }
+    }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)    | 16            | "-0xFFFFFFFFFFFFFFFF"                                 */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .data.len = 19, .cap = 19, .pstr = "-0xFFFFFFFFFFFFFFFF" }
+    },
+    /* --------------------------------------------------- EDGE CASES --------------------------------------------------------- */
+    { /* 8          | 2^64 (n = 2)                      | 2             | "0b100000000000...000000000000" (truncated)           */
+        .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_8, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 67, .data.len = 67, 
+            .pstr = "0b10000000000000000000000000000000000000000000000000000000000000000" 
+        }
+    }, { /* 9       | 2^64 + 1 (n = 2)                  | 8             | "0o2000000000000000000001"                            */
+        .in = &(bitos_conv_in){
+            .base = 8, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_9, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 24, .data.len = 24,
+            .pstr = "0o2000000000000000000001"
+        }
+    }, { /* 10      | 2^128 - 1 (n = 2)                 | 7             | "0{7}311551216212...356026315303" (truncated)         */
+            .in = &(bitos_conv_in){
+            .base = 7, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 50, .data.len = 50, 
+            .pstr = "0{7}3115512162124626343001006330151620356026315303" 
+        }
+    }, { /* 11      | -(2^128 - 1) (n = 2)              | 16            | "-0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"                 */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = -1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 35, .data.len = 35,
+            .pstr = "-0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        }
+    }, { /* 12      | idk Random ig (n = 3)             | 3             | "0{3}111210010100...202201200001" (truncated)         */
+        .in = &(bitos_conv_in){
+            .base = 3, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_12, .cap = 3, .n = 3, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 86, .data.len = 86,
+            .pstr = "0{3}"
+                    "11121001010011210211100011210110"
+                    "20000002010100200221200112200222"
+                    "020221202201200001" 
+        }
+    }, { /* 13      | 1000000000 (n = 1) - Power of 10  | 10            | "1000000000"                                          */
+        .in = &(bitos_conv_in){
+            .base = 10, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = 1 }
+        },
+        .exp = { .type = STRING, .cap = 10, .data.len = 10,  .pstr = "1000000000" }
+    }, { /* 14      | -1000000000 (n = 1, sign = -1)    | 10            | "-1000000000"                                         */
+        .in = &(bitos_conv_in){
+            .base = 10, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = -1 }
+        },
+        .exp = { .type = STRING, .cap = 11, .data.len = 11,  .pstr = "-1000000000" }
+    }, { /* 15      | Alt Limbs (n = 2)                 | 16            | "0xAAAAAAAAAAAAAAAA5555555555555555"                  */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_15, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .cap = 34, .data.len = 34,
+            .pstr = "0xAAAAAAAAAAAAAAAA5555555555555555"
+        }
+    }, { /* 16      | MSB Limbs (n = 2)                 | 2             | "0b100000000000...000000000000" (truncated)           */
+        .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_16, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 130, .data.len = 130,
+            .pstr = "0b"
+                    "10000000000000000000000000000000"
+                    "00000000000000000000000000000000"
+                    "10000000000000000000000000000000"
+                    "00000000000000000000000000000000"
+        }
+    }, { /* 17      | 2^96 (n = 2)                      | 8             | "0o100000000000000000000000000000000"                 */
+        .in = &(bitos_conv_in){
+            .base = 8, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_17, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 35, .data.len = 35,
+            .pstr = "0o100000000000000000000000000000000"
+        }
+    }, { /* 18      | 2^192 (n = 4)                     | 32            | "-0{32}400000000000000000000000000000000000000"       */
+        .in = &(bitos_conv_in){
+            .base = 32, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_18, .cap = 4, .n = 4, .sign = -1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 45, .data.len = 45,
+            .pstr = "-0{32}400000000000000000000000000000000000000"
+        }
+    }, { /* 19      | idk (n = 5) - LARGELY SPARSE      | 18            | "0{18}31G025HE8916...8224E90HA311" (truncated)        */
+        .in = &(bitos_conv_in){
+            .base = 18, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_19, .cap = 5, .n = 5, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 67, .data.len = 67,
+            .pstr = "0{18}31G025HE891652FC25EED6DG159AHB8HD9DC46856F404H5GAG8224E90HA311"
+        }
+    }, { /* 20      | [0, 1, 2, 3, 4] (n = 5, sign = -1)| 16            | "-0x400000000000...000000000000" (truncated)          */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_20, .cap = 5, .n = 5, .sign = -1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 68, .data.len = 68,
+            .pstr = "0x"
+                    "-4000000000000000300000000000000"
+                    "02000000000000000100000000000000"
+                    "00"
+        }
+    }, { /* 21      | 2^256 - 1 (n = 5, sign = -1)      | 16            | "-0xffffffffffff...ffffffffffff" (truncated)          */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_21, .cap = 4, .n = 4, .sign = -1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 67, .data.len = 67,
+            .pstr = "0x"
+                    "ffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffff"
+        }
+    }, { /* 22      | 2^127 - 1 (n = 2) - MERSENNE PRIME| 2             | "0b111111111111...111111111111" (truncated)           */
+        .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_22, .cap = 2, .n = 2, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 129, .data.len = 129,
+            .pstr = "0b"
+                    "11111111111111111111111111111111"
+                    "11111111111111111111111111111111"
+                    "11111111111111111111111111111111"
+                    "1111111111111111111111111111111"
+        }
+    }, { /* 23      | Absolutely random (n = 6)         | 48            | "0{48}1XBCG0M8HWlH...j6URTfakGMJW" (truncated)        */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_23, .cap = 6, .n = 6, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 73, .data.len = 73,
+            .pstr = "0{48}"
+                    "1XBCG0M8HWlH2Z41QAPQFHAIcILZBLgR"
+                    "M7EA6c7Sab58AMlgSUj37diZj6URTfak"
+                    "GMJW"
+        }
+    }, { /* 24      | 2^3072 - 1 (n = 48)               | 16            | "0xffffffffffff...ffffffffffff" (truncated)           */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_final, .cap = 48, .n = 48, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 770, .data.len = 770,
+            .pstr = "0x"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+    }, { /* 25      | -(2^3072 - 1) (n = 48, sign = -1) | 64            | "-0,////////////...////////////" (truncated)          */
+        .in = &(bitos_conv_in){
+            .base = 64, .uppercase = false, .len = STR_OUT_CAP,
+            .x = { .limbs = case_final, .cap = 48, .n = 48, .sign = -1 }
+        },
+        .exp = {
+            .type = STRING, .cap = 515, .data.len = 515,
+            .pstr = "-0,"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+        }
+    },
+    /* -------------------------------------------------------------------------------------------------------------------- */
+};
 
 
 // Main Code
@@ -64,12 +342,12 @@ int main(int argc, char **argv) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
         conv_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else conv_omode = DNML_VOUT;
-    u8 conv_ecount = 30, conv_scount = 4;
+    u8 conv_ecount = 25, conv_scount = 2;
 
     // Edge-case Buffer Setup
-    limb_t ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
+    char ectx_buf[2270]; // Edge-case Memory Usage: 2270 bytes
     str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
-    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 2270 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
@@ -83,19 +361,17 @@ int main(int argc, char **argv) {
     __GET_ENTROPY_FAST(conv_rstate.s, sizeof(u64) << 2);
     __GET_ENTROPY_FAST(side_mix, sizeof(u64));
     seed_xoshiro256(&conv_rstate, side_mix);
-    str_rand_mod conv_rconfig_nob = {0}, // Non-base parameter / Base-10
-    conv_rconfig_b = {0}; // Base-prefix / Base-parameter / Base-N
-    strgen_init_sesh(&conv_rconfig_nob, false, &conv_rstate);
-    strgen_init_sesh(&conv_rconfig_b, true, &conv_rstate);
+    bi_rand_mod convf_rconfig = {0}; // Base-prefix
+    bigen_init_sesh(&convf_rconfig, &conv_rstate);
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
     // to_strf()
     suite to_strf_suite = {0};
     create_str_suite(&to_strf_suite, "to_strf - BigInt Conversion", 
-        conv_scount, rcount, ecases_strict, INVERSE, ebuf_slices[0], 
+        conv_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
         "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_b, &conv_rstate
+        &convf_rconfig, &conv_rstate
     ); to_strf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strf_suite,
         &_bitos_convf_ingen, &exec_bitos_to_strf,
@@ -108,9 +384,9 @@ int main(int argc, char **argv) {
     // tto_strf()
     suite tto_strf_suite = {0};
     create_str_suite(&tto_strf_suite, "tto_strf - BigInt Conversion",
-        conv_scount, rcount, ecases_trunc, INVERSE, ebuf_slices[1],
+        conv_scount, rcount, ecases, INVERSE, ebuf_slices[1],
         "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_b, &conv_rstate
+        &convf_rconfig, &conv_rstate
     ); tto_strf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tto_strf_suite,
         &_bitos_convf_ingen, &exec_bitos_tto_strf,
@@ -118,34 +394,6 @@ int main(int argc, char **argv) {
         &cmp_inv_bitos_conv, &fmt_in_to_strf, &fmt_recon_bitos,
         &_bitos_conv_inlink, &_bitos_conv_insize,
         &_bitos_recon_linker, &_bitos_recon_size,
-        &_bitos_outlink, &_bitos_aux2link
-    );
-    // to_strf() - Size-aware Testing
-    suite to_sstrf_suite = {0};
-    create_str_suite(&to_sstrf_suite, "to_strf - BigInt Conversion", 
-        conv_scount, rcount, ecases_strict_sa, INVERSE, ebuf_slices[2], 
-        "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_b, &conv_rstate
-    ); to_sstrf_suite.cap_mode = RANDOMIZED;
-    fill_suite_rinv(&to_strf_suite,
-        &_bitos_convf_ingen, &exec_bitos_to_strf,
-        &inv_bitos_conv_b, &stat_bitos_conv_b,
-        &cmp_inv_bitos_conv, &fmt_in_to_strf, &fmt_recon_bitos,
-        &_bitos_conv_inlink, &_bitos_conv_insize,
-        &_bitos_recon_linker, &_bitos_recon_size,
-        &_bitos_outlink, &_bitos_aux2link
-    );
-    // tto_strf() - Size-aware Testing
-    suite tto_sstrf_suite = {0};
-    create_str_suite(&tto_sstrf_suite, "tto_strf - BigInt Conversion",
-        conv_scount, rcount, ecases_trunc_sa, INVERSE, ebuf_slices[3],
-        "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
-        &conv_rconfig_b, &conv_rstate
-    ); tto_sstrf_suite.cap_mode = RANDOMIZED;
-    fill_suite_reval(&tto_sstrf_suite,
-        &_bitos_convf_ingen, &exec_bitos_tto_strf, &eval_bitos_tto_strf,
-        &stat_bitos_tconv_b, &cmp_eval_bitos, &fmt_in_to_strf,
-        &_bitos_conv_inlink, &_bitos_conv_insize,
         &_bitos_outlink, &_bitos_aux2link
     );
 
