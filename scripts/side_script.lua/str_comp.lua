@@ -22,19 +22,23 @@ local function validate_commas(str)
     return true
 end
 
+print(" ===================== STRING COMPARISON ===================== ")
 print("Select Mode:")
-print("1. Plain Text")
-print("2. Numbers (Base-10 with Comma Validation)")
+print("    +) 1. Plain Text")
+print("    +) 2. Numbers (Base-10 with Comma Validation)")
+io.write("Enter your choice here: ")
 local mode = io.read()
 
-print("\nEnter first input:")
+print("\n ---------------------------------------------- ")
+io.write("Enter first input: ")
 local input1 = io.read()
-print("Enter second input:")
+io.write("Enter second input: ")
 local input2 = io.read()
 
 if mode == "1" then
     -- --- PLAIN TEXT MODE ---
-    print("\n--- Metadata ---")
+    print("\n ------ RESULTS - (1) PLAIN TEXT ------ ")
+    print("--- Metadata ---")
     print("String 1 Length: " .. #input1)
     print("String 2 Length: " .. #input2)
     
@@ -72,9 +76,11 @@ elseif mode == "2" then
         print("ERROR: Input contains non-numeric characters.")
         return
     end
-
-    print("\n--- Metadata ---")
-    print("Numerical Comparison (Commas stripped)")
+    
+    print("\n ------ RESULTS - (2) NUMERICAL STRING ------ ")
+    print("----- Metadata -----")
+    print("String 1 Length: " .. #clean1)
+    print("String 2 Length: " .. #clean2)
     if clean1 == clean2 then
         print("RESULT: The numbers are equal.")
     else

@@ -2,11 +2,26 @@ import math
 import os
 from pathlib import Path
 
+# Custom Base-64 character set
+B64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
+
 def truncate_string(s):
     """Truncates string to '12 digits...12 digits' if longer than 34 chars."""
     if len(s) <= 34:
         return f'"{s}"'
     return f"{s[:12]}...{s[-12:]}"
+
+def int_to_b64(n):
+    """Converts a Python integer to a string in custom base-64."""
+    if n == 0:
+        return B64_CHARS[0]
+    
+    digits = []
+    while n > 0:
+        digits.append(B64_CHARS[n % 64])
+        n //= 64
+    
+    return "".join(reversed(digits))
 
 def generate_bigint_max_value():
     # --- Input Handling ---
@@ -29,13 +44,15 @@ def generate_bigint_max_value():
     str_hex = hex(max_val)[2:]
     str_oct = oct(max_val)[2:]
     str_bin = bin(max_val)[2:]
+    str_b64 = int_to_b64(max_val)
 
     # Metadata & Truncated Summary for Terminal
     results_map = [
         ("Base-10", str_dec, len(str_dec)),
         ("Base-16", str_hex, len(str_hex)),
         ("Base-8",  str_oct, len(str_oct)),
-        ("Base-2",  str_bin, len(str_bin))
+        ("Base-2",  str_bin, len(str_bin)),
+        ("Base-64", str_b64, len(str_b64))
     ]
 
     print("\n--- BigInt Metadata & Summary ---")
@@ -77,6 +94,8 @@ def generate_bigint_max_value():
             f.write(format_c_string("Base-8",  str_oct))
             f.write("\n")
             f.write(format_c_string("Base-2",  str_bin))
+            f.write("\n")
+            f.write(format_c_string("Base-64", str_b64))
     except IOError as e:
         print(f"File Error: {e}")
 

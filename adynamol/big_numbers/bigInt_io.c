@@ -60,10 +60,6 @@ size_t _finval_charb(const char *str, size_t len, uint8_t base) {
         if (val > base) return i - whspace;
     } return len - whspace;
 }
-static inline void _HORNER_PARSE__() {}
-static inline void _DC_PARSE__() {}
-static inline void _DIV_SMALL__() {}
-static inline void _DC_DIV_LARGE__() {}
 static inline void _ASCII_COLUMN__(limb_t val, char* c) {
     uint8_t *p = &val;
     for (uint8_t i = 7; i >= 0; --i) {

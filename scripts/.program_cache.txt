@@ -1,0 +1,10 @@
+b|side_script.lua|2|./side_script.lua/str_concat.lua
+b|side_script.lua|1|./side_script.lua/str_comp.lua
+b|side_script.lua|3|./side_script.lua/str_format.lua
+a|bigint.py|2|./bigint.py/base64_trunc.py
+a|bigint.py|1|./bigint.py/base_conv.py
+a|bigint.py|7|./bigint.py/rand_base64.py
+a|bigint.py|6|./bigint.py/nbase_to_bigint.py
+a|bigint.py|5|./bigint.py/bigint_limb_max.py
+a|bigint.py|4|./bigint.py/bigint_limb_build.py
+a|bigint.py|3|./bigint.py/base64.py

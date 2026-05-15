@@ -25,8 +25,16 @@ local function get_concatenated(str)
     return result
 end
 
+-- Get the amount of sections there is
+local function get_sections(str)
+    local len = #str
+    if len == 0 then return 0 end
+    local chunk_size = (len <= 128) and 32 or 64
+    return math.ceil(len / chunk_size)
+end
+
 -- Main program
-print("Enter the string to format:")
+io.write("Enter the string to format: ")
 local input_str = io.read()
 
 if not input_str or input_str == "" then
@@ -38,12 +46,18 @@ print("\n" .. string.rep("=", 40))
 print("           FORMATTED OUTPUT")
 print(string.rep("=", 40))
 
--- 1. Truncated Summary
+-- 1. String Metadata - String Length
+print("METADATA:")
+print("o) String Length: ", #input_str)
+print(string.rep("-", 40))
+
+-- 2. Truncated Summary
 print("SUMMARY VIEW:")
 print(get_truncated(input_str))
 print(string.rep("-", 40))
 
--- 2. C-Style Concatenation
+-- 3. C-Style Concatenation
+print("SECTION COUNT:", get_sections(input_str))
 print("CONCATENATED VIEW:")
 print(get_concatenated(input_str))
 print(string.rep("=", 40))

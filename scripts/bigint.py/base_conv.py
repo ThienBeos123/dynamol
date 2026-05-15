@@ -59,6 +59,7 @@ def main():
         result_str = int_to_string(decimal_value, base_b)
         
         print("\n" + "="*30)
+        print(f"Result length: {len(result_str)}")
         print(f"Result (Base {base_b}):")
         print(result_str)
         print("="*30)

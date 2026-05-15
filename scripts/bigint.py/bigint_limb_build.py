@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 
+# Custom Base-64 character set
+B64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
+
 def truncate_string(s):
     """Truncates string to '12 digits...12 digits' if longer than 34 chars."""
     if len(s) <= 34:
@@ -20,6 +23,18 @@ def format_large_string(label, value_str):
         chunk = value_str[i : i + part_size]
         output += f"    \"{chunk}\"\n"
     return output
+
+def int_to_b64(n):
+    """Converts a Python integer to a string in custom base-64."""
+    if n == 0:
+        return B64_CHARS[0]
+    
+    digits = []
+    while n > 0:
+        digits.append(B64_CHARS[n % 64])
+        n //= 64
+    
+    return "".join(reversed(digits))
 
 def main():
     try:
@@ -45,19 +60,21 @@ def main():
 
         total_value += val * (pow(2, 64 * i))
 
-    # Generate the raw strings
+    # Generate the raw strings including custom Base-64
     data = {
         "Base-16": hex(total_value)[2:],
         "Base-10": str(total_value),
         "Base-8": oct(total_value)[2:],
-        "Base-2": bin(total_value)[2:]
+        "Base-2": bin(total_value)[2:],
+        "Base-64": int_to_b64(total_value)
     }
+    
     # ------ Print String Metadata
     print("\n" + "="*30)
     print("      STRING METADATA")
     print("="*30)
     for label, val_str in data.items():
-        print(f"{label}: {len(val_str)}")
+        print(f"{label:7}: {len(val_str)}")
     print("="*30)
 
     # --- Terminal Output Section ---
@@ -66,7 +83,7 @@ def main():
     print("="*30)
     for label, val_str in data.items():
         display_val = truncate_string(val_str)
-        print(f"{label}: {display_val}")
+        print(f"{label:7}: {display_val}")
     print("="*30 + "\n")
 
     # --- Log File Section ---
@@ -77,7 +94,7 @@ def main():
     try:
         # Gets the absolute directory of the current script
         script_dir = Path(__file__).resolve().parent
-        with open(str(script_dir) + os.sep + "bi_limbs.txt", "w") as f:
+        with open(script_dir / "bi_limbs.txt", "w") as f:
             f.write(log_content)
         print("Full data successfully logged to 'bi_limbs.txt'.")
     except Exception as e:

@@ -1,3 +1,6 @@
+# Custom Base-64 character set
+B64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
+
 def get_metadata(val):
     """Determines the smallest standard bit-size category for the limb."""
     if val == (2**64 - 1):
@@ -15,29 +18,37 @@ def get_metadata(val):
     else:
         return "[64-bit]"
 
+def any_base_to_int(s, base):
+    """Converts a string in an arbitrary base (2-64) into a Python integer."""
+    val = 0
+    # Slice character set to match only the allowed digits for the chosen base
+    char_map = {char: i for i, char in enumerate(B64_CHARS[:base])}
+    
+    for char in s:
+        if char not in char_map:
+            raise ValueError(f"Character '{char}' is not valid for base {base}.")
+        val = val * base + char_map[char]
+    return val
+
 def main():
     input_str = input("Enter the large number string: ").strip()
     
-    print("\nSelect the base of the input:")
-    print("1. Base 10 (Decimal)")
-    print("2. Base 8  (Octal)")
-    print("3. Base 2  (Binary)")
-    print("4. Base 16 (Hex)")
-    
-    choice = input("Choice (1-4): ")
-    
-    bases = {"1": 10, "2": 8, "3": 2, "4": 16}
-    base = bases.get(choice)
-    
-    if not base:
-        print("Error: Invalid choice.")
+    # Arbitrary base selection handling
+    try:
+        base = int(input("Enter the base of the input (2-64): "))
+    except ValueError:
+        print("Error: Base must be an integer.")
+        return
+
+    if not (2 <= base <= 64):
+        print("Error: Base must be between 2 and 64.")
         return
 
     try:
-        # Convert the full string to one massive integer
-        big_int_val = int(input_str, base)
-    except ValueError:
-        print(f"Error: The input string is not valid for base {base}.")
+        # Dynamically parse the big integer value based on user base configuration
+        big_int_val = any_base_to_int(input_str, base)
+    except ValueError as e:
+        print(f"Error: {e}")
         return
 
     limbs = []
