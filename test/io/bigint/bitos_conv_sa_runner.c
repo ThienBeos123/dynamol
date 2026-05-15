@@ -49,7 +49,73 @@
 */
 
 
-scase ecases_nob[30] = {};
+// INPUT DATA STORAGE SITE
+limb_t zero = 0, one = 1;
+limb_t small_mulval[5] = {
+    10, // For Case 4
+    UINT16_MAX, // For case 5
+    UINT64_MAX,  // For case 6
+};
+
+scase ecases_nob[30] = {
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    /* Case Number  | Input                                     | Capacity  | Expected Ouput                            */
+    /* ------------------------------------------------ TRIVIAL CASES ------------------------------------------------- */
+    { /* 1          | 0 (n = 0, sign = 1)                       | 0         | STR_INVALID_CAP                           */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = 0,
+            .x = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP)
+    }, { /* 2       | 1 (n = 1, sign = -1)                      | 1         | STR_INVALID_CAP                           */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = 0,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
+        }, INVAL_STR(STR_INVALID_CAP)
+    }, { /* 3       | 1 (n = 1, sign = 1)                       | 1         | STR_SUCCESS                           */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = 1,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .status = STR_SUCCESS,
+            .cap = 1, .data.len = 1, .pstr = "1"
+        }
+    }, { /* 4       | -10 (n = 1, sign = -1)                    | 3         | STR_SUCCESS                           */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = 3,
+            .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { 
+            .type = STRING, .status = STR_SUCCESS,
+            .cap = 3, .data.len = 3, .pstr = "-10"
+        }
+    }, { /* 5      | 65535 (n = 1, sign = 1)                    | 8         | STR_SUCCESS                           */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = 8,
+            .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .status = STR_SUCCESS,
+            .cap = 8, .data.len = 5, .pstr = "65535"
+        }
+    }, { /* 6      | 2^64 - 1 (n = 1, sign = 1)                 | 24        | STR_SUCCESS                           */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = 24,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS,
+            .cap = 24, .data.len = 20, .pstr = "18446744073709551615"
+        }
+    }, { /* 7      | -(2^64 - 1) (n = 1, sign = -1)             | 20        | STR_INVALID_CAP                       */
+        .in = &(bitos_conv_in){
+            .base = 0, .uppercase = false, .len = 20,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP)
+    },
+    /* ------------------------------------------------- EDGE CASES --------------------------------------------------- */
+    /* ---------------------------------------------------------------------------------------------------------------- */
+};
 scase ecases_b[30] = {};
 
 

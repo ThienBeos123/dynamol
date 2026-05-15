@@ -50,7 +50,7 @@
 
 // INPUT DATA STORAGE SITE
 limb_t zero = 0, one = 1;
-limb_t small_mulval[35] = {
+limb_t small_mulval[4] = {
     255, // ecases_nob Case 4
     UINT16_C(999), // ecases_nob Case 5
     UINT64_MAX, // ecases_nob Case 6 & 7 
@@ -93,43 +93,43 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 1, .cap = 1, .pstr = "0" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 1, .cap = 1, .pstr = "0" }
     }, { /* 2       | 1 (n = 1)                                 | "1"                                               */
         .in = &(bitos_conv_in){ 
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 1, .cap = 1, .pstr = "1" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 1, .cap = 1, .pstr = "1" }
     }, { /* 3       | -1 (n = 1, sign = -1)                     | "-1"                                              */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .data.len = 2, .cap = 2, .pstr = "-1" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 2, .cap = 2, .pstr = "-1" }
     }, { /* 4       | 255 (n = 1)                               | "255"                                             */
         .in = &(bitos_conv_in){ 
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 3, .cap = 3, .pstr = "255" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 3, .cap = 3, .pstr = "255" }
     }, { /* 5       | -999 (n = 1, sign = -1)                   | "-999"                                            */
         .in = &(bitos_conv_in){ 
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .data.len = 4, .cap = 4, .pstr = "-999" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 4, .cap = 4, .pstr = "-999" }
     }, { /* 6       | 2^64 - 1 (n = 1)                          | "18446744073709551615"                            */
         .in = &(bitos_conv_in){ 
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 20, .cap = 20, .pstr = "18446744073709551615" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 20, .cap = 20, .pstr = "18446744073709551615" }
     }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | "-18446744073709551615"                           */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .data.len = 21, .cap = 21, .pstr = "-18446744073709551615" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 21, .cap = 21, .pstr = "-18446744073709551615" }
     },
     /* ----------------------------------------------- EDGE CASES ------------------------------------------------- */
     { /* 8          | 2^64 (n = 2)                              | "18446744073709551616"                            */
@@ -137,20 +137,20 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_8, .cap = 2, .n = 2, .sign = 1 }
         },
-        .exp = { .type = STRING, .cap = 20, .data.len = 20, .pstr = "18446744073709551616" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .cap = 20, .data.len = 20, .pstr = "18446744073709551616" }
     }, { /* 9       | 2^64 + 1 (n = 2)                          | "18446744073709551617"                            */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_9, .cap = 2, .n = 2, .sign = 1 }
         },
-        .exp = { .type = STRING, .cap = 20, .data.len = 20, .pstr = "18446744073709551617" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .cap = 20, .data.len = 20, .pstr = "18446744073709551617" }
     }, { /* 10      | 2^128 - 1 (n = 2)                         | "340282366920938463463374607431768211455"         */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = { 
-            .type = STRING, .cap = 39, .data.len = 39, 
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 39, 
             .pstr = "340282366920938463463374607431768211455" 
         }
     }, { /* 11      | -(2^128 - 1) (n = 2)                      | "-340282366920938463463374607431768211455"        */
@@ -159,7 +159,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = -1 }
         },
         .exp = { 
-            .type = STRING, .cap = 40, .data.len = 40, 
+            .type = STRING, .status = STR_SUCCESS, .cap = 40, .data.len = 40, 
             .pstr = "-340282366920938463463374607431768211455" 
         }
     }, { /* 12      | idk Random ig (n = 3)                     | "679052356442...456469093871" (truncated)         */
@@ -168,7 +168,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_12, .cap = 3, .n = 3, .sign = 1 }
         },
         .exp = { 
-            .type = STRING, .cap = 39, .data.len = 39, 
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 39, 
             .pstr = "679052356442327393940567539456469093871" 
         }
     }, { /* 13      | 1000000000 (n = 1) - Power of 10          | "1000000000"                                      */
@@ -176,20 +176,20 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .cap = 10, .data.len = 10,  .pstr = "1000000000" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .cap = 10, .data.len = 10,  .pstr = "1000000000" }
     }, { /* 14      | -1000000000 (n = 1, sign = -1)            | "-1000000000"                                     */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .cap = 11, .data.len = 11,  .pstr = "-1000000000" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .cap = 11, .data.len = 11,  .pstr = "-1000000000" }
     }, { /* 15      | Alt Limbs (n = 2)                         | "226854911280...263275623765" (truncated)         */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_15, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = { 
-            .type = STRING, .cap = 39, .data.len = 39,
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 39,
             .pstr = "226854911280625642302767490263275623765"
         }
     }, { /* 16      | MSB Limbs (n = 2)                         | "170141183460...752738881536" (truncated)         */
@@ -198,7 +198,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_16, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 39, .data.len = 39,
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 39,
             .pstr = "170141183460469231740910675752738881536"
         }
     }, { /* 17      | 2^96 (n = 2)                              | "79228162514264337593543950336"                   */
@@ -207,7 +207,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_17, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 29, .data.len = 29,
+            .type = STRING, .status = STR_SUCCESS, .cap = 29, .data.len = 29,
             .pstr = "79228162514264337593543950336"
         }
     }, { /* 18      | 2^192 (n = 4)                             | "-627710173538...464034512896" (truncated)        */
@@ -216,7 +216,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_18, .cap = 4, .n = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 59, .data.len = 59,
+            .type = STRING, .status = STR_SUCCESS, .cap = 59, .data.len = 59,
             .pstr = "-6277101735386680763835789423207666416102355444464034512896"
         }
     }, { /* 19      | idk (n = 5) - LARGELY SPARSE              | "115792089237...344897851391" (truncated)         */
@@ -225,7 +225,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_19, .cap = 5, .n = 5, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 78, .data.len = 78,
+            .type = STRING, .status = STR_SUCCESS, .cap = 78, .data.len = 78,
             .pstr = "11579208923731619542357098500868"
                     "79078536102670325615025029209586"
                     "15344897851391"
@@ -236,7 +236,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_20, .cap = 5, .n = 5, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 79, .data.len = 79,
+            .type = STRING, .status = STR_SUCCESS, .cap = 79, .data.len = 79,
             .pstr = "-46316835694926478171311524524091"
                     "16737052678716660271323330825983"
                     "23981868072960"
@@ -247,7 +247,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_21, .cap = 4, .n = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 79, .data.len = 79,
+            .type = STRING, .status = STR_SUCCESS, .cap = 79, .data.len = 79,
             .pstr = "-11579208923731619542357098500868"
                     "79078532699846656405640394575840"
                     "07913129639935"
@@ -258,7 +258,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_22, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 39, .data.len = 39,
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 39,
             .pstr = "170141183460469231731687303715884105727"
         }
     }, { /* 23      | Absolutely random (n = 6)                 | "744153080953...881801009584" (truncated)         */
@@ -267,7 +267,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_23, .cap = 6, .n = 6, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 113, .data.len = 113,
+            .type = STRING, .status = STR_SUCCESS, .cap = 113, .data.len = 113,
             .pstr = "74415308095378740388572238211385"
                     "16023944234383361231936207324957"
                     "66344647588606305592985742043724"
@@ -279,7 +279,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_final, .cap = 48, .n = 48, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 925, .data.len = 925,
+            .type = STRING, .status = STR_SUCCESS, .cap = 925, .data.len = 925,
             .pstr = "5809605995369958062859502533304574370686975176362895236661486152"
                     "2872037309971102257373360445331184072513261577549805174439905295"
                     "9454004712166288567218703240103211163970644049884404985098905162"
@@ -302,7 +302,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
             .x = { .limbs = case_final, .cap = 48, .n = 48, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 926, .data.len = 926,
+            .type = STRING, .status = STR_SUCCESS, .cap = 926, .data.len = 926,
             .pstr = "-5809605995369958062859502533304574370686975176362895236661486152"
                     "2872037309971102257373360445331184072513261577549805174439905295"
                     "9454004712166288567218703240103211163970644049884404985098905162"
@@ -331,43 +331,43 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .base = 2, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 1, .cap = 1, .pstr = "0" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 1, .cap = 1, .pstr = "0" }
     }, { /* 2       | 1 (n = 1)                         | 8             | "1"                                               */
         .in = &(bitos_conv_in){ 
             .base = 8, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 1, .cap = 1, .pstr = "1" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 1, .cap = 1, .pstr = "1" }
     }, { /* 3       | -1 (n = 1, sign = -1)             | 16            | "-1"                                              */
         .in = &(bitos_conv_in){
             .base = 16, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .data.len = 2, .cap = 2, .pstr = "-1" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 2, .cap = 2, .pstr = "-1" }
     }, { /* 4       | 255 (n = 1)                       | 10            | "255"                                             */
         .in = &(bitos_conv_in){ 
             .base = 10, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 3, .cap = 3, .pstr = "255" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 3, .cap = 3, .pstr = "255" }
     }, { /* 5       | -999 (n = 1, sign = -1)           | 10            | "-999"                                            */
         .in = &(bitos_conv_in){ 
             .base = 10, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .data.len = 4, .cap = 4, .pstr = "-999" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 4, .cap = 4, .pstr = "-999" }
     }, { /* 6       | 2^64 - 1 (n = 1)                  | 16            | "FFFFFFFFFFFFFFFF"                                */
         .in = &(bitos_conv_in){ 
             .base = 16, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .data.len = 16, .cap = 16, .pstr = "FFFFFFFFFFFFFFFF" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 16, .cap = 16, .pstr = "FFFFFFFFFFFFFFFF" }
     }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)    | 16            | "-FFFFFFFFFFFFFFFF"                               */
         .in = &(bitos_conv_in){
             .base = 16, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .data.len = 17, .cap = 17, .pstr = "-FFFFFFFFFFFFFFFF" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .data.len = 17, .cap = 17, .pstr = "-FFFFFFFFFFFFFFFF" }
     },
     /* --------------------------------------------------- EDGE CASES ----------------------------------------------------- */
     { /* 8          | 2^64 (n = 2)                      | 2             | "100000000000...000000000000" (truncated)         */
@@ -376,7 +376,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_8, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = { 
-            .type = STRING, .cap = 65, .data.len = 65, 
+            .type = STRING, .status = STR_SUCCESS, .cap = 65, .data.len = 65, 
             .pstr = "10000000000000000000000000000000000000000000000000000000000000000" 
         }
     }, { /* 9       | 2^64 + 1 (n = 2)                  | 8             | "2000000000000000000001"                          */
@@ -385,7 +385,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_9, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 22, .data.len = 22,
+            .type = STRING, .status = STR_SUCCESS, .cap = 22, .data.len = 22,
             .pstr = "2000000000000000000001"
         }
     }, { /* 10      | 2^128 - 1 (n = 2)                 | 7             | "311551216212...356026315303" (truncated)         */
@@ -394,7 +394,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = { 
-            .type = STRING, .cap = 46, .data.len = 46, 
+            .type = STRING, .status = STR_SUCCESS, .cap = 46, .data.len = 46, 
             .pstr = "3115512162124626343001006330151620356026315303" 
         }
     }, { /* 11      | -(2^128 - 1) (n = 2)              | 16            | "-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"               */
@@ -403,7 +403,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_10, .cap = 2, .n = 2, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 33, .data.len = 33,
+            .type = STRING, .status = STR_SUCCESS, .cap = 33, .data.len = 33,
             .pstr = "-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" 
         }
     }, { /* 12      | idk Random ig (n = 3)             | 3             | "111210010100...202201200001" (truncated)         */
@@ -412,7 +412,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_12, .cap = 3, .n = 3, .sign = 1 }
         },
         .exp = { 
-            .type = STRING, .cap = 82, .data.len = 82,
+            .type = STRING, .status = STR_SUCCESS, .cap = 82, .data.len = 82,
             .pstr = "11121001010011210211100011210110"
                     "20000002010100200221200112200222"
                     "020221202201200001" 
@@ -422,20 +422,20 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .base = 10, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = 1 }
         },
-        .exp = { .type = STRING, .cap = 10, .data.len = 10,  .pstr = "1000000000" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .cap = 10, .data.len = 10,  .pstr = "1000000000" }
     }, { /* 14      | -1000000000 (n = 1, sign = -1)    | 10            | "-1000000000"                                     */
         .in = &(bitos_conv_in){
             .base = 10, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = &small_mulval[3], .cap = 1, .n = 1, .sign = -1 }
         },
-        .exp = { .type = STRING, .cap = 11, .data.len = 11,  .pstr = "-1000000000" }
+        .exp = { .type = STRING, .status = STR_SUCCESS, .cap = 11, .data.len = 11,  .pstr = "-1000000000" }
     }, { /* 15      | Alt Limbs (n = 2)                 | 16            | "AAAAAAAAAAAAAAAA5555555555555555"                */
         .in = &(bitos_conv_in){
             .base = 16, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_15, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = { 
-            .type = STRING, .cap = 32, .data.len = 32,
+            .type = STRING, .status = STR_SUCCESS, .cap = 32, .data.len = 32,
             .pstr = "AAAAAAAAAAAAAAAA5555555555555555"
         }
     }, { /* 16      | MSB Limbs (n = 2)                 | 2             | "100000000000...000000000000" (truncated)         */
@@ -444,7 +444,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_16, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 128, .data.len = 128,
+            .type = STRING, .status = STR_SUCCESS, .cap = 128, .data.len = 128,
             .pstr = "10000000000000000000000000000000"
                     "00000000000000000000000000000000"
                     "10000000000000000000000000000000"
@@ -456,7 +456,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_17, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 33, .data.len = 33,
+            .type = STRING, .status = STR_SUCCESS, .cap = 33, .data.len = 33,
             .pstr = "100000000000000000000000000000000"
         }
     }, { /* 18      | 2^192 (n = 4)                     | 32            | "-400000000000000000000000000000000000000"        */
@@ -465,7 +465,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_18, .cap = 4, .n = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 40, .data.len = 40,
+            .type = STRING, .status = STR_SUCCESS, .cap = 40, .data.len = 40,
             .pstr = "-400000000000000000000000000000000000000"
         }
     }, { /* 19      | idk (n = 5) - LARGELY SPARSE      | 18            | "31G025HE8916...8224E90HA311" (truncated)         */
@@ -474,7 +474,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_19, .cap = 5, .n = 5, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 62, .data.len = 62,
+            .type = STRING, .status = STR_SUCCESS, .cap = 62, .data.len = 62,
             .pstr = "31G025HE891652FC25EED6DG159AHB8HD9DC46856F404H5GAG8224E90HA311"
         }
     }, { /* 20      | [0, 1, 2, 3, 4] (n = 5, sign = -1)| 16            | "-400000000000...000000000000" (truncated)        */
@@ -483,7 +483,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_20, .cap = 5, .n = 5, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 66, .data.len = 66,
+            .type = STRING, .status = STR_SUCCESS, .cap = 66, .data.len = 66,
             .pstr = "-4000000000000000300000000000000"
                     "02000000000000000100000000000000"
                     "00"
@@ -494,7 +494,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_21, .cap = 4, .n = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 65, .data.len = 65,
+            .type = STRING, .status = STR_SUCCESS, .cap = 65, .data.len = 65,
             .pstr = "ffffffffffffffffffffffffffffffff"
                     "ffffffffffffffffffffffffffffffff"
         }
@@ -504,7 +504,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_22, .cap = 2, .n = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 127, .data.len = 127,
+            .type = STRING, .status = STR_SUCCESS, .cap = 127, .data.len = 127,
             .pstr = "11111111111111111111111111111111"
                     "11111111111111111111111111111111"
                     "11111111111111111111111111111111"
@@ -516,7 +516,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_23, .cap = 6, .n = 6, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 68, .data.len = 68,
+            .type = STRING, .status = STR_SUCCESS, .cap = 68, .data.len = 68,
             .pstr = "1XBCG0M8HWlH2Z41QAPQFHAIcILZBLgR"
                     "M7EA6c7Sab58AMlgSUj37diZj6URTfak"
                     "GMJW"
@@ -527,7 +527,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_final, .cap = 48, .n = 48, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .cap = 768, .data.len = 768,
+            .type = STRING, .status = STR_SUCCESS, .cap = 768, .data.len = 768,
             .pstr = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
                     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
                     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
@@ -547,7 +547,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
             .x = { .limbs = case_final, .cap = 48, .n = 48, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .cap = 513, .data.len = 513,
+            .type = STRING, .status = STR_SUCCESS, .cap = 513, .data.len = 513,
             .pstr = "-////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"

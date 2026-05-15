@@ -221,7 +221,7 @@ scase ecases_bprefix[27] = { // 19 limbs ---> 152 bytes
 scase ecases_base[27] = { // 19 limbs ---> 152 bytes
     /* -------------------------------------------------------------------------------------------- */
     /* Case Number  |   Input                               |   Expected Ouput                      */
-    /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
+    /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */
     { /* 1.         |   ""                              ---->   STR_EMPTY                           */
         .in = &(stobi_init_in){ .str = "", .len = 0, .base = 10 },
         .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
