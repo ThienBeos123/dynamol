@@ -495,7 +495,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
         },
         .exp = {
             .type = STRING, .status = STR_SUCCESS, .cap = 65, .data.len = 65,
-            .pstr = "ffffffffffffffffffffffffffffffff"
+            .pstr = "-ffffffffffffffffffffffffffffffff"
                     "ffffffffffffffffffffffffffffffff"
         }
     }, { /* 22      | 2^127 - 1 (n = 2) - MERSENNE PRIME| 2             | "111111111111...111111111111" (truncated)         */

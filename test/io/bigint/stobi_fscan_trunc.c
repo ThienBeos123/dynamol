@@ -358,7 +358,7 @@ scase ecases_bprefix[28] = { // 128 limbs ---> 1024 bytes / 1KB
     },
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
 };
-scase ecases_base[28] = {
+scase ecases_base[28] = { // 128 limbs ---> 1024 bytes / 1KB
     /* ---------------------------------------------------------------------------------------------------------------------------------- */
     /* Case Number  | Input                                       | Required      | Capacity      |   Expected Ouput                      */
     /* ------------------------------------------------------- EASY SUCCESS CASE -------------------------------------------------------- */
@@ -527,7 +527,7 @@ static inline void setup_cases(FILE *nob, FILE *b, u8 ecount) {
 }
 
 
-int main(int argc, char **argv) { // 128 limbs ---> 1024 bytes / 1KB
+int main(int argc, char **argv) {
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -552,7 +552,7 @@ int main(int argc, char **argv) { // 128 limbs ---> 1024 bytes / 1KB
     setup_cases(tscan_in_nob, tscan_in_b, tscan_ecount);
 
     // Edge Case Buffer Setup
-    limb_t ectx_buf[128]; // Edge-case Memory Usage: 1024 bytes / 1kb
+    limb_t ectx_buf[128]; // Edge-case Memory Usage: approx 1kb
     str_res *ebuf_slices[tscan_scount], fail_ebuf[(tscan_ecount << 1) * tscan_scount];
     strbump_t tscan_ectx = { .ctx = ectx_buf, .off = 0, .size = 128 };
     _dist_buf(ebuf_slices, fail_ebuf, tscan_ecount << 1, tscan_scount, sizeof(str_res));
@@ -579,7 +579,7 @@ int main(int argc, char **argv) { // 128 limbs ---> 1024 bytes / 1KB
     suite ftscan_suite = {0};
     create_str_suite(&ftscan_suite, "bigInt_ftscan - String Stream Scan",
         tscan_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_ftscan_sa.txt", tscan_ectx, &tscan_rcon,
+        "../logs/bi_logs/bigInt_ftscan_sa.txt", &tscan_ectx, &tscan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); ftscan_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&ftscan_suite,
@@ -592,7 +592,7 @@ int main(int argc, char **argv) { // 128 limbs ---> 1024 bytes / 1KB
     suite ftscanb_suite = {0};
     create_str_suite(&ftscanb_suite, "bigInt_ftscanb - String Stream Scan",
         tscan_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bi_logs/bigInt_ftscan_sa.txt", tscan_ectx, &tscan_rcon,
+        "../logs/bi_logs/bigInt_ftscan_sa.txt", &tscan_ectx, &tscan_rcon,
         &scan_rconfig, &scan_rstate
     ); ftscanb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&ftscanb_suite,

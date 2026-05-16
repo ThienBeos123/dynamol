@@ -224,7 +224,7 @@ scase ecases_bprefix[27] = { // 19 limbs ---> 152 bytes
 scase ecases_base[27] = { // 19 limbs ---> 152 bytes
     /* -------------------------------------------------------------------------------------------- */
     /* Case Number  |   Input                               |   Expected Ouput                      */
-    /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */ 
+    /* ------------------------------ PREPARSE LEXICAL FAILURE CASE ------------------------------- */
     { /* 1.         |   ""                              ---->   STR_EMPTY                           */
         .in = &(stobi_assign_in){ .str = "", .len = 0, .base = 10, .bi_size = BIGINT_CAP },
         .exp = { .type = BIGINT, .status = STR_EMPTY, .cap = 0, INVAL_BI() }
@@ -241,7 +241,7 @@ scase ecases_base[27] = { // 19 limbs ---> 152 bytes
         .in = &(stobi_assign_in){ .str = "-0", .len = 2, .base = 10, .bi_size = BIGINT_CAP },
         .exp = { .type = BIGINT, .status = STR_INVALID_SIGN, .cap = 0, INVAL_BI() }
     },
-    /* --------------------------------- ON-THE-EDGE SUCCESS CASE --------------------------------- */ 
+    /* --------------------------------- ON-THE-EDGE SUCCESS CASE --------------------------------- */
     { /* 6.         |   "+0"                            ---->   STR_SUCCESS (0)                     */
         .in = &(stobi_assign_in){ .str = "+0", .len = 2, .base = 10, .bi_size = BIGINT_CAP },
         .exp = { 
@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
     suite get_str_suite = {0};
     create_str_suite(&get_str_suite, "bigInt_get_str - String Assignment", 
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        "../logs/bi_logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); get_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_str_suite,
@@ -419,7 +419,7 @@ int main(int argc, char **argv) {
     suite get_strn_suite = {0};
     create_str_suite(&get_strn_suite, "bigInt_get_strn - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        "../logs/bi_logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); get_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strn_suite,
@@ -434,7 +434,7 @@ int main(int argc, char **argv) {
     suite get_strb_suite = {0};
     create_str_suite(&get_strb_suite, "bigInt_get_strb - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
-        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        "../logs/bi_logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_rconfig, &assign_rstate
     ); get_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strb_suite,
@@ -449,7 +449,7 @@ int main(int argc, char **argv) {
     suite get_strnb_suite = {0};
     create_str_suite(&get_strnb_suite, "bigInt_get_strnb - String Assignment",
         assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
-        "../logs/bi_logs/bigInt_get_str.txt", assign_ectx, &assign_rcon,
+        "../logs/bi_logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_rconfig, &assign_rstate
     ); get_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&get_strnb_suite,

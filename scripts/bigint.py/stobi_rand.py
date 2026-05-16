@@ -1,30 +1,37 @@
 import secrets
+import math
 
-def randomize_and_convert_base64():
-    BASE64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
-    
+BASE64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
+def randomize_and_convert_base():    
     try:
+        input_base = int(input("Enter the desired base: "))
         input_len = int(input("Enter the desired length: "))
     except ValueError: return
     
-    if not (0 < input_len <= 512):
-        print("Error: Length must be between 1 and 512.")
+    if not (2 <= input_base <= 64):
+        print("Error: Base must be between 2-64")
+        return
+    max_len = int(3072 / math.log2(input_base))
+    if not (0 < input_len <= max_len):
+        print(f"Error: Length must be between 1 and {max_len}.")
         return
 
-    random_str = ''.join(secrets.choice(BASE64_CHARS) for _ in range(input_len))
+    sub_choices = BASE64_CHARS[:input_base]
+    random_str = ''.join(secrets.choice(sub_choices) for _ in range(input_len))
     truncated = random_str if input_len <= 24 else f"{random_str[:12]}...{random_str[-12:]}"
 
-    print("\n--- String Metadata ---")
+    print("\n------------- String Metadata ------------")
+    print(f"Base:             {input_base}")
     print(f"Full String:      {random_str}")
     print(f"Truncated:        {truncated}")
     print(f"Raw payload len:  {input_len}")
     print(f"Total buffer len: {input_len + 2}")
-    print("-----------------------\n")
+    print("-----------------------------------------\n")
 
     char_to_val = {char: i for i, char in enumerate(BASE64_CHARS)}
     total_value = 0
     for char in random_str:
-        total_value = (total_value << 6) | char_to_val[char]
+        total_value = (total_value * input_base) + char_to_val[char]
 
     limbs = []
     bit_mask = (1 << 64) - 1
@@ -49,4 +56,4 @@ def randomize_and_convert_base64():
         print(f"[{i}]: {val} ({size}){note}")
 
 if __name__ == "__main__":
-    randomize_and_convert_base64()
+    randomize_and_convert_base()

@@ -202,7 +202,7 @@ limb_t case_final[48] = {
 // Edge-case VALUE STORAGE - BASE-PARAMETER
 
 // Edge-case STORAGE
-scase ecases_bprefix[28] = { // 128 limbs ---> 1024 bytes / 1KB
+scase ecases_bprefix[28] = { // 128 limbs ---> 1KB
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
     /* Case Number  | Input                                         | Required      | Capacity      |   Expected Ouput                      */
     /* -------------------------------------------------------- EASY SUCCESS CASE --------------------------------------------------------- */
@@ -446,7 +446,7 @@ scase ecases_bprefix[28] = { // 128 limbs ---> 1024 bytes / 1KB
     },
     /* ------------------------------------------------------------------------------------------------------------------------------------ */
 };
-scase ecases_base[28] = { // 128 limbs ---> 1024 bytes / 1KB
+scase ecases_base[28] = { // 128 limbs ---> 1KB
     /* ---------------------------------------------------------------------------------------------------------------------------------- */
     /* Case Number  | Input                                       | Required      | Capacity      |   Expected Ouput                      */
     /* ------------------------------------------------------- EASY SUCCESS CASE -------------------------------------------------------- */
@@ -696,13 +696,13 @@ int main(int argc, char **argv) {
     u8 tassign_ecount = 28, tassign_scount = 4;
 
     // Edge-case Buffer Setup
-    limb_t ectx_buf[128]; // Edge-case Memory Usage: 1024 bytes / 1kb
+    limb_t ectx_buf[128]; // Edge-case Memory Usage: 1kb
     str_res *ebuf_slices[tassign_scount], fail_ebuf[(tassign_ecount << 1) * tassign_scount];
     strbump_t tassign_ectx = { .ctx = ectx_buf, .off = 0, .size = 128 };
     _dist_buf(ebuf_slices, fail_ebuf, tassign_ecount << 1, tassign_scount, sizeof(str_res));
     // Random-case Buffer Setup
     rctx_res_t tassign_res_rctx = {0}; rctx_input_t tassign_in_rctx = {0};
-    rand_container tassign_rcon = { 
+    rand_container tassign_rcon = {
         .in_cont = CTX, 
         .in_cont.rctx = &tassign_in_rctx,
         .res_cont = &tassign_res_rctx 
@@ -723,7 +723,7 @@ int main(int argc, char **argv) {
     suite tget_str_suite = {0};
     create_str_suite(&tget_str_suite, "bigInt_tget_str - String Assignment", 
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -737,7 +737,7 @@ int main(int argc, char **argv) {
     suite tget_strn_suite = {0};
     create_str_suite(&tget_strn_suite, "bigInt_tget_strn - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -751,7 +751,7 @@ int main(int argc, char **argv) {
     suite tget_strb_suite = {0};
     create_str_suite(&tget_strb_suite, "bigInt_tget_strb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[2],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -765,7 +765,7 @@ int main(int argc, char **argv) {
     suite tget_strnb_suite = {0};
     create_str_suite(&tget_strnb_suite, "bigInt_tget_strnb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[3],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", tassign_ectx, &tassign_rcon,
+        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,

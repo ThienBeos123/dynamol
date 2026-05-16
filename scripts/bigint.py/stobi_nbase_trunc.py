@@ -1,18 +1,22 @@
+import math
+
+BASE64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
 def base64_to_bounded_bigint():
     # Custom character set
-    BASE64_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./"
     char_to_val = {char: i for i, char in enumerate(BASE64_CHARS)}
     
     try:
-        user_input = input("Enter base-64 string: ").strip()
+        input_base = int(input("Enter desired base: "))
+        user_input = input(f"Enter base-{input_base} string: ").strip()
         capacity = int(input("Enter bigint capacity (number of 64-bit limbs): "))
     except (EOFError, ValueError):
         print("Error: Invalid input. Capacity must be an integer.")
         return
     
     raw_len = len(user_input)
-    if raw_len > 512 or not all(c in char_to_val for c in user_input):
-        print("Error: Invalid string or length exceeds 512.")
+    max_len = int(3072 / math.log2(input_base))
+    if raw_len > max_len or not all(c in BASE64_CHARS[:input_base] for c in user_input):
+        print(f"Error: Invalid string or length exceeds {max_len}.")
         return
 
     if capacity <= 0:
@@ -21,17 +25,18 @@ def base64_to_bounded_bigint():
 
     # --- String Metadata ---
     truncated_str = user_input if raw_len <= 24 else f"{user_input[:12]}...{user_input[-12:]}"
-    print("\n--- String Metadata ---")
+    print("\n----------- String Metadata -----------")
+    print(f"Base:              {input_base}")
     print(f"Truncated Preview: {truncated_str}")
     print(f"Raw payload len:   {raw_len}")
     print(f"Total buffer len:  {raw_len + 2} (includes '0,' prefix)")
     print(f"Target Capacity:   {capacity} limbs ({capacity * 64} bits)")
-    print("-----------------------\n")
+    print("---------------------------------------\n")
 
     # Step 1: Convert base-64 string to a single large integer
     total_value = 0
     for char in user_input:
-        total_value = (total_value << 6) | char_to_val[char]
+        total_value = (total_value * input_base) + char_to_val[char]
 
     # Step 2: Split into base 2^64 limbs
     limbs = []

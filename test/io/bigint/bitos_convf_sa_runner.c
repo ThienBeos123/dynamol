@@ -49,8 +49,293 @@
 */
 
 
-scase ecases_strict[30] = {};
-scase ecases_trunc[30] = {};
+// INPUT DATA STORAGE SITE
+limb_t zero = 0, one = 1;
+limb_t small_mulval[3] = {
+    10, // For Case 4
+    UINT16_MAX, // For case 5
+    UINT64_MAX,  // For case 6
+};
+limb_t case_8[2] = { 0, UINT32_MAX + 1 }; // 2^96
+limb_t case_9[2] = { UINT64_MAX, UINT64_MAX }; // 2^128 - 1
+limb_t case_10[8] = { 0, 0, 0, 0, 0, 0, 0, 1 }; // SUPER SUPER SPRASE
+limb_t case_11[4] = { // Alternating 1
+    UINT64_C(0x5555555555555555), UINT64_C(0x5555555555555555), 
+    UINT64_C(0x5555555555555555), UINT64_C(0x5555555555555555) 
+};
+limb_t case_12[6] = { // Alternating 2
+    UINT64_C(0xAAAAAAAAAAAAAAAA), UINT64_C(0xAAAAAAAAAAAAAAAA), UINT64_C(0xAAAAAAAAAAAAAAAA),
+    UINT64_C(0xAAAAAAAAAAAAAAAA), UINT64_C(0xAAAAAAAAAAAAAAAA), UINT64_C(0xAAAAAAAAAAAAAAAA)
+};
+limb_t case_13[4] = { // Double Alt
+    UINT64_C(0x3333333333333333), UINT64_C(0x3333333333333333),
+    UINT64_C(0x3333333333333333), UINT64_C(0x3333333333333333)
+};
+limb_t case_15[8] = { // All MSB
+    UINT64_C(0x8000000000000000), UINT64_C(0x8000000000000000),
+    UINT64_C(0x8000000000000000), UINT64_C(0x8000000000000000),
+    UINT64_C(0x8000000000000000), UINT64_C(0x8000000000000000),
+    UINT64_C(0x8000000000000000), UINT64_C(0x8000000000000000),
+}; // Largely Dense
+limb_t case_16[3] = { UINT64_C(0xEEEEEEEEEEEEEEEE), UINT64_C(0xEEEEEEEEEEEEEEEE), UINT64_C(0xEEEEEEEEEEEEEEEE) };
+limb_t case_17[5] = { UINT64_MAX, UINT64_MAX, 0, 0, 1 }; // Dense then Sparse
+limb_t case_18[4] = { 0, 0, 0, 1 }; // 2^192
+limb_t case_19[4] = { UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX };
+limb_t case_20[2] = { UINT64_MAX, UINT64_C(0x7FFFFFFFFFFFFFFF) };
+limb_t case_21[16] = {
+    UINT64_C(3871883061804059262), UINT64_C(3221185750163728262), UINT64_C(2598294283346557851),
+    UINT64_C(12430469004817244324), UINT64_C(12808085984798916544), UINT64_C(13866222929514101260),
+    UINT64_C(2887031538269898738), UINT64_C(17890322021139828271), UINT64_C(10533069378811781369),
+    UINT64_C(18125661448742495921), UINT64_C(10906755342983384455), UINT64_C(18404811730781439589),
+    UINT64_C(18053755223345613669), UINT64_C(6760901800924461203), UINT64_C(5244474428776404420),
+    UINT64_C(1644707881994106644)
+};
+limb_t case_22[8] = { 
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX
+};
+limb_t case_23[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+limb_t case_final[48] = {
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+};
+
+
+
+scase ecases_strict[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
+    /* ---------------------------------------------------------------------------------------------------------------------------------------- */
+    /* Case Number  | Input                                     | Base      | Capacity  | Needed    | Expected Ouput                            */
+    /* ------------------------------------------------------------ TRIVIAL CASES ------------------------------------------------------------- */
+    { /* 1          | 0 (n = 0, sign = 1)                       | 10        | 0         | 1         | STR_INVALID_CAP                           */
+        .in = &(bitos_conv_in){
+            .base = 10, .uppercase = false, .len = 0,
+            .x = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP, 0),
+    }, { /* 2       | 1 (n = 1, sign = -1)                      | 10        | 1         | 2         | STR_INVALID_CAP                           */
+        .in = &(bitos_conv_in){
+            .base = 10, .uppercase = false, .len = 1,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
+        }, INVAL_STR(STR_INVALID_CAP, 1),
+    }, { /* 3       | 1 (n = 1, sign = 1)                       | 10        | 10        | 1         | STR_SUCCESS ("1")                         */
+        .in = &(bitos_conv_in){
+            .base = 10, .uppercase = false, .len = 10,
+            .x = { .limbs = &one, .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .status = STR_SUCCESS,
+            .cap = 10, .data.len = 1, .pstr = "1"
+        },
+    }, { /* 4       | -10 (n = 1, sign = -1)                    | 10        | 12        | 3         | STR_SUCCESS ("-10")                       */
+        .in = &(bitos_conv_in){
+            .base = 10, .uppercase = false, .len = 12,
+            .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = -1 }
+        },
+        .exp = { 
+            .type = STRING, .status = STR_SUCCESS,
+            .cap = 12, .data.len = 3, .pstr = "-10"
+        },
+    }, { /* 5       | 65535 (n = 1, sign = 1)                   | 16        | 8         | 2         | STR_SUCCESS ("FF")                        */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = 8,
+            .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = { 
+            .type = STRING, .status = STR_SUCCESS,
+            .cap = 8, .data.len = 2, .pstr = "FF"
+        },
+    }, { /* 6       | 2^64 - 1 (n = 1, sign = 1)                | 2         | 64        | 64        | STR_SUCCESS ("11111111111...11111-11111") */
+        .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = 64,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 64, .data.len = 64, 
+            .pstr = "11111111111111111111111111111111"
+                    "11111111111111111111111111111111"
+        },
+    }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | 8         | 20        | 23        | STR_INVALID_CAP                           */
+        .in = &(bitos_conv_in){
+            .base = 8, .uppercase = false, .len = 20,
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP, 20),
+    },
+    /* -------------------------------------------------------------- EDGE CASES -------------------------------------------------------------- */
+    { /* 8          | -2^96 (n = 2, sign = -1)                  | 5         | 29        | 42        | STR_INVALID_CAP                           */
+        .in = &(bitos_conv_in){
+            .base = 5, .uppercase = false, .len = 29,
+            .x = { .limbs = case_8, .n = 2, .cap = 2, .sign = -1 }
+        }, INVAL_STR(STR_INVALID_CAP, 29),
+    }, { /* 9       | 2^128 - 1 (n = 2)                         | 16        | 39        | 32        | STR_SUCCESS (ffffffffffff...ffffffffffff) */
+        .in = &(bitos_conv_in){
+            .base = 16, .uppercase = false, .len = 39,
+            .x = { .limbs = case_9, .n = 2, .cap = 2, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 32, 
+            .pstr = "ffffffffffffffffffffffffffffffff"
+        },
+    }, { /* 10      | SUPER SUPER SPARSE (n = 8)                | 2         | 449       | 449       | STR_SUCCESS (100000000000...000000000000) */
+        .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = 449,
+            .x = { .limbs = case_10, .n = 8, .cap = 8, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 449, .data.len = 449, 
+            .pstr = "1000000000000000000000000000000000000000000000000000000000000000"
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                    "0"
+        },
+    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 8         | 86        | 86        | STR_SUCCESS (525252525252...252525252525) */
+        .in = &(bitos_conv_in){
+            .base = 8, .uppercase = false, .len = 86,
+            .x = { .limbs = case_11, .n = 4, .cap = 4, .sign = -1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 86, .data.len = 86,
+            .pstr = "-52525252525252525252525252525252"
+                    "52525252525252525252525252525252"
+                    "525252525252525252525"
+        },
+    }, { /* 12      | Alternating 2 (n = 6)                     | 2         | 384       | 384       | STR_SUCCESS (101010101010...101010101010) */
+        .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = 384,
+            .x = { .limbs = case_12, .n = 6, .cap = 6, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 384, .data.len = 384,
+            .pstr = "1010101010101010101010101010101010101010101010101010101010101010"
+                    "1010101010101010101010101010101010101010101010101010101010101010"
+                    "1010101010101010101010101010101010101010101010101010101010101010"
+                    "1010101010101010101010101010101010101010101010101010101010101010"
+                    "1010101010101010101010101010101010101010101010101010101010101010"
+                    "1010101010101010101010101010101010101010101010101010101010101010"
+        },
+    }, { /* 13      | Double Alternating (n = 4, sign = -1)     | 2         | 255       | 255       | STR_SUCCESS (-11001100110...001100110011) */
+        .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = 255,
+            .x = { .limbs = case_13, .n = 4, .cap = 4, .sign = -1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 255, .data.len = 255,
+            .pstr = "-1100110011001100110011001100110011001100110011001100110011001100"
+                    "1100110011001100110011001100110011001100110011001100110011001100"
+                    "1100110011001100110011001100110011001100110011001100110011001100"
+                    "11001100110011001100110011001100110011001100110011001100110011"
+        },
+    }, { /* 14      | MSB All Limbs (n = 8)                     | 64        | 86        | 86        | STR_SUCCESS (200000000008...080000000000) */
+        .in = &(bitos_conv_in){
+            .base = 64, .uppercase = false, .len = 86,
+            .x = { .limbs = case_12, .n = 8, .cap = 8, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 86, .data.len = 86,
+            .pstr = "2000000000080000000000W000000000"
+                    "2000000000080000000000W000000000"
+                    "2000000000080000000000"
+        },
+    }, { /* 15      | SUPER SUPER SPARSE (n = 8) - fail edition | 13        | 120       | 122       | STR_INVALID_CAP                           */
+         .in = &(bitos_conv_in){
+            .base = 13, .uppercase = false, .len = 120,
+            .x = { .limbs = case_10, .n = 8, .cap = 8, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP, 120),
+    }, { /* 16      | NEARLY DENSE (n = 3) - fail edition       | 6         | 50        | 75        | STR_INVALID_CAP                           */
+         .in = &(bitos_conv_in){
+            .base = 6, .uppercase = false, .len = 50,
+            .x = { .limbs = case_16, .n = 3, .cap = 3, .sign = -1 }
+        }, INVAL_STR(STR_INVALID_CAP, 50),
+    }, { /* 17      | Dense -> Sparse (n = 5)                   | 22        | 40        | 58        | STR_INVALID_CAP                           */
+         .in = &(bitos_conv_in){
+            .base = 22, .uppercase = false, .len = 40,
+            .x = { .limbs = case_17, .n = 5, .cap = 5, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP, 40),
+    }, { /* 18      | 2^192 (n = 4)                             | 36        | 25        | 38        | STR_INVALID_CAP                           */
+         .in = &(bitos_conv_in){
+            .base = 36, .uppercase = false, .len = 25,
+            .x = { .limbs = case_18, .n = 4, .cap = 4, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP, 25),
+    }, { /* 19      | 2^256 - 1 (n = 4)                         | 4         | 77        | 128       | STR_INVALID_CAP                           */
+         .in = &(bitos_conv_in){
+            .base = 4, .uppercase = false, .len = 77,
+            .x = { .limbs = case_19, .n = 4, .cap = 4, .sign = 1 }
+        }, INVAL_STR(STR_INVALID_CAP, 77),
+    }, { /* 20      | 2^127 - 1 (n = 2) (Mersenne prime)        | 2         | 127       | 127       | STR_SUCCESS (111111111111...111111111111) */
+         .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = 127,
+            .x = { .limbs = case_20, .n = 2, .cap = 2, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 127, .data.len = 127,
+            .pstr = "11111111111111111111111111111111"
+                    "11111111111111111111111111111111"
+                    "11111111111111111111111111111111"
+                    "1111111111111111111111111111111"
+        },
+    }, { /* 21      | Absolutely Random (n = 16)                | 11        | 296       | 296       | STR_SUCCESS (235A75279904...460090954A36) */
+         .in = &(bitos_conv_in){
+            .base = 11, .uppercase = false, .len = 296,
+            .x = { .limbs = case_22, .n = 8, .cap = 8, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 296, .data.len = 296,
+            .pstr = "235A752799046623806113A0A4516A584156A00523343334109A965514374269"
+                    "5945259992A9A836A460102035A924689894A4A5094359718175A43328708866"
+                    "18409482812A87444A3674293A319250452339A1A07A31964A556277824A6286"
+                    "952309A505683034053324953A07489A7727865835321160083493A93501AA98"
+                    "2862A867A77A67406656483660A3460090954A36"
+        },
+    }, { /* 22      | 2^512 - 1 (n = 8)                         | 32        | 103       | 103       | STR_SUCCESS (3VVVVVVVVVVV...VVVVVVVVVVVV) */
+         .in = &(bitos_conv_in){
+            .base = 32, .uppercase = false, .len = 103,
+            .x = { .limbs = case_22, .n = 8, .cap = 8, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 103, .data.len = 103,
+            .pstr = "3VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+                    "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+                    "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+                    "VVVVVVV"
+        },
+    }, { /* 23      | -2^512 (n = 9, sign = -1)                 | 32        | 103       | 104       | STR_INVALID_CAP                           */
+         .in = &(bitos_conv_in){
+            .base = 32, .uppercase = false, .len = 103,
+            .x = { .limbs = case_23, .n = 9, .cap = 9, .sign = -1 }
+        }, INVAL_STR(STR_INVALID_CAP, 103),
+    }, { /* 24      | -(2^3072 - 1) (n = 48, sign = -1)         | 2         | 3072      | 3073      | STR_INVALID_CAP                           */
+         .in = &(bitos_conv_in){
+            .base = 2, .uppercase = false, .len = 3072,
+            .x = { .limbs = case_final, .n = 48, .cap = 48, .sign = -1 }
+        }, INVAL_STR(STR_INVALID_CAP, 3072),
+    }, { /* 25      | 2^3072 - 1 (n = 48)                       | 64        | 512       | 512       | STR_SUCCESS (////////////...////////////) */
+        .in = &(bitos_conv_in){
+            .base = 64, .uppercase = false, .len = 512,
+            .x = { .limbs = case_final, .n = 48, .cap = 48, .sign = 1 }
+        },
+        .exp = {
+            .type = STRING, .status = STR_SUCCESS, .cap = 512, .data.len = 512,
+            .pstr = "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+                    "////////////////////////////////////////////////////////////////"
+        },
+    }, 
+    /* ---------------------------------------------------------------------------------------------------------------------------------------- */
+};
+scase ecases_trunc[25] = {};
 
 
 // Main Code
@@ -62,12 +347,12 @@ int main(int argc, char **argv) {
         u8 sesh_count = _stou64(argv[2], strlen(argv[2]));
         conv_omode = (sesh_count <= 3) ? DNML_VOUT : DNML_COUT;
     } else conv_omode = DNML_VOUT;
-    u8 conv_ecount = 30, conv_scount = 4;
+    u8 conv_ecount = 25, conv_scount = 2;
 
     // Edge-case Buffer Setup
-    char ectx_buf[19]; // Edge-case Memory Usage: 152 bytes
+    char ectx_buf[6016]; // Edge-case Memory Usage: 6016 bytes
     str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
-    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 19 };
+    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 6016 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};

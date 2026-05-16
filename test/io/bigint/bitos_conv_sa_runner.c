@@ -117,7 +117,7 @@ scase ecases_nob[25] = { // Total: 3556 bytes - 3.556 KB
         }, INVAL_STR(STR_INVALID_CAP, 0),
     }, { /* 2       | 1 (n = 1, sign = -1)                      | 1         | 2         | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
-            .base = 0, .uppercase = false, .len = 0,
+            .base = 0, .uppercase = false, .len = 1,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 1),
     }, { /* 3       | 1 (n = 1, sign = 1)                       | 10        | 1         | STR_SUCCESS ("1")                         */
@@ -338,7 +338,7 @@ scase ecases_b[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
         }, INVAL_STR(STR_INVALID_CAP, 0),
     }, { /* 2       | 1 (n = 1, sign = -1)                      | 10        | 1         | 2         | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
-            .base = 10, .uppercase = false, .len = 0,
+            .base = 10, .uppercase = false, .len = 1,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 1),
     }, { /* 3       | 1 (n = 1, sign = 1)                       | 10        | 10        | 1         | STR_SUCCESS ("1")                         */
