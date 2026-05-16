@@ -461,9 +461,9 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
     }
     // Normal Case
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
-    if (len <= sign_space + 1) return STR_INVALID_CAP;
+    if (len <= sign_space) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; *written++; }
-    size_t digit_needed = __BIGINT_COUNTDB__(&x, 10) + sign_space + 1;
+    size_t digit_needed = __BIGINT_COUNTDB__(&x, 10) + sign_space;
     size_t end = (digit_needed < len) ? digit_needed : len;
     size_t tmp_mark = arena_mark(_DASI_TSET_STRNLEN_ARENA);
     limb_t *tmp_limbs = arena_galloc(_DASI_TSET_STRNLEN_ARENA, x.n * BYTES_IN_UINT64_T);
@@ -473,12 +473,12 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
         .cap   = x.n,       .n    = x.n,
     };
 
-    for (size_t i = end - 2; i >= sign_space; --i) {
+    for (size_t i = end - 1; i >= sign_space; --i) {
         if (!tmp_buf.n) break;
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; *written++;
     }
-    arena_reset(_DASI_TSET_STRNLEN_ARENA, tmp_mark); str[end - 1] = '\0';
+    arena_reset(_DASI_TSET_STRNLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -498,9 +498,9 @@ dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base
     }
     // Normal Case
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
-    if (len <= sign_space + 1) return STR_INVALID_CAP;
+    if (len <= sign_space) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; *written++; }
-    size_t digit_needed = __BIGINT_COUNTDB__(&x, base) + sign_space + 1;
+    size_t digit_needed = __BIGINT_COUNTDB__(&x, base) + sign_space;
     size_t end = (digit_needed < len) ? digit_needed : len;
     size_t tmp_mark = arena_mark(_DASI_TSET_BASENLEN_ARENA);
     limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASENLEN_ARENA, x.n * BYTES_IN_UINT64_T);
@@ -510,13 +510,13 @@ dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base
         .cap   = x.n,       .n    = x.n,
     };
     // Numerical Accumulation Loop
-    for (size_t i = end - 2; i >= sign_space; --i) {
+    for (size_t i = end - 1; i >= sign_space; --i) {
         if (!tmp_buf.n) break;
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] : 
         _DIGIT_SEN_[numeric_value]; *written++;
     }
-    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark); str[end - 1] = '\0';
+    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -550,19 +550,19 @@ dnml_status bigInt_tto_strf(
             } break;
         }
     } *written += sign_space + prefix_space;
-    size_t digit_needed = __BIGINT_COUNTDB__(&x, base) + sign_space + prefix_space + 1;
+    size_t digit_needed = __BIGINT_COUNTDB__(&x, base) + sign_space + prefix_space;
     size_t end = (digit_needed < len) ? digit_needed : len;
     size_t tmp_mark = arena_mark(_DASI_TSET_BASENLEN_ARENA);
     limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASENLEN_ARENA, x.n * BYTES_IN_UINT64_T);
     memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign,  /**/    .cap = x.n, .n = x.n };
-    for (size_t i = end - 2; i >= sign_space; --i) {
+    for (size_t i = end - 1; i >= sign_space; --i) {
         if (!tmp_buf.n) break;
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value + char_add] : 
         _DIGIT_SEN_[numeric_value]; *written++;
     }
-    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark); str[end - 1] = '\0';
+    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -643,19 +643,18 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
     dnml_arena *_DASI_SET_STRNLEN_ARENA = _USE_ARENA();
     // Special Case - Singular Character
     if (x.n == 1 && x.limbs[0] <= 9) {
-        if (len < 2 + ((x.sign == -1) ? 1 : 0)) {
+        if (len < 1 + ((x.sign == -1) ? 1 : 0)) {
             return STR_INVALID_CAP;  // Need "-0\0"
         }
         if (x.sign == -1) str[0] = '-';
         str[0 + ((x.sign == -1) ? 1 : 0)] = (char)(x.limbs[0] + '0');
-        str[1 + ((x.sign == -1) ? 1 : 0)] = '\0'; *written = 1;
         return STR_SUCCESS;
     }
     // Normal Case
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
-    if (len <= sign_space + 1) return STR_INVALID_CAP;
+    if (len <= sign_space) return STR_INVALID_CAP;
     size_t digit_needed = __BIGINT_COUNTDB__(&x, 10);
-    size_t total_needed = digit_needed + sign_space + 1;
+    size_t total_needed = digit_needed + sign_space;
     if (len < total_needed) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; *written++; }
     size_t tmp_mark = arena_mark(_DASI_SET_STRNLEN_ARENA);
@@ -666,7 +665,7 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
         .cap   = x.n,       .n    = x.n,
     };
     // Numerical Accumulation Loop
-    for (size_t i = total_needed - 2; i >= sign_space; --i) {
+    for (size_t i = total_needed - 1; i >= sign_space; --i) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; *written++;
     }
@@ -679,20 +678,19 @@ dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base,
     test_assert((!base), STR_INVALID_BASE);
     // Special Case - Singular Character
     if (x.n == 1 && x.limbs[0] <= base - 1) {
-        if (len < 2 + ((x.sign == -1) ? 1 : 0)) {
+        if (len < 1 + ((x.sign == -1) ? 1 : 0)) {
             return STR_INVALID_CAP;  // Need "-0\0"
         } 
         if (x.sign == -1) str[0] = '-';
         str[0 + ((x.sign == -1) ? 1 : 0)] = _DIGIT_SEN_[x.limbs[0]];
-        str[1 + ((x.sign == -1) ? 1 : 0)] = '\0'; *written = 1;
         return STR_SUCCESS;
     }
     // Normal Case
     dnml_arena *_DASI_SET_BASENLEN_ARENA = _USE_ARENA();
     uint8_t sign_space = (x.sign == -1) ? 1 : 0;
-    if (len <= sign_space + 1) return STR_INVALID_CAP;
+    if (len <= sign_space) return STR_INVALID_CAP;
     size_t digit_needed = __BIGINT_COUNTDB__(&x, base);
-    size_t total_needed = digit_needed + sign_space + 1;
+    size_t total_needed = digit_needed + sign_space;
     if (len < total_needed) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; *written++; }
     size_t tmp_mark = arena_mark(_DASI_SET_BASENLEN_ARENA);
@@ -703,13 +701,12 @@ dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base,
         .cap   = x.n,       .n    = x.n,
     };
     // Numerical Accumulation Loop
-    for (size_t i = total_needed - 2; i >= sign_space; --i) {
+    for (size_t i = total_needed - 1; i >= sign_space; --i) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] : 
         _DIGIT_SEN_[numeric_value]; *written++;
     }
-    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark);
-    str[total_needed - 1] = '\0'; return STR_SUCCESS;
+    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
 dnml_status bigInt_to_strf(
     char* str, size_t len, 
@@ -725,9 +722,9 @@ dnml_status bigInt_to_strf(
     prefix_space = (base == 2 || base == 8 || base == 16) ? 2 : (
         (base < 10) ? 4 : ((base < 100) ? 5 : 6)
     ), prefix_add = (uppercase) ? 32 : 0, char_add = (uppercase) ? 16 : 0;
-    if (len <= sign_space + prefix_space + 1) return STR_INVALID_CAP;
+    if (len <= sign_space + prefix_space) return STR_INVALID_CAP;
     size_t digit_needed = __BIGINT_COUNTDB__(&x, base);
-    size_t total_needed = digit_needed + sign_space + prefix_space + 1;
+    size_t total_needed = digit_needed + sign_space + prefix_space;
     if (len < total_needed) return STR_INVALID_CAP;
     if (sign_space) str[0] = '-';
     if (prefix_space) { str[0 + sign_space] = '0';
@@ -750,13 +747,12 @@ dnml_status bigInt_to_strf(
     memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign,  /**/    .cap = x.n, .n = x.n};
     // Numerical Accumulation Loop
-    for (size_t i = total_needed - 2; i >= sign_space + prefix_space; --i) {
+    for (size_t i = total_needed - 1; i >= sign_space + prefix_space; --i) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value + char_add] : 
         _DIGIT_SEN_[numeric_value]; *written++;
     }
-    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark);
-    str[total_needed - 1] = '\0';  return STR_SUCCESS;
+    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
 //* -------------------------- BigInt Conversions -------------------------- *//
 bigInt bigInt_from_str(const char* str, dnml_status *err) {

@@ -243,7 +243,7 @@ scase ecases_nob[25] = { // 2636 bytes of memory usage ---> Rounded to 2688 byte
                     "16737052678716660271323330825983"
                     "23981868072960"
         }
-    }, { /* 21      | 2^256 - 1 (n = 5, sign = -1)              | "-115792089237...913129639935" (truncated)        */
+    }, { /* 21      | 2^256 - 1 (n = 4, sign = -1)              | "-115792089237...913129639935" (truncated)        */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = STR_OUT_CAP,
             .x = { .limbs = case_21, .cap = 4, .n = 4, .sign = -1 }

@@ -159,7 +159,7 @@ scase ecases_nob[25] = { // Total: 3556 bytes - 3.556 KB
     }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | 20        | 21        | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = 20,
-            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 20),
     },
     /* ------------------------------------------------------- EDGE CASES --------------------------------------------------------- */
@@ -241,7 +241,7 @@ scase ecases_nob[25] = { // Total: 3556 bytes - 3.556 KB
     }, { /* 16      | NEARLY DENSE (n = 3) - fail edition       | 50        | 58        | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = 50,
-            .x = { .limbs = case_16, .n = 3, .cap = 3, .sign = -1 }
+            .x = { .limbs = case_16, .n = 3, .cap = 3, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 50),
     }, { /* 17      | Dense -> Sparse (n = 5)                   | 60        | 78        | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
@@ -381,11 +381,11 @@ scase ecases_b[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
     }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | 8         | 20        | 23        | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
             .base = 8, .uppercase = false, .len = 20,
-            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
+            .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 20),
     },
     /* -------------------------------------------------------------- EDGE CASES -------------------------------------------------------------- */
-    { /* 8          | -2^96 (n = 2, sign = -1)                  | 5         | 29        | 42        | STR_INVALID_CAP                           */
+    { /* 8          | -2^96 (n = 2, sign = -1)                  | 5         | 29        | 43        | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
             .base = 5, .uppercase = false, .len = 29,
             .x = { .limbs = case_8, .n = 2, .cap = 2, .sign = -1 }
@@ -471,7 +471,7 @@ scase ecases_b[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
     }, { /* 16      | NEARLY DENSE (n = 3) - fail edition       | 6         | 50        | 75        | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
             .base = 6, .uppercase = false, .len = 50,
-            .x = { .limbs = case_16, .n = 3, .cap = 3, .sign = -1 }
+            .x = { .limbs = case_16, .n = 3, .cap = 3, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 50),
     }, { /* 17      | Dense -> Sparse (n = 5)                   | 22        | 40        | 58        | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
