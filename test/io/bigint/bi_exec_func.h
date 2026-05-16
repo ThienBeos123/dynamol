@@ -49,35 +49,36 @@
 // Truncative Conversions - tto_str
 static inline void exec_bitos_tto_str(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
-    out->type = STRING; out->cap = in->len;
-    out->str[out->cap] = '\0';
-    out->status = bigInt_tto_str(out->str, in->x, &out->data.len);
+    out->type = STRING;
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[out->cap] = '\0';
+    out->status = bigInt_tto_str(dest, in->x, &out->data.len);
 }
 static inline void exec_bitos_tto_strb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
-    out->type = STRING; out->cap = in->len;
-    out->str[out->cap] = '\0';
-    out->status = bigInt_tto_strb(out->str, in->x, in->base, &out->data.len);
+    out->type = STRING;
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[out->cap] = '\0';
+    out->status = bigInt_tto_strb(dest, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_tto_strn(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
-    out->type = STRING; 
-    out->status = bigInt_tto_strn(out->str, in->len, in->x, &out->data.len);
+    out->type = STRING;
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    out->status = bigInt_tto_strn(dest, in->len, in->x, &out->data.len);
 }
 static inline void exec_bitos_tto_strnb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    out->status = bigInt_tto_strnb(
-        out->str, in->len, 
-        in->x, in->base, 
-        &out->data.len
-    );
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    out->status = bigInt_tto_strnb(dest, in->len, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_tto_strf(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    out->status = bigInt_tto_strf(out->str, 
-        in->len, in->x, 
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    out->status = bigInt_tto_strf(
+        dest, in->len, in->x, 
         in->base, in->uppercase,
         &out->data.len
     );
@@ -85,35 +86,36 @@ static inline void exec_bitos_tto_strf(const void *vin, str_res *out, void *vctx
 // Default / Strict Conversions - to_str
 static inline void exec_bitos_to_str(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
-    out->type = STRING; out->cap = in->len;
-    out->str[out->cap] = '\0';
-    out->status = bigInt_to_str(out->str, in->x, &out->data.len);
+    out->type = STRING;
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[out->cap] = '\0';
+    out->status = bigInt_to_str(dest, in->x, &out->data.len);
 }
 static inline void exec_bitos_to_strb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
-    out->type = STRING; out->cap = in->len;
-    out->str[out->cap] = '\0';
-    out->status = bigInt_to_strb(out->str, in->x, in->base, &out->data.len);
+    out->type = STRING;
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[out->cap] = '\0';
+    out->status = bigInt_to_strb(dest, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_to_strn(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    out->status = bigInt_to_strn(out->str, in->len, in->x, &out->data.len);
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    out->status = bigInt_to_strn(dest, in->len, in->x, &out->data.len);
 }
 static inline void exec_bitos_to_strnb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    out->status = bigInt_to_strnb(
-        out->str, in->len, 
-        in->x, in->base,
-        &out->data.len
-    );
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    out->status = bigInt_to_strnb(dest, in->len, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_to_strf(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    out->status = bigInt_to_strf(out->str, 
-        in->len, in->x, 
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    out->status = bigInt_to_strf(
+        dest, in->len, in->x, 
         in->base, in->uppercase, 
         &out->data.len
     );
@@ -133,7 +135,9 @@ static inline void exec_bitos_fput(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = stat;
+    }
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_fputb(const void *vin, str_res *out, void *vctx) {
@@ -151,7 +155,9 @@ static inline void exec_bitos_fputb(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = stat;
+    } 
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_fputf(const void *vin, str_res *out, void *vctx) {
@@ -169,7 +175,9 @@ static inline void exec_bitos_fputf(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = stat;
+    } 
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 // Buffered Printing - sfput
@@ -188,7 +196,9 @@ static inline void exec_bitos_sfput(const void *vin, str_res *out, void *vctx) {
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = stat;
+    } 
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_sfputb(const void *vin, str_res *out, void *vctx) {
@@ -206,7 +216,9 @@ static inline void exec_bitos_sfputb(const void *vin, str_res *out, void *vctx) 
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = stat;
+    } 
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_sfputf(const void *vin, str_res *out, void *vctx) {
@@ -224,7 +236,9 @@ static inline void exec_bitos_sfputf(const void *vin, str_res *out, void *vctx) 
             sizeof(char), 64, tmp
         ); len += n;
         if (feof(tmp)) break;
-    } out->str[len] = '\0'; out->status = stat;
+    } 
+    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
+    dest[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 // Stream-based Raw Output - fwrite

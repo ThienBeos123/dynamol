@@ -346,9 +346,9 @@ int main(int argc, char **argv) {
     u8 print_ecount = 35, print_scount = 2;
 
     // Edge-case Buffer Setup
-    char ectx_buf[2270]; // Edge-case Memory Usage: 2270 bytes
+    char ectx_buf[2304]; // Edge-case Memory Usage: 2304 bytes
     str_res *ebuf_slices[print_scount], fail_ebuf[(print_ecount << 1) * print_scount];
-    strbump_t print_ectx = { .ctx = ectx_buf, .off = 0, .size = 2270 };
+    strbump_t print_ectx = { .ctx = ectx_buf, .off = 0, .size = 2304 };
     _dist_buf(ebuf_slices, fail_ebuf, print_ecount << 1, print_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t print_res_rctx = {0}; rctx_input_t print_in_rctx = {0};
@@ -371,7 +371,7 @@ int main(int argc, char **argv) {
     suite fputf_suite = {0};
     create_str_suite(&fputf_suite, "fputf - BigInt Printing", 
         print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fputf.txt", print_ectx, &print_rcon,
+        "../logs/bi_logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fputf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fputf_suite,
@@ -386,7 +386,7 @@ int main(int argc, char **argv) {
     suite sfputf_suite = {0};
     create_str_suite(&sfputf_suite, "sfputf - BigInt Printing", 
         print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fputf.txt", print_ectx, &print_rcon,
+        "../logs/bi_logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfputf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sfputf_suite,

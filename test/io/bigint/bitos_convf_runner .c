@@ -85,7 +85,7 @@ limb_t case_final[48] = {
 };
 
 
-scase ecases[25] = { // 2270 bytes of memory
+scase ecases[25] = { // 2270 bytes of memory ---> Rounded up to 2304
     /* ------------------------------------------------------------------------------------------------------------------------ */
     /* Case Number  | Input                             | Base          | Expected Ouput                                        */
     /* -------------------------------------------------- TRIVIAL CASES ------------------------------------------------------- */
@@ -345,9 +345,9 @@ int main(int argc, char **argv) {
     u8 conv_ecount = 25, conv_scount = 2;
 
     // Edge-case Buffer Setup
-    char ectx_buf[2270]; // Edge-case Memory Usage: 2270 bytes
+    char ectx_buf[2304]; // Edge-case Memory Usage: 2304 bytes
     str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
-    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 2270 };
+    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 2304 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
     suite to_strf_suite = {0};
     create_str_suite(&to_strf_suite, "to_strf - BigInt Conversion", 
         conv_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
         &convf_rconfig, &conv_rstate
     ); to_strf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strf_suite,
@@ -385,7 +385,7 @@ int main(int argc, char **argv) {
     suite tto_strf_suite = {0};
     create_str_suite(&tto_strf_suite, "tto_strf - BigInt Conversion",
         conv_scount, rcount, ecases, INVERSE, ebuf_slices[1],
-        "../logs/bi_logs/bigint_to_strf.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
         &convf_rconfig, &conv_rstate
     ); tto_strf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tto_strf_suite,

@@ -25,9 +25,9 @@ typedef uint16_t u16;
 typedef uint8_t u8;
 
 #define INVAL_BI() .data.bi = { .limbs = NULL, .n = 1, .cap = 0, .sign = 0 }
-#define INVAL_STR(err_code) .exp = { \
+#define INVAL_STR(err_code, incap) .exp = { \
     .type = STRING, .status = err_code, \
-    .data.len = 0, .cap = 0, .pstr = NULL \
+    .data.len = 0, .cap = incap, .pstr = NULL \
 }
 
 stinl void _print_base(FILE* f, u8 base, bool endl) {

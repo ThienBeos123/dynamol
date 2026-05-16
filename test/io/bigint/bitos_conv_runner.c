@@ -86,7 +86,7 @@ limb_t case_final[48] = {
 };
 
 
-scase ecases_nob[25] = { // 2636 bytes of memory usage + 64 bytes = 2700 bytes
+scase ecases_nob[25] = { // 2636 bytes of memory usage ---> Rounded to 2688 bytes
     /* ------------------------------------------------------------------------------------------------------------ */
     /* Case Number  | Input                                     | Expected Ouput                                    */
     /* ---------------------------------------------- TRIVIAL CASES ----------------------------------------------- */
@@ -576,9 +576,9 @@ int main(int argc, char **argv) {
     u8 conv_ecount = 25, conv_scount = 4;
 
     // Edge-case Buffer Setup
-    char ectx_buf[2700]; // Edge-case Memory Usage: 2700 bytes
+    char ectx_buf[2688]; // Edge-case Memory Usage: 2688 bytes
     str_res *ebuf_slices[conv_scount], fail_ebuf[(conv_ecount << 1) * conv_scount];
-    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 2700 };
+    strbump_t conv_ectx = { .ctx = ectx_buf, .off = 0, .size = 2688 };
     _dist_buf(ebuf_slices, fail_ebuf, conv_ecount << 1, conv_scount, sizeof(str_res));
     // Rand-case Buffer Setup:
     rctx_res_t conv_res_rctx = {0}; rctx_input_t conv_in_rctx = {0};
@@ -601,7 +601,7 @@ int main(int argc, char **argv) {
     suite to_str_suite = {0};
     create_str_suite(&to_str_suite, "to_str - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_str_suite,
@@ -616,7 +616,7 @@ int main(int argc, char **argv) {
     suite to_strb_suite = {0};
     create_str_suite(&to_strb_suite, "to_strb - BigInt Conversion", 
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[1], 
-        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strb_suite,
@@ -631,7 +631,7 @@ int main(int argc, char **argv) {
     suite to_strn_suite = {0};
     create_str_suite(&to_strn_suite, "to_strn - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[2], 
-        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strn_suite,
@@ -646,7 +646,7 @@ int main(int argc, char **argv) {
     suite to_strnb_suite = {0};
     create_str_suite(&to_strnb_suite, "to_strnb - BigInt Conversion",
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[3],
-        "../logs/bi_logs/bigint_to_str.txt", conv_ectx, &conv_rcon,
+        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strnb_suite,

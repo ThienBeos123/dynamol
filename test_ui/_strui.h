@@ -89,7 +89,7 @@ typedef struct _libdnml_str_suite {
     dnml_sres_fill *fn_outfill; dnml_sres_fill *fn_aux2fill;
 
     // Edge cases storage
-    _libdnml_scase *edge; strbump_t ectx;
+    _libdnml_scase *edge; strbump_t *ectx;
     uint8_t ecount; uint8_t ecorrect;
     str_res *fail_eres; str_res *fail_eexp;
 
@@ -102,15 +102,16 @@ typedef struct _libdnml_str_suite {
 
 
 //* =========== TYPE-SPECIFIC UTILITIES =========== *//
-static inline int move_forward(strbump_t *ctx, str_res *out) {
-    assert(out->type); size_t amount;
-    switch (out->type) {
-        case BIGINT: amount = out->data.bi.n; break;
-        case STRING: amount =  out->data.len; break;
-    }
-    if (amount > ctx->size) return 1;
-    if (ctx->off + amount > ctx->size) return 1;
-    ctx += amount; return 0;
+static inline void* strbump_alloc(strbump_t *ctx, size_t amount) {
+    if (!amount) return NULL;
+    if (amount > ctx->size) return NULL;
+    if (ctx->off + amount > ctx->size) return NULL;
+    void *res_ptr = ctx->ctx;
+    ctx->ctx += amount; return res_ptr;
+}
+static inline void _prep_edge_res_pstr(str_res *out, const str_res *exp, strbump_t *bump) {
+    out->cap = exp->cap;  // Mirror expected capacity
+    out->pstr = (char*)strbump_alloc(bump, out->cap + 1);
 }
 static inline rcap_mode _rand_rcap(xoshiro256_state *state) {
     float roll = fmodf(__froll(state), 100.0f);
@@ -252,7 +253,7 @@ static inline void create_str_suite(
     _libdnml_str_suite *curr_suite, const char *name,
     uint8_t ecount, uint16_t rcount, _libdnml_scase *ebank,
     rcheck_mode mode, str_res *fail_ebuf, const char *log_path,
-    strbump_t ectx, rand_container *rincon,
+    strbump_t *ectx, rand_container *rincon,
     void *rconfig, xoshiro256_state *state
 ) {
     curr_suite->suite_name = name;
@@ -491,8 +492,8 @@ static inline void _dnml_run_edge(_libdnml_str_suite *s) {
     int enum_i = 0;
     for (uint8_t i = 0; i < s->ecount; ++i) {
         _libdnml_scase *c = &s->edge[i];
-        run_ecase(c, s->fn_test, s->ectx.ctx);
-        assert(!move_forward(&s->ectx, &c->res));
+        _prep_edge_res_pstr(&c->res, &c->exp, s->ectx);
+        run_ecase(c, s->fn_test, s->ectx->ctx);
         if (_comp_str_res(&c->res, &c->exp)) s->ecorrect++;
         else { uint8_t findex = (i + 1) - s->ecorrect;
             s->fail_eres[findex] = c->res;
@@ -521,8 +522,10 @@ static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_
         uint8_t voidp_in_buf[(*s->fn_aux1size)()];
         aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
         // Setting up Evaluation Output buffers
-        out = s->rincon->res_cont->res_buf;
-        aux2 = s->rincon->res_cont->aux2_buf;
+        (*s->fn_outfill)(out, s->rincon);
+        (*s->fn_aux2fill)(aux2, s->rincon);
+        // Preventing the usage of pointer-based string storage in Random Cases
+        out->pstr == NULL; aux2->pstr == NULL;
 
         // ---------------- MAIN EXECUTION PART ----------------
         run_case(s, s->fn_test, in, out);
@@ -579,6 +582,8 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
         // Setting up Evaluation Output buffers
         (*s->fn_outfill)(out, s->rincon);
         (*s->fn_aux2fill)(aux2, s->rincon);
+        // Preventing the usage of pointer-based string storage in Random Cases
+        out->pstr == NULL; aux2->pstr == NULL;
 
         // ---------------- MAIN EXECUTION PART ----------------
         run_case(s, s->fn_test, in, out);
