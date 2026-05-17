@@ -2,12 +2,9 @@
 #define _libdnml_base
 
 
-#include "system/__arch.h"
-#include "system/__compiler.h"
-#include "system/__hwcaps.h"
-#include "sconfigs/settings.h"
+#include <include.h>
+#include <system/sys.h>
 #include "intrinsics/intrinsics.h"
-#include <stdint.h>
 
 static volatile uint8_t _libinit = 0;
 

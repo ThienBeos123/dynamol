@@ -94,19 +94,19 @@ After the acquisition of the source code, have a look at INSTALLATION.md for det
 ## Documentation
 If you are a developer who wants to either contribute to our project, or just wants better integration quality by reading ducomentation, here are some valuable documentation for notable types:
 
-* [BigNumbers Utilization Details](/adynamol/BIGNUM_CONTRACT.md)
+* [BigNumbers Utilization Details](/adynamol/BIGNUM_CONTRACT.txt)
 * Future documentation incoming..
 
 
 ## Project Status
 ~~~md
 ## Status
-- Version: v0.2.1 (pre-stable)
+- Version: v0.2.2 (pre-release)
 - API is subject to change
 
 - Mathematical Module is maturing               [#####     ] 50%
-- Testing & benchmarking in progress            [###       ] 30%
-- Cryptography features in progress             [          ] 0%
+- Testing & benchmarking in progress            [#####     ] 50%
+- Cryptography features in progress             [#         ] 10%
 - Embedded-development features in progress     [          ] 0%
 - Generic I/O in progress                       [          ] 0%
 ~~~

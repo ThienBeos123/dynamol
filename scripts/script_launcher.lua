@@ -1,10 +1,31 @@
 local CACHE_FILE = ".program_cache.txt"
+local CONFIG_FILE = ".languages.txt"
 
 -- Helper to check if a file/directory exists
 local function exists(path)
     local f = io.open(path, "r")
     if f then f:close() return true end
     return false
+end
+
+-- Reads the configuration file to determine supported extensions and engines
+local function load_supported_languages()
+    local languages = {}
+    if not exists(CONFIG_FILE) then
+        -- Default fallback if config file isn't found
+        languages[".py"] = "python3"
+        languages[".lua"] = "lua"
+        return languages
+    end
+
+    for line in io.lines(CONFIG_FILE) do
+        -- Matches extension (e.g., .py) and engine (e.g., python3)
+        local ext, engine = line:match("([%.%w]+)%s+(%S+)")
+        if ext and engine then
+            languages[ext] = engine
+        end
+    end
+    return languages
 end
 
 -- Generates the directory characters (a-z, then A-Z)
@@ -18,13 +39,20 @@ local function get_dir_char(index)
     end
 end
 
--- Scans directories for folders ending with .py or .lua
-local function scan_folders(err_obj)
+-- Scans directories for folders ending with any configured suffix
+local function scan_folders(supported_langs, err_obj)
     print("Scanning directories...")
     local structure = {}
 
-    -- Execute popen to get directories ending in .py or .lua safely
-    local p_dir = io.popen("find . -maxdepth 1 -type d \\( -name '*.py' -o -name '*.lua' \\) | sort")
+    -- Build a dynamic find argument string for directories based on suffixes
+    -- Example: -name '*.py' -o -name '*.lua'
+    local find_dir_args = {}
+    for ext, _ in pairs(supported_langs) do
+        table.insert(find_dir_args, "-name '*" .. ext .. "'")
+    end
+    local dir_clause = table.concat(find_dir_args, " -o ")
+
+    local p_dir = io.popen("find . -maxdepth 1 -type d \\( " .. dir_clause .. " \\) | sort")
     if p_dir == nil then
         err_obj.err_code = 1
         return {}
@@ -37,8 +65,8 @@ local function scan_folders(err_obj)
             local char_key = get_dir_char(dir_idx)
             structure[char_key] = { name = dir_name, files = {} }
             
-            -- Scan files inside this directory matching extension types
-            local p_file = io.popen("find " .. dir_path .. " -maxdepth 1 -type f \\( -name '*.py' -o -name '*.lua' \\) | sort")
+            -- Scan files inside this directory matching any of the allowed extension types
+            local p_file = io.popen("find " .. dir_path .. " -maxdepth 1 -type f \\( " .. dir_clause .. " \\) | sort")
             if p_file == nil then
                 err_obj.err_code = 1
                 return {}
@@ -88,17 +116,14 @@ local function load_cache()
 end
 
 -- Dynamic filtering logic based on user filter preference
-local function filter_structure(raw_structure, lang_choice)
-    if lang_choice == "all" then return raw_structure end
+local function filter_structure(raw_structure, target_ext)
+    if target_ext == "all" then return raw_structure end
     
     local filtered = {}
-    local target_ext = "." .. lang_choice -- ".py" or ".lua"
-    
     for char_key, dir_data in pairs(raw_structure) do
         local filtered_files = {}
         local f_idx = 1
         
-        -- Sort internal files numerically to filter them out sequentially
         local temp_keys = {}
         for k in pairs(dir_data.files) do table.insert(temp_keys, tonumber(k)) end
         table.sort(temp_keys)
@@ -111,7 +136,6 @@ local function filter_structure(raw_structure, lang_choice)
             end
         end
         
-        -- Only add the directory if it contains matched filtered executable scripts
         local has_files = false
         for _ in pairs(filtered_files) do has_files = true break end
         
@@ -126,18 +150,27 @@ local function filter_structure(raw_structure, lang_choice)
 end
 
 local function main()
-    -- Ask the user what kind of scripts they want to handle
+    -- Dynamically read configured languages
+    local supported_langs = load_supported_languages()
+
     print("=========================================")
     print("Select language filter option:")
-    print("1. Python scripts only (.py)")
-    print("2. Lua scripts only (.lua)")
-    print("3. All scripts")
-    io.write("Choice (1-3): ")
-    local filter_input = io.read()
     
-    local lang_choice = "all"
-    if filter_input == "1" then lang_choice = "py"
-    elseif filter_input == "2" then lang_choice = "lua" end
+    -- Dynamically generate menu options from configuration
+    local menu_map = {}
+    local menu_idx = 1
+    for ext, _ in pairs(supported_langs) do
+        print(string.format("%d. Only %s files", menu_idx, ext))
+        menu_map[tostring(menu_idx)] = ext
+        menu_idx = menu_idx + 1
+    end
+    print(string.format("%d. All scripts", menu_idx))
+    menu_map[tostring(menu_idx)] = "all"
+
+    io.write("Choice: ")
+    local filter_input = io.read():gsub("%s+", "")
+    
+    local lang_choice = menu_map[filter_input] or "all"
 
     local raw_structure = nil
     local err_obj = { err_code = 0 }
@@ -151,7 +184,7 @@ local function main()
     end
     
     if not raw_structure then
-        raw_structure = scan_folders(err_obj)
+        raw_structure = scan_folders(supported_langs, err_obj)
         if err_obj.err_code == 1 then
             io.stderr:write("\n=================== ERROR PAGE ===================\n")
             io.stderr:write("CRITICAL ERROR: Certain Directory or environment find tools not found\n")
@@ -173,9 +206,7 @@ local function main()
     -- Sort the keys for display (a-z, A-Z)
     local sorted_keys = {}
     for k in pairs(structure) do table.insert(sorted_keys, k) end
-    table.sort(sorted_keys, function(a, b)
-        return a < b
-    end)
+    table.sort(sorted_keys)
 
     -- Display the structured menu
     print("\n=========================================")
@@ -200,7 +231,7 @@ local function main()
 
     -- User selection
     io.write("\nSelect a program option (e.g., a1, B2): ")
-    local selection = io.read():gsub("%s+", "") -- strip whitespaces
+    local selection = io.read():gsub("%s+", "")
     
     if #selection < 2 then
         print("Invalid format input. Exiting.")
@@ -222,10 +253,20 @@ local function main()
         return
     end
 
-    -- Determine runtime engine
-    local engine = "python3"
-    if target_path:match("%.lua$") then
-        engine = "lua"
+    -- Dynamically determine runtime engine based on target file extension match
+    local engine = ""
+    for ext, eng in pairs(supported_langs) do
+        -- Escape the dot in the extension pattern matching logic
+        local escaped_ext = ext:gsub("%.", "%%.")
+        if target_path:match(escaped_ext .. "$") then
+            engine = eng
+            break
+        end
+    end
+
+    if engine == "" then
+        print("Error: No execution engine configured for this file type.")
+        return
     end
 
     print("\nLaunching " .. target_path .. " and terminating launcher...")
