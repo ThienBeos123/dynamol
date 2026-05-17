@@ -118,7 +118,8 @@ static void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, cal
         __BIGINT_SCHOOLBOOK__(m, n, res); return;
     } //* -------- 1. SETUP & SPLITTING -------- *//
     size_t k = (size_t)(max(m->n, n->n) / 3) + 1;
-    size_t m2size = m->n - (k << 1), /**/ n2size = n->n - (k << 1);
+    size_t m2size = (m->n > (k << 1)) ? (m->n - (k << 1)) : 0;
+    size_t n2size = (n->n > (k << 1)) ? (n->n - (k << 1)) : 0;
     bigInt m0 = {.limbs = m->limbs,             .n = k,         .cap = k};
     bigInt m1 = {.limbs = m->limbs + k,         .n = k,         .cap = k};
     bigInt m2 = {.limbs = m->limbs + (k << 1),  .n = m2size,  .cap = m2size};

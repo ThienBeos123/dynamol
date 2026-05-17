@@ -6,3 +6,4 @@ zbuild/
 *.dSYM
 .vscode/
 .idea/
+*.pdf

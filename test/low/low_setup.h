@@ -1,5 +1,5 @@
-#ifndef _LMACRO_H
-#define _LMACRO_H
+#ifndef _LOW_SETUP_H
+#define _LOW_SETUP_H
 
 
 #include "../../test_ui/lowui.h"
@@ -13,6 +13,7 @@
 #define pair _dnml_pair
 #define u64 uint64_t
 #define u32 uint32_t
+#define u16 uint16_t
 #define u8 uint8_t
 
 #define U8m UINT8_MAX
@@ -46,7 +47,7 @@
     ecount, rcount, rin,        \
     edge, rand, ribuf, resbuf,  \
     test_fn, ref_fn, logp       \
-) do { create_suite( \
+) do { create_lsuite( \
     suite, name,            \
     ecount, rcount, rin,    \
     edge, rand,             \
@@ -62,6 +63,16 @@ u64 barebone_rand(void) {
         res = (res << 15) | (rand() & 0x7FFF);
     } return res;
 }
+void _suite_slices(
+    void** slices, void* storage, 
+    size_t elements_per_suite, size_t element_size, 
+    u8 suite_count
+) {
+    for (size_t i = 0; i < suite_count; ++i) {
+        size_t increments = i * elements_per_suite * element_size;
+        slices[i] = (void*)((char*)storage + increments);
+    } return;
+}
 
 
 
@@ -70,7 +81,7 @@ u64 barebone_rand(void) {
 //* ======= ARITHMETIC SUITE SETUP ======== *//
 //* ======================================= *//
 static inline void addc_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *addclp,
     u64 (*test_fn)(u64, u64, u8*),
@@ -114,7 +125,7 @@ static inline void addc_setup(
     ); return;
 }
 static inline void subb_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *subblp,
     u64 (*test_fn)(u64, u64, u8*),
@@ -159,7 +170,7 @@ static inline void subb_setup(
     ); return;
 }
 static inline void wmul_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
@@ -207,7 +218,7 @@ static inline void wmul_setup(
     ); return;
 }
 static inline void wdiv_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
@@ -269,7 +280,7 @@ static inline void wdiv_setup(
 //* ===== MODULAR ARITHMETIC SUITE SETUP ===== *//
 //* ========================================== *//
 static inline void modinv_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
@@ -326,7 +337,7 @@ static inline void modinv_setup(
 //* ===== BITWISE OPERATIONS SUITE SETUP ===== *//
 //* ========================================== *//
 static inline void clz_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
@@ -367,7 +378,7 @@ static inline void clz_setup(
     ); return;
 }
 static inline void ctz_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
@@ -408,7 +419,7 @@ static inline void ctz_setup(
     ); return;
 }
 static inline void bswap_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
@@ -449,7 +460,7 @@ static inline void bswap_setup(
     ); return;
 }
 static inline void pcnt_setup(
-    _libdnml_suite *s, const char *name,
+    _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
     u64 **ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),

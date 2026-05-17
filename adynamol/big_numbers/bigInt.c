@@ -49,7 +49,7 @@ void __BIGINT_EMPTY_INIT__(bigInt *x) {
     x->n     = 0;
     x->sign  = 1;
 }
-void __BIGINT_LIMBS_INIT__(bigInt *x, size_t n) {
+void bigInt_linit(bigInt *x, size_t n) {
     if (n == 0 || x->limbs != NULL) return; // Intializing 0 cap OR already initialized
     limb_t *__BUFFER_P = calloc(n, sizeof(limb_t));
     if (__BUFFER_P == NULL) abort();
@@ -230,7 +230,7 @@ bigInt __BIGINT_FROM_LD_SAFE__(long double x) {}
 //* =========================================== BITWISE OPERATIONS =========================================== */
 bigInt __BIGINT_NOT__(const bigInt x) {
     assert(__BIGINT_STATE_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, x.n);
+    bigInt res; bigInt_linit(&res, x.n);
     for (size_t i = 0; i < x.n; ++i) {
         res.limbs[0] = ~x.limbs[0];
     }
@@ -242,7 +242,7 @@ bigInt __BIGINT_NOT__(const bigInt x) {
 bigInt __BIGINT_RSHIFT__(const bigInt x, size_t k) {
     assert(__BIGINT_VALIDATE__(x));
     uint64_t discarded_bits = 0;
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, k);
+    bigInt res; bigInt_linit(&res, k);
     for (size_t i = 0; i < x.n; ++i) {
         uint64_t positioned_bits = discarded_bits << (BITS_IN_UINT64_T - k);
         res.limbs[i] = (x.limbs[i] >> k) | positioned_bits;
@@ -253,7 +253,7 @@ bigInt __BIGINT_RSHIFT__(const bigInt x, size_t k) {
 bigInt __BIGINT_LSHIFT__(const bigInt x, size_t k) {
     assert(__BIGINT_VALIDATE__(x));
     uint64_t discarded_bits = 0;
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, x.n);
+    bigInt res; bigInt_linit(&res, x.n);
     for (size_t i = 0; i < x.n; ++i) {
         res.limbs[i] = (x.limbs[i] << k) | discarded_bits;
         uint64_t iso_mask = (1U << k) - 1;
@@ -742,7 +742,7 @@ bigInt __BIGINT_AND_UI64__  (const bigInt x, uint64_t val) {
 }
 bigInt __BIGINT_NAND_UI64__ (const bigInt x, uint64_t val) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (x.n) ? x.n : 1);
+    bigInt res; bigInt_linit(&res, (x.n) ? x.n : 1);
     if (x.n == 0) {
         res.limbs[0] = UINT64_MAX;
         res.n        = 1;
@@ -762,7 +762,7 @@ bigInt __BIGINT_OR_UI64__   (const bigInt x, uint64_t val) {
         res.n        = res.limbs[0] ? 1 : 0;
         res.sign     = res.limbs[0] ? x.sign : 1;
     } else {
-        __BIGINT_LIMBS_INIT__(&res, x.n);
+        bigInt_linit(&res, x.n);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = x.limbs[i] | b;
@@ -782,7 +782,7 @@ bigInt __BIGINT_NOR_UI64__  (const bigInt x, uint64_t val) {
         res.n        = (op_res) ? 1 : 0;
         res.sign     = (op_res) ? x.sign : 1; 
     } else {
-        __BIGINT_LIMBS_INIT__(&res, x.n);
+        bigInt_linit(&res, x.n);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = ~(x.limbs[i] | b);
@@ -802,7 +802,7 @@ bigInt __BIGINT_XOR_UI64__  (const bigInt x, uint64_t val) {
         res.n           = (op_res) ? 1 : 0;
         res.sign        = (op_res) ? x.sign : 1;
     } else {
-        __BIGINT_LIMBS_INIT__(&res, x.n);
+        bigInt_linit(&res, x.n);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = x.limbs[i] ^ b;
@@ -822,7 +822,7 @@ bigInt __BIGINT_XNOR_UI64__ (const bigInt x, uint64_t val) {
         res.n        = (op_res) ? 1 : 0;
         res.sign     = (op_res) ? x.sign : 1;
     } else {
-        __BIGINT_LIMBS_INIT__(&res, x.n);
+        bigInt_linit(&res, x.n);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = ~(x.limbs[i] ^ b);
@@ -839,7 +839,7 @@ bigInt __BIGINT_AND__   (const bigInt x, const bigInt y) {
     if (!x.n || !y.n) __BIGINT_EMPTY_INIT__(&res);
     else {
         size_t operation_range = max(x.n, y.n);
-        __BIGINT_LIMBS_INIT__(&res, operation_range);
+        bigInt_linit(&res, operation_range);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
@@ -857,12 +857,12 @@ bigInt __BIGINT_NAND__  (const bigInt x, const bigInt y) {
     if (!x.n || !y.n) {
         size_t max = max(x.n, y.n);
         size_t expanded_cap = max ? max : 1;
-        __BIGINT_LIMBS_INIT__(&res, expanded_cap);
+        bigInt_linit(&res, expanded_cap);
         memset(res.limbs, UINT64_MAX, expanded_cap);
         res.n = expanded_cap;
     } else {
         size_t operation_range = max(x.n, y.n);
-        __BIGINT_LIMBS_INIT__(&res, operation_range);
+        bigInt_linit(&res, operation_range);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
@@ -881,7 +881,7 @@ bigInt __BIGINT_OR__    (const bigInt x, const bigInt y) {
     else if (!x.n) __BIGINT_STANDARD_INIT__(&res, y);
     else {
         size_t operation_range = max(x.n, y.n);
-        __BIGINT_LIMBS_INIT__(&res, operation_range);
+        bigInt_linit(&res, operation_range);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
@@ -903,7 +903,7 @@ bigInt __BIGINT_NOR__   (const bigInt x, const bigInt y) {
         res.sign     = x.sign;
     } else {
         size_t operation_range = max(x.n, y.n);
-        __BIGINT_LIMBS_INIT__(&res, operation_range);
+        bigInt_linit(&res, operation_range);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
@@ -921,7 +921,7 @@ bigInt __BIGINT_XOR__   (const bigInt x, const bigInt y) {
     if (!x.n && !y.n) __BIGINT_EMPTY_INIT__(&res);
     else {
         size_t operation_range = max(x.n, y.n);
-        __BIGINT_LIMBS_INIT__(&res, operation_range);
+        bigInt_linit(&res, operation_range);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
@@ -942,7 +942,7 @@ bigInt __BIGINT_XNOR__  (const bigInt x, const bigInt y) {
         res.n        = 1;
     } else {
         size_t operation_range = max(x.n, y.n);
-        __BIGINT_LIMBS_INIT__(&res, operation_range);
+        bigInt_linit(&res, operation_range);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
@@ -956,7 +956,7 @@ bigInt __BIGINT_XNOR__  (const bigInt x, const bigInt y) {
 /* ------------- Functional, Explicit-width ------------- */
 bigInt __BIGINT_EX_AND_UI64__  (const bigInt x, uint64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (x.n && width) {
         res.limbs[0] = x.limbs[0] & val;
         res.n        = res.limbs[0] ? 1 : 0;
@@ -966,7 +966,7 @@ bigInt __BIGINT_EX_AND_UI64__  (const bigInt x, uint64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_NAND_UI64__ (const bigInt x, uint64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i == 0) ? val : 0;
@@ -981,7 +981,7 @@ bigInt __BIGINT_EX_NAND_UI64__ (const bigInt x, uint64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_OR_UI64__   (const bigInt x, uint64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
@@ -996,7 +996,7 @@ bigInt __BIGINT_EX_OR_UI64__   (const bigInt x, uint64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_NOR_UI64__  (const bigInt x, uint64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
@@ -1011,7 +1011,7 @@ bigInt __BIGINT_EX_NOR_UI64__  (const bigInt x, uint64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_XOR_UI64__  (const bigInt x, uint64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
@@ -1026,7 +1026,7 @@ bigInt __BIGINT_EX_XOR_UI64__  (const bigInt x, uint64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_XNOR_UI64__ (const bigInt x, uint64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
@@ -1041,7 +1041,7 @@ bigInt __BIGINT_EX_XNOR_UI64__ (const bigInt x, uint64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_AND_I64__  (const bigInt x, int64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width && x.n) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
@@ -1057,7 +1057,7 @@ bigInt __BIGINT_EX_AND_I64__  (const bigInt x, int64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_NAND_I64__ (const bigInt x, int64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
@@ -1073,7 +1073,7 @@ bigInt __BIGINT_EX_NAND_I64__ (const bigInt x, int64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_OR_I64__   (const bigInt x, int64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
@@ -1089,7 +1089,7 @@ bigInt __BIGINT_EX_OR_I64__   (const bigInt x, int64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_NOR_I64__  (const bigInt x, int64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
@@ -1105,7 +1105,7 @@ bigInt __BIGINT_EX_NOR_I64__  (const bigInt x, int64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_XOR_I64__  (const bigInt x, int64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
@@ -1121,7 +1121,7 @@ bigInt __BIGINT_EX_XOR_I64__  (const bigInt x, int64_t val, size_t width) {
 }
 bigInt __BIGINT_EX_XNOR_I64__ (const bigInt x, int64_t val, size_t width) {
     assert(__BIGINT_VALIDATE__(x));
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
@@ -1138,7 +1138,7 @@ bigInt __BIGINT_EX_XNOR_I64__ (const bigInt x, int64_t val, size_t width) {
 bigInt __BIGINT_EX_AND__   (const bigInt x, const bigInt y, size_t width) {
     assert(__BIGINT_VALIDATE__(x) && __BIGINT_VALIDATE__(y));
     assert(x.limbs != y.limbs);
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
@@ -1154,7 +1154,7 @@ bigInt __BIGINT_EX_AND__   (const bigInt x, const bigInt y, size_t width) {
 bigInt __BIGINT_EX_NAND__  (const bigInt x, const bigInt y, size_t width) {
     assert(__BIGINT_VALIDATE__(x) && __BIGINT_VALIDATE__(y));
     assert(x.limbs != y.limbs);
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
@@ -1170,7 +1170,7 @@ bigInt __BIGINT_EX_NAND__  (const bigInt x, const bigInt y, size_t width) {
 bigInt __BIGINT_EX_OR__    (const bigInt x, const bigInt y, size_t width) {
     assert(__BIGINT_VALIDATE__(x) && __BIGINT_VALIDATE__(y));
     assert(x.limbs != y.limbs);
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
@@ -1186,7 +1186,7 @@ bigInt __BIGINT_EX_OR__    (const bigInt x, const bigInt y, size_t width) {
 bigInt __BIGINT_EX_NOR__   (const bigInt x, const bigInt y, size_t width) {
     assert(__BIGINT_VALIDATE__(x) && __BIGINT_VALIDATE__(y));
     assert(x.limbs != y.limbs);
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
@@ -1202,7 +1202,7 @@ bigInt __BIGINT_EX_NOR__   (const bigInt x, const bigInt y, size_t width) {
 bigInt __BIGINT_EX_XOR__   (const bigInt x, const bigInt y, size_t width) {
     assert(__BIGINT_VALIDATE__(x) && __BIGINT_VALIDATE__(y));
     assert(x.limbs != y.limbs);
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
@@ -1218,7 +1218,7 @@ bigInt __BIGINT_EX_XOR__   (const bigInt x, const bigInt y, size_t width) {
 bigInt __BIGINT_EX_XNOR__  (const bigInt x, const bigInt y, size_t width) {
     assert(__BIGINT_VALIDATE__(x) && __BIGINT_VALIDATE__(y));
     assert(x.limbs != y.limbs);
-    bigInt res; __BIGINT_LIMBS_INIT__(&res, (width) ? width : 1);
+    bigInt res; bigInt_linit(&res, (width) ? width : 1);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
@@ -2020,7 +2020,7 @@ bigInt __BIGINT_DIV__(const bigInt x, const bigInt y, dnml_status *err) {
     else if (y.n == 1 && y.limbs[0] == 1) { __BIGINT_STANDARD_INIT__(&quot, x); quot.sign *= y.sign; }
     else if (x.n == 1 && x.limbs[0] == 1) __BIGINT_EMPTY_INIT__(&quot);
     else {
-        __BIGINT_LIMBS_INIT__(&quot, x.n);
+        bigInt_linit(&quot, x.n);
         dnml_arena *_DASI_FDIV_ARENA = _USE_ARENA();
         size_t tmp_mark = arena_mark(_DASI_FDIV_ARENA);
         limb_t *tmp_limbs = arena_alloc(_DASI_FDIV_ARENA, y.n);
@@ -2046,7 +2046,7 @@ bigInt __BIGINT_MOD__(const bigInt x, const bigInt y, dnml_status *err) {
         if (comp_res < 0) __BIGINT_STANDARD_INIT__(&rem, x);
         else if (!comp_res) __BIGINT_EMPTY_INIT__(&rem);
         else {
-            __BIGINT_LIMBS_INIT__(&rem, y.n);
+            bigInt_linit(&rem, y.n);
             dnml_arena *_DASI_FMOD_ARENA = _USE_ARENA();
             size_t tmp_mark = arena_mark(_DASI_FMOD_ARENA);
             limb_t *tmp_limbs = arena_alloc(_DASI_FMOD_ARENA, x.n);
@@ -2074,7 +2074,7 @@ bigInt __BIGINT_GCD_UI64__(const bigInt x, uint64_t val) {
     if (x.n == 0) __BIGINT_UI64_INIT__(&res, val);
     else if (x.n == 1) __BIGINT_UI64_INIT__(&res, ___GCD_UI64___(x.limbs[0], val));
     else {
-        __BIGINT_LIMBS_INIT__(&res, min(x.n, 1));
+        bigInt_linit(&res, min(x.n, 1));
         dnml_arena *_DASI_UI64_ARENA = _USE_ARENA();
         size_t tmp_mark = arena_mark(_DASI_UI64_ARENA);
         limb_t *tmp_limbs = arena_alloc(_DASI_UI64_ARENA, 1);
@@ -2094,7 +2094,7 @@ bigInt __BIGINT_GCD_I64__(const bigInt x, int64_t val) {
     if (x.n == 0) __BIGINT_UI64_INIT__(&res, __MAG_I64__(val));
     else if (x.n == 1) __BIGINT_UI64_INIT__(&res, ___GCD_UI64___(x.limbs[0], __MAG_I64__(val)));
     else {
-        __BIGINT_LIMBS_INIT__(&res, min(x.n, 1));
+        bigInt_linit(&res, min(x.n, 1));
         dnml_arena *_DASI_UI64_ARENA = _USE_ARENA();
         size_t tmp_mark = arena_mark(_DASI_UI64_ARENA);
         limb_t *tmp_limbs = arena_alloc(_DASI_UI64_ARENA, 1);
@@ -2115,7 +2115,7 @@ bigInt __BIGINT_GCD__(const bigInt x, const bigInt y) {
     if (x.n == 1 && y.n == 1) __BIGINT_UI64_INIT__(
         &res, ___GCD_UI64___(x.limbs[0], y.limbs[0])
     ); else {
-        __BIGINT_LIMBS_INIT__(&res, min(x.n, y.n));
+        bigInt_linit(&res, min(x.n, y.n));
         __BIGINT_MAGNITUDED_GCD__(&res, &x, &y);
     } return res;
 }
@@ -2272,7 +2272,7 @@ bigInt __BIGINT_MODULO__(const bigInt x, const bigInt modulus, dnml_status *err)
         && x.sign == 1
     ) __BIGINT_STANDARD_INIT__(&res, x);
     else { 
-        __BIGINT_LIMBS_INIT__(&res, modulus.n);
+        bigInt_linit(&res, modulus.n);
         __BIGINT_MAGNITUDED_EUCMOD__(&res, &x, &modulus);
         if (x.sign == -1 && res.n) {
             __BIGINT_MAGNITUDED_SUB__(&res, &modulus, &res);
@@ -2416,14 +2416,14 @@ bigInt __BIGINT_SQR__(const bigInt x) {
         else if (x.limbs[0] <= ((1ULL << 32) - 1)) {
             __BIGINT_UI64_INIT__(&res, x.limbs[0] * x.limbs[0]);
         } else { 
-            __BIGINT_LIMBS_INIT__(&res, 2);
+            bigInt_linit(&res, 2);
             res.limbs[0] = __MUL_UI64__(
                 x.limbs[0], x.limbs[0],
                 &res.limbs[1]
             ); res.n = 2;
         } res.sign = 1;
     } else { 
-        __BIGINT_LIMBS_INIT__(&res, x.n * 2);
+        bigInt_linit(&res, x.n * 2);
         __BIGINT_MAGSQR__(&res, &x); res.sign = 1;
     } return res;
 }
@@ -2441,7 +2441,7 @@ bigInt __BIGINT_POW__(const bigInt x, uint64_t exp) {
         )); __BIGINT_UI64_INIT__(&res, exp_res);
         res.sign = (!(exp & 1)) ? 1 : x.sign;
     } else if (exp == 1) __BIGINT_STANDARD_INIT__(&res, x);
-    else { __BIGINT_LIMBS_INIT__(&res, x.n * exp);
+    else { bigInt_linit(&res, x.n * exp);
         __BIGINT_MAGPOW__(&res, &x, exp);
         res.sign = (!(exp & 1)) ? 1 : x.sign;
     } return res;
@@ -2451,7 +2451,7 @@ bigInt __BIGINT_SQRT__(const bigInt x, dnml_status *err) {
     if (x.sign == -1) { *err = BIGINT_ERR_DOMAIN; return __BIGINT_ERROR_VALUE__(); }
     bigInt res; if (!x.n) __BIGINT_EMPTY_INIT__(&res);
     else if (x.n == 1 && x.limbs[0] == 1) __BIGINT_UI64_INIT__(&res, 1);
-    else { __BIGINT_LIMBS_INIT__(&res, (x.n >> 1));
+    else { bigInt_linit(&res, (x.n >> 1));
         __BIGINT_MAGSQR__(&res, &x); res.sign = 1;
     } return res;
 }
@@ -2459,7 +2459,7 @@ bigInt __BIGINT_CBRT__(const bigInt x) {
     assert(__BIGINT_VALIDATE__(x));
     bigInt res; if (!x.n) __BIGINT_EMPTY_INIT__(&res);
     else if (x.n == 1 && x.limbs[0] == 1) __BIGINT_I64_INIT__(&res, (1 * x.sign));
-    else { __BIGINT_LIMBS_INIT__(&res, x.n / 3);
+    else { bigInt_linit(&res, x.n / 3);
         __BIGINT_MAGCBRT__(&res, &x); res.sign = x.sign;
     } return res;
 }
@@ -2472,7 +2472,7 @@ bigInt __BIGINT_NROOT__(const bigInt x, uint64_t root, dnml_status *err) {
         __BIGINT_UI64_INIT__(&res, 1); 
         res.sign = (!(root & 1)) ? 1 : x.sign; 
     } else { size_t alloc_size = (__IS_2POW__(root)) ? (x.n >> __CTZ_UI64__(root)) : (x.n / root);
-        __BIGINT_LIMBS_INIT__(&res, alloc_size); __BIGINT_MAG_NROOT__(&res, &x, root); 
+        bigInt_linit(&res, alloc_size); __BIGINT_MAG_NROOT__(&res, &x, root); 
         res.sign = (!(root & 1)) ? 1 : x.sign;
     } return res;
 }
@@ -2653,7 +2653,7 @@ bigInt __BIGINT_COPY__(const bigInt source__) {
         __BIGINT_EMPTY_INIT__(&dst__);
         return dst__;
     }
-    __BIGINT_LIMBS_INIT__(&dst__, source__.n);
+    bigInt_linit(&dst__, source__.n);
     memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
     dst__.n     = source__.n;
     dst__.sign  = source__.sign;
@@ -2664,7 +2664,7 @@ bigInt __BIGINT_COPY_DEEP__(const bigInt source__) {
     bigInt dst__;
     if (source__.n == 0) __BIGINT_EMPTY_INIT__(&dst__);
     else {
-        __BIGINT_LIMBS_INIT__(&dst__, source__.n);
+        bigInt_linit(&dst__, source__.n);
         memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
         dst__.n = source__.n;
     }
@@ -2679,7 +2679,7 @@ bigInt __BIGINT_COPY_OVER__(const bigInt source__, size_t output_cap, dnml_statu
         return __BIGINT_ERROR_VALUE__();
     }
     bigInt dst__;  
-    __BIGINT_LIMBS_INIT__(&dst__, output_cap);
+    bigInt_linit(&dst__, output_cap);
     memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
     dst__.n     = source__.n;
     dst__.sign  = source__.sign;
@@ -2691,7 +2691,7 @@ bigInt __BIGINT_COPY_TRUNCOVER__(const bigInt source__, size_t output_cap) {
     bigInt dst__;
     if (output_cap == 0) __BIGINT_EMPTY_INIT__(&dst__);
     else {
-        __BIGINT_LIMBS_INIT__(&dst__, output_cap);
+        bigInt_linit(&dst__, output_cap);
         size_t operation_range = (output_cap < source__.n) ? output_cap : source__.n;
         memcpy(dst__.limbs, source__.limbs, operation_range * sizeof(uint64_t));
         dst__.n     = operation_range;
@@ -2712,7 +2712,7 @@ inline void __BIGINT_CANONICALIZE__(bigInt *x) {
         x->cap = 1;
     }
     if (x->n > x->cap) x->n = x->cap;
-    if (x->sign != 1 || x->sign != -1) {
+    if (x->sign != 1 && x->sign != -1) {
         // Just reset to ensure value safety and certainty
         x->n = 0;
         x->sign = 1;

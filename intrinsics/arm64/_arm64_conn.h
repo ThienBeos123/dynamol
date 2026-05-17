@@ -1,9 +1,7 @@
 #ifndef ____DNML_AARCH64_CONN
 #define ____DNML_AARCH64_CONN
 
-#include "../../system/asm/__asm_macros.h"
-#include "../../system/__arch.h"
-#include "../../system/__compiler.h"
+#include <system/sys.h>
 
 // _arm64_arith.S
 extern uint64_t _arm64_add64c(uint64_t a, uint64_t b, uint8_t *carry);

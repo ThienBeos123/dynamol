@@ -4,7 +4,7 @@
 
 
 #include <stdint.h>
-#include "../../system/__compiler.h"
+#include <system/sys.h>
 
 static const uint8_t inv8_lookup[128] = {
     0x1,   0xAB,  0xCD,  0xB7,  0x39,  0xA3,  0xC5,  0xEF,  

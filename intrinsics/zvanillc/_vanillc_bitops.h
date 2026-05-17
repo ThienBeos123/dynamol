@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #include <math.h>
-#include "../../system/__compiler.h"
+#include <system/sys.h>
 
 #define msb_mask ((UINT64_MAX >> 1) + 1)
 

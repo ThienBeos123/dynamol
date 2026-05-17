@@ -41,6 +41,7 @@ inline void __BIGINT_INTERNAL_FREE__(bigInt *x) {
 
 /* Safety Utilities */
 inline uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity */
+    if (x == NULL) return 0;
     /* State Validation */
     if (x->limbs == NULL) return 0;
     if (x->cap < 1) return 0;
@@ -52,6 +53,7 @@ inline uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity *
     return 1;
 }
 inline uint8_t __BIGINT_INTERNAL_PVALID__(const bigInt *x) { /* BigInt Pointer State Validity */
+    if (x == NULL) return 0;
     if (x->limbs == NULL) return 0;
     if (x->cap < 1) return 0;
     if (x->n > x->cap) return 0;
@@ -59,16 +61,13 @@ inline uint8_t __BIGINT_INTERNAL_PVALID__(const bigInt *x) { /* BigInt Pointer S
     return 1;
 }
 inline uint8_t __BIGINT_INTERNAL_SVALID__(const bigInt *x) { /* BigInt Storage Validity */
+    if (x == NULL) return 0;
     if (x->limbs == NULL) return 0;
     if (x->cap < 1) return 0;
+    return 1;
 }
 bigInt __BIGINT_ERROR_VALUE__(void) {
-    return (bigInt){
-        .limbs = NULL,
-        .cap   = 0,
-        .n     = 1,
-        .sign  = 0
-    };
+    return (bigInt){ .limbs = NULL, .cap = 0,   /**/   .n = 1, .sign = 0 };
 }
 
 /* General Utilities */
@@ -112,6 +111,9 @@ size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
             last_limb /= base;
         }
     } return total_digits;
+}
+size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) {
+    return (size_t)(BITS_IN_UINT64_T * lcnt * (log10(2) / log10(base))) + 1;
 }
 size_t __BIGINT_LIMBS_NEEDED__(size_t bits) { 
     return (size_t)(bits / BIGINT_LIMBS_BITS) + 1; 

@@ -23,6 +23,7 @@ static inline void _libdnml_init(void) {
     // Unknown compiler
     // ---> Initialize DNML's handwritten intrinsics
     if (_libinit) return;
+    _dnml_hwcaps libdnml_caps = {0};
     _libdnml_detect_hwcaps();
     _libdnml_fill_galg();
     _libdnml_fill_garith();

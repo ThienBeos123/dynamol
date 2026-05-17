@@ -5,26 +5,37 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <inttypes.h>
-#include <math.h>
-#include <assert.h>
-
-#include "../../adynamol/big_numbers/bigNums.h"
+#include <include.h>
+#include <system/sys.h>
+#include "../sconfigs/settings/numeric_config.h"
+#include "../sconfigs/memory/_ctx.h"
 #include "../intrinsics/intrinsics.h"
-
-#include "../system/__compiler.h"
-#include "../sconfigs/numeric_config.h"
-#include "../sconfigs/_ctx.h"
+#include "../../adynamol/big_numbers/bigNums.h"
 #include "aconv_macros.h"
+
+
+/* ---------------------- */
+/* sec_util.c */
+/* ---------------------- */
+typedef struct { uint64_t s[4]; } xoshiro256_state;
+inline uint64_t splitmix64(uint64_t x);
+void seed_xoshiro256(xoshiro256_state *state, uint64_t x);
+inline uint64_t xoshiro256pp_next(xoshiro256_state *state);
+inline float xoshiro256pp_fnext01(xoshiro256_state *state);
+inline xoshiro256_state mix_xoshiro256(xoshiro256_state *stateA, xoshiro256_state *stateB);
+static inline uint64_t __rng_skrange(xoshiro256_state *state, uint64_t min, uint64_t max, float median_dist);
+static inline uint64_t __rng_range(xoshiro256_state *state, uint64_t min, uint64_t max);
+static inline float __rng_frange(xoshiro256_state *state, float min, float max);
+static inline float __froll(xoshiro256_state *state);
+
 
 /* ---------------------- */
 /* str_parse.c */
 /* ---------------------- */
-uint8_t is_numeric(char c);
-uint16_t _skip_whitespace__(FILE *stream);
+size_t _actual_len(const char *str, size_t buflen, size_t *actual_len);
+uint16_t _fskip_whitespace__(FILE *stream);
+size_t _skip_whitespace(const char *str, size_t len, size_t *pos);
+size_t _skip_leading_zeros(const char *str, size_t len, size_t *pos);
 uint8_t _is_valid_digit__(uint16_t *curr_char);
 uint8_t _sign_handle_(const char *str, size_t *curr_pos, uint8_t *sign);
 uint8_t _sign_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *sign, size_t len);
@@ -38,6 +49,9 @@ uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char
 inline size_t __BITCOUNT___(size_t digit_count, uint8_t base);
 inline uint8_t __BASEN_DCOUNT__(uint64_t val, uint8_t base);
 inline uint64_t __MAG_I64__(int64_t val);
+inline uint64_t _stou64(const char *buf, int buflen);
+inline int _itosn(uint64_t x, char *buf, int buflen);
+inline int _dnml_ipower(uint64_t *base, uint8_t power);
 
 
 /* ---------------------- */
@@ -59,6 +73,7 @@ inline void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x);
 inline void __BIGINT_INTERNAL_ZSET__(bigInt *x);
 inline void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y);
 size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base);
+size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base);
 size_t __BIGINT_LIMBS_NEEDED__(size_t bits);
 uint8_t __BIGINT_WILL_OVERFLOW__(const bigInt *x, uint64_t threshold);
 size_t __BIGINT_CTZ__(const bigInt *x);
