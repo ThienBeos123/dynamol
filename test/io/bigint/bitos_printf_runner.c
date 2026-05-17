@@ -285,9 +285,9 @@ scase ecases[25] = { // 2270 bytes of memory ---> Rounded up to 2304
         .exp = {
             .type = STRING, .status = STR_SUCCESS, .cap = 73, .data.len = 73,
             .pstr = "0{48}"
-                    "1xbcg0m8hwlh2z41qapqfhaicilzblgr"
-                    "m7ea6c7sab58amlgsuj37dizj6urtfak"
-                    "gmjw"
+                    "1XBCG0M8HWlH2Z41QAPQFHAIcILZBLgR"
+                    "M7EA6c7Sab58AMlgSUj37diZj6URTfak"
+                    "GMJW" //! CASE-SENSITIVE --> UPPERCASE WON'T AFFECT ITS DIGITS
         }
     }, { /* 24      | 2^3072 - 1 (n = 48)               | 16            | "0XFFFFFFFFFFFF...FFFFFFFFFFFF" (truncated)           */
         .in = &(bitos_print_in){

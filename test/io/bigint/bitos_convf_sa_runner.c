@@ -108,7 +108,7 @@ limb_t case_final[48] = {
 
 
 
-scase ecases_strict[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
+scase ecases_strict[25] = { // 5994 bytes - 6kb ---> Rounded to 6016 bytes
     /* ---------------------------------------------------------------------------------------------------------------------------------------- */
     /* Case Number  | Input                                     | Base      | Capacity  | Needed    | Expected Ouput                            */
     /* ------------------------------------------------------------ TRIVIAL CASES ------------------------------------------------------------- */
@@ -119,7 +119,7 @@ scase ecases_strict[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
         }, INVAL_STR(STR_INVALID_CAP, 0),
     }, { /* 2       | 1 (n = 1, sign = -1)                      | 10        | 1         | 2         | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
-            .base = 10, .uppercase = false, .len = 1,
+            .base = 10, .uppercase = true, .len = 1,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 1),
     }, { /* 3       | 1 (n = 1, sign = 1)                       | 10        | 10        | 1         | STR_SUCCESS ("1")                         */
@@ -133,61 +133,62 @@ scase ecases_strict[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
         },
     }, { /* 4       | -10 (n = 1, sign = -1)                    | 10        | 12        | 3         | STR_SUCCESS ("-10")                       */
         .in = &(bitos_conv_in){
-            .base = 10, .uppercase = false, .len = 12,
+            .base = 10, .uppercase = true, .len = 12,
             .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = -1 }
         },
         .exp = { 
             .type = STRING, .status = STR_SUCCESS,
             .cap = 12, .data.len = 3, .pstr = "-10"
         },
-    }, { /* 5       | 65535 (n = 1, sign = 1)                   | 16        | 8         | 2         | STR_SUCCESS ("FF")                        */
+    }, { /* 5       | 65535 (n = 1, sign = 1)                   | 16        | 8         | 4         | STR_SUCCESS ("0XFF")                      */
         .in = &(bitos_conv_in){
-            .base = 16, .uppercase = false, .len = 8,
+            .base = 16, .uppercase = true, .len = 8,
             .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = 1 }
         },
         .exp = { 
             .type = STRING, .status = STR_SUCCESS,
-            .cap = 8, .data.len = 2, .pstr = "FF"
+            .cap = 8, .data.len = 4, .pstr = "0XFF"
         },
-    }, { /* 6       | 2^64 - 1 (n = 1, sign = 1)                | 2         | 64        | 64        | STR_SUCCESS ("11111111111...11111-11111") */
+    }, { /* 6       | 2^64 - 1 (n = 1, sign = 1)                | 2         | 66        | 66        | STR_SUCCESS ("0b1111111111...1111111111") */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 64,
+            .base = 2, .uppercase = false, .len = 66,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 64, .data.len = 64, 
-            .pstr = "11111111111111111111111111111111"
+            .type = STRING, .status = STR_SUCCESS, .cap = 66, .data.len = 66, 
+            .pstr = "0b11111111111111111111111111111111"
                     "11111111111111111111111111111111"
         },
-    }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | 8         | 20        | 23        | STR_INVALID_CAP                           */
+    }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | 8         | 20        | 25        | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
             .base = 8, .uppercase = false, .len = 20,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 20),
     },
     /* -------------------------------------------------------------- EDGE CASES -------------------------------------------------------------- */
-    { /* 8          | -2^96 (n = 2, sign = -1)                  | 5         | 29        | 42        | STR_INVALID_CAP                           */
+    { /* 8          | -2^96 (n = 2, sign = -1)                  | 5         | 29        | 46        | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
             .base = 5, .uppercase = false, .len = 29,
             .x = { .limbs = case_8, .n = 2, .cap = 2, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 29),
-    }, { /* 9       | 2^128 - 1 (n = 2)                         | 16        | 39        | 32        | STR_SUCCESS (ffffffffffff...ffffffffffff) */
+    }, { /* 9       | 2^128 - 1 (n = 2)                         | 16        | 39        | 34        | STR_SUCCESS (0XFFFFFFFFFFF...FFFFFFFFFFF) */
         .in = &(bitos_conv_in){
-            .base = 16, .uppercase = false, .len = 39,
+            .base = 16, .uppercase = true, .len = 39,
             .x = { .limbs = case_9, .n = 2, .cap = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 32, 
-            .pstr = "ffffffffffffffffffffffffffffffff"
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 34, 
+            .pstr = "0XFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
         },
-    }, { /* 10      | SUPER SUPER SPARSE (n = 8)                | 2         | 449       | 449       | STR_SUCCESS (100000000000...000000000000) */
+    }, { /* 10      | SUPER SUPER SPARSE (n = 8)                | 2         | 451       | 451       | STR_SUCCESS (0B10000000000...00000000000) */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 449,
+            .base = 2, .uppercase = true, .len = 451,
             .x = { .limbs = case_10, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 449, .data.len = 449, 
-            .pstr = "1000000000000000000000000000000000000000000000000000000000000000"
+            .type = STRING, .status = STR_SUCCESS, .cap = 451, .data.len = 451, 
+            .pstr = "0B"
+                    "1000000000000000000000000000000000000000000000000000000000000000"
                     "0000000000000000000000000000000000000000000000000000000000000000"
                     "0000000000000000000000000000000000000000000000000000000000000000"
                     "0000000000000000000000000000000000000000000000000000000000000000"
@@ -196,134 +197,142 @@ scase ecases_strict[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
                     "0000000000000000000000000000000000000000000000000000000000000000"
                     "0"
         },
-    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 8         | 86        | 86        | STR_SUCCESS (525252525252...252525252525) */
+    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 8         | 88        | 88        | STR_SUCCESS (-0o5252525252...52525252525) */
         .in = &(bitos_conv_in){
-            .base = 8, .uppercase = false, .len = 86,
+            .base = 8, .uppercase = false, .len = 88,
             .x = { .limbs = case_11, .n = 4, .cap = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 86, .data.len = 86,
-            .pstr = "-52525252525252525252525252525252"
+            .type = STRING, .status = STR_SUCCESS, .cap = 88, .data.len = 88,
+            .pstr = "-0o"
+                    "52525252525252525252525252525252"
                     "52525252525252525252525252525252"
                     "525252525252525252525"
         },
-    }, { /* 12      | Alternating 2 (n = 6)                     | 2         | 384       | 384       | STR_SUCCESS (101010101010...101010101010) */
+    }, { /* 12      | Alternating 2 (n = 6)                     | 2         | 386       | 386       | STR_SUCCESS (0B10101010101...01010101010) */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 384,
+            .base = 2, .uppercase = true, .len = 386,
             .x = { .limbs = case_12, .n = 6, .cap = 6, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 384, .data.len = 384,
-            .pstr = "1010101010101010101010101010101010101010101010101010101010101010"
+            .type = STRING, .status = STR_SUCCESS, .cap = 386, .data.len = 386,
+            .pstr = "0B"
+                    "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
         },
-    }, { /* 13      | Double Alternating (n = 4, sign = -1)     | 2         | 255       | 255       | STR_SUCCESS (-11001100110...001100110011) */
+    }, { /* 13      | Double Alternating (n = 4, sign = -1)     | 2         | 257       | 257       | STR_SUCCESS (-0b1100110011...01100110011) */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 255,
+            .base = 2, .uppercase = false, .len = 257,
             .x = { .limbs = case_13, .n = 4, .cap = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 255, .data.len = 255,
-            .pstr = "-1100110011001100110011001100110011001100110011001100110011001100"
+            .type = STRING, .status = STR_SUCCESS, .cap = 257, .data.len = 257,
+            .pstr = "-0b"
+                    "1100110011001100110011001100110011001100110011001100110011001100"
                     "1100110011001100110011001100110011001100110011001100110011001100"
                     "1100110011001100110011001100110011001100110011001100110011001100"
                     "11001100110011001100110011001100110011001100110011001100110011"
         },
-    }, { /* 14      | MSB All Limbs (n = 8)                     | 64        | 86        | 86        | STR_SUCCESS (200000000008...080000000000) */
+    }, { /* 14      | MSB All Limbs (n = 8)                     | 64        | 88        | 88        | STR_SUCCESS (0,20000000000...80000000000) */ //! CASE-SENSITIVE
         .in = &(bitos_conv_in){
-            .base = 64, .uppercase = false, .len = 86,
+            .base = 64, .uppercase = false, .len = 88,
             .x = { .limbs = case_12, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 86, .data.len = 86,
-            .pstr = "2000000000080000000000W000000000"
+            .type = STRING, .status = STR_SUCCESS, .cap = 88, .data.len = 88,
+            .pstr = "0,"
                     "2000000000080000000000W000000000"
-                    "2000000000080000000000"
+                    "2000000000080000000000W000000000"
+                    "2000000000080000000000" //! CASE-SENSITIVE
         },
-    }, { /* 15      | SUPER SUPER SPARSE (n = 8) - fail edition | 13        | 120       | 122       | STR_INVALID_CAP                           */
+    }, { /* 15      | SUPER SUPER SPARSE (n = 8) - fail edition | 13        | 120       | 127       | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
             .base = 13, .uppercase = false, .len = 120,
             .x = { .limbs = case_10, .n = 8, .cap = 8, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 120),
-    }, { /* 16      | NEARLY DENSE (n = 3) - fail edition       | 6         | 50        | 75        | STR_INVALID_CAP                           */
+    }, { /* 16      | NEARLY DENSE (n = 3) - fail edition       | 6         | 50        | 79        | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
-            .base = 6, .uppercase = false, .len = 50,
+            .base = 6, .uppercase = true, .len = 50,
             .x = { .limbs = case_16, .n = 3, .cap = 3, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 50),
-    }, { /* 17      | Dense -> Sparse (n = 5)                   | 22        | 40        | 58        | STR_INVALID_CAP                           */
+    }, { /* 17      | Dense -> Sparse (n = 5)                   | 22        | 40        | 63        | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
             .base = 22, .uppercase = false, .len = 40,
             .x = { .limbs = case_17, .n = 5, .cap = 5, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 40),
-    }, { /* 18      | 2^192 (n = 4)                             | 36        | 25        | 38        | STR_INVALID_CAP                           */
+    }, { /* 18      | 2^192 (n = 4)                             | 36        | 25        | 43        | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
             .base = 36, .uppercase = false, .len = 25,
             .x = { .limbs = case_18, .n = 4, .cap = 4, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 25),
-    }, { /* 19      | 2^256 - 1 (n = 4)                         | 4         | 77        | 128       | STR_INVALID_CAP                           */
+    }, { /* 19      | 2^256 - 1 (n = 4)                         | 4         | 77        | 132       | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
             .base = 4, .uppercase = false, .len = 77,
             .x = { .limbs = case_19, .n = 4, .cap = 4, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 77),
-    }, { /* 20      | 2^127 - 1 (n = 2) (Mersenne prime)        | 2         | 127       | 127       | STR_SUCCESS (111111111111...111111111111) */
+    }, { /* 20      | 2^127 - 1 (n = 2) (Mersenne prime)        | 2         | 129       | 129       | STR_SUCCESS (0b11111111111...11111111111) */
          .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 127,
+            .base = 2, .uppercase = false, .len = 129,
             .x = { .limbs = case_20, .n = 2, .cap = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 127, .data.len = 127,
-            .pstr = "11111111111111111111111111111111"
+            .type = STRING, .status = STR_SUCCESS, .cap = 129, .data.len = 129,
+            .pstr = "0b"
+                    "11111111111111111111111111111111"
                     "11111111111111111111111111111111"
                     "11111111111111111111111111111111"
                     "1111111111111111111111111111111"
         },
-    }, { /* 21      | Absolutely Random (n = 16)                | 11        | 296       | 296       | STR_SUCCESS (235A75279904...460090954A36) */
+    }, { /* 21      | Absolutely Random (n = 16)                | 11        | 301       | 301       | STR_SUCCESS (0{11}235A75279...0090954A36) */
          .in = &(bitos_conv_in){
-            .base = 11, .uppercase = false, .len = 296,
+            .base = 11, .uppercase = true, .len = 301,
             .x = { .limbs = case_22, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 296, .data.len = 296,
-            .pstr = "235A752799046623806113A0A4516A584156A00523343334109A965514374269"
+            .type = STRING, .status = STR_SUCCESS, .cap = 301, .data.len = 301,
+            .pstr = "0{11}"
+                    "235A752799046623806113A0A4516A584156A00523343334109A965514374269"
                     "5945259992A9A836A460102035A924689894A4A5094359718175A43328708866"
                     "18409482812A87444A3674293A319250452339A1A07A31964A556277824A6286"
                     "952309A505683034053324953A07489A7727865835321160083493A93501AA98"
                     "2862A867A77A67406656483660A3460090954A36"
         },
-    }, { /* 22      | 2^512 - 1 (n = 8)                         | 32        | 103       | 103       | STR_SUCCESS (3VVVVVVVVVVV...VVVVVVVVVVVV) */
+    }, { /* 22      | 2^512 - 1 (n = 8)                         | 32        | 108       | 108       | STR_SUCCESS (0{32}3VVVVVVVV...VVVVVVVVVV) */ //! CASE-SENSITIVE
          .in = &(bitos_conv_in){
-            .base = 32, .uppercase = false, .len = 103,
+            .base = 32, .uppercase = false, .len = 108,
             .x = { .limbs = case_22, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 103, .data.len = 103,
-            .pstr = "3VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+            .type = STRING, .status = STR_SUCCESS, .cap = 108, .data.len = 108,
+            .pstr = "0{32}"
+                    "3VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
                     "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
                     "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
                     "VVVVVVV"
         },
-    }, { /* 23      | -2^512 (n = 9, sign = -1)                 | 32        | 103       | 104       | STR_INVALID_CAP                           */
+    }, { /* 23      | -2^512 (n = 9, sign = -1)                 | 32        | 103       | 109       | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
             .base = 32, .uppercase = false, .len = 103,
             .x = { .limbs = case_23, .n = 9, .cap = 9, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 103),
-    }, { /* 24      | -(2^3072 - 1) (n = 48, sign = -1)         | 2         | 3072      | 3073      | STR_INVALID_CAP                           */
+    }, { /* 24      | -(2^3072 - 1) (n = 48, sign = -1)         | 2         | 3072      | 3075      | STR_INVALID_CAP                           */
          .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 3072,
+            .base = 2, .uppercase = true, .len = 3072,
             .x = { .limbs = case_final, .n = 48, .cap = 48, .sign = -1 }
         }, INVAL_STR(STR_INVALID_CAP, 3072),
-    }, { /* 25      | 2^3072 - 1 (n = 48)                       | 64        | 512       | 512       | STR_SUCCESS (////////////...////////////) */
+    }, { /* 25      | 2^3072 - 1 (n = 48)                       | 64        | 514       | 514       | STR_SUCCESS (0,///////////...///////////) */
         .in = &(bitos_conv_in){
-            .base = 64, .uppercase = false, .len = 512,
+            .base = 64, .uppercase = false, .len = 514,
             .x = { .limbs = case_final, .n = 48, .cap = 48, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 512, .data.len = 512,
-            .pstr = "////////////////////////////////////////////////////////////////"
+            .type = STRING, .status = STR_SUCCESS, .cap = 514, .data.len = 514,
+            .pstr = "0,"
+                    "////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"
@@ -335,7 +344,7 @@ scase ecases_strict[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
     }, 
     /* ---------------------------------------------------------------------------------------------------------------------------------------- */
 };
-scase ecases_trunc[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
+scase ecases_trunc[25] = { // 5994 bytes - 6kb ---> Rounded to 6016 bytes
     /* ---------------------------------------------------------------------------------------------------------------------------------------- */
     /* Case Number  | Input                                     | Base      | Capacity  | Needed    | Expected Ouput                            */
     /* ------------------------------------------------------------ TRIVIAL CASES ------------------------------------------------------------- */
@@ -344,11 +353,11 @@ scase ecases_trunc[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
             .base = 10, .uppercase = false, .len = 0,
             .x = { .limbs = &zero, .n = 0, .cap = 1, .sign = 1 }
         }, INVAL_STR(STR_INVALID_CAP, 0),
-    }, { /* 2       | 1 (n = 1, sign = -1)                      | 10        | 0         | 2         | STR_INVALID_CAP                           */
+    }, { /* 2       | 1 (n = 1, sign = -1)                      | 16        | 3         | 4         | STR_INVALID_CAP                           */
         .in = &(bitos_conv_in){
-            .base = 10, .uppercase = false, .len = 0,
+            .base = 16, .uppercase = true, .len = 3,
             .x = { .limbs = &one, .n = 1, .cap = 1, .sign = -1 }
-        }, INVAL_STR(STR_INVALID_CAP, 0),
+        }, INVAL_STR(STR_INVALID_CAP, 3),
     }, { /* 3       | 1 (n = 1, sign = 1)                       | 10        | 10        | 1         | STR_SUCCESS ("1")                         */
         .in = &(bitos_conv_in){
             .base = 10, .uppercase = false, .len = 10,
@@ -360,69 +369,71 @@ scase ecases_trunc[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
         },
     }, { /* 4       | -10 (n = 1, sign = -1)                    | 10        | 12        | 3         | STR_SUCCESS ("-10")                       */
         .in = &(bitos_conv_in){
-            .base = 10, .uppercase = false, .len = 12,
+            .base = 10, .uppercase = true, .len = 12,
             .x = { .limbs = &small_mulval[0], .n = 1, .cap = 1, .sign = -1 }
         },
         .exp = { 
             .type = STRING, .status = STR_SUCCESS,
             .cap = 12, .data.len = 3, .pstr = "-10"
         },
-    }, { /* 5       | 65535 (n = 1, sign = 1)                   | 16        | 8         | 2         | STR_SUCCESS ("FF")                        */
+    }, { /* 5       | 65535 (n = 1, sign = 1)                   | 16        | 8         | 4         | STR_SUCCESS ("0XFF")                      */
         .in = &(bitos_conv_in){
-            .base = 16, .uppercase = false, .len = 8,
+            .base = 16, .uppercase = true, .len = 8,
             .x = { .limbs = &small_mulval[1], .n = 1, .cap = 1, .sign = 1 }
         },
         .exp = { 
             .type = STRING, .status = STR_SUCCESS,
-            .cap = 8, .data.len = 2, .pstr = "FF"
+            .cap = 8, .data.len = 4, .pstr = "0XFF"
         },
-    }, { /* 6       | 2^64 - 1 (n = 1, sign = 1)                | 2         | 64        | 64        | STR_SUCCESS ("11111111111...11111-11111") */
+    }, { /* 6       | 2^64 - 1 (n = 1, sign = 1)                | 2         | 66        | 66        | STR_SUCCESS ("0b1111111111...1111111111") */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 64,
+            .base = 2, .uppercase = false, .len = 66,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 64, .data.len = 64, 
-            .pstr = "11111111111111111111111111111111"
+            .type = STRING, .status = STR_SUCCESS, .cap = 66, .data.len = 66, 
+            .pstr = "0b"
+                    "11111111111111111111111111111111"
                     "11111111111111111111111111111111"
         },
-    }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | 8         | 20        | 23        | STR_TRUNC_SUCCESS                         */
+    }, { /* 7       | -(2^64 - 1) (n = 1, sign = -1)            | 8         | 20        | 25        | STR_TRUNC_SUCCESS                         */
         .in = &(bitos_conv_in){
             .base = 8, .uppercase = false, .len = 20,
             .x = { .limbs = &small_mulval[2], .n = 1, .cap = 1, .sign = -1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS,
-            .cap = 20, .data.len = 20, .pstr = "-7777777777777777777"
+            .cap = 20, .data.len = 20, .pstr = "-0o77777777777777777"
         }
     },
     /* -------------------------------------------------------------- EDGE CASES -------------------------------------------------------------- */
-    { /* 8          | -2^96 (n = 2, sign = -1)                  | 5         | 29        | 43        | STR_TRUNC_SUCCESS                         */
+    { /* 8          | -2^96 (n = 2, sign = -1)                  | 5         | 29        | 47        | STR_TRUNC_SUCCESS                         */
         .in = &(bitos_conv_in){
             .base = 5, .uppercase = false, .len = 29,
             .x = { .limbs = case_8, .n = 2, .cap = 2, .sign = -1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS,
-            .cap = 29, .data.len = 29, .pstr = "-1114424220224113034222402321"
+            .cap = 29, .data.len = 29, .pstr = "-0{5}424220224113034222402321"
         }
-    }, { /* 9       | 2^128 - 1 (n = 2)                         | 16        | 39        | 32        | STR_SUCCESS (ffffffffffff...ffffffffffff) */
+    }, { /* 9       | 2^128 - 1 (n = 2)                         | 16        | 39        | 34        | STR_SUCCESS (0XFFFFFFFFFFF...FFFFFFFFFFF) */
         .in = &(bitos_conv_in){
-            .base = 16, .uppercase = false, .len = 39,
+            .base = 16, .uppercase = true, .len = 39,
             .x = { .limbs = case_9, .n = 2, .cap = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 32, 
-            .pstr = "ffffffffffffffffffffffffffffffff"
+            .type = STRING, .status = STR_SUCCESS, .cap = 39, .data.len = 34, 
+            .pstr = "0XFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
         },
-    }, { /* 10      | SUPER SUPER SPARSE (n = 8)                | 2         | 449       | 449       | STR_SUCCESS (100000000000...000000000000) */
+    }, { /* 10      | SUPER SUPER SPARSE (n = 8)                | 2         | 451       | 451       | STR_SUCCESS (0B10000000000...00000000000) */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 449,
+            .base = 2, .uppercase = true, .len = 451,
             .x = { .limbs = case_10, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 449, .data.len = 449, 
-            .pstr = "1000000000000000000000000000000000000000000000000000000000000000"
+            .type = STRING, .status = STR_SUCCESS, .cap = 451, .data.len = 451, 
+            .pstr = "0B"
+                    "1000000000000000000000000000000000000000000000000000000000000000"
                     "0000000000000000000000000000000000000000000000000000000000000000"
                     "0000000000000000000000000000000000000000000000000000000000000000"
                     "0000000000000000000000000000000000000000000000000000000000000000"
@@ -431,159 +442,167 @@ scase ecases_trunc[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
                     "0000000000000000000000000000000000000000000000000000000000000000"
                     "0"
         },
-    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 8         | 86        | 86        | STR_SUCCESS (525252525252...252525252525) */
+    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 8         | 88        | 88        | STR_SUCCESS (-0o5252525252...52525252525) */
         .in = &(bitos_conv_in){
-            .base = 8, .uppercase = false, .len = 86,
+            .base = 8, .uppercase = false, .len = 88,
             .x = { .limbs = case_11, .n = 4, .cap = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 86, .data.len = 86,
-            .pstr = "-52525252525252525252525252525252"
+            .type = STRING, .status = STR_SUCCESS, .cap = 88, .data.len = 88,
+            .pstr = "-0o"
+                    "52525252525252525252525252525252"
                     "52525252525252525252525252525252"
                     "525252525252525252525"
         },
-    }, { /* 12      | Alternating 2 (n = 6)                     | 2         | 384       | 384       | STR_SUCCESS (101010101010...101010101010) */
+    }, { /* 12      | Alternating 2 (n = 6)                     | 2         | 386       | 386       | STR_SUCCESS (0B10101010101...01010101010) */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 384,
+            .base = 2, .uppercase = true, .len = 386,
             .x = { .limbs = case_12, .n = 6, .cap = 6, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 384, .data.len = 384,
-            .pstr = "1010101010101010101010101010101010101010101010101010101010101010"
+            .type = STRING, .status = STR_SUCCESS, .cap = 386, .data.len = 386,
+            .pstr = "0B"
+                    "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
                     "1010101010101010101010101010101010101010101010101010101010101010"
         },
-    }, { /* 13      | Double Alternating (n = 4, sign = -1)     | 2         | 255       | 255       | STR_SUCCESS (-11001100110...001100110011) */
+    }, { /* 13      | Double Alternating (n = 4, sign = -1)     | 2         | 257       | 257       | STR_SUCCESS (-0b1100110011...01100110011) */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 255,
+            .base = 2, .uppercase = false, .len = 257,
             .x = { .limbs = case_13, .n = 4, .cap = 4, .sign = -1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 255, .data.len = 255,
-            .pstr = "-1100110011001100110011001100110011001100110011001100110011001100"
+            .type = STRING, .status = STR_SUCCESS, .cap = 257, .data.len = 257,
+            .pstr = "-0b"
+                    "1100110011001100110011001100110011001100110011001100110011001100"
                     "1100110011001100110011001100110011001100110011001100110011001100"
                     "1100110011001100110011001100110011001100110011001100110011001100"
                     "11001100110011001100110011001100110011001100110011001100110011"
         },
-    }, { /* 14      | MSB All Limbs (n = 8)                     | 64        | 86        | 86        | STR_SUCCESS (200000000008...080000000000) */
+    }, { /* 14      | MSB All Limbs (n = 8)                     | 64        | 88        | 88        | STR_SUCCESS (0,20000000000...80000000000) */ //! CASE-SENSITIVE
         .in = &(bitos_conv_in){
-            .base = 64, .uppercase = false, .len = 86,
+            .base = 64, .uppercase = false, .len = 88,
             .x = { .limbs = case_12, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 86, .data.len = 86,
-            .pstr = "2000000000080000000000W000000000"
+            .type = STRING, .status = STR_SUCCESS, .cap = 88, .data.len = 88,
+            .pstr = "0,"
                     "2000000000080000000000W000000000"
-                    "2000000000080000000000"
+                    "2000000000080000000000W000000000"
+                    "2000000000080000000000" //! CASE-SENSITIVE
         },
-    }, { /* 15      | SUPER SUPER SPARSE (n = 8) - fail edition | 13        | 120       | 122       | STR_TRUNC_SUCCESS                         */
+    }, { /* 15      | SUPER SUPER SPARSE (n = 8) - fail edition | 13        | 120       | 127       | STR_TRUNC_SUCCESS                         */
          .in = &(bitos_conv_in){
             .base = 13, .uppercase = false, .len = 120,
             .x = { .limbs = case_10, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS, .cap = 120, .data.len = 120,
-            .pstr = "56B72556B3872176B35B8A7780589529"
-                    "C6C372C93CB362959204665485841546"
-                    "29626C6A0922041667B39B6434199474"
-                    "0B6412308A484B8912991893"
+            .pstr = "0{13}"
+                    "556b3872176b35b8a7780589529c6c37"
+                    "2c93cb36295920466548584154629626"
+                    "c6a0922041667b39b64341994740b641"
+                    "2308a484b8912991893"
         }
-    }, { /* 16      | NEARLY DENSE (n = 3) - fail edition       | 6         | 50        | 75        | STR_TRUNC_SUCCESS                         */
+    }, { /* 16      | NEARLY DENSE (n = 3) - fail edition       | 6         | 50        | 79        | STR_TRUNC_SUCCESS                         */
          .in = &(bitos_conv_in){
-            .base = 6, .uppercase = false, .len = 50,
+            .base = 6, .uppercase = true, .len = 50,
             .x = { .limbs = case_16, .n = 3, .cap = 3, .sign = 1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS, .cap = 50, .data.len = 50,
-            .pstr = "02110515404523521300451551534135200150220112420210"
+            .pstr = "0{6}0515404523521300451551534135200150220112420210"
         }
-    }, { /* 17      | Dense -> Sparse (n = 5)                   | 22        | 40        | 58        | STR_TRUNC_SUCCESS                         */
+    }, { /* 17      | Dense -> Sparse (n = 5)                   | 22        | 40        | 63        | STR_TRUNC_SUCCESS                         */ //! CASE-SENSITIVE
          .in = &(bitos_conv_in){
             .base = 22, .uppercase = false, .len = 40,
             .x = { .limbs = case_17, .n = 5, .cap = 5, .sign = 1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS, .cap = 40, .data.len = 40,
-            .pstr = "L31JKLHC6FG5FBLCLEIJ14F33536EAFJ37K359CB"
+            .pstr = "0{22}LHC6FG5FBLCLEIJ14F33536EAFJ37K359CB" //! CASE-SENSITIVE
         }
-    }, { /* 18      | 2^192 (n = 4)                             | 36        | 25        | 38        | STR_TRUNC_SUCCESS                         */
+    }, { /* 18      | 2^192 (n = 4)                             | 36        | 25        | 43        | STR_TRUNC_SUCCESS                         */ //! CASE-SENSITIVE
          .in = &(bitos_conv_in){
             .base = 36, .uppercase = false, .len = 25,
             .x = { .limbs = case_18, .n = 4, .cap = 4, .sign = 1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS,
-            .cap = 25, .data.len = 25, .pstr = "ZS89YAZ14IVFB2OWPROUGRCHS"
+            .cap = 25, .data.len = 25, .pstr = "0{36}AZ14IVFB2OWPROUGRCHS" //! CSE-SENSITIVE
         }
-    }, { /* 19      | 2^256 - 1 (n = 4)                         | 4         | 77        | 128       | STR_TRUNC_SUCCESS                         */
+    }, { /* 19      | 2^256 - 1 (n = 4)                         | 4         | 77        | 132       | STR_TRUNC_SUCCESS                         */
          .in = &(bitos_conv_in){
             .base = 4, .uppercase = false, .len = 77,
             .x = { .limbs = case_19, .n = 4, .cap = 4, .sign = 1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS, .cap = 77, .data.len = 77,
-            .pstr = "33333333333333333333333333333333333333333333333333333333333333333333333333333"
+            .pstr = "0{4}3333333333333333333333333333333333333333333333333333333333333333333333333"
         }
-    }, { /* 20      | 2^127 - 1 (n = 2) (Mersenne prime)        | 2         | 127       | 127       | STR_SUCCESS (111111111111...111111111111) */
+    }, { /* 20      | 2^127 - 1 (n = 2) (Mersenne prime)        | 2         | 129       | 129       | STR_SUCCESS (0b11111111111...11111111111) */
          .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 127,
+            .base = 2, .uppercase = false, .len = 129,
             .x = { .limbs = case_20, .n = 2, .cap = 2, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 127, .data.len = 127,
-            .pstr = "11111111111111111111111111111111"
+            .type = STRING, .status = STR_SUCCESS, .cap = 129, .data.len = 129,
+            .pstr = "0b"
+                    "11111111111111111111111111111111"
                     "11111111111111111111111111111111"
                     "11111111111111111111111111111111"
                     "1111111111111111111111111111111"
         },
-    }, { /* 21      | Absolutely Random (n = 16)                | 11        | 296       | 296       | STR_SUCCESS (235A75279904...460090954A36) */
+    }, { /* 21      | Absolutely Random (n = 16)                | 11        | 301       | 301       | STR_SUCCESS (0{11}235A7527...60090954A36) */
          .in = &(bitos_conv_in){
-            .base = 11, .uppercase = false, .len = 296,
+            .base = 11, .uppercase = true, .len = 301,
             .x = { .limbs = case_22, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 296, .data.len = 296,
-            .pstr = "235A752799046623806113A0A4516A584156A00523343334109A965514374269"
+            .type = STRING, .status = STR_SUCCESS, .cap = 301, .data.len = 301,
+            .pstr = "0{11}"
+                    "235A752799046623806113A0A4516A584156A00523343334109A965514374269"
                     "5945259992A9A836A460102035A924689894A4A5094359718175A43328708866"
                     "18409482812A87444A3674293A319250452339A1A07A31964A556277824A6286"
                     "952309A505683034053324953A07489A7727865835321160083493A93501AA98"
                     "2862A867A77A67406656483660A3460090954A36"
         },
-    }, { /* 22      | 2^512 - 1 (n = 8)                         | 32        | 103       | 103       | STR_SUCCESS (3VVVVVVVVVVV...VVVVVVVVVVVV) */
+    }, { /* 22      | 2^512 - 1 (n = 8)                         | 32        | 108       | 108       | STR_SUCCESS (0{32}3VVVVVVV...VVVVVVVVVVV) */ //! CASE-SENSITIVE
          .in = &(bitos_conv_in){
-            .base = 32, .uppercase = false, .len = 103,
+            .base = 32, .uppercase = false, .len = 108,
             .x = { .limbs = case_22, .n = 8, .cap = 8, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 103, .data.len = 103,
-            .pstr = "3VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+            .type = STRING, .status = STR_SUCCESS, .cap = 108, .data.len = 108,
+            .pstr = "0{32}"
+                    "3VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
                     "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
                     "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
                     "VVVVVVV"
         },
-    }, { /* 23      | -2^512 (n = 9, sign = -1)                 | 32        | 103       | 104       | STR_TRUNC_SUCCESS                         */
+    }, { /* 23      | -2^512 (n = 9, sign = -1)                 | 32        | 103       | 109       | STR_TRUNC_SUCCESS                         */ //! CASE-SENSITIVE
         .in = &(bitos_conv_in){
             .base = 32, .uppercase = false, .len = 103,
             .x = { .limbs = case_23, .n = 9, .cap = 9, .sign = -1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS, .cap = 103, .data.len = 103,
-            .pstr = "-00000000000000000000000000000000"
+            .pstr = "-0{32}000000000000000000000000000"
                     "00000000000000000000000000000000"
                     "00000000000000000000000000000000"
-                    "000000"
+                    "000000" //! CASE-SENSITIVE
         }
-    }, { /* 24      | -(2^3072 - 1) (n = 48, sign = -1)         | 2         | 3072      | 3073      | STR_TRUNC_SUCCESS                         */
+    }, { /* 24      | -(2^3072 - 1) (n = 48, sign = -1)         | 2         | 3072      | 3075      | STR_TRUNC_SUCCESS                         */
         .in = &(bitos_conv_in){
-            .base = 2, .uppercase = false, .len = 3072,
+            .base = 2, .uppercase = true, .len = 3072,
             .x = { .limbs = case_final, .n = 48, .cap = 48, .sign = -1 }
         },
         .exp = {
             .type = STRING, .status = STR_TRUNC_SUCCESS, .cap = 3072, .data.len = 3072,
-            .pstr = "-111111111111111111111111111111111111111111111111111111111111111"
+            .pstr = "-0B1111111111111111111111111111111111111111111111111111111111111"
                     "1111111111111111111111111111111111111111111111111111111111111111"
                     "1111111111111111111111111111111111111111111111111111111111111111"
                     "1111111111111111111111111111111111111111111111111111111111111111"
@@ -632,14 +651,15 @@ scase ecases_trunc[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
                     "1111111111111111111111111111111111111111111111111111111111111111"
                     "1111111111111111111111111111111111111111111111111111111111111111"
         }
-    }, { /* 25      | 2^3072 - 1 (n = 48)                       | 64        | 512       | 512       | STR_SUCCESS (////////////...////////////) */
+    }, { /* 25      | 2^3072 - 1 (n = 48)                       | 64        | 514       | 514       | STR_SUCCESS (0,///////////...///////////) */
         .in = &(bitos_conv_in){
-            .base = 64, .uppercase = false, .len = 512,
+            .base = 64, .uppercase = false, .len = 514,
             .x = { .limbs = case_final, .n = 48, .cap = 48, .sign = 1 }
         },
         .exp = {
-            .type = STRING, .status = STR_SUCCESS, .cap = 512, .data.len = 512,
-            .pstr = "////////////////////////////////////////////////////////////////"
+            .type = STRING, .status = STR_SUCCESS, .cap = 514, .data.len = 514,
+            .pstr = "0,"
+                    "////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"
                     "////////////////////////////////////////////////////////////////"

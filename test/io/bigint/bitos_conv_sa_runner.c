@@ -188,7 +188,7 @@ scase ecases_nob[25] = { // Total: 3556 bytes - 3.556 KB
                     "8063928811339792332619105071376356556076252160626617793353460162"
                     "8614656"
         },
-    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 78        | 78        | STR_SUCCESS (385973630791...304376546645) */
+    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 78        | 78        | STR_SUCCESS (-38597363079...304376546645) */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = 78,
             .x = { .limbs = case_11, .n = 4, .cap = 4, .sign = -1 }
@@ -211,7 +211,7 @@ scase ecases_nob[25] = { // Total: 3556 bytes - 3.556 KB
                     "61638145143314737409428441699232"
                     "77093871085326871210"
         },
-    }, { /* 13      | Double Alternating (n = 4, sign = -1)     | 80        | 78        | STR_SUCCESS (231584178474...582625927987) */
+    }, { /* 13      | Double Alternating (n = 4, sign = -1)     | 80        | 78        | STR_SUCCESS (-23158417847...582625927987) */
         .in = &(bitos_conv_in){
             .base = 0, .uppercase = false, .len = 80,
             .x = { .limbs = case_13, .n = 4, .cap = 4, .sign = -1 }
@@ -415,7 +415,7 @@ scase ecases_b[25] = { // 5968 bytes - 6kb ---> Rounded to 6016 bytes
                     "0000000000000000000000000000000000000000000000000000000000000000"
                     "0"
         },
-    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 8         | 86        | 86        | STR_SUCCESS (525252525252...252525252525) */
+    }, { /* 11      | Alternating 1 (n = 4, sign = -1)          | 8         | 86        | 86        | STR_SUCCESS (-52525252525...252525252525) */
         .in = &(bitos_conv_in){
             .base = 8, .uppercase = false, .len = 86,
             .x = { .limbs = case_11, .n = 4, .cap = 4, .sign = -1 }
