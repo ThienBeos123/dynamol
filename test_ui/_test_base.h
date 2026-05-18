@@ -117,7 +117,7 @@ static inline void _dnml_session_progress(uint8_t done, uint8_t total, const cha
     printf("  %s\n  Session progression: [", session_name);
     for (int i = 0; i < barw; i++)
         printf((i < filled) ? "#" : " ");
-    printf("] %" PRIu8 "%\n\n", (total) ? (uint8_t)(done * 100 / total) : 0);
+    printf("] %" PRIu8 "\n\n", (total) ? (uint8_t)(done * 100 / total) : 0);
     fflush(stdout);
 }
 static inline int _dnml_twidth(void) {

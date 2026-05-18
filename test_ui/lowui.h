@@ -2,12 +2,7 @@
 #define ___LIBDNML_LTEST_UI
 
 
-#include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <string.h>
-#include <time.h>
-
+#include <include.h>
 #include "_test_base.h"
 
 //* =========== TYPE DEFINITIONS =========== *//
@@ -204,7 +199,7 @@ static inline void _dnml_render_csuite(_libdnml_lsuite *s) { // Render a "COMPAC
     uint8_t fail_edge = s->edge_cases_count - s->edge_cases_correct;
     uint8_t fail_rand = s->rand_cases_count - s->rand_cases_correct;
     char status = (fail_edge + fail_rand == 0) ? '+' : '-';
-    printf("  [%c] %-20s     %2" PRIu8 "/%-2" PRIu8 " edge   %2" PRIu8 "/%-2" PRIu8 " random",
+    printf("  [%c] %-20s     %2" PRIu8 "/%-2" PRIu8 " edge   %2" PRIu16 "/%-2" PRIu16 " random",
         status, s->suite_name,
         s->edge_cases_correct, s->edge_cases_count,
         s->rand_cases_correct, s->rand_cases_count
@@ -223,10 +218,10 @@ static inline void _dnml_render_esuite(_libdnml_lsuite *s, uint8_t suite_num, ui
     // print failed edge cases
     int fail_edge = s->edge_cases_count - s->edge_cases_correct;
     char curr_index[10], fail_line[BOX_WIDTH];
-    for (int i = 0; i < fail_edge; ++i) { fail_line[BOX_WIDTH];
-        int ilen = (s->fail_enums[i], curr_index, sizeof(curr_index));
+    for (int i = 0; i < fail_edge; ++i) {
+        int ilen = _itosn(s->fail_enums[i], curr_index, sizeof(curr_index));
         snprintf(fail_line, sizeof(fail_line),
-            "o) Case %.*s: Expected: <0x%016" PRIx64 ", 0x%016" PRIx64 "> | Got: <0x%016" PRIx64 ", 0x%016 " PRIx64 ">",
+            "o) Case %.*s: Expected: <0x%016" PRIx64 ", 0x%016" PRIx64 "> | Got: <0x%016" PRIx64 ", 0x%016" PRIx64 ">",
             ilen, curr_index,
             s->fail_edge_exp[i].first,
             s->fail_edge_exp[i].second,
@@ -250,8 +245,7 @@ static inline void _dnml_render_rsuite(_libdnml_lsuite *s, uint8_t suite_num, ui
     char curr_index[10], fail_line[BOX_WIDTH];
     for (int i = 0; i < fail_rand; i++) {
         int ilen = _itosn(i, curr_index, sizeof(curr_index));
-        snprintf(
-            fail_line, sizeof(fail_line),
+        snprintf(fail_line, sizeof(fail_line),
             "o Case %.*s: Expected: <0x%016" PRIx64 ", 0x%016" PRIx64 "> | Got: <0x%016" PRIx64 ", 0x%016" PRIx64 ">",
             ilen, curr_index,
             s->fail_rand_exp[i].first,

@@ -183,13 +183,13 @@ static inline void _rseed_cap_metadata(bi_rand_mod *config) {
         case EXACT_CAPACITY: { config->len = config->cap; config->init_fill_chance = 100; break; }
         case NEAR_CAPACITY: __ccase_near_cap(config); break;
         case QUARTERLY_SPARSE: {
-            config->init_fill_chance = __rng_frange(config->cap,
+            config->init_fill_chance = __rng_frange(&config->state,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].low_pbound,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].high_pbound
             ); config->len = config->cap >> 2 + 1;
         } break;
         case HALF_SPARSE: {
-            config->init_fill_chance = __rng_frange(config->cap,
+            config->init_fill_chance = __rng_frange(&config->state,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].low_pbound,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].high_pbound
             ); config->len = config->cap >> 1 + 1;
@@ -236,7 +236,7 @@ static inline uint64_t _biwrite_lsb(bi_rand_mod *config) {
 }
 static inline uint64_t _biwrite_power(xoshiro256_state *state, uint8_t base, uint8_t max_exp) {
     uint8_t exp = __rng_range(state, 0, max_exp);
-    return ((exp) ? _dnml_ipower(base, exp) : 1);
+    return ((exp) ? _dnml_ipower_u64(base, exp) : 1);
 }
 // Main Functions
 inline void bigen_init_sesh(bi_rand_mod *config, xoshiro256_state *add_state) {

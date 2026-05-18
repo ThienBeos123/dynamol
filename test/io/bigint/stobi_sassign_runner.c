@@ -395,7 +395,7 @@ int main(int argc, char **argv) {
     };
     xoshiro256_state assign_rstate = {0}; u64 side_mix = 0;
     __GET_ENTROPY_FAST(assign_rstate.s, sizeof(u64) << 2);
-    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    __GET_ENTROPY_FAST(&side_mix, sizeof(u64));
     seed_xoshiro256(&assign_rstate, side_mix);
     str_rand_mod assign_rconfig = {0}, // Base-parameter / Non-base-prefix
     assign_bp_rconfig = {0}; // Base-prefix / Non-base-parameter

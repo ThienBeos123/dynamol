@@ -3110,7 +3110,7 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
     if (curr_char == EOF) {
         if (ferror(stream)) return FILE_ERR_PARSE;
         if (sign == -1) return STR_INVALID_SIGN;
-        __BIGINT_INTERNAL_ZSET__(x); return;
+        __BIGINT_INTERNAL_ZSET__(x); return STR_SUCCESS;
     }
 
     //* Main accumalator loop *//
@@ -3161,7 +3161,6 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
     
     //* Sign *//
     uint8_t sign = 1, base = 10, curr_lexpos = 0;
-    uint8_t sign = 1, base = 10;
     if (curr_char == '-') { sign = -1; curr_char = fgetc(stream); }
     else if (curr_char == '+') curr_char = fgetc(stream);
     else if (!isdigit(curr_char)) return STR_INVALID_SIGN;
@@ -3254,7 +3253,7 @@ dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
     if (curr_char == EOF) {
         if (ferror(stream)) return FILE_ERR_PARSE;
         if (sign == -1) return STR_INVALID_SIGN;
-        __BIGINT_INTERNAL_ZSET__(x); return;
+        __BIGINT_INTERNAL_ZSET__(x); return STR_SUCCESS;
     }
 
     //* Main accumalator loop *//
@@ -3404,7 +3403,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
     if (curr_char == EOF) {
         if (ferror(stream)) return FILE_ERR_PARSE;
         if (sign == -1) return STR_INVALID_SIGN;
-        __BIGINT_INTERNAL_ZSET__(x); return;
+        __BIGINT_INTERNAL_ZSET__(x); return STR_SUCCESS;
     }
 
     //* Main accumalator loop *//

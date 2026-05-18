@@ -588,7 +588,7 @@ int main(int argc, char **argv) {
     // Randomization Configuration
     xoshiro256_state conv_rstate = {0}; u64 side_mix = 0;
     __GET_ENTROPY_FAST(conv_rstate.s, sizeof(u64) << 2);
-    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    __GET_ENTROPY_FAST(&side_mix, sizeof(u64));
     seed_xoshiro256(&conv_rstate, side_mix);
     bi_rand_mod conv_rconfig = {0}; // Non-base-prefix
     bigen_init_sesh(&conv_rconfig, &conv_rstate);

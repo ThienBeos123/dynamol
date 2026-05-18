@@ -244,12 +244,6 @@ void _stobi_init_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, 
 void _stobi_init_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_init_in *vin = (stobi_init_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    // --- Random Generation
-    uint64_t scramble_eggs; // haha very funny 😂😂😂😂
-    __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
-    __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
-    seed_xoshiro256(state, scramble_eggs);
-    // --- String Generation setup
     uint8_t rand_gmode = __rng_range(state, 0, 2);
     strgen_write(vin->str, STR_CAP, &config, false);
     vin->len = config->str_len; vin->base = config->base;
@@ -257,12 +251,6 @@ void _stobi_init_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, ra
 void _stobi_conv_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_conv_in *vin = (stobi_conv_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    // --- Random Generation
-    uint64_t scramble_eggs; // haha very funny 😂😂😂😂
-    __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
-    __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
-    seed_xoshiro256(state, scramble_eggs);
-    // --- String Generation setup
     uint8_t rand_gmode = __rng_range(state, 0, 2);
     strgen_write(vin->str, STR_CAP, &config, true);
     vin->len = config->str_len; vin->base = config->base; // Base is set for safety
@@ -270,24 +258,12 @@ void _stobi_conv_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, 
 void _stobi_conv_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_conv_in *vin = (stobi_conv_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    // --- Random Generation
-    uint64_t scramble_eggs; // haha very funny 😂😂😂😂
-    __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
-    __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
-    seed_xoshiro256(state, scramble_eggs);
-    // --- String Generation setup
     strgen_write(vin->str, STR_CAP, &config, false);
     vin->len = config->str_len; vin->base = config->base;
 }
 void _stobi_assign_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_assign_in *vin = (stobi_assign_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    // --- Random Generation
-    uint64_t scramble_eggs; // haha very funny 😂😂😂😂
-    __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
-    __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
-    seed_xoshiro256(state, scramble_eggs);
-    // --- String Generation setup
     strgen_write(vin->str, STR_CAP, &config, true);
     vin->len = config->str_len; vin->base = config->base; // Base is set for safety
     vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
@@ -295,12 +271,6 @@ void _stobi_assign_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap
 void _stobi_assign_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_assign_in *vin = (stobi_assign_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    // --- Random Generation
-    uint64_t scramble_eggs; // haha very funny 😂😂😂😂
-    __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
-    __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
-    seed_xoshiro256(state, scramble_eggs);
-    // --- String Generation setup
     strgen_write(vin->str, STR_CAP, &config, false);
     vin->len = config->str_len; vin->base = config->base;
     vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
@@ -308,12 +278,6 @@ void _stobi_assign_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, 
 void _stobi_scan_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_scan_in *vin = (stobi_scan_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    // --- Random Generation
-    uint64_t scramble_eggs; // haha very funny 😂😂😂😂
-    __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
-    __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
-    seed_xoshiro256(state, scramble_eggs);
-    // --- String Generation setup
     strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, true);
     fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config->str_len, vin->stream);
     memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config->base;
@@ -322,12 +286,6 @@ void _stobi_scan_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, 
 void _stobi_scan_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_scan_in *vin = (stobi_scan_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    // --- Random Generation
-    uint64_t scramble_eggs; // haha very funny 😂😂😂😂
-    __GET_ENTROPY_FAST(&scramble_eggs, sizeof(uint64_t));
-    __GET_ENTROPY_FAST(state->s, sizeof(uint64_t) << 2);
-    seed_xoshiro256(state, scramble_eggs);
-    // --- String Generation setup
     strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, false);
     fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config->str_len, vin->stream);
     memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config->base;

@@ -47,7 +47,7 @@ typedef enum {
     /* Square root / Nth Root */
     BIGINT_NAIVE            = 1,
     BIGINT_NEWTON_RAPHSON,
-};
+} ALG_THRESHOLDS ;
 
 typedef enum {
     /* GCD - Greatest Common Divisor */

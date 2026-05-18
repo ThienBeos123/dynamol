@@ -1,0 +1,1 @@
+/usr/bin/cc -O3 -DNDEBUG -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/rv64_runner.dir/rv64_runner.c.o -o bin/rv64_runner  -ldnml_core

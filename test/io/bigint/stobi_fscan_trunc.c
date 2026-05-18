@@ -566,7 +566,7 @@ int main(int argc, char **argv) {
     // Randomization Configuration
     xoshiro256_state scan_rstate = {0}; u64 side_mix = 0;
     __GET_ENTROPY_FAST(scan_rstate.s, sizeof(u64) << 2);
-    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    __GET_ENTROPY_FAST(&side_mix, sizeof(u64));
     seed_xoshiro256(&scan_rstate, side_mix);
     str_rand_mod scan_rconfig = {0}, // Base-parameter / Non-base-prefix
     scan_bp_rconfig = {0}; // Base-prefix / Non-base-parameter

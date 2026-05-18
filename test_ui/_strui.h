@@ -63,43 +63,6 @@ typedef struct rand_container {
 } rand_container;
 
 
-//* ================= BIG DATA CONTAINING DEFINITIONS ================= *//
-typedef struct _libdnml_scase {
-    void* in;
-    str_res exp;
-    str_res res;
-    void* recons;
-} _libdnml_scase;
-
-typedef struct _libdnml_str_suite {
-    const char *suite_name; const char *log_path;
-    xoshiro256_state *state; void *rconfig;
-    enum { ENOUGH, RANDOMIZED } cap_mode;
-
-    dnml_gen_fn *gen_case;
-    dnml_exec_fn *fn_test; 
-    // Random Case Oracle Functions
-    dnml_inv_fn *fn_inv; dnml_eval_fn *fn_eval;
-    dnml_cmp_inv_fn *inv_cmp; dnml_cmp_eval_fn *eval_cmp;     
-    dnml_fmt_in_fn *fmtin_fn; dnml_stat_fn *fn_stat;
-    dnml_fmt_recon_fn *fmtrecon_fn;
-    // Buffer Linkage Functions
-    dnml_voidp_size *fn_insize; dnml_voidp_size *fn_aux1size;
-    dnml_voidp_fill *fn_infill; dnml_voidp_fill *fn_aux1fill;
-    dnml_sres_fill *fn_outfill; dnml_sres_fill *fn_aux2fill;
-
-    // Edge cases storage
-    _libdnml_scase *edge; strbump_t *ectx;
-    uint8_t ecount; uint8_t ecorrect;
-    str_res *fail_eres; str_res *fail_eexp;
-
-    // Random cases Handling
-    rcheck_mode check_mode;
-    uint16_t rcount; uint16_t rcorrect;
-    rand_container *rincon; int fail_enums[];
-} _libdnml_str_suite;
-
-
 
 //* =========== TYPE-SPECIFIC UTILITIES =========== *//
 static inline void* strbump_alloc(strbump_t *ctx, size_t amount) {
@@ -147,7 +110,7 @@ static inline void _print_str(FILE *f, const char *s, size_t len, int tab_depth)
         memcpy(buf, s, STR_PREVIEW); 
         fprintf(f, "--- Low Segment:  \"%.*s\"...\n", STR_PREVIEW, buf);
         for (int i = 0; i <= tab_depth; ++i) fputs(TAB, f);
-        memcpy(buf, s[len - STR_PREVIEW - 1], STR_PREVIEW);
+        memcpy(buf, &s[len - STR_PREVIEW - 1], STR_PREVIEW);
         fprintf(f, "--- High Segment: \"%.*s\"...\n", STR_PREVIEW, buf);
         for (int i = 0; i <= tab_depth; ++i) fputs(TAB, f);
         fprintf(f, "--- Length: %zu\n", len);
@@ -192,7 +155,7 @@ static inline void _print_bigint(FILE *f, const bigInt *x, int tab_depth) {
         fputs("--- High Limbs: [", f);
         for (size_t i = x->n - BIGINT_PREVIEW/2; i < x->n; ++i) {
             fprintf(f, "%016" PRIx64 " ", x->limbs[i]);
-        } fputs(']', f);
+        } fputc(']', f);
     }
     // The final close-bracket ">"
     for (int i = 0; i < tab_depth; ++i) fputs(TAB, f);
@@ -210,7 +173,7 @@ static inline void _print_str_res(const str_res *a, FILE *f, int tab_depth) {
 }
 
 
-//* =================== FUNCTION-GENERALIZATION DISPATCHER =================== *//
+//* =================== FUNCTION-GENERALIZATION DISPATCHER - TYPES =================== *//
 typedef void (*dnml_gen_fn)(void *in, void *rconfig, xoshiro256_state *state, rcap_mode cap_mode, rand_container *rcont);
 typedef void (*dnml_exec_fn)(const void *in, str_res *out, void *ctx);
 typedef bool (*dnml_prop_fn)(const void *in, str_res *out);
@@ -229,6 +192,48 @@ typedef size_t (*dnml_voidp_size)(void);
 typedef void (*dnml_voidp_fill)(void *in, rand_container *incon);
 typedef void (*dnml_sres_fill)(str_res *res, rand_container *rcon);
 
+
+
+
+
+//* ================= BIG DATA CONTAINING DEFINITIONS ================= *//
+typedef struct _libdnml_scase {
+    void* in;
+    str_res exp;
+    str_res res;
+    void* recons;
+} _libdnml_scase;
+
+typedef struct _libdnml_str_suite {
+    const char *suite_name; const char *log_path;
+    xoshiro256_state *state; void *rconfig;
+    enum { ENOUGH, RANDOMIZED } cap_mode;
+
+    dnml_gen_fn *gen_case;
+    dnml_exec_fn *fn_test; 
+    // Random Case Oracle Functions
+    dnml_inv_fn *fn_inv; dnml_eval_fn *fn_eval;
+    dnml_cmp_inv_fn *inv_cmp; dnml_cmp_eval_fn *eval_cmp;     
+    dnml_fmt_in_fn *fmtin_fn; dnml_stat_fn *fn_stat;
+    dnml_fmt_recon_fn *fmtrecon_fn;
+    // Buffer Linkage Functions
+    dnml_voidp_size *fn_insize; dnml_voidp_size *fn_aux1size;
+    dnml_voidp_fill *fn_infill; dnml_voidp_fill *fn_aux1fill;
+    dnml_sres_fill *fn_outfill; dnml_sres_fill *fn_aux2fill;
+
+    // Edge cases storage
+    _libdnml_scase *edge; strbump_t *ectx;
+    uint8_t ecount; uint8_t ecorrect;
+    str_res *fail_eres; str_res *fail_eexp;
+
+    // Random cases Handling
+    rcheck_mode check_mode;
+    uint16_t rcount; uint16_t rcorrect;
+    rand_container *rincon; int fail_enums[];
+} _libdnml_str_suite;
+
+
+//* =================== FUNCTION-GENERALIZATION DISPATCHER - FUNCTIONS =================== *//
 static inline void *run_ecase(_libdnml_scase *c, dnml_exec_fn *fn, void *ctx) {
     (*fn)(c->in, &c->res, ctx);
 }
@@ -519,8 +524,8 @@ static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_
         (*s->gen_case)(in, &s->rconfig, s->state, incap, s->rincon);
         
         // Setting up Auxillary 1 (Reconstruction) buffers
-        uint8_t voidp_in_buf[(*s->fn_aux1size)()];
-        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
+        uint8_t voidp_aux1_buf[(*s->fn_aux1size)()];
+        aux1 = voidp_aux1_buf; (*s->fn_aux1fill)(aux1, s->rincon);
         // Setting up Evaluation Output buffers
         (*s->fn_outfill)(out, s->rincon);
         (*s->fn_aux2fill)(aux2, s->rincon);
@@ -577,8 +582,8 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
         (*s->gen_case)(in, &s->state, s->state, incap, s->rincon->in_cont.rctx);
 
         // Setting up Auxillary 1 (Reconstruction) buffers
-        uint8_t voidp_in_buf[(*s->fn_aux1size)()];
-        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
+        uint8_t void_aux1_buf[(*s->fn_aux1size)()];
+        aux1 = void_aux1_buf; (*s->fn_aux1fill)(aux1, s->rincon);
         // Setting up Evaluation Output buffers
         (*s->fn_outfill)(out, s->rincon);
         (*s->fn_aux2fill)(aux2, s->rincon);

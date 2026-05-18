@@ -1,41 +1,38 @@
 cmake_minimum_required(VERSION 3.10)
 project(Dynamol LANGUAGES C ASM)
 
-# Set C standard
+# Set C standard (Updated to crisp C23)
 set(CMAKE_C_STANDARD 23)
-set(CMAKE_C)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Set compiler flags for suppressing warnings during development
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
 
-# Add include directories (so header files can be found)
-include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/system)
+# Add include directories globally
 include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/system
+    ${CMAKE_SOURCE_DIR}/include/system/asm
     ${CMAKE_SOURCE_DIR}/sconfigs
     ${CMAKE_SOURCE_DIR}/sconfigs/memory
     ${CMAKE_SOURCE_DIR}/sconfigs/perf
     ${CMAKE_SOURCE_DIR}/sconfigs/settings
-)
-include_directories(
     ${CMAKE_SOURCE_DIR}/intrinsics
     ${CMAKE_SOURCE_DIR}/intrinsics/arm64
     ${CMAKE_SOURCE_DIR}/intrinsics/risc-v64
     ${CMAKE_SOURCE_DIR}/intrinsics/x86_64
     ${CMAKE_SOURCE_DIR}/intrinsics/zvanillc
-)
-include_directories(${CMAKE_SOURCE_DIR}/util)
-include_directories(
+    ${CMAKE_SOURCE_DIR}/util
     ${CMAKE_SOURCE_DIR}/calc_algo
     ${CMAKE_SOURCE_DIR}/calc_algo/header
+    ${CMAKE_SOURCE_DIR}/adynamol/big_numbers
+    ${CMAKE_SOURCE_DIR}/test_ui                 # Added so lowui.h is universally accessible
 )
-include_directories(${CMAKE_SOURCE_DIR}/adynamol/big_numbers)
 
 # =====================================================
-# BigInt Executable (compilation test)
+# Core Static Library (dnml_core)
 # =====================================================
-add_executable(main
+add_library(dnml_core STATIC
     # 1a. Main Module Files - BigNum
     adynamol/big_numbers/bigInt.c
     adynamol/big_numbers/bigInt_io.c
@@ -56,6 +53,7 @@ add_executable(main
     util/sec_util.c
 
     # 4. Mathematical Intrinsic Operations Files
+    intrinsics/intrinsics.c
     # 4a. ARM64 Intrinsic Files
     intrinsics/arm64/_arm64_alg.S
     intrinsics/arm64/_arm64_arith.S
@@ -76,8 +74,25 @@ add_executable(main
     intrinsics/risc-v64/_rv64_marith.S
     intrinsics/risc-v64/_rv64_bitops.S
 
+    # 5. System Assembly files
+    include/system/__hwcaps.c
+    include/system/asm/_dnml_cpuid.S
+    # Character tables (lookup arrays)
+    include/char_table.c
 )
 
-target_include_directories(main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_options(main PRIVATE -Wno-unused-function)
-target_sources(main PRIVATE ztest/main.c)
+# FIXED: Target applied to dnml_core instead of non-existent "main"
+target_compile_options(dnml_core PUBLIC -Wno-unused-function)
+
+# Pass include path properties cleanly down to linking sub-targets
+target_include_directories(dnml_core PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# 3. LINK TO THE TEST FOLDER
+add_subdirectory(test/low)
+add_subdirectory(test/io/bigint)
+add_subdirectory(test/io/bigfloat)
+add_subdirectory(test/calc/arith)
+add_subdirectory(test/calc/num_theory)
+add_subdirectory(test/main_math)

@@ -2,14 +2,19 @@
 #if __ARCH_ARM64__
 
 asm_text_section
-.globl     _arm64_add64c
-.globl     _arm64_sub64b
-.globl     _arm64_wmul128
+.globl     ASM_SYM(arm64_add64c)
+.globl     ASM_SYM(arm64_sub64b)
+.globl     ASM_SYM(arm64_wmul128)
 
-.type       _arm64_add64cc, %function
-.type       _arm64_sub64b, %function
-.type       _arm64_wmul128, %function
-.align      2
+FUNC_TYPE(ASM_SYM(arm64_add64c))
+FUNC_TYPE(ASM_SYM(arm64_sub64b))
+FUNC_TYPE(ASM_SYM(arm64_wmul128))
+
+FUNC_SIZE(ASM_SYM(arm64_add64c))
+FUNC_SIZE(ASM_SYM(arm64_sub64b))
+FUNC_SIZE(ASM_SYM(arm64_wmul128))
+
+.p2align      2
 
 /* ------- 64 BIT ADDITION WITH CARRY -------
 * uint64_t _arm64_add64c(uint64_t a, uint64_t b, uint8_t *carry)
@@ -21,7 +26,7 @@ asm_text_section
 *   x0: (a + b + *carry) mod(2^64)
 *   x2: boolean - 1/0
 */
-_arm64_add64c:
+ASM_SYM(arm64_add64c):
     ldr x3, [x2] // Load *carry into register x3
     cmp x3, #1   // Sets the C flag to 1 (NO-BORROW) if carry = 1
 
@@ -45,7 +50,7 @@ _arm64_add64c:
 *   x0: (a - b - *borrow) mod(2^64)
 *   x2: boolean - 1/0
 */
-_arm64_sub64b:
+ASM_SYM(arm64_sub64b):
     ldr x3, [x2] // Load *carry into register x3
     // - Sets the C flag inversely relative to x3
     // +) x3 = 1 (BORROW) --> 0 - 1 = -1 (UNDERFLOWS) ---> C_flag = 0
@@ -55,7 +60,7 @@ _arm64_sub64b:
     // 1. Subtract a = a - b - carry
     // ---------> x0 = x0 - x1 - C_flag
     sbcs    x0, x0, x1
-    sbc x3, #1, xzr
+    cset    x3, cc
     str x3, [x2]
     ret
 
@@ -71,7 +76,7 @@ _arm64_sub64b:
 *   x0 - lo: (a * b) mod(2^64)
 *   x2 - hi: (a * b) >> 64;
 */
-_arm64_wmul128:
+ASM_SYM(arm64_wmul128):
     mov x3, x0 // Move the value of x0 (a) into x3 as a temporary
     mul x0, x3, x1 // x0 = (x3 * x1) mod(2^64); (GET LOW 64 BIT)
     umulh   x4, x3, x1      // x4 = (__int128)(x0/x3 * x1) >> 64; (GET HIGH 64 BIT)

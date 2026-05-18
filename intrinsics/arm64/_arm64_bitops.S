@@ -3,15 +3,22 @@
 
 
 asm_text_section
-.globl     _arm64_clz64
-.globl     _arm64_ctz64
-.globl     _arm64_bswap64
-.globl     _arm64_pcnt64
-.type       _arm64_clz64, %function
-.type       _arm64_ctz64, %function
-.type       _arm64_bswap64, %function
-.type       _arm64_pcnt64, %function
-.align      2
+.globl     ASM_SYM(arm64_clz64)
+.globl     ASM_SYM(arm64_ctz64)
+.globl     ASM_SYM(arm64_bswap64)
+.globl     ASM_SYM(arm64_pcnt64)
+
+FUNC_TYPE(ASM_SYM(arm64_clz64))
+FUNC_TYPE(ASM_SYM(arm64_ctz64))
+FUNC_TYPE(ASM_SYM(arm64_bswap64))
+FUNC_TYPE(ASM_SYM(arm64_pcnt64))
+
+FUNC_SIZE(ASM_SYM(arm64_clz64))
+FUNC_SIZE(ASM_SYM(arm64_ctz64))
+FUNC_SIZE(ASM_SYM(arm64_bswap64))
+FUNC_SIZE(ASM_SYM(arm64_pcnt64))
+
+.p2align      2
 
 
 
@@ -20,7 +27,7 @@ asm_text_section
 * arg: x0: uint64_t x --> (64 BIT)
 * ret: x0: clz(x) ------> (8  BIT)
 */
-_arm64_clz64:
+ASM_SYM(arm64_clz64):
     clz x0, x0
     ret
 
@@ -30,8 +37,9 @@ _arm64_clz64:
 * arg: x0: uint64_t x --> (64 BIT)
 * ret: x0: ctz(x) ------> (8  BIT)
 */
-_arm64_ctz64:
-    ctz x0, x0
+ASM_SYM(arm64_ctz64):
+    rbit x0, x0
+    clz  x0, x0
     ret
 
 
@@ -40,7 +48,7 @@ _arm64_ctz64:
 * arg: x0: uint64_t x ----> (64 BIT)
 * ret: x0: bswap(x) ------> (8  BIT)
 */
-_arm64_bswap64:
+ASM_SYM(arm64_bswap64):
     rev x0, x0
     ret
 
@@ -50,7 +58,7 @@ _arm64_bswap64:
 * arg: x0: uint64_t x --> (64 BIT)
 * ret: x0: pcnt(x) -----> (8  BIT)
 */
-_arm64_pcnt64:
+ASM_SYM(arm64_pcnt64):
     fmov d0, x0
     cnt v0.8b, v0.8b
     addv b0, v0.8b
