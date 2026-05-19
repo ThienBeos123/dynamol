@@ -35,34 +35,34 @@ asm_text_section
 * ret: rax: x^-1 mod(2^64)
 */
 _x86w64_modinv64:
-    # Calculating table's offset
-    mov rax, rcx # rax = rcx
-    shr rax, 1 # rax >> 1
-    and rax, 0x7F # rax & 0x7F
-    # rax = (rcx >> 1) & 0x7F/0b1111111
-    movzx   rax, byte ptr [rip + inv8_lookup + rax] # rax = inv8_lookup[rax]
+    ; Calculating table's offset
+    mov rax, rcx ; rax = rcx
+    shr rax, 1 ; rax >> 1
+    and rax, 0x7F ; rax & 0x7F
+    ; rax = (rcx >> 1) & 0x7F/0b1111111
+    movzx   rax, byte ptr [rip + inv8_lookup + rax] ; rax = inv8_lookup[rax]
 
-    # General formula: res *= 2 - x * res
-    # Iteration 1:
+    ; General formula: res *= 2 - x * res
+    ; Iteration 1:
     mov rsi, 2
-    mov rdx, rax # rdx = rax/res
-    imul    rdx, rcx # res * x
-    sub rsi, rdx # 2 - (res * x)
-    imul    rax, rsi # res *= 2 - (res * x)
+    mov rdx, rax ; rdx = rax/res
+    imul    rdx, rcx ; res * x
+    sub rsi, rdx ; 2 - (res * x)
+    imul    rax, rsi ; res *= 2 - (res * x)
 
-    # Iteration 2:
+    ; Iteration 2:
     mov rsi, 2
-    mov rdx, rax # rdx = rax / res
-    imul    rdx, rcx # res * x
-    sub rsi, rdx # 2 - (res * x)
-    imul    rax, rsi # res *= 2 - (res * x)
+    mov rdx, rax ; rdx = rax / res
+    imul    rdx, rcx ; res * x
+    sub rsi, rdx ; 2 - (res * x)
+    imul    rax, rsi ; res *= 2 - (res * x)
 
-    # Iteration 3:
+    ; Iteration 3:
     mov rsi, 2
-    mov rdx, rax # rdx = rax / res
-    imul    rdx, rcx # res * x
-    sub rsi, rdx # 2 - (res * x)
-    imul    rax, rsi # res *= 2 - (res * x)
+    mov rdx, rax ; rdx = rax / res
+    imul    rdx, rcx ; res * x
+    sub rsi, rdx ; 2 - (res * x)
+    imul    rax, rsi ; res *= 2 - (res * x)
     ret
 
 

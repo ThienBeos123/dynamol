@@ -12,7 +12,8 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../libdnml_base.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -563,7 +564,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -588,18 +589,19 @@ int main(int argc, char **argv) {
     // Randomization Configuration
     xoshiro256_state conv_rstate = {0}; u64 side_mix = 0;
     __GET_ENTROPY_FAST(conv_rstate.s, sizeof(u64) << 2);
-    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    __GET_ENTROPY_FAST(&side_mix, sizeof(u64));
     seed_xoshiro256(&conv_rstate, side_mix);
     bi_rand_mod conv_rconfig = {0}; // Non-base-prefix
     bigen_init_sesh(&conv_rconfig, &conv_rstate);
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
+    FILE *idk = fopen("logs/bigint_tto_str.txt", "w"); fclose(idk); 
     // tto_str() - Non-base-parameter, No length param
     suite tto_str_suite = {0};
     create_str_suite(&tto_str_suite, "tto_str - BigInt Conversion", 
-        conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
+        conv_ecount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
+        "logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tto_str_suite,
@@ -613,8 +615,8 @@ int main(int argc, char **argv) {
     // tto_strb() - Base-parameter, No length param
     suite tto_strb_suite = {0};
     create_str_suite(&tto_strb_suite, "tto_strb - BigInt Conversion", 
-        conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
+        conv_ecount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
+        "logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tto_strb_suite,
@@ -628,8 +630,8 @@ int main(int argc, char **argv) {
     // tto_strn() - Non-base-parameter, length param
     suite tto_strn_suite = {0};
     create_str_suite(&tto_strn_suite, "tto_strn - BigInt Conversion", 
-        conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
+        conv_ecount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
+        "logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tto_strn_suite,
@@ -643,8 +645,8 @@ int main(int argc, char **argv) {
     // tto_strnb() - Base-parameter, length param
     suite tto_strnb_suite = {0};
     create_str_suite(&tto_strnb_suite, "tto_strnb - BigInt Conversion",
-        conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[0],
-        "../logs/bi_logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
+        conv_ecount, rcount, ecases_b, INVERSE, ebuf_slices[0],
+        "logs/bigint_tto_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tto_strnb_suite,

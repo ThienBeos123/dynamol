@@ -2,12 +2,7 @@
 #define ___LIBDNML_LTEST_UI
 
 
-#include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <string.h>
-#include <time.h>
-
+#include <include.h>
 #include "_test_base.h"
 
 //* =========== TYPE DEFINITIONS =========== *//
@@ -17,7 +12,7 @@ typedef struct { uint64_t first; uint64_t second; } _dnml_pair;
 typedef struct _libdnml_case {
     _dnml_pair exp;
     uint8_t inc;
-    uint64_t *in;
+    uint64_t in[4];
 } _libdnml_case;
 
 typedef struct _libdnml_lsuite {
@@ -32,9 +27,9 @@ typedef struct _libdnml_lsuite {
 
     _libdnml_case *rand_cases;
     uint16_t rand_cases_count;  uint16_t rand_cases_correct;    uint8_t rand_nin;
-    uint64_t **fail_rand_in;    _dnml_pair *fail_rand_res;      _dnml_pair *fail_rand_exp;
+    uint64_t *fail_rand_in;    _dnml_pair *fail_rand_res;      _dnml_pair *fail_rand_exp;
 
-    int fail_enums[];
+    int fail_enums[50];
 } _libdnml_lsuite;
 
 
@@ -45,7 +40,7 @@ static inline void create_lsuite(
     _libdnml_lsuite *curr_suite, const char *suite_name,
     uint8_t edge_count, uint16_t rand_count, uint8_t rand_nin, 
     _libdnml_case *edge_bank, _libdnml_case *rand_bank,
-    uint64_t **fail_randin, _dnml_pair *res_storage, 
+    uint64_t *fail_randin, _dnml_pair *res_storage, 
     const char *log_path
 ) {
     curr_suite->suite_name = suite_name;
@@ -90,6 +85,7 @@ typedef uint64_t (*_fn4_t)(uint64_t, uint64_t, uint64_t, uint64_t);
 typedef uint64_t (*_fn1o_t)(uint64_t, uint64_t*);
 typedef uint64_t (*_fn2o_t)(uint64_t, uint64_t, uint64_t*);
 typedef uint64_t (*_fn3o_t)(uint64_t, uint64_t, uint64_t, uint64_t*);
+typedef uint64_t (*_fn2o_u8_t)(uint64_t, uint64_t, uint8_t*);
 #define DNML_FCALL_(fn_ptr, case_ptr, out) \
     do { \
         switch ((case_ptr)->inc) { \
@@ -142,7 +138,7 @@ static inline void _dnml_run_suite(_libdnml_lsuite *s) {
     //* ======== 1. EDGE CASE TESTING ======== *//
     int enum_i = 0;
     for (uint8_t i = 0; i < s->edge_cases_count; ++i) {
-        _dnml_pair got = {0}, exp = s->edge_cases->exp;
+        _dnml_pair got = {0}, exp = s->edge_cases[i].exp;
         if (s->call_style == DNML_CALL) DNML_FCALL_(s->fn_test, &s->edge_cases[i], got);
         else DNML_OFCALL_(s->fn_test,&s->edge_cases[i], got);
         if (_comp_pair(got, exp)) s->edge_cases_correct += 1;
@@ -176,14 +172,15 @@ static inline void _dnml_log_suite(_libdnml_lsuite *s) {
     uint16_t fail_rand = s->rand_cases_count - s->rand_cases_correct;
 
     if ((fail_edge + fail_rand) == 0 || !s->log_path) return;
-    FILE *f = fopen(s->log_path, "w"); if (!f) return;
-    fprintf(f, "======== %s FAIL LOG ========", s->suite_name);
+    FILE *f = fopen(s->log_path, "a"); if (!f) return;
+    fprintf(f, "\n\n======== %s FAIL LOG ========\n", s->suite_name);
     //* PRINTS EDGE CASES *//
     for (uint8_t i = 0; i < fail_edge; ++i) {
+        uint8_t case_idx = s->fail_enums[i] - 1;
         fprintf(f, "o) Edge case %d: \n", s->fail_enums[i]);
-        for (uint8_t j = 0; j < s->edge_cases[i].inc; ++j) {
-            fprintf(f, "     in[%" PRIu8 "]: 0x%016" PRIx64 "\n", j, s->edge_cases[i].in[j]);
-        } fprintf(f, "     expected: <0x%016" PRIx64 ", 0x%016" PRIx64 ">\n", 
+        for (uint8_t j = 0; j < s->edge_cases[case_idx].inc; ++j) {
+            fprintf(f, "     in[%" PRIu8 "]: 0x%016" PRIx64 "\n", j, s->edge_cases[case_idx].in[j]);
+        } fprintf(f, "     expected: <0x%016" PRIx64 ", 0x%016" PRIx64 ">\n",
             s->fail_edge_exp[i].first, s->fail_edge_exp[i].second);
         fprintf(f, "     got:      <0x%016" PRIx64 ", 0x%016" PRIx64 ">\n", 
             s->fail_edge_res[i].first, s->fail_edge_res[i].second);
@@ -193,7 +190,8 @@ static inline void _dnml_log_suite(_libdnml_lsuite *s) {
     for (uint16_t i = 0; i < fail_rand; ++i) {
         fprintf(f, "o) Rand case %" PRIu32 ":\n", i + 1);
         for (uint8_t j = 0; j < s->rand_nin; ++j) {
-            fprintf(f, "     in[%" PRIu8 "]: 0x%016" PRIx64 "\n", j, s->fail_rand_in[i][j]);
+            fprintf(f, "     in[%" PRIu8 "]: 0x%016" PRIx64 "\n", j,
+                s->fail_rand_in[i * s->rand_nin + j]);
         } fprintf(f, "     expected: <0x%016" PRIx64 ", 0x%016" PRIx64 ">\n", 
             s->fail_rand_exp[i].first, s->fail_rand_exp[i].second);
         fprintf(f, "     got: <0x%016" PRIx64 ", 0x%016" PRIx64 ">\n", 
@@ -204,7 +202,7 @@ static inline void _dnml_render_csuite(_libdnml_lsuite *s) { // Render a "COMPAC
     uint8_t fail_edge = s->edge_cases_count - s->edge_cases_correct;
     uint8_t fail_rand = s->rand_cases_count - s->rand_cases_correct;
     char status = (fail_edge + fail_rand == 0) ? '+' : '-';
-    printf("  [%c] %-20s     %2" PRIu8 "/%-2" PRIu8 " edge   %2" PRIu8 "/%-2" PRIu8 " random",
+    printf("  [%c] %-20s     %2" PRIu8 "/%-2" PRIu8 " edge   %2" PRIu16 "/%-2" PRIu16 " random",
         status, s->suite_name,
         s->edge_cases_correct, s->edge_cases_count,
         s->rand_cases_correct, s->rand_cases_count
@@ -214,7 +212,7 @@ static inline void _dnml_render_csuite(_libdnml_lsuite *s) { // Render a "COMPAC
 static inline void _dnml_render_esuite(_libdnml_lsuite *s, uint8_t suite_num, uint32_t delay_ms, int bw) {
     _dnml_box_top(s->suite_name, bw); _dnml_box_divider(bw); _dnml_delay_ms(delay_ms);
     // ------ edge cases line ------
-    char edge_line[BOX_WIDTH]; snprintf(
+    char edge_line[bw]; snprintf(
         edge_line, sizeof(edge_line), "Edge case: %d/%d",
         s->edge_cases_correct, s->edge_cases_count
     ); _dnml_box_line(edge_line, bw);
@@ -222,16 +220,16 @@ static inline void _dnml_render_esuite(_libdnml_lsuite *s, uint8_t suite_num, ui
 
     // print failed edge cases
     int fail_edge = s->edge_cases_count - s->edge_cases_correct;
-    char curr_index[10], fail_line[BOX_WIDTH];
-    for (int i = 0; i < fail_edge; ++i) { fail_line[BOX_WIDTH];
-        int ilen = (s->fail_enums[i], curr_index, sizeof(curr_index));
+    char curr_index[10], fail_line[bw];
+    for (int i = 0; i < fail_edge; ++i) {
+        int ilen = _itosn(s->fail_enums[i], curr_index, sizeof(curr_index));
         snprintf(fail_line, sizeof(fail_line),
-            "o) Case %.*s: Expected: <0x%016" PRIx64 ", 0x%016" PRIx64 "> | Got: <0x%016" PRIx64 ", 0x%016 " PRIx64 ">",
+            "o) Case %.*s: "
+            "Expected: <0x%016" PRIx64 ", 0x%016" PRIx64 "> | "
+            "Got: <0x%016" PRIx64 ", 0x%016" PRIx64 ">",
             ilen, curr_index,
-            s->fail_edge_exp[i].first,
-            s->fail_edge_exp[i].second,
-            s->fail_edge_res[i].first,
-            s->fail_edge_res[i].second
+            s->fail_edge_exp[i].first, s->fail_edge_exp[i].second,
+            s->fail_edge_res[i].first, s->fail_edge_res[i].second
         ); _dnml_box_line(fail_line, bw);
         _dnml_delay_ms(delay_ms);
     } fflush(stdout);
@@ -239,7 +237,7 @@ static inline void _dnml_render_esuite(_libdnml_lsuite *s, uint8_t suite_num, ui
 static inline void _dnml_render_rsuite(_libdnml_lsuite *s, uint8_t suite_num, uint32_t delay_ms, int bw) {
     _dnml_box_divider(bw);
     // ------ random cases line ------
-    char rand_line[BOX_WIDTH];
+    char rand_line[bw];
     snprintf(rand_line, sizeof(rand_line), "Random case: %d/%d",
              s->rand_cases_correct, s->rand_cases_count);
     _dnml_box_line(rand_line, bw);
@@ -247,17 +245,16 @@ static inline void _dnml_render_rsuite(_libdnml_lsuite *s, uint8_t suite_num, ui
 
     // print failed random cases
     int fail_rand = s->rand_cases_count - s->rand_cases_correct;
-    char curr_index[10], fail_line[BOX_WIDTH];
+    char curr_index[10], fail_line[bw];
     for (int i = 0; i < fail_rand; i++) {
         int ilen = _itosn(i, curr_index, sizeof(curr_index));
-        snprintf(
-            fail_line, sizeof(fail_line),
-            "o Case %.*s: Expected: <0x%016" PRIx64 ", 0x%016" PRIx64 "> | Got: <0x%016" PRIx64 ", 0x%016" PRIx64 ">",
+        snprintf(fail_line, sizeof(fail_line),
+            "o Case %.*s: "
+            "Expected: <0x%016" PRIx64 ", 0x%016" PRIx64 "> | "
+            "Got: <0x%016" PRIx64 ", 0x%016" PRIx64 ">",
             ilen, curr_index,
-            s->fail_rand_exp[i].first,
-            s->fail_rand_exp[i].second,
-            s->fail_rand_res[i].first,
-            s->fail_rand_res[i].second
+            s->fail_rand_exp[i].first, s->fail_rand_exp[i].second,
+            s->fail_rand_res[i].first, s->fail_rand_res[i].second
         ); _dnml_box_line(fail_line, bw);
         _dnml_delay_ms(delay_ms);
     } _dnml_box_bottom(bw);

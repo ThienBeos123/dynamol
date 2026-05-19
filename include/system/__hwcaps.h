@@ -9,37 +9,55 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(__linux__) || defined(__linux) 
+#if __OS_LINUX__
     #include <sys/syscall.h>
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif __OS_BSD__
     #include <sys/aux.h>
-#elif __compiler_msvc || defined(_WIN32)
+#elif __OS_WIN64__
     #include <intrin.h>
     #include <windows.h>
 #endif
 
 // Bit definitions for CPUID
-#define bit_RDRAND (1 << 30)
-#define bit_SSE42 (1 << 20)
-#define bit_ABM (1 << 5)
-#define bit_BMI1 (1 << 3)
+#define dnml_bit_RDSEED (1 << 18)
+#define dnml_bit_RDRAND (1 << 30)
+#define dnml_bit_SSE42 (1 << 20)
+#define dnml_bit_ABM (1 << 5)
+#define dnml_bit_BMI1 (1 << 3)
 // Platform Convenience Macro
-#define ON_WINDOWS (defined(_WIN32) || __compiler_msvc)
-#define ON_ANY_OTHER (__OS_LINUX__ || __OS_MACOS__ || __OS_IOS__ || __OS_BSD__)
+#define ON_ANY_OTHER (defined(__OS_LINUX__) || defined(__OS_MACOS__) || defined(__OS_IOS__) || defined(__OS_BSD__))
 
 
 //* ------- TYPE & OBJECT DECLARATIONS ------- *//
+/* RISC-V 64 BIT HWCAPS STRUCT */
 typedef struct {
-    // RISC-V EXTENSIONS
-    uint8_t rv64_zbb;
-    uint8_t rv64_zba;
-    uint8_t rv64_zbs;
-    // X86_64 EXTENSIONS
-    uint8_t x86_abm; uint8_t x86_bmi1;
-    uint8_t x86_sse4_2; uint8_t x86_rdrand;
-    // AARCH64 EXTENSIONS
-} _dnml_hwcaps;
-extern _dnml_hwcaps libdnml_caps;
+    // RISC-V BIT EXTENSIONS
+    uint8_t rv64_zbb, rv64_zba, rv64_zbs;
+    // RISC-V Security Extensions
+    uint8_t rv64_zkr;
+    // RISC-V Hardware Interaction
+    uint8_t rv64_zihintpause;
+} _dnml_hwcaps_rv64;
+
+/* x86_64 64 BIT HWCAPS STRUCT */
+typedef struct {
+    /* Bit Manipulation Extensions */
+   uint8_t x86_abm; uint8_t x86_bmi1;
+   /* SIMD / Vectorization Extensions */
+   uint8_t x86_sse4_2;
+   /* Security Extensions */
+   uint8_t x86_rdrand; uint8_t x86_rdseed;
+} _dnml_hwcaps_x64;
+
+/* ARM64 64 BIT HWCAPS STRUCT */
+typedef struct {
+    /* Security Operations */
+    uint8_t armv85_feat_rng;
+} _dnml_hwcaps_arm64;
+
+extern _dnml_hwcaps_rv64 libdnml_rv64_caps;
+extern _dnml_hwcaps_x64 libdnml_x64_caps;
+extern _dnml_hwcaps_arm64 libdnml_arm64_caps;
 
 //* --------- BARE-METAL MANUAL FLAGS --------- *//
 // RISC-V 64 bit Flags

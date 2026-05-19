@@ -12,7 +12,8 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../libdnml_base.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -564,7 +565,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -589,7 +590,7 @@ int main(int argc, char **argv) {
     // Randomization Configuration
     xoshiro256_state print_rstate = {0}; u64 side_mix = 0;
     __GET_ENTROPY_FAST(print_rstate.s, sizeof(u64) << 2);
-    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    __GET_ENTROPY_FAST(&side_mix, sizeof(u64));
     seed_xoshiro256(&print_rstate, side_mix);
     bi_rand_mod print_rconfig = {0}; // Base-prefix
     bigen_init_sesh(&print_rconfig, &print_rstate);
@@ -597,10 +598,11 @@ int main(int argc, char **argv) {
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
     // fput() - Stream-based Printing
+    FILE *idk = fopen("logs/bigInt_fput.txt", "w"); fclose(idk); 
     suite fput_suite = {0};
     create_str_suite(&fput_suite, "fput - BigInt Printing", 
-        print_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        print_ecount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fput_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fput_suite,
@@ -614,8 +616,8 @@ int main(int argc, char **argv) {
     // sfput() - Buffered Printing
     suite sfput_suite = {0};
     create_str_suite(&sfput_suite, "sfput - BigInt Printing", 
-        print_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        print_ecount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfput_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sfput_suite,
@@ -629,8 +631,8 @@ int main(int argc, char **argv) {
     // fputb() - Stream-based Printing
     suite fputb_suite = {0};
     create_str_suite(&fputb_suite, "fputb - BigInt Printing",
-        print_scount, rcount, ecases_b, INVERSE, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        print_ecount, rcount, ecases_b, INVERSE, ebuf_slices[0],
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fputb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fputb_suite,
@@ -644,8 +646,8 @@ int main(int argc, char **argv) {
     // sfput() - Buffered Printing
     suite sfputb_suite = {0};
     create_str_suite(&sfputb_suite, "sfputb - BigInt Printing", 
-        print_scount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        print_ecount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfputb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sfputb_suite,

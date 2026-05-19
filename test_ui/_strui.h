@@ -4,7 +4,7 @@
 
 
 #include <include.h>
-#include "../adynamol/big_numbers/bigNums.h"
+#include "../dynamol/big_numbers/bigNums.h"
 #include "../sconfigs/dnml_status.h"
 #include "../sconfigs/memory/_scratch.h"
 #include "../util/util.h"
@@ -12,7 +12,7 @@
 
 
 //* ================= SMALL SIDE-TYPES DEFINITIONS ================= *//
-typedef enum res_type { BIGINT, STRING, OP_NONE } operated_types;
+typedef enum res_type { BIGINT, STRING } operated_types;
 typedef enum rcheck_mode { INVERSE, EVAL, NONE } rcheck_mode;
 typedef struct strbump_t { void *ctx; size_t off; size_t size; } strbump_t;
 typedef enum rcap_mode { 
@@ -21,34 +21,20 @@ typedef enum rcap_mode {
 } rcap_mode;
 
 typedef struct str_res {
-    /* Notes:
-        Instead of using a union to store
-        the varying return types of I/O operations,
-        we seperate results into entirely different struct fields.
-        This is for:
-            - Using a union won't allow for the definition
-                of an incomplete array, forcing the usage of pointers
-                ----> Complicated testing and storing 
-
-            - Incomplete struct fields allow for the independent
-                storage of the string by the struct header, simplifying
-                string storage instead of relying on external storage
-    */
     operated_types type;
-    dnml_status status;
+    dnml_status status; size_t cap;
     union { bigInt bi; size_t len; } data;
-    size_t cap; char *pstr; // For string literals
-    char str[];
+    char *pstr;
 } str_res;
 
 
 //* ================= CONTEXT CONTAINER DEFINITIONS ================= *//
 #define ALIGN_UP(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
-#define RES_BUF_SIZE ((ALIGN_UP(sizeof(str_res), alignof(limb_t))) + STR_OUT_CAP + 6)
+#define RES_BUF_SIZE (STR_OUT_CAP + 6) // Add 6 for prefix & signs
 // Add 6 for signs and arbitrary-base
 typedef struct {
-    uint8_t res_buf[RES_BUF_SIZE]; // FAM-based
-    uint8_t aux2_buf[RES_BUF_SIZE]; // FAM-based
+    uint8_t res_buf[RES_BUF_SIZE]; // Connected by String Pointer (.pstr)
+    uint8_t aux2_buf[RES_BUF_SIZE]; // Connected by String Pointer (.pstr)
 } rctx_res_t;
 
 typedef struct {
@@ -56,48 +42,11 @@ typedef struct {
     uint8_t aux1_buf[STR_CAP];
 } rctx_input_t;
 
-typedef struct rand_container { 
+typedef struct rand_container {
     enum { CTX, STREAM } in_cont_type;
     union { rctx_input_t *rctx; FILE* stream; } in_cont;
     rctx_res_t *res_cont;
 } rand_container;
-
-
-//* ================= BIG DATA CONTAINING DEFINITIONS ================= *//
-typedef struct _libdnml_scase {
-    void* in;
-    str_res exp;
-    str_res res;
-    void* recons;
-} _libdnml_scase;
-
-typedef struct _libdnml_str_suite {
-    const char *suite_name; const char *log_path;
-    xoshiro256_state *state; void *rconfig;
-    enum { ENOUGH, RANDOMIZED } cap_mode;
-
-    dnml_gen_fn *gen_case;
-    dnml_exec_fn *fn_test; 
-    // Random Case Oracle Functions
-    dnml_inv_fn *fn_inv; dnml_eval_fn *fn_eval;
-    dnml_cmp_inv_fn *inv_cmp; dnml_cmp_eval_fn *eval_cmp;     
-    dnml_fmt_in_fn *fmtin_fn; dnml_stat_fn *fn_stat;
-    dnml_fmt_recon_fn *fmtrecon_fn;
-    // Buffer Linkage Functions
-    dnml_voidp_size *fn_insize; dnml_voidp_size *fn_aux1size;
-    dnml_voidp_fill *fn_infill; dnml_voidp_fill *fn_aux1fill;
-    dnml_sres_fill *fn_outfill; dnml_sres_fill *fn_aux2fill;
-
-    // Edge cases storage
-    _libdnml_scase *edge; strbump_t *ectx;
-    uint8_t ecount; uint8_t ecorrect;
-    str_res *fail_eres; str_res *fail_eexp;
-
-    // Random cases Handling
-    rcheck_mode check_mode;
-    uint16_t rcount; uint16_t rcorrect;
-    rand_container *rincon; int fail_enums[];
-} _libdnml_str_suite;
 
 
 
@@ -126,7 +75,7 @@ static inline bool _comp_str_res(const str_res *a, const str_res *b) {
         return (a->status == b->status);
     } if (a->type != b->type) return false;
     switch (a->type) {
-        case STRING: return strcmp(a->str, b->str) == 0; break;
+        case STRING: return strcmp(a->pstr, b->pstr) == 0; break;
         case BIGINT: return (__BIGINT_INTERNAL_COMP__(&a->data.bi, &b->data.bi) == 0); break;
         default: return true; break;
     };
@@ -140,14 +89,14 @@ static inline void _print_str(FILE *f, const char *s, size_t len, int tab_depth)
         >
     */
     if (len <= STR_PREVIEW) {
-        fprintf(f, "< \"%.*s\">" , len, s);
+        fprintf(f, "< \"%.*s\">" , (int)(len), s);
     } else {
         fputs("<\n", f); char buf[STR_PREVIEW];
         for (int i = 0; i <= tab_depth; ++i) fputs(TAB, f);
         memcpy(buf, s, STR_PREVIEW); 
         fprintf(f, "--- Low Segment:  \"%.*s\"...\n", STR_PREVIEW, buf);
         for (int i = 0; i <= tab_depth; ++i) fputs(TAB, f);
-        memcpy(buf, s[len - STR_PREVIEW - 1], STR_PREVIEW);
+        memcpy(buf, &s[len - STR_PREVIEW - 1], STR_PREVIEW);
         fprintf(f, "--- High Segment: \"%.*s\"...\n", STR_PREVIEW, buf);
         for (int i = 0; i <= tab_depth; ++i) fputs(TAB, f);
         fprintf(f, "--- Length: %zu\n", len);
@@ -192,7 +141,7 @@ static inline void _print_bigint(FILE *f, const bigInt *x, int tab_depth) {
         fputs("--- High Limbs: [", f);
         for (size_t i = x->n - BIGINT_PREVIEW/2; i < x->n; ++i) {
             fprintf(f, "%016" PRIx64 " ", x->limbs[i]);
-        } fputs(']', f);
+        } fputc(']', f);
     }
     // The final close-bracket ">"
     for (int i = 0; i < tab_depth; ++i) fputs(TAB, f);
@@ -202,18 +151,18 @@ static inline void _print_str_res(const str_res *a, FILE *f, int tab_depth) {
     fputs("< -- STR-RES --\n", f);
     for (int i = 0; i <= tab_depth; ++i) fputs(TAB, f);
     fputs("+) Status: ", f); _print_dnml_status(a->status, f); fputc('\n', f);
+    for (int i = 0; i <= tab_depth; ++i) fputs(TAB, f);
     fputs("+) Data:   ", f); switch (a->type) {
         case BIGINT: _print_bigint(f, &a->data.bi, tab_depth); break;
-        case STRING: _print_str(f, a->str, a->data.len, tab_depth); break;
+        case STRING: _print_str(f, a->pstr, a->data.len, tab_depth); break;
     } for (int i = 0; i < tab_depth; ++i) fputs(TAB, f); 
     fputs("\n>", f);
 }
 
 
-//* =================== FUNCTION-GENERALIZATION DISPATCHER =================== *//
+//* =================== FUNCTION-GENERALIZATION DISPATCHER - TYPES =================== *//
 typedef void (*dnml_gen_fn)(void *in, void *rconfig, xoshiro256_state *state, rcap_mode cap_mode, rand_container *rcont);
 typedef void (*dnml_exec_fn)(const void *in, str_res *out, void *ctx);
-typedef bool (*dnml_prop_fn)(const void *in, str_res *out);
 // Evaluators & Inverses
 typedef void (*dnml_eval_fn)(const void *in, str_res *exp, void *ctx);
 typedef void (*dnml_inv_fn)(const void *in, const str_res *out, void *reconstructed, void *ctx);
@@ -229,20 +178,60 @@ typedef size_t (*dnml_voidp_size)(void);
 typedef void (*dnml_voidp_fill)(void *in, rand_container *incon);
 typedef void (*dnml_sres_fill)(str_res *res, rand_container *rcon);
 
-static inline void *run_ecase(_libdnml_scase *c, dnml_exec_fn *fn, void *ctx) {
-    (*fn)(c->in, &c->res, ctx);
+
+
+
+
+//* ================= BIG DATA CONTAINING DEFINITIONS ================= *//
+typedef struct _libdnml_scase {
+    void* in; void* recons;
+    str_res exp; str_res res;
+} _libdnml_scase;
+
+typedef struct _libdnml_str_suite {
+    const char *suite_name; const char *log_path;
+    xoshiro256_state *state; void *rconfig;
+    enum { ENOUGH, RANDOMIZED } cap_mode;
+
+    dnml_gen_fn gen_case;
+    dnml_exec_fn fn_test; 
+    // Random Case Oracle Functions
+    dnml_inv_fn fn_inv; dnml_eval_fn fn_eval;
+    dnml_cmp_inv_fn inv_cmp; dnml_cmp_eval_fn eval_cmp;     
+    dnml_fmt_in_fn fmtin_fn; dnml_stat_fn fn_stat;
+    dnml_fmt_recon_fn fmtrecon_fn;
+    // Buffer Linkers
+    dnml_voidp_size fn_insize; dnml_voidp_size fn_aux1size;
+    dnml_voidp_fill fn_infill; dnml_voidp_fill fn_aux1fill;
+    dnml_sres_fill fn_outfill; dnml_sres_fill fn_aux2fill;
+
+    // Edge cases storage
+    _libdnml_scase *edge; strbump_t *ectx;
+    uint8_t ecount; uint8_t ecorrect;
+    str_res *fail_eres; str_res *fail_eexp;
+
+    // Random cases Handling
+    rcheck_mode check_mode;
+    uint16_t rcount; uint16_t rcorrect;
+    rand_container *rincon; int fail_enums[];
+} _libdnml_str_suite;
+
+
+//* =================== FUNCTION-GENERALIZATION DISPATCHER - FUNCTIONS =================== *//
+static inline void run_ecase(_libdnml_scase *c, dnml_exec_fn fn, void *ctx) {
+    fn(c->in, &c->res, ctx);
 }
-static inline void *run_case(_libdnml_str_suite *s, dnml_exec_fn *fn, void *in, str_res *out) {
-    (*fn)(in, out, s->rincon->res_cont->res_buf);
+static inline void run_case(_libdnml_str_suite *s, dnml_exec_fn fn, void *in, str_res *out) {
+    fn(in, out, s->rincon->res_cont->res_buf);
 }
-static inline void *run_eval(_libdnml_str_suite *s, dnml_eval_fn *fn,  void *in, str_res *aux2) {
-    (*fn)(in, aux2, s->rincon->res_cont->aux2_buf);
+static inline void run_eval(_libdnml_str_suite *s, dnml_eval_fn fn,  void *in, str_res *aux2) {
+    fn(in, aux2, s->rincon->res_cont->aux2_buf);
 }
-static inline void *run_inverse(
-    _libdnml_str_suite *s, dnml_inv_fn *fn,
+static inline void run_inverse(
+    _libdnml_str_suite *s, dnml_inv_fn fn,
     void *in, str_res *out, void *aux1
 ) {
-    (*fn)(in, out, aux1, s->rincon->in_cont.rctx->aux1_buf);
+    fn(in, out, aux1, s->rincon->in_cont.rctx->aux1_buf);
 }
 
 
@@ -275,50 +264,50 @@ static inline void create_str_suite(
 
 static inline void fill_suite_rinv(
     _libdnml_str_suite *curr_suite, 
-    void *case_gen, void *fn_test,
-    void *fn_inv, bool *fn_stat,
-    bool *cmp_inv, void *fmtin_fn, void *fmtrecon_fn,
-    void *inbuf_linker, void *inbuf_size,
-    void *reconbuf_linker, void *reconbuf_size,
-    void *outbuf_linker, void *aux2buf_linker
+    dnml_gen_fn case_gen, dnml_exec_fn fn_test,
+    dnml_inv_fn fn_inv, dnml_stat_fn fn_stat,
+    dnml_cmp_inv_fn cmp_inv, dnml_fmt_in_fn fmtin_fn, dnml_fmt_recon_fn fmtrecon_fn,
+    dnml_voidp_fill inbuf_linker, dnml_voidp_size inbuf_size,
+    dnml_voidp_fill reconbuf_linker, dnml_voidp_size reconbuf_size,
+    dnml_sres_fill outbuf_linker, dnml_sres_fill aux2buf_linker
 ) {
-    curr_suite->gen_case = (dnml_gen_fn*)(case_gen);
-    curr_suite->fn_test = (dnml_exec_fn*)(fn_test);
+    curr_suite->gen_case = case_gen;
+    curr_suite->fn_test = fn_test;
     // Evaluators
-    curr_suite->fn_inv = (dnml_inv_fn*)(fn_inv);
-    curr_suite->fn_stat = (dnml_stat_fn*)(fn_stat);
-    curr_suite->inv_cmp = (dnml_cmp_inv_fn*)(cmp_inv);
-    // Priting & Formatting
-    curr_suite->fmtin_fn = (dnml_fmt_in_fn*)(fmtin_fn);
-    curr_suite->fmtrecon_fn = (dnml_fmt_recon_fn*)(fmtrecon_fn);
+    curr_suite->fn_inv = fn_inv;
+    curr_suite->fn_stat = fn_stat;
+    curr_suite->inv_cmp = cmp_inv;
+    // Printing & Formatting
+    curr_suite->fmtin_fn = fmtin_fn;
+    curr_suite->fmtrecon_fn = fmtrecon_fn;
     // Buffer Linkage
-    curr_suite->fn_infill = (dnml_voidp_fill*)(inbuf_linker);
-    curr_suite->fn_insize = (dnml_voidp_size*)(inbuf_size);
-    curr_suite->fn_aux1fill = (dnml_voidp_fill*)(reconbuf_linker);
-    curr_suite->fn_aux1size = (dnml_voidp_size*)(reconbuf_size);
-    curr_suite->fn_outfill = (dnml_sres_fill*)(outbuf_linker);
-    curr_suite->fn_aux2fill = (dnml_sres_fill*)(aux2buf_linker);
+    curr_suite->fn_infill = inbuf_linker;
+    curr_suite->fn_insize = inbuf_size;
+    curr_suite->fn_aux1fill = reconbuf_linker;
+    curr_suite->fn_aux1size = reconbuf_size;
+    curr_suite->fn_outfill = outbuf_linker;
+    curr_suite->fn_aux2fill = aux2buf_linker;
 
 }
 static inline void fill_suite_reval(
     _libdnml_str_suite *curr_suite,
-    void *case_gen, void *fn_test, void *fn_eval,
-    bool *fn_stat, bool *cmp_eval, void *fmtin_fn,
-    void *inbuf_linker, void *inbuf_size,
-    void *outbuf_linker, void *aux2buf_linker
+    dnml_gen_fn case_gen, dnml_exec_fn fn_test, dnml_eval_fn fn_eval,
+    dnml_stat_fn fn_stat, dnml_cmp_eval_fn cmp_eval, dnml_fmt_in_fn fmtin_fn,
+    dnml_voidp_fill inbuf_linker, dnml_voidp_size inbuf_size,
+    dnml_sres_fill outbuf_linker, dnml_sres_fill aux2buf_linker
 ) {
-    curr_suite->gen_case = (dnml_gen_fn*)(case_gen);
-    curr_suite->fn_test = (dnml_exec_fn*)(fn_test);
-    curr_suite->fmtin_fn = (dnml_fmt_in_fn*)(fmtin_fn);
+    curr_suite->gen_case = case_gen;
+    curr_suite->fn_test = fn_test;
+    curr_suite->fmtin_fn = fmtin_fn;
     // Evaluators
-    curr_suite->fn_eval = (dnml_eval_fn*)(fn_eval);
-    curr_suite->fn_stat = (dnml_stat_fn*)(fn_stat);
-    curr_suite->eval_cmp = (dnml_cmp_inv_fn*)(cmp_eval);
+    curr_suite->fn_eval = fn_eval;
+    curr_suite->fn_stat = fn_stat;
+    curr_suite->eval_cmp = cmp_eval;
     // Buffer Linkage
-    curr_suite->fn_infill = (dnml_voidp_fill*)(inbuf_linker);
-    curr_suite->fn_insize = (dnml_voidp_size*)(inbuf_size);
-    curr_suite->fn_outfill = (dnml_sres_fill*)(outbuf_linker);
-    curr_suite->fn_aux2fill = (dnml_sres_fill*)(aux2buf_linker);
+    curr_suite->fn_infill = inbuf_linker;
+    curr_suite->fn_insize = inbuf_size;
+    curr_suite->fn_outfill = outbuf_linker;
+    curr_suite->fn_aux2fill = aux2buf_linker;
 }
 
 
@@ -351,7 +340,7 @@ static inline void __dnml_log_stcase(RAND_PARAM_CONV) {
     */
     fprintf(f,  "o) Rand case %" PRIu16 ":\n", i);
     fputs(      "    - Input: ", f);
-    (*s->fmtin_fn)(f, in, 1); fputc('\n', f);
+    s->fmtin_fn(f, in, 1); fputc('\n', f);
     fputs(      "    - Expected: ", f);
     _print_str_res(aux_2, f, 1); fputc('\n', f);
     fputs(      "    - Got:      ", f);
@@ -371,7 +360,7 @@ static inline void __dnml_print_stcase(RAND_PARAM_CONV, int bw, uint32_t delay_m
     // Printing out the input
     freopen(NULL, "w", tmp);
     fputs("    - Input: ", tmp);
-    (*s->fmtin_fn)(tmp, in, 1);
+    s->fmtin_fn(tmp, in, 1);
     _dnml_box_fmultiline(tmp, bw); putchar('\n');
 
     // Printing out the Expected Status
@@ -401,11 +390,11 @@ static inline void __dnml_log_invc(RAND_PARAM_CONV) {
     */
     fprintf(f,  "o) Rand case %" PRIu16 ":\n", i);
     fputs(      "    - Input: ", f);
-    (*s->fmtin_fn)(f, in, 1); fputc('\n', f);
+    s->fmtin_fn(f, in, 1); fputc('\n', f);
     fputs(      "    - Output: ", f);
     _print_str_res(out, f, 1); fputc('\n', f);
     fputs(      "    - Reconstruction: ", f);\
-    (*s->fmtrecon_fn)(f, aux_1, 1); fputc('\n', f);
+    s->fmtrecon_fn(f, aux_1, 1); fputc('\n', f);
 }
 static inline void __dnml_print_invc(RAND_PARAM_CONV, int bw, uint32_t delay_ms) {
     // Printing the Case Index
@@ -421,7 +410,7 @@ static inline void __dnml_print_invc(RAND_PARAM_CONV, int bw, uint32_t delay_ms)
     // Printing out the input
     freopen(NULL, "w", tmp);
     fputs("    - Input: ", tmp);
-    (*s->fmtin_fn)(tmp, in, 1);
+    s->fmtin_fn(tmp, in, 1);
     _dnml_box_fmultiline(tmp, bw); putchar('\n');
 
     // Printing out the Intermediate Output/Result
@@ -433,7 +422,7 @@ static inline void __dnml_print_invc(RAND_PARAM_CONV, int bw, uint32_t delay_ms)
     // Printing out the Reconstruction
     freopen(NULL, "w", tmp);
     fputs("    - Reconstruction: ", tmp);
-    (*s->fmtrecon_fn)(tmp, aux_1, 1);
+    s->fmtrecon_fn(tmp, aux_1, 1);
     _dnml_box_fmultiline(tmp, bw); putchar('\n');
 
     _dnml_delay_ms(delay_ms);
@@ -450,7 +439,7 @@ static inline void __dnml_log_evalc(RAND_PARAM_CONV) {
     */
     fprintf(f,  "o) Rand case %" PRIu16 ":\n", i);
     fputs(      "    - Input: ", f);
-    (*s->fmtin_fn)(f, in, 1); fputc('\n', f);
+    s->fmtin_fn(f, in, 1); fputc('\n', f);
     fputs(      "    - Expected: ", f);
     _print_str_res(aux_2, f, 1); fputc('\n', f);
     fputs(      "    - Got:      ", f);
@@ -470,7 +459,7 @@ static inline void __dnml_print_evalc(RAND_PARAM_CONV, int bw, uint32_t delay_ms
     // Printing out the input
     freopen(NULL, "w", tmp);
     fputs("    - Input: ", tmp);
-    (*s->fmtin_fn)(tmp, in, 1);
+    s->fmtin_fn(tmp, in, 1);
     _dnml_box_fmultiline(tmp, bw); putchar('\n');
 
     // Printing out the Expected Status
@@ -503,50 +492,48 @@ static inline void _dnml_run_edge(_libdnml_str_suite *s) {
     }
 }
 static inline void _dnml_run_rand(_libdnml_str_suite *s, int bw, uint32_t delay_ms) {
-    FILE *logf = fopen(s->log_path, "w");
+    FILE *logf = fopen(s->log_path, "a");
     fprintf(logf, "======== %s RNG-CASES FAIL LOG ========\n", s->suite_name);
     fputs("Suite's Base-state (xoshiro256++):\n", logf);
     fprintf(logf, "- [0/1]: %" PRIu64 "\n", s->state->s[0]);
     fprintf(logf, "- [1/2]: %" PRIu64 "\n", s->state->s[1]);
     fprintf(logf, "- [2/3]: %" PRIu64 "\n", s->state->s[2]);
     fprintf(logf, "- [3/4]: %" PRIu64 "\n", s->state->s[3]);
-    void *in, *aux1; str_res *out, *aux2;
+    void *in, *aux1; str_res out, aux2;
     for (uint16_t i = 0; i < s->rcount; ++i) {
         // Setting Up Input
-        uint8_t voidp_in_buf[(*s->fn_insize)()];
-        in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
+        uint8_t voidp_in_buf[s->fn_insize()];
+        in = voidp_in_buf; s->fn_infill(in, s->rincon);
         rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->rconfig, s->state, incap, s->rincon);
+        s->gen_case(in, &s->rconfig, s->state, incap, s->rincon);
         
         // Setting up Auxillary 1 (Reconstruction) buffers
-        uint8_t voidp_in_buf[(*s->fn_aux1size)()];
-        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
+        uint8_t voidp_aux1_buf[s->fn_aux1size()];
+        aux1 = voidp_aux1_buf; s->fn_aux1fill(aux1, s->rincon);
         // Setting up Evaluation Output buffers
-        (*s->fn_outfill)(out, s->rincon);
-        (*s->fn_aux2fill)(aux2, s->rincon);
-        // Preventing the usage of pointer-based string storage in Random Cases
-        out->pstr == NULL; aux2->pstr == NULL;
+        s->fn_outfill(&out, s->rincon);
+        s->fn_aux2fill(&aux2, s->rincon);
 
         // ---------------- MAIN EXECUTION PART ----------------
-        run_case(s, s->fn_test, in, out);
-        dnml_status stat = out->status;
+        run_case(s, s->fn_test, in, &out);
+        dnml_status stat = out.status;
         // Hard Barrier ---> STATUS_MODE
         if (stat != STR_SUCCESS || stat != STR_TRUNC_SUCCESS) {
-            if (!(*s->fn_stat)(in, out->status, aux2)) {
-                __dnml_log_stcase(s, i, logf, in, aux1, aux2, out);
+            if (!s->fn_stat(in, out.status, &aux2)) {
+                __dnml_log_stcase(s, i, logf, in, aux1, &aux2, &out);
             } else s->rcorrect++;
         }
         // INVERSE MODE
-        else if (s->check_mode == INVERSE) { run_inverse(s, s->fn_inv, in, out, aux1);
-            if (!(*s->inv_cmp)(in, out, aux1, s->rincon->in_cont.rctx))  {
-                __dnml_log_invc(s, i, logf, in, aux1, aux2, out);
+        else if (s->check_mode == INVERSE) { run_inverse(s, s->fn_inv, in, &out, aux1);
+            if (!s->inv_cmp(in, &out, aux1, s->rincon->in_cont.rctx))  {
+                __dnml_log_invc(s, i, logf, in, aux1, &aux2, &out);
             } else s->rcorrect++;
         }
         // EVALUATOR MODE
         // else {} works as well, but this is preferred for explicitcity
-        else if (s->check_mode == EVAL) { run_eval(s, s->fn_eval, in, aux2);
-            if (!(*s->eval_cmp)(aux2, out)) {
-                __dnml_log_evalc(s, i, logf, in, aux1, aux2, out);
+        else if (s->check_mode == EVAL) { run_eval(s, s->fn_eval, in, &aux2);
+            if (!s->eval_cmp(&aux2, &out)) {
+                __dnml_log_evalc(s, i, logf, in, aux1, &aux2, &out);
             } else s->rcorrect++;
         }
     }
@@ -561,52 +548,50 @@ static inline void _dnml_run_randp(_libdnml_str_suite *s, int bw, uint32_t delay
             >
             - Reconstruction: <...> (whatever the top-layer format is)
     */
-    FILE *logf = fopen(s->log_path, "w");
+    FILE *logf = fopen(s->log_path, "a");
     fprintf(logf, "======== %s RNG-CASES FAIL LOG ========\n", s->suite_name);
     fputs("Suite's Base-state (xoshiro256++):\n", logf);
     fprintf(logf, "- [0/1]: %" PRIu64 "\n", s->state->s[0]);
     fprintf(logf, "- [1/2]: %" PRIu64 "\n", s->state->s[1]);
     fprintf(logf, "- [2/3]: %" PRIu64 "\n", s->state->s[2]);
     fprintf(logf, "- [3/4]: %" PRIu64 "\n", s->state->s[3]);
-    void *in, *aux1; str_res *out, *aux2;
+    void *in, *aux1; str_res out, aux2;
     for (uint16_t i = 0; i < s->rcount; ++i) {
         // Setting Up Input
-        uint8_t voidp_in_buf[(*s->fn_insize)()];
-        in = voidp_in_buf; (*s->fn_infill)(in, s->rincon);
+        uint8_t voidp_in_buf[s->fn_insize()];
+        in = voidp_in_buf; s->fn_infill(in, s->rincon);
         rcap_mode incap = (s->cap_mode == ENOUGH) ? SATISFACTORY : _rand_rcap(s->state);
-        (*s->gen_case)(in, &s->state, s->state, incap, s->rincon->in_cont.rctx);
+        s->gen_case(in, &s->state, s->state, incap, s->rincon);
 
         // Setting up Auxillary 1 (Reconstruction) buffers
-        uint8_t voidp_in_buf[(*s->fn_aux1size)()];
-        aux1 = voidp_in_buf; (*s->fn_aux1fill)(in, s->rincon);
+        uint8_t void_aux1_buf[s->fn_aux1size()];
+        aux1 = void_aux1_buf; s->fn_aux1fill(aux1, s->rincon);
         // Setting up Evaluation Output buffers
-        (*s->fn_outfill)(out, s->rincon);
-        (*s->fn_aux2fill)(aux2, s->rincon);
-        // Preventing the usage of pointer-based string storage in Random Cases
-        out->pstr == NULL; aux2->pstr == NULL;
+        s->fn_outfill(&out, s->rincon);
+        s->fn_aux2fill(&aux2, s->rincon);
 
         // ---------------- MAIN EXECUTION PART ----------------
-        run_case(s, s->fn_test, in, out);
-        dnml_status stat = out->status;
+        run_case(s, s->fn_test, in, &out);
+        dnml_status stat = out.status;
         // Hard Barrier ---> STATUS_MODE
         if (stat != STR_SUCCESS || stat != STR_TRUNC_SUCCESS) {
-            if (!(*s->fn_stat)(in, out->status, aux2)) {
-                __dnml_log_stcase(s, i, logf, in, aux1, aux2, out);
-                __dnml_print_stcase(s, i, logf, in, aux1, aux2, out, bw, delay_ms);
+            if (!s->fn_stat(in, out.status, &aux2)) {
+                __dnml_log_stcase(s, i, logf, in, aux1, &aux2, &out);
+                __dnml_print_stcase(s, i, logf, in, aux1, &aux2, &out, bw, delay_ms);
             } else s->rcorrect++;
         }
         // INVERSE MODE
-        else if (s->check_mode == INVERSE) { run_inverse(s, s->fn_inv, in, out, aux1);
-            if (!(*s->inv_cmp)(in, out, aux1, s->rincon->in_cont.rctx))  {
-                __dnml_log_invc(s, i, logf, in, aux1, aux2, out);
-                __dnml_print_invc(s, i, logf, in, aux1, aux2, out, bw, delay_ms);
+        else if (s->check_mode == INVERSE) { run_inverse(s, s->fn_inv, in, &out, aux1);
+            if (!s->inv_cmp(in, &out, aux1, s->rincon->in_cont.rctx))  {
+                __dnml_log_invc(s, i, logf, in, aux1, &aux2, &out);
+                __dnml_print_invc(s, i, logf, in, aux1, &aux2, &out, bw, delay_ms);
             } else s->rcorrect++;
         }
         // else {} works as well, but this is preferred for explicitcity
-        else if (s->check_mode == EVAL) { run_eval(s, s->fn_eval, in, aux2);
-            if (!(*s->eval_cmp)(aux2, out)) {
-                __dnml_log_evalc(s, i, logf, in, aux1, aux2, out);
-                __dnml_print_evalc(s, i, logf, in, aux1, aux2, out, bw, delay_ms);
+        else if (s->check_mode == EVAL) { run_eval(s, s->fn_eval, in, &aux2);
+            if (!s->eval_cmp(&aux2, &out)) {
+                __dnml_log_evalc(s, i, logf, in, aux1, &aux2, &out);
+                __dnml_print_evalc(s, i, logf, in, aux1, &aux2, &out, bw, delay_ms);
             } else s->rcorrect++;
         }
     }
@@ -615,7 +600,7 @@ static inline void _dnml_render_csuite(_libdnml_str_suite *s) { // Render a "COM
     uint8_t fail_edge = s->ecount - s->ecorrect;
     uint8_t fail_rand = s->rcount - s->rcorrect;
     char status = (fail_edge + fail_rand == 0) ? '+' : '-';
-    printf("  [%c] %-20s     %2" PRIu8 "/%-2" PRIu8 " edge   %2" PRIu8 "/%-2" PRIu8 " random",
+    printf("  [%c] %-20s     %2" PRIu8 "/%-2" PRIu8 " edge   %2" PRIu16 "/%-2" PRIu16 " random",
         status, s->suite_name,
         s->ecorrect, s->ecount,
         s->rcorrect, s->rcount
@@ -628,7 +613,7 @@ static inline void _dnml_log_esuite(_libdnml_str_suite *s) {
 
     if ((fail_edge + fail_rand) == 0 || !s->log_path) return;
     FILE *f = fopen(s->log_path, "w"); if (!f) return;
-    fprintf(f, "======== %s FAIL LOG ========", s->suite_name);
+    fprintf(f, "\n\n======== %s FAIL LOG ========\n", s->suite_name);
     //* PRINTS EDGE CASES *//
     for (uint8_t i = 0; i < fail_edge; ++i) {
         /* Example Result:
@@ -652,11 +637,9 @@ static inline void _dnml_log_esuite(_libdnml_str_suite *s) {
 static inline void _dnml_render_esuite(_libdnml_str_suite *s, uint32_t delay_ms, int bw) {
     _dnml_box_top(s->suite_name, bw); _dnml_delay_ms(delay_ms);
     // ------ edge cases line ------
-    char edge_line[bw]; snprintf(
-        edge_line, sizeof(edge_line), "Edge case: %d/%d",
-        s->ecorrect, s->ecount
-    ); _dnml_box_line(edge_line, bw);
-    _dnml_delay_ms(delay_ms);
+    char edge_line[bw]; snprintf(edge_line, sizeof(edge_line), 
+        "Edge case: %" PRIu8 "/%" PRIu8 "", s->ecorrect, s->ecount
+    ); _dnml_box_line(edge_line, bw); _dnml_delay_ms(delay_ms);
 
     // print failed edge cases
     /* Example:
@@ -670,11 +653,10 @@ static inline void _dnml_render_esuite(_libdnml_str_suite *s, uint32_t delay_ms,
                     +) Data: ...
                 >
     */
-    int fail_edge = s->ecount - s->ecorrect;
+    uint8_t fail_edge = s->ecount - s->ecorrect;
     char curr_index[10], fail_line[bw]; FILE *tmp = tmpfile(); 
     if (tmp == NULL) { fprintf(stderr, "Failed to open a tmpfile(), Terminating..."); abort();  }
     for (uint8_t i = 0; i < fail_edge; ++i) { 
-        memset(fail_line, (char)(1), bw);
         int curri_len = _itosn(i, curr_index, sizeof(curr_index));
         snprintf(fail_line, sizeof(fail_line), "Case %" PRIu16 ": \n", s->fail_enums[i]);
         _dnml_box_line(fail_line, bw);
@@ -696,9 +678,7 @@ static inline void _dnml_render_esuite(_libdnml_str_suite *s, uint32_t delay_ms,
 static inline void _dnml_full_suite(_libdnml_str_suite *s, uint32_t delay_ms, int bw) {
     _dnml_run_edge(s); _dnml_log_esuite(s); 
     _dnml_render_esuite(s, delay_ms, bw);
-    if (s->ecorrect < s->ecount || s->check_mode == NONE) { 
-        _dnml_box_bottom(bw); return; 
-    }
+    if (s->check_mode == NONE) { _dnml_box_bottom(bw); return; }
     // Running Random Cases
     _dnml_box_divider(bw);
     char rand_line[bw]; snprintf(
@@ -715,7 +695,9 @@ static inline void _dnml_compact_suite(_libdnml_str_suite *s, uint32_t delay_ms,
     if (s->ecorrect < s->ecount || s->check_mode == NONE) {
         uint8_t fail_edge = s->ecount - s->ecorrect;
         char status = (!fail_edge) ? '+' : '-';
-        printf("  [%c] %-20s     %2" PRIu8 "/%-2" PRIu8 " edge",
+        printf("  [%c] %-20s     "
+            "%2" PRIu8 "/%-2" PRIu8 " edge"
+            "%2" PRIu16 "/%-2" PRIu16 " rand",
             status, s->suite_name,
             s->ecorrect, s->ecount,
             s->rcorrect, s->rcount
@@ -731,7 +713,7 @@ static inline void _dnml_compact_suite(_libdnml_str_suite *s, uint32_t delay_ms,
 }
 static inline void start_str_session(const _libdnml_session *session) {
     int bw = session->box_width;
-    _libdnml_str_suite **session_suites = (_libdnml_str_suite**)(session->suites);
+    _libdnml_str_suite *session_suites = (_libdnml_str_suite*)(session->suites);
     //* ---- COMPACT MODE ---- *//
     if (session->output_mode >= DNML_COUT) {
         printf("\n  -- %s ", session->session_name);
@@ -739,7 +721,7 @@ static inline void start_str_session(const _libdnml_session *session) {
         for (int i = 0; i < (pad - (pad & 1)) >> 1; ++i) fputs("--", stdout);
         putchar('\n');
         for (uint8_t i = 0; i < session->suite_count; ++i){
-            _dnml_compact_suite(session_suites[i], session->cli_delay, session->box_width);
+            _dnml_compact_suite(&session_suites[i], session->cli_delay, session->box_width);
         } return;
     } 
     //* ---- VERBSOE/FULL MODE ---- *//
@@ -750,7 +732,7 @@ static inline void start_str_session(const _libdnml_session *session) {
         _dnml_session_progress(i, session->suite_count, session->session_name);
         // loading animation between suites
         if (i > 0) _dnml_loading("Running suite...", session->cli_delay, 8);
-        _dnml_full_suite(session_suites[i], session->cli_delay, session->box_width);
+        _dnml_full_suite(&session_suites[i], session->cli_delay, session->box_width);
     }
     // Final progress bar at 100%
     _dnml_session_progress(session->suite_count, session->suite_count, session->session_name);

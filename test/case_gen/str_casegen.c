@@ -222,7 +222,7 @@ STV _strgen_write_ws_(char *buf, size_t len, str_rand_mod* config, size_t *curso
         enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
         if (config->early_null && enull_roll < config->enull_chance) {
             buf[*cursor] = '\0'; *term = true; return;
-        } buf[*cursor] = ' '; *cursor++;
+        } buf[*cursor] = ' '; (*cursor)++;
     }
 }
 STV _strgen_write_sign_(char *buf, size_t len, str_rand_mod* config, size_t *cursor, bool *term) {
@@ -232,14 +232,14 @@ STV _strgen_write_sign_(char *buf, size_t len, str_rand_mod* config, size_t *cur
     if (config->early_null && enull_roll < config->enull_chance) { 
         buf[*cursor] = '\0'; *term = true; return;
     } int8_t sign = (__rng_range(&config->base_state, 1, 2) == 1) ? 1 : -1;
-    buf[*cursor] = (sign == 1) ? '+' : '-'; *cursor++;
+    buf[*cursor] = (sign == 1) ? '+' : '-'; (*cursor)++;
 
     if (config->mixed_sign) {
         if (*cursor >= config->str_len) { *term = true; return; }
         enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
         if (config->early_null && enull_roll < config->enull_chance) { 
             buf[*cursor] = '\0'; *term = true; return;
-        } buf[*cursor] = (sign == 1) ? '-' : '+'; *cursor++;
+        } buf[*cursor] = (sign == 1) ? '-' : '+'; (*cursor)++;
     }
 }
 STV _strgen_write_lz_(char *buf, size_t len, str_rand_mod* config, size_t *cursor, bool *term) {
@@ -250,7 +250,7 @@ STV _strgen_write_lz_(char *buf, size_t len, str_rand_mod* config, size_t *curso
         enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
         if (config->early_null && enull_roll < config->enull_chance) {
             buf[*cursor] = '\0'; *term = true; return;
-        } buf[*cursor] = '0'; *cursor++;
+        } buf[*cursor] = '0'; (*cursor)++;
     }
 }
 STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *cursor, bool *term) {
@@ -260,25 +260,25 @@ STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *
     if (config->early_null && enull_roll < config->enull_chance) { 
         buf[*cursor] = '\0'; *term = true; return;
     } uint8_t upsub = (__rng_range(&config->base_state, 1, 10) == 1) ? 32 : 0;
-    buf[*cursor] = '0'; *cursor++;
+    buf[*cursor] = '0'; (*cursor)++;
     switch (config->base) {
         case 2: {
             if (*cursor >= config->str_len) { *term = true; return; }
             if (config->early_null && enull_roll < config->enull_chance) { 
                 buf[*cursor] = '\0'; *term = true; return;
-            } buf[*cursor] = 'b' - upsub; *cursor++; break;
+            } buf[*cursor] = 'b' - upsub; (*cursor)++; break;
         }
         case 8: {
             if (*cursor >= config->str_len) { *term = true; return; }
             if (config->early_null && enull_roll < config->enull_chance) { 
                 buf[*cursor] = '\0'; *term = true; return;
-            } buf[*cursor] = 'o' - upsub; *cursor++; break;
+            } buf[*cursor] = 'o' - upsub; (*cursor)++; break;
         }
         case 16: {
             if (*cursor >= config->str_len) { *term = true; return; }
             if (config->early_null && enull_roll < config->enull_chance) { 
                 buf[*cursor] = '\0'; *term = true; return;
-            } buf[*cursor] = 'x' - upsub; *cursor++; break;
+            } buf[*cursor] = 'x' - upsub; (*cursor)++; break;
         }
         case 10: break;
         default: {
@@ -286,18 +286,18 @@ STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *
             if (*cursor >= config->str_len) { *term = true; return; }
             if (config->early_null && enull_roll < config->enull_chance) { 
                 buf[*cursor] = '\0'; *term = true; return;
-            } buf[*cursor] = '{'; *cursor++;
+            } buf[*cursor] = '{'; (*cursor)++;
             while (tmp) {
                 if (*cursor >= config->str_len) { *term = true; return; }
                 if (config->early_null && enull_roll < config->enull_chance) { 
                     buf[*cursor] = '\0'; *term = true; return;
                 } buf[*cursor] = '0' - (tmp % 10); 
-                *cursor++; 
+                (*cursor)++; 
             }
             if (*cursor >= config->str_len) { *term = true; return; }
             if (config->early_null && enull_roll < config->enull_chance) { 
                 buf[*cursor] = '\0'; *term = true; return;
-            } buf[*cursor] = '}'; *cursor++;
+            } buf[*cursor] = '}'; (*cursor)++;
         } break;
     }
     if (config->mixed_bp) {
@@ -307,43 +307,43 @@ STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *
             if (*cursor >= config->str_len) { *term = true; return; }
             if (config->early_null && enull_roll < config->enull_chance) { 
                 buf[*cursor] = '\0'; *term = true; return;
-            } buf[*cursor] = '0'; *cursor++;
+            } buf[*cursor] = '0'; (*cursor)++;
             switch (rand_base) {
                 case 2: {
                     if (*cursor >= config->str_len) { *term = true; return; }
                     if (config->early_null && enull_roll < config->enull_chance) { 
                         buf[*cursor] = '\0'; *term = true; return;
-                    } buf[*cursor] = 'b' - upsub; *cursor++; break;
+                    } buf[*cursor] = 'b' - upsub; (*cursor)++; break;
                 }
                 case 8: {
                     if (*cursor >= config->str_len) { *term = true; return; }
                     if (config->early_null && enull_roll < config->enull_chance) { 
                         buf[*cursor] = '\0'; *term = true; return;
-                    } buf[*cursor] = 'o' - upsub; *cursor++; break;
+                    } buf[*cursor] = 'o' - upsub; (*cursor)++; break;
                 }
                 case 16: {
                     if (*cursor >= config->str_len) { *term = true; return; }
                     if (config->early_null && enull_roll < config->enull_chance) { 
                         buf[*cursor] = '\0'; *term = true; return;
-                    } buf[*cursor] = 'x' - upsub; *cursor++; break;
+                    } buf[*cursor] = 'x' - upsub; (*cursor)++; break;
                 }
                 case 10: break;
                 default: {
                     if (*cursor >= config->str_len) { *term = true; return; }
                     if (config->early_null && enull_roll < config->enull_chance) { 
                         buf[*cursor] = '\0'; *term = true; return;
-                    } buf[*cursor] = '{'; *cursor++;
+                    } buf[*cursor] = '{'; (*cursor)++;
                     while (rand_base) {
                         if (*cursor >= config->str_len) { *term = true; return; }
                         if (config->early_null && enull_roll < config->enull_chance) { 
                             buf[*cursor] = '\0'; *term = true; return;
                         } buf[*cursor] = '0' - (rand_base % 10); 
-                        *cursor++; 
+                        (*cursor)++; 
                     }
                     if (*cursor >= config->str_len) { *term = true; return; }
                     if (config->early_null && enull_roll < config->enull_chance) { 
                         buf[*cursor] = '\0'; *term = true; return;
-                    } buf[*cursor] = '}'; *cursor++;
+                    } buf[*cursor] = '}'; (*cursor)++;
                 } break;
             }
         }
@@ -352,7 +352,7 @@ STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *
 STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *cursor, bool *term) {
     float enull_roll, junk_roll, inval_roll;
     // We roll for special-cases from least-likely --> most-likely
-    for (; *cursor < config->str_len; *cursor++) {
+    for (; *cursor < config->str_len; (*cursor)++) {
         if (*cursor >= config->str_len) { *term = true; return; }
         // Rolling for Early Null
         if (config->early_null) {
@@ -370,7 +370,7 @@ STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *curs
                 ); config->inval_digit_cnt--;
                 size_t digit_left = (config->str_len - *cursor - 1);
                 config->init_inval_chance = (float)(config->inval_digit_cnt / digit_left);
-                *cursor++; continue;
+                (*cursor)++; continue;
             }
         }
         // Rolling for Junk
@@ -378,15 +378,15 @@ STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *curs
             junk_roll = (float)(fmodf(__froll(&config->base_state), 100));
             if (junk_roll < config->junk_chance) {
                 buf[*cursor] = __get_junk(&config->base_state);
-                config->max_junk_cnt--; *cursor++;
+                config->max_junk_cnt--; (*cursor)++;
                 continue;
             }
         } buf[*cursor] = __get_valdigit(config->base, &config->base_state); 
-        *cursor++;
+        (*cursor)++;
     }
 }
 // Main Functions
-inline void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_state *add_state) {
+void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_state *add_state) {
     // Generation of State
     uint64_t side_mix = 0;
     config->base_state = (xoshiro256_state){0};
@@ -399,7 +399,7 @@ inline void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_stat
     config->base_state = mix_xoshiro256(&config->base_state, add_state);
     xoshiro256pp_next(&config->base_state); // Further scramble
 }
-inline size_t strgen_len(void) { return STR_CAP; }
+size_t strgen_len(void) { return STR_CAP; }
 void strgen_write(char *buf, size_t len, str_rand_mod* config, bool bprefix) {
     // Setup
     config->mod_gen_mode = _strgen_roll_gmode(&config->base_state);

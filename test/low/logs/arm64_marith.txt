@@ -1,0 +1,19 @@
+
+
+======== modinv64 FAIL LOG ========
+o) Edge case 5: 
+     in[0]: 0x0000000000000007
+     expected: <0x0000000000000000, 0x0000000000000000>
+     got:      <0x0000000000000000, 0x0000000000000000>
+o) Edge case 13: 
+     in[0]: 0x3333333333333333
+     expected: <0xb6db6db6db6db6db, 0x0000000000000000>
+     got:      <0x6db6db6db6db6db7, 0x0000000000000000>
+o) Edge case 14: 
+     in[0]: 0x0000000000000013
+     expected: <0x3333333333333333, 0x0000000000000000>
+     got:      <0xfffffffffffffffb, 0x0000000000000000>
+o) Edge case 15: 
+     in[0]: 0x1234567890abcdef
+     expected: <0x79435e50d79435e3, 0x0000000000000000>
+     got:      <0x86bca1af286bca1b, 0x0000000000000000>

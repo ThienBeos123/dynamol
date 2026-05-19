@@ -140,12 +140,16 @@ static inline float __data_shift_skew(bi_gen_mode gmode) {
         case BI_CLEAN_GEN: return 5.0f; break;
         case BI_STD_GEN: return 15.0f; break;
         case BI_RAND_GEN: return 50.0f; break;
-    }
+        case BIGEN_CNT: return 5.0f; break;
+        default: return 5.0f; break;
+        /* The final case is to silent compiler warnings */
+        /* We explicitly return the value of CLEAN mode to minimize errors */
+    } return 5.0f; /* Same, just for safety */
 }
-static int __roulette_wheel_select(float *spect, xoshiro256_state *state) {
+static int __roulette_wheel_select(const float *spect, xoshiro256_state *state) {
     float roll = (float)(fmod(__froll(state), 100));
-    int i = 0; while (roll > 0) { 
-        roll -= spect[i]; ++i; 
+    int i = 0; while (roll > 0) {
+        roll -= spect[i]; ++i;
     }  return i;
 }
 // Component Determinators / Setup Helpers
@@ -183,17 +187,20 @@ static inline void _rseed_cap_metadata(bi_rand_mod *config) {
         case EXACT_CAPACITY: { config->len = config->cap; config->init_fill_chance = 100; break; }
         case NEAR_CAPACITY: __ccase_near_cap(config); break;
         case QUARTERLY_SPARSE: {
-            config->init_fill_chance = __rng_frange(config->cap,
+            config->init_fill_chance = __rng_frange(&config->state,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].low_pbound,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].high_pbound
-            ); config->len = config->cap >> 2 + 1;
+            ); config->len = (config->cap >> 2) + 1;
         } break;
         case HALF_SPARSE: {
-            config->init_fill_chance = __rng_frange(config->cap,
+            config->init_fill_chance = __rng_frange(&config->state,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].low_pbound,
                 ccase_variant_matrix[config->mod_gen_mode][config->cap_case].high_pbound
-            ); config->len = config->cap >> 1 + 1;
+            ); config->len = (config->cap >> 1) + 1;
         } break;
+        /* These two cases are purely for safety purposes, in which we do the most deterministic case for them */
+        case BICAP_CASE_COUNT: { config->len = config->cap; config->init_fill_chance = 100; break; }
+        default: { config->len = config->cap; config->init_fill_chance = 100; break; }
     }
 }
 // Write Helpers
@@ -225,7 +232,7 @@ static inline uint64_t _biwrite_msb(bi_rand_mod *config) {
     uint8_t shift = (uint8_t)__rng_skrange(
         &config->state, 0, 63,
         __data_shift_skew(config->mod_gen_mode)
-    ); uint64_t val = 1 << 63;
+    ); uint64_t val = UINT64_C(0x8000000000000000);
     return val >> shift;
 }
 static inline uint64_t _biwrite_lsb(bi_rand_mod *config) {
@@ -236,10 +243,10 @@ static inline uint64_t _biwrite_lsb(bi_rand_mod *config) {
 }
 static inline uint64_t _biwrite_power(xoshiro256_state *state, uint8_t base, uint8_t max_exp) {
     uint8_t exp = __rng_range(state, 0, max_exp);
-    return ((exp) ? _dnml_ipower(base, exp) : 1);
+    return ((exp) ? _dnml_ipower_u64(base, exp) : 1);
 }
 // Main Functions
-inline void bigen_init_sesh(bi_rand_mod *config, xoshiro256_state *add_state) {
+void bigen_init_sesh(bi_rand_mod *config, xoshiro256_state *add_state) {
     // Generation of State
     uint64_t side_mix = 0;
     config->state = (xoshiro256_state){0};
@@ -250,7 +257,7 @@ inline void bigen_init_sesh(bi_rand_mod *config, xoshiro256_state *add_state) {
     config->state = mix_xoshiro256(&config->state, add_state);
     xoshiro256pp_next(&config->state); // Further scramble
 }
-inline size_t bigen_len(void) { return BIGINT_CAP; }
+size_t bigen_len(void) { return BIGINT_CAP; }
 void bigen_write(bigInt *buf, bi_rand_mod *config) {
     // Setup
     config->mod_gen_mode = _bigen_roll_gmode(&config->state);
@@ -286,4 +293,6 @@ void bigen_write(bigInt *buf, bi_rand_mod *config) {
     }
     if (config->len) buf->sign = (__rng_range(&config->state, 0, 1)) ? 1 : -1;
     else buf->sign = 1;
+    __BIGINT_INTERNAL_TRIM_LZ__(buf);
+    if (buf->n == 0) buf->sign = 1;
 }

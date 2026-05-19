@@ -1,13 +1,9 @@
 #ifndef _LOW_SETUP_H
 #define _LOW_SETUP_H
 
-
+#include <include.h>
+#include <string.h>
 #include "../../test_ui/lowui.h"
-// STDLIB utilities
-#include <time.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #define case _libdnml_case
 #define pair _dnml_pair
@@ -35,9 +31,10 @@
 //* ======================================= *//
 //* ========= GENERIC SETUP MACRO ========= *//
 //* ======================================= *//
-#define _DNML_INFER_STYLEE(fn) _Generic((fn),   \
+#define _DNML_INFER_STYLE(fn) _Generic((fn),   \
     _fn1o_t: DNML_OCALL,                        \
     _fn2o_t: DNML_OCALL,                        \
+    _fn2o_u8_t: DNML_OCALL,                     \
     _fn3o_t: DNML_OCALL,                        \
     default: DNML_CALL                          \
 )
@@ -64,13 +61,15 @@ u64 barebone_rand(void) {
     } return res;
 }
 void _suite_slices(
-    void** slices, void* storage, 
+    void *slices, void *storage, 
     size_t elements_per_suite, size_t element_size, 
     u8 suite_count
 ) {
+    unsigned char *dest = (unsigned char*)slices;
     for (size_t i = 0; i < suite_count; ++i) {
         size_t increments = i * elements_per_suite * element_size;
-        slices[i] = (void*)((char*)storage + increments);
+        void *slice_addr = (void*)((char*)storage + increments);
+        memcpy(dest + i * sizeof(void*), &slice_addr, sizeof(void*));
     } return;
 }
 
@@ -83,7 +82,7 @@ void _suite_slices(
 static inline void addc_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *addclp,
+    u64 *ribuf, pair *resbuf, const char *addclp,
     u64 (*test_fn)(u64, u64, u8*),
     u64 (*ref_fn)(u64, u64, u8*)
 ) { 
@@ -97,7 +96,7 @@ static inline void addc_setup(
     ecases[4] = (case){ .in = {U64m, 0, 0}, .exp = {U64m, 0}, .inc = addc_in };
     ecases[5] = (case){ .in = {U64m, 1, 0}, .exp = {0, 1}, .inc = addc_in };
     ecases[6] = (case){ .in = {U64m, 0, 1}, .exp = {0, 1}, .inc = addc_in };
-    ecases[7] = (case){ .in = {U64m-1, 0, 0}, .exp = {U64m, 0}, .inc = addc_in };
+    ecases[7] = (case){ .in = {U64m-1, 0, 0}, .exp = {U64m-1, 0}, .inc = addc_in };
     ecases[8] = (case){ .in = {U64m, 1, 1}, .exp = {1, 1}, .inc = addc_in };
     ecases[9] = (case){ .in = {1, U64m, 1}, .exp = {1, 1}, .inc = addc_in };
     ecases[10] = (case){ .in = {U64m, U64m, 0}, .exp = {U64m-1, 1}, .inc = addc_in };
@@ -111,7 +110,7 @@ static inline void addc_setup(
     // Signed Arithmetic overlap / ALU tests
     ecases[17] = (case){ .in = {alt64_1, alt64_2, 1}, .exp = {0, 1}, .inc = addc_in };
     ecases[18] = (case){ .in = {5,       U64m-4,  0}, .exp = {0, 1}, .inc = addc_in };
-    ecases[19] = (case){ .in = {U64m>>1, 0, 1}, .exp = {U64m>>1+1, 0}, .inc = addc_in };
+    ecases[19] = (case){ .in = {U64m>>1, 0, 1}, .exp = {(U64m>>1)+1, 0}, .inc = addc_in };
     // Randomly Generated Cases filling
     for (u32 i = 0; i < rcount; ++i) {
         u64 in3 = (barebone_rand() & 1) ? 1 : 0;
@@ -127,7 +126,7 @@ static inline void addc_setup(
 static inline void subb_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *subblp,
+    u64 *ribuf, pair *resbuf, const char *subblp,
     u64 (*test_fn)(u64, u64, u8*),
     u64 (*ref_fn)(u64, u64, u8*)
 ) { 
@@ -145,16 +144,16 @@ static inline void subb_setup(
     ecases[8] = (case){ .in = {0,  0, 1},      .exp = {U64m, 1}, .inc = subb_in };
     ecases[9] = (case){ .in = {10, 10, 1},     .exp = {U64m, 1}, .inc = subb_in };
     // Near the edge tests
-    ecases[10] = (case){ .in = {U64m, U64m, 0}, .exp = {U64m-1, 1}, .inc = subb_in };
+    ecases[10] = (case){ .in = {U64m, U64m, 0}, .exp = {0, 0}, .inc = subb_in };
     ecases[11] = (case){ .in = {U64m, U64m, 1}, .exp = {U64m, 1}, .inc = subb_in };
-    ecases[12] = (case){ .in = {U64m, 0, 0},    .exp = {U64m, 1}, .inc = subb_in };
+    ecases[12] = (case){ .in = {U64m, 0, 0},    .exp = {U64m, 0}, .inc = subb_in };
     ecases[13] = (case){ .in = {U64m, 0, 1},    .exp = {U64m-1, 0}, .inc = subb_in };
     ecases[14] = (case){ .in = {0,    U64m, 0}, .exp = {1, 1}, .inc = subb_in };
     ecases[15] = (case){ .in = {0,    U64m, 1}, .exp = {0, 1}, .inc = subb_in };
     // Bitwise Stress Test
     ecases[16] = (case){ .in = {alt64_1, alt64_2, 0}, .exp = {alt64_2, 0}, .inc = subb_in };
     ecases[17] = (case){ .in = {alt64_2, alt64_1, 1}, .exp = {alt64_1+1, 1}, .inc = subb_in };
-    ecases[18] = (case){ .in = {U64m>>1+1, U64m>>1, 1},   .exp = {0, 0}, .inc = subb_in };
+    ecases[18] = (case){ .in = {(U64m>>1)+1, U64m>>1, 1},   .exp = {0, 0}, .inc = subb_in };
     // API/Function Logic test
     ecases[19] = (case){ .in = {5, U64m, 1}, .exp = {5, 1}, .inc = subb_in };
     // Randomly Generated Cases filling
@@ -172,7 +171,7 @@ static inline void subb_setup(
 static inline void wmul_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *wmullp,
+    u64 *ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
     u64 (*ref_fn)(u64, u64, u64*)
 ) { 
@@ -190,7 +189,7 @@ static inline void wmul_setup(
     ecases[8] = (case){ .in = {U32m+1, U32m+1}, .exp = {0, 1}, .inc = wmul_in };
     ecases[9] = (case){ .in = {half64_2, half64_1}, .exp = {U32m+1, half64_1-1}, .inc = wmul_in };
     ecases[10] = (case){ 
-        .in =  {alt64_1,          alt64_2         }, 
+        .in = {alt64_1,          alt64_2         }, 
         .exp = {0x1C71C71C71C71C72, 0x38E38E38E38E38E3}, 
         .inc = wmul_in 
     };
@@ -202,7 +201,7 @@ static inline void wmul_setup(
     };
     ecases[13] = (case){ .in = {U32m, U64m}, .exp = {half64_2+1, half64_1-1}, .inc = wmul_in };
     ecases[14] = (case){ 
-        .in =  {0xFFFFFFFFFFFFFFC5, 3}, 
+        .in = {0xFFFFFFFFFFFFFFC5, 3}, 
         .exp = {0xFFFFFFFFFFFFFF4F, 2}, 
         .inc = wmul_in 
     };
@@ -220,7 +219,7 @@ static inline void wmul_setup(
 static inline void wdiv_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *wmullp,
+    u64 *ribuf, pair *resbuf, const char *wmullp,
     u64 (*test_fn)(u64, u64, u64*),
     u64 (*ref_fn)(u64, u64, u64*)
 ) {
@@ -242,8 +241,8 @@ static inline void wdiv_setup(
     // Assymertical Tests
     ecases[8] = (case){ .in = {U64m, 0, 1},        .exp = {U64m, 0}, .inc = wdiv_in };
     ecases[9] = (case){ .in = {U32m, 0, U64m},     .exp = {0, U32m}, .inc = wdiv_in };
-    ecases[10] = (case){ .in =  {U64m, 0, U64m},   .exp = {1, 0}, .inc = wdiv_in };
-    ecases[11] = (case){ .in =  {U64m-1, 0, U63m}, .exp = {1, U63m}, .inc = wdiv_in };
+    ecases[10] = (case){ .in = {U64m, 0, U64m},   .exp = {1, 0}, .inc = wdiv_in };
+    ecases[11] = (case){ .in = {U64m-1, 0, U63m}, .exp = {1, U63m}, .inc = wdiv_in };
     // Bitwise Handling Tests
     ecases[12] = (case){ 
         .in = {half64_1-1,  half64_2+1, U32m}, 
@@ -282,9 +281,9 @@ static inline void wdiv_setup(
 static inline void modinv_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *wmullp,
-    u64 (*test_fn)(u64, u64, u64*),
-    u64 (*ref_fn)(u64, u64, u64*)
+    u64 *ribuf, pair *resbuf, const char *wmullp,
+    u64 (*test_fn)(u64),
+    u64 (*ref_fn)(u64)
 ) {
     srand(time(NULL)); static u8 modinv_in = 1;
     // Core, Basic cases
@@ -339,9 +338,9 @@ static inline void modinv_setup(
 static inline void clz_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *wmullp,
-    u64 (*test_fn)(u64, u64, u64*),
-    u64 (*ref_fn)(u64, u64, u64*)
+    u64 *ribuf, pair *resbuf, const char *wmullp,
+    u8 (*test_fn)(u64),
+    u8 (*ref_fn)(u64)
 ) {
     srand(time(NULL)); static u8 clz_in = 1;
     // Core, Basic cases
@@ -354,7 +353,7 @@ static inline void clz_setup(
     ecases[5] = (case){ .in = {2},      .exp = {62}, .inc = clz_in };
     ecases[6] = (case){ .in = {0x0010000000000001}, .exp = {11}, .inc = clz_in }; 
     ecases[7] = (case){ .in = {U31m+1},    .exp = {32}, .inc = clz_in };
-    ecases[8] = (case){ .in = {U32m+1<<1}, .exp = {30}, .inc = clz_in };
+    ecases[8] = (case){ .in = {(U32m+1)<<1}, .exp = {30}, .inc = clz_in };
     // Block Boundaries
     ecases[9] = (case){ .in = {half64_1},      .exp = {32}, .inc = clz_in };
     ecases[10] = (case){ .in = {half64_1+1},   .exp = {31}, .inc = clz_in };
@@ -372,7 +371,7 @@ static inline void clz_setup(
     for (u32 i = 0; i < rcount; ++i) {
         u64 in = barebone_rand();
         rcases[i] = (case) { .in = {in}, .inc = clz_in };
-    } _DNML_SUITE_SETUP(s, name, 15, rcount,
+    } _DNML_SUITE_SETUP(s, name, 20, rcount,
         clz_in, ecases, rcases, ribuf,
         resbuf, test_fn, ref_fn, wmullp
     ); return;
@@ -380,9 +379,9 @@ static inline void clz_setup(
 static inline void ctz_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *wmullp,
-    u64 (*test_fn)(u64, u64, u64*),
-    u64 (*ref_fn)(u64, u64, u64*)
+    u64 *ribuf, pair *resbuf, const char *wmullp,
+    u8 (*test_fn)(u64),
+    u8 (*ref_fn)(u64)
 ) {
     srand(time(NULL)); static u8 ctz_in = 1;
     // Core, Basic cases
@@ -395,7 +394,7 @@ static inline void ctz_setup(
     ecases[5] = (case){ .in = {2},      .exp = {1},    .inc = ctz_in };
     ecases[6] = (case){ .in = {U63m+1}, .exp = {15},   .inc = ctz_in }; 
     ecases[7] = (case){ .in = {U31m+1},    .exp = {31}, .inc = ctz_in };
-    ecases[8] = (case){ .in = {U32m+1<<1}, .exp = {33}, .inc = ctz_in };
+    ecases[8] = (case){ .in = {(U32m+1)<<1}, .exp = {33}, .inc = ctz_in };
     // Block Boundaries
     ecases[9] = (case){ .in = {half64_2},      .exp = {32}, .inc = ctz_in };
     ecases[10] = (case){ .in = {half64_1+1},   .exp = {31}, .inc = ctz_in };
@@ -413,7 +412,7 @@ static inline void ctz_setup(
     for (u32 i = 0; i < rcount; ++i) {
         u64 in = barebone_rand();
         rcases[i] = (case) { .in = {in}, .inc = ctz_in };
-    } _DNML_SUITE_SETUP(s, name, 15, rcount,
+    } _DNML_SUITE_SETUP(s, name, 20, rcount,
         ctz_in, ecases, rcases, ribuf,
         resbuf, test_fn, ref_fn, wmullp
     ); return;
@@ -421,9 +420,9 @@ static inline void ctz_setup(
 static inline void bswap_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *wmullp,
-    u64 (*test_fn)(u64, u64, u64*),
-    u64 (*ref_fn)(u64, u64, u64*)
+    u64 *ribuf, pair *resbuf, const char *wmullp,
+    u64 (*test_fn)(u64),
+    u64 (*ref_fn)(u64)
 ) {
     srand(time(NULL)); static u8 ctz_in = 1;
     // Core, Basic cases
@@ -454,7 +453,7 @@ static inline void bswap_setup(
     for (u32 i = 0; i < rcount; ++i) {
         u64 in = barebone_rand();
         rcases[i] = (case) { .in = {in}, .inc = ctz_in };
-    } _DNML_SUITE_SETUP(s, name, 15, rcount,
+    } _DNML_SUITE_SETUP(s, name, 20, rcount,
         ctz_in, ecases, rcases, ribuf,
         resbuf, test_fn, ref_fn, wmullp
     ); return;
@@ -462,9 +461,9 @@ static inline void bswap_setup(
 static inline void pcnt_setup(
     _libdnml_lsuite *s, const char *name,
     case *ecases, case *rcases, u32 rcount, 
-    u64 **ribuf, pair *resbuf, const char *wmullp,
-    u64 (*test_fn)(u64, u64, u64*),
-    u64 (*ref_fn)(u64, u64, u64*)
+    u64 *ribuf, pair *resbuf, const char *wmullp,
+    u8 (*test_fn)(u64),
+    u8 (*ref_fn)(u64)
 ) {
     srand(time(NULL)); static u8 ctz_in = 1;
     // Core, Basic cases
@@ -496,7 +495,7 @@ static inline void pcnt_setup(
     for (u32 i = 0; i < rcount; ++i) {
         u64 in = barebone_rand();
         rcases[i] = (case) { .in = {in}, .inc = ctz_in };
-    } _DNML_SUITE_SETUP(s, name, 15, rcount,
+    } _DNML_SUITE_SETUP(s, name, 20, rcount,
         ctz_in, ecases, rcases, ribuf,
         resbuf, test_fn, ref_fn, wmullp
     ); return;

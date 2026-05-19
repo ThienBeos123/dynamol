@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "../../../test_ui/_strui.h"
-#include "../../../adynamol/big_numbers/bigNums.h"
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigNums.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 #include "../_ioconv.h"
 #include "bi_indef.h"
 
@@ -49,36 +49,30 @@
 // Truncative Conversions - tto_str
 static inline void exec_bitos_tto_str(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
-    out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[out->cap] = '\0';
-    out->status = bigInt_tto_str(dest, in->x, &out->data.len);
+    out->type = STRING; out->pstr[out->cap] = '\0';
+    out->status = bigInt_tto_str(out->pstr, in->x, &out->data.len);
 }
 static inline void exec_bitos_tto_strb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[out->cap] = '\0';
-    out->status = bigInt_tto_strb(dest, in->x, in->base, &out->data.len);
+    out->pstr[out->cap] = '\0';
+    out->status = bigInt_tto_strb(out->pstr, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_tto_strn(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    out->status = bigInt_tto_strn(dest, in->len, in->x, &out->data.len);
+    out->status = bigInt_tto_strn(out->pstr, in->len, in->x, &out->data.len);
 }
 static inline void exec_bitos_tto_strnb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    out->status = bigInt_tto_strnb(dest, in->len, in->x, in->base, &out->data.len);
+    out->status = bigInt_tto_strnb(out->pstr, in->len, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_tto_strf(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
     out->status = bigInt_tto_strf(
-        dest, in->len, in->x, 
+        out->pstr, in->len, in->x, 
         in->base, in->uppercase,
         &out->data.len
     );
@@ -87,42 +81,37 @@ static inline void exec_bitos_tto_strf(const void *vin, str_res *out, void *vctx
 static inline void exec_bitos_to_str(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[out->cap] = '\0';
-    out->status = bigInt_to_str(dest, in->x, &out->data.len);
+    out->pstr[out->cap] = '\0';
+    out->status = bigInt_to_str(out->pstr, in->x, &out->data.len);
 }
 static inline void exec_bitos_to_strb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[out->cap] = '\0';
-    out->status = bigInt_to_strb(dest, in->x, in->base, &out->data.len);
+    out->pstr[out->cap] = '\0';
+    out->status = bigInt_to_strb(out->pstr, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_to_strn(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    out->status = bigInt_to_strn(dest, in->len, in->x, &out->data.len);
+    out->status = bigInt_to_strn(out->pstr, in->len, in->x, &out->data.len);
 }
 static inline void exec_bitos_to_strnb(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    out->status = bigInt_to_strnb(dest, in->len, in->x, in->base, &out->data.len);
+    out->status = bigInt_to_strnb(out->pstr, in->len, in->x, in->base, &out->data.len);
 }
 static inline void exec_bitos_to_strf(const void *vin, str_res *out, void *vctx) {
     const bitos_conv_in *in = vin;
     out->type = STRING;
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
     out->status = bigInt_to_strf(
-        dest, in->len, in->x, 
+        out->pstr, in->len, in->x, 
         in->base, in->uppercase, 
         &out->data.len
     );
 }
 // Instant / Streamed Printing - fput
 static inline void exec_bitos_fput(const void *vin, str_res *out, void *vctx) {
-    bitos_print_in *in = vin; out->type = STRING;
+    const bitos_print_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -130,18 +119,15 @@ static inline void exec_bitos_fput(const void *vin, str_res *out, void *vctx) {
     dnml_status stat = bigInt_fput(tmp, in->x);
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
-    while (1) { size_t n = fread(
-            out->str + len, 
-            sizeof(char), 64, tmp
-        ); len += n;
-        if (feof(tmp)) break;
+    while (1) { 
+        size_t n = fread(out->pstr + len,  sizeof(char), 64, tmp); 
+        len += n; if (feof(tmp)) break;
     }
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[len] = '\0'; out->status = stat;
+    out->pstr[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_fputb(const void *vin, str_res *out, void *vctx) {
-    bitos_print_in *in = vin; out->type = STRING;
+    const bitos_print_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -150,18 +136,14 @@ static inline void exec_bitos_fputb(const void *vin, str_res *out, void *vctx) {
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 64, tmp
-        ); len += n;
-        if (feof(tmp)) break;
+        size_t n = fread(out->pstr + len, sizeof(char), 64, tmp); 
+        len += n; if (feof(tmp)) break;
     } 
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[len] = '\0'; out->status = stat;
+    out->pstr[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_fputf(const void *vin, str_res *out, void *vctx) {
-    bitos_print_in *in = vin; out->type = STRING;
+    const bitos_print_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -170,19 +152,15 @@ static inline void exec_bitos_fputf(const void *vin, str_res *out, void *vctx) {
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 64, tmp
-        ); len += n;
-        if (feof(tmp)) break;
+        size_t n = fread(out->pstr + len, sizeof(char), 64, tmp);
+        len += n; if (feof(tmp)) break;
     } 
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[len] = '\0'; out->status = stat;
+    out->pstr[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 // Buffered Printing - sfput
 static inline void exec_bitos_sfput(const void *vin, str_res *out, void *vctx) {
-    bitos_print_in *in = vin; out->type = STRING;
+    const bitos_print_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -191,18 +169,14 @@ static inline void exec_bitos_sfput(const void *vin, str_res *out, void *vctx) {
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 64, tmp
-        ); len += n;
-        if (feof(tmp)) break;
+        size_t n = fread(out->pstr + len, sizeof(char), 64, tmp);
+        len += n; if (feof(tmp)) break;
     } 
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[len] = '\0'; out->status = stat;
+    out->pstr[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_sfputb(const void *vin, str_res *out, void *vctx) {
-    bitos_print_in *in = vin; out->type = STRING;
+    const bitos_print_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -211,18 +185,14 @@ static inline void exec_bitos_sfputb(const void *vin, str_res *out, void *vctx) 
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 64, tmp
-        ); len += n;
-        if (feof(tmp)) break;
+        size_t n = fread(out->pstr + len, sizeof(char), 64, tmp);
+        len += n; if (feof(tmp)) break;
     } 
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[len] = '\0'; out->status = stat;
+    out->pstr[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_sfputf(const void *vin, str_res *out, void *vctx) {
-    bitos_print_in *in = vin; out->type = STRING;
+    const bitos_print_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -231,14 +201,10 @@ static inline void exec_bitos_sfputf(const void *vin, str_res *out, void *vctx) 
     fflush(tmp); rewind(tmp);
     char buf[64]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 64, tmp
-        ); len += n;
-        if (feof(tmp)) break;
+        size_t n = fread(out->pstr + len, sizeof(char), 64, tmp);
+        len += n; if (feof(tmp)) break;
     } 
-    char *dest = (out->pstr != NULL) ? out->pstr : out->str;
-    dest[len] = '\0'; out->status = stat;
+    out->pstr[len] = '\0'; out->status = stat;
     out->data.len = len; fclose(tmp);
 }
 // Stream-based Raw Output - fwrite
@@ -248,7 +214,7 @@ static inline void exec_bitos_tserial(const void *vin, str_res *out, void *vctx)
 static inline void exec_bitos_sserial(const void *vin, str_res *out, void *vctx) { DNML_UNFINISHED(); }
 // Utilities
 static inline void exec_bitos_ldump(const void *vin, str_res *out, void *vctx) {
-    bitos_util_in *in = vin; out->type = STRING;
+    const bitos_util_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -256,16 +222,13 @@ static inline void exec_bitos_ldump(const void *vin, str_res *out, void *vctx) {
     fflush(tmp); rewind(tmp);
     char buf[256]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 256, tmp
-        ); len += n;
-        if (feof(tmp)) break;
-    } out->str[len] = '\0'; 
+        size_t n = fread(out->pstr + len, sizeof(char), 256, tmp); 
+        len += n; if (feof(tmp)) break;
+    } out->pstr[len] = '\0'; 
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_hdump(const void *vin, str_res *out, void *vctx) {
-    bitos_util_in *in = vin; out->type = STRING;
+    const bitos_util_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -273,16 +236,13 @@ static inline void exec_bitos_hdump(const void *vin, str_res *out, void *vctx) {
     fflush(tmp); rewind(tmp);
     char buf[256]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 256, tmp
-        ); len += n;
-        if (feof(tmp)) break;
-    } out->str[len] = '\0'; 
+        size_t n = fread(out->pstr + len, sizeof(char), 256, tmp);
+        len += n; if (feof(tmp)) break;
+    } out->pstr[len] = '\0'; 
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_bdump(const void *vin, str_res *out, void *vctx) {
-    bitos_util_in *in = vin; out->type = STRING;
+    const bitos_util_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -290,16 +250,13 @@ static inline void exec_bitos_bdump(const void *vin, str_res *out, void *vctx) {
     fflush(tmp); rewind(tmp);
     char buf[256]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 256, tmp
-        ); len += n;
-        if (feof(tmp)) break;
-    } out->str[len] = '\0'; 
+        size_t n = fread(out->pstr + len, sizeof(char), 256, tmp);
+        len += n; if (feof(tmp)) break;
+    } out->pstr[len] = '\0'; 
     out->data.len = len; fclose(tmp);
 }
 static inline void exec_bitos_info(const void *vin, str_res *out, void *vctx) {
-    bitos_util_in *in = vin; out->type = STRING;
+    const bitos_util_in *in = vin; out->type = STRING;
     FILE *tmp = tmpfile(); if (tmp == NULL) { 
         perror("Unable to open tmpfile(), Terminating program...");
         abort();
@@ -307,12 +264,9 @@ static inline void exec_bitos_info(const void *vin, str_res *out, void *vctx) {
     fflush(tmp); rewind(tmp);
     char buf[256]; size_t len = 0;
     while (1) {
-        size_t n = fread(
-            out->str + len, 
-            sizeof(char), 256, tmp
-        ); len += n;
-        if (feof(tmp)) break;
-    } out->str[len] = '\0'; 
+        size_t n = fread(out->pstr + len, sizeof(char), 256, tmp);
+        len += n; if (feof(tmp)) break;
+    } out->pstr[len] = '\0'; 
     out->data.len = len; fclose(tmp);
 }
 

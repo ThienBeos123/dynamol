@@ -8,7 +8,7 @@
 #include <system/sys.h>
 #include "../../../test_ui/_strui.h"
 #include "../../../sconfigs/memory/_scratch.h"
-#include "../../../adynamol/big_numbers/bigNums.h"
+#include "../../../dynamol/big_numbers/bigNums.h"
 
 #define DNML_UNFINISHED() do { \
     fputs("\n\n !CRITICAL FAILURE!: This feature is either: ", stderr); \

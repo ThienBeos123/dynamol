@@ -22,9 +22,11 @@ inv8_lookup:
     .byte 0x11, 0x3B, 0x5D, 0xC7, 0x49, 0x33, 0x55, 0xFF
 
 asm_text_section
-.globl     _arm64_modinv64
-.type       _arm64_modinv64, %function
-.align      2
+.globl     ASM_SYM(arm64_modinv64)
+FUNC_TYPE(ASM_SYM(arm64_modinv64))
+FUNC_TYPE(ASM_SYM(arm64_modinv64))
+
+.p2align      2
 
 
 /* ------- 64 BIT MODULAR INVERSE OF MODULO 2^64 -------
@@ -32,11 +34,16 @@ asm_text_section
 * arg: x0: uint64_t x   (64 BIT)
 * ret: x0: x^-1 mod(2^64)
 */
-_arm64_modinv64:
+ASM_SYM(arm64_modinv64):
     // Access the initial guess from inv8_lookup
     ubfx    x1, x0, #1, #7 // x1 = (x0 >> 1) & 0x7F/0b1111111
+#if defined(__MACH__)
+    adrp    x2, inv8_lookup@PAGE
+    add     x2, x2, inv8_lookup@PAGEOFF
+#else
     adrp    x2, inv8_lookup // Load inv8_lookup's page
-    add x2, x2, :lo12:inv8_lookup // x2 = exact adress of inv8_lookup
+    add     x2, x2, :lo12:inv8_lookup // x2 = exact address of inv8_lookup
+#endif
     ldrb    w3, [x2, x1]
 
     // Calculation iterations - 3 iterations

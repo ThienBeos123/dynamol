@@ -88,7 +88,7 @@ static inline uint64_t _cintrin_wdiv128(
     uint64_t lo, uint64_t hi, 
     uint64_t div, uint64_t *rhat
 ) {
-
+    return 0;
 }
 
 #endif

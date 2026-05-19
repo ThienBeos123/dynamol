@@ -10,16 +10,19 @@
     #define asm_rodata_section  .section __TEXT,__const
     #define asm_bss_section     .section __DATA,__bss
     #define asm_data_section    .section __DATA,__data
+    #define ASM_SYM(name)       __##name
 #elif defined(__linux__) || defined(__unix__)
     #define asm_text_section    .section .text
     #define asm_rodata_section  .section .rodata
     #define asm_bss_section     .section .bss
     #define asm_data_section    .section .data
+    #define ASM_SYM(name)       _##name
 #elif defined(_WIN64)
     #define asm_text_section    .section .text
     #define asm_rodata_section  .section .rdata, "dr"
     #define asm_bss_section     .section .bss
     #define asm_data_section    .section .data
+    #define ASM_SYM(name)       _##name
 #else
     #error "Unsupported OS for assembly"
 #endif

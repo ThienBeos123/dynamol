@@ -3,7 +3,7 @@
 
 #include <include.h>
 #include <system/sys.h>
-#include "../adynamol/big_numbers/bigNums.h"
+#include "../dynamol/big_numbers/bigNums.h"
 #include "../sconfigs/dnml_status.h"
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
@@ -18,7 +18,7 @@ typedef enum { LOW_SUITE, IO_SUITE, BIGSUITE } suite_type;
 typedef struct _libdnml_session {
     const char *session_name;
     uint8_t suite_count;
-    void* *suites;
+    void* suites;
     _dnml_output_mode output_mode;
     uint32_t cli_delay; // in ms
     int box_width;
@@ -49,20 +49,20 @@ typedef struct _libdnml_session {
 #define BOX_WIDTH   80
 //* ============== SUITE BOX FUNCTIONS ============== *//
 static inline void _dnml_box_divider(int bw) {
-    puts(BOX_DIV_L);
-    for (int i = 0; i < bw; i++) puts(BOX_H);
-    puts(BOX_DIV_R "\n");
+    fputs(BOX_DIV_L, stdout);
+    for (int i = 0; i < bw; i++) fputs(BOX_H, stdout);
+    fputs(BOX_DIV_R "\n", stdout);
 }
 static inline void _dnml_box_top(const char* suite_name, int bw) {
     printf(BOX_TL " %s ", suite_name); 
     size_t namelen = strlen(suite_name);
-    for (int i = 0; i < bw - (int)namelen - 2; i++) puts(BOX_H);
-    puts(BOX_TR "\n");
+    for (int i = 0; i < bw - (int)namelen - 2; i++) fputs(BOX_H, stdout);
+    fputs(BOX_TR "\n", stdout);
 }
 static inline void _dnml_box_bottom(int bw) {
-    puts(BOX_BL);
-    for (int i = 0; i < bw; i++) puts(BOX_H);
-    puts(BOX_BR "\n");
+    fputs(BOX_BL, stdout);
+    for (int i = 0; i < bw; i++) fputs(BOX_H, stdout);
+    fputs(BOX_BR "\n", stdout);
 }
 static inline void _dnml_box_line(const char *text, int bw) {
     int len = (int)strlen(text);
@@ -117,7 +117,7 @@ static inline void _dnml_session_progress(uint8_t done, uint8_t total, const cha
     printf("  %s\n  Session progression: [", session_name);
     for (int i = 0; i < barw; i++)
         printf((i < filled) ? "#" : " ");
-    printf("] %" PRIu8 "%\n\n", (total) ? (uint8_t)(done * 100 / total) : 0);
+    printf("] %" PRIu8 "\n\n", (total) ? (uint8_t)(done * 100 / total) : 0);
     fflush(stdout);
 }
 static inline int _dnml_twidth(void) {

@@ -1,7 +1,8 @@
 #ifndef ____DNML_SYS_CONN
 #define ____DNML_SYS_CONN
+#if __x86_64__
 
-#include <cpuid.h>
+
 #include "__asm_macros.h"
 #include "../__platform.h"
 
@@ -10,5 +11,5 @@ extern unsigned int __sysv_cpu_maxl(void);
 
 
 
-
+#endif
 #endif

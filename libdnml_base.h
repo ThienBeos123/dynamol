@@ -2,29 +2,28 @@
 #define _libdnml_base
 
 
-#include "system/__arch.h"
-#include "system/__compiler.h"
-#include "system/__hwcaps.h"
-#include "sconfigs/settings.h"
+#include <include.h>
+#include <system/sys.h>
 #include "intrinsics/intrinsics.h"
-#include <stdint.h>
 
 static volatile uint8_t _libinit = 0;
 
 //* ---------- LIBRARY INITIALIZATION FUNCTIONS ---------- *//
 // Library Initialization
 static inline void _libdnml_init(void) {
+    if (_libinit) return;
+
+    _libdnml_detect_hwcaps();
+    _libdnml_fill_ghw();
+
 #if __compiler_clang || __compiler_gcc || __compiler_msvc
-    // Every "hardware-specific features"
-    // are already supported on Clang/GCC/MSVC
+    // Compiler built-ins cover most arithmetic/bitwise optimizations.
+    // Hardware RNG and halt hooks still require explicit initialization.
     _libinit = 1;
     return;
 #else
     // Unknown compiler
     // ---> Initialize DNML's handwritten intrinsics
-    if (_libinit) return;
-    _dnml_hwcaps libdnml_caps = {0};
-    _libdnml_detect_hwcaps();
     _libdnml_fill_galg();
     _libdnml_fill_garith();
     _libdnml_fill_gbitops();

@@ -12,7 +12,8 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../libdnml_base.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -360,7 +361,7 @@ scase ecases_base[27] = { // 19 limbs ---> 152 bytes
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -385,7 +386,7 @@ int main(int argc, char **argv) {
     // Randomization Configuration
     xoshiro256_state init_rstate = {0}; u64 side_mix = 0;
     __GET_ENTROPY_FAST(init_rstate.s, sizeof(u64) << 2);
-    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    __GET_ENTROPY_FAST(&side_mix, sizeof(u64));
     seed_xoshiro256(&init_rstate, side_mix);
     str_rand_mod init_rconfig = {0}, // Base-parameter / Non-base-prefix
     init_bp_rconfig = {0}; // Base-prefix / Non-base-parameter
@@ -394,11 +395,12 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
+    FILE *idk = fopen("logs/bigint_strinit.txt", "w"); fclose(idk);
     // strinit() -- Base-prefix, No length param
     suite strinit_suite = {0};
     create_str_suite(&strinit_suite, "strinit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        init_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_bp_rconfig, &init_rstate
     ); strinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strinit_suite,
@@ -412,8 +414,8 @@ int main(int argc, char **argv) {
     // strninit() -- Base-prefix, Length param
     suite strninit_suite = {0};
     create_str_suite(&strninit_suite, "strninit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1], 
-        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        init_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1], 
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_bp_rconfig, &init_rstate
     ); strninit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strninit_suite,
@@ -427,8 +429,8 @@ int main(int argc, char **argv) {
     // strbinit() -- Base-param, No length param
     suite strbinit_suite = {0};
     create_str_suite(&strbinit_suite, "strbinit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
-        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        init_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_rconfig, &init_rstate
     ); strbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strbinit_suite,
@@ -442,8 +444,8 @@ int main(int argc, char **argv) {
     // strnbinit() -- Base-param, Length param
     suite strnbinit_suite = {0};
     create_str_suite(&strnbinit_suite, "strnbinit - String Intialization", 
-        init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3], 
-        "../logs/bi_logs/bigint_strinit.txt", init_ectx, &init_rcon,
+        init_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3], 
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_rconfig, &init_rstate
     ); strnbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strnbinit_suite,

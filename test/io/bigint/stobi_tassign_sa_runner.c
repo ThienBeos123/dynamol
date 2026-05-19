@@ -12,7 +12,8 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../libdnml_base.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -685,7 +686,7 @@ scase ecases_base[28] = { // 128 limbs ---> 1KB
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -710,7 +711,7 @@ int main(int argc, char **argv) {
     // Randomization Configuration
     xoshiro256_state assign_rstate = {0}; u64 side_mix = 0;
     __GET_ENTROPY_FAST(assign_rstate.s, sizeof(u64) << 2);
-    __GET_ENTROPY_FAST(side_mix, sizeof(u64));
+    __GET_ENTROPY_FAST(&side_mix, sizeof(u64));
     seed_xoshiro256(&assign_rstate, side_mix);
     str_rand_mod assign_rconfig = {0}, // Base-parameter / Non-base-prefix
     assign_bp_rconfig = {0}; // Base-prefix / Non-base-parameter
@@ -719,11 +720,12 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
+    FILE *idk = fopen("logs/bigInt_tget_str_sa.txt", "w"); fclose(idk);
     // tget_str() -- Base-prefix, No length param
     suite tget_str_suite = {0};
     create_str_suite(&tget_str_suite, "bigInt_tget_str - String Assignment", 
-        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        tassign_ecount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -736,8 +738,8 @@ int main(int argc, char **argv) {
     // tget_strn() -- Base-prefix, Length param
     suite tget_strn_suite = {0};
     create_str_suite(&tget_strn_suite, "bigInt_tget_strn - String Assignment",
-        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        tassign_ecount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -750,8 +752,8 @@ int main(int argc, char **argv) {
     // tget_strb() -- Base-param, No length param
     suite tget_strb_suite = {0};
     create_str_suite(&tget_strb_suite, "bigInt_tget_strb - String Assignment",
-        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[2],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        tassign_ecount, rcount, ecases_bprefix, EVAL, ebuf_slices[2],
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -764,8 +766,8 @@ int main(int argc, char **argv) {
     // tget_strnb() -- Base-param, Length param
     suite tget_strnb_suite = {0};
     create_str_suite(&tget_strnb_suite, "bigInt_tget_strnb - String Assignment",
-        tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[3],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        tassign_ecount, rcount, ecases_bprefix, EVAL, ebuf_slices[3],
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,

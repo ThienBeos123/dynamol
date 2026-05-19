@@ -1,4 +1,6 @@
 #include "__sys_conn.h"
+#if __x86_64__
+
 
 /* 
 This file is reserved for:
@@ -37,3 +39,6 @@ __sysv_cpu_maxl:
     mov ecx, 0
     cpuid
     ret
+
+
+#endif

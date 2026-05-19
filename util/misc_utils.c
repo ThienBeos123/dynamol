@@ -1,7 +1,7 @@
 #include "util.h"
 
 
-inline size_t __BITCOUNT___(size_t digit_count, uint8_t base) {
+size_t __BITCOUNT___(size_t digit_count, uint8_t base) {
     if (base = 10)          return digit_count * log2_10;
     else if (base == 16)    return digit_count * log2_16;
     else if (base == 2)     return digit_count * log2_2;
@@ -10,12 +10,12 @@ inline size_t __BITCOUNT___(size_t digit_count, uint8_t base) {
 }
 
 
-inline uint8_t __BASEN_DCOUNT__(uint64_t val, uint8_t base) {
+uint8_t __BASEN_DCOUNT__(uint64_t val, uint8_t base) {
     return (size_t)(log10(val) / log10(base)) + 1;
 }
 
 
-inline uint64_t __MAG_I64__(int64_t val) {
+uint64_t __MAG_I64__(int64_t val) {
     return (val == INT64_MIN) ?
         (uint64_t)(llabs(val + 1)) + 1 :
         (uint64_t)(llabs(val));
@@ -27,7 +27,7 @@ static inline uint8_t _mul_will_overflow(uint64_t mul1, uint64_t mul2) {
 }
 
 
-inline uint64_t _stou64(const char *buf, int buflen) {
+uint64_t _stou64(const char *buf, int buflen) {
     if (!buflen || !buf) return 0;
     uint64_t res = 0;
     for (size_t i = 0; i < buflen; ++i) {
@@ -40,29 +40,32 @@ inline uint64_t _stou64(const char *buf, int buflen) {
 }
 
 
-inline int _itosn(uint64_t x, char *buf, int buflen) {
+int _itosn(uint64_t x, char *buf, int buflen) {
     if (!buflen) return 0;
-    int i = buflen - 1, xlen = 0;
-    while (x) { if (i < 0) { break; }
+    if (buflen < 2) { buf[0] = '\0'; return 0; }
+    if (x == 0) { buf[0] = '0'; buf[1] = '\0'; return 1; }
+    // Fill buffer from the end backwards
+    int i = buflen - 2, count = 0;
+    while (x && i >= 0) {
         buf[i] = '0' + (char)(x % 10);
-        x /= 10; --i;
-    } return xlen;
+        x /= 10; --i; ++count;
+    }
+    if (x) return 0;
+    // Shift string to beginning of buffer
+    int start = i + 1;
+    if (start > 0) {
+        for (int j = 0; j < count; ++j) {
+            buf[j] = buf[start + j];
+        }
+    } buf[count] = '\0'; return count;
 }
 
-
-inline int _dnml_ipower(uint64_t *base, uint8_t power) {
-    uint64_t res = 0, tmp_base = *base;
+uint64_t _dnml_ipower_u64(uint64_t base, uint8_t power) {
+    uint64_t res = 1;
     while (power) {
-        if (power & 1) {
-            if (_mul_will_overflow(res, tmp_base)) {
-                *base = 0; return 1;
-            } res *= tmp_base;
-        }
-        if (_mul_will_overflow(res, tmp_base)) {
-                *base = 0; return 1;
-        } tmp_base *= tmp_base;
+        if (power & 1) res *= base;
+        base *= base;
         power >>= 1;
     }
-    *base = res;
-    return 0; // No overflow
+    return res;
 }

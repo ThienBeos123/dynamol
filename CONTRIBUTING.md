@@ -120,3 +120,5 @@ Contributors must either:
 - Refactor testing interface capability to test such features
 
 Before testing such refactored features
+
+### For more details, please have a look at [TEST_CONDUCT.md](test/TEST_CONDUCT.md)
