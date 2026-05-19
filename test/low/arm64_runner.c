@@ -33,56 +33,59 @@ int main(int argc, char **argv) {
         pair resbuf[ressizes * arm64_scount]; pair* resslices[arm64_scount];
         _suite_slices(resslices, resbuf, ressizes, sizeof(pair), arm64_scount);
 
+        FILE* f1 = fopen("logs/arm64_arith.txt", "w"); fclose(f1);
+        FILE* f2 = fopen("logs/arm64_marith.txt", "w"); fclose(f2);
+        FILE* f3 = fopen("logs/arm64_bitops.txt", "w"); fclose(f3);
         // -------------- ARITHMETIC TEST SUITES -------------- //
         _libdnml_lsuite add64c_suite = {}; addc_setup(
             &add64c_suite, "add64c", eslices[0],
             rslices[0], rcount, rinslices[0], resslices[0],
-            "../logs/arm64_arith.txt",
+            "logs/arm64_arith.txt",
             _arm64_add64c, _cintrin_add64c
         );
         _libdnml_lsuite sub64b_suite = {}; subb_setup(
             &sub64b_suite, "sub64b", eslices[1], 
             rslices[1], rcount, rinslices[1], resslices[1], 
-            "../logs/arm64_arith.txt",
+            "logs/arm64_arith.txt",
             _arm64_sub64b, _cintrin_sub64b
         );
         _libdnml_lsuite wmul128_suite = {}; wmul_setup(
             &wmul128_suite, "wmul128", eslices[2],
             rslices[2], rcount, rinslices[2], resslices[2],
-            "../logs/arm64_arith.txt",
+            "logs/arm64_arith.txt",
             _arm64_wmul128, _cintrin_wmul128
         );
         // ----------- MODULAR ARITHETMIC TEST SUITES ---------- //
         _libdnml_lsuite modinv64_suite = {}; modinv_setup(
             &modinv64_suite, "modinv64", eslices[3],
             rslices[3], rcount, rinslices[3], resslices[3],
-            "../logs/arm64_marith.txt",
+            "logs/arm64_marith.txt",
             _arm64_modinv64, _cintrin_modinv64
         );
         // --- ------ BITWISE OPERATIONS TEST SUITES ---------- //
         _libdnml_lsuite clz64_suite = {}; clz_setup(
             &clz64_suite, "clz64", eslices[4],
             rslices[4], rcount, rinslices[4], resslices[4],
-            "../logs/arm64_bitops.txt",
+            "logs/arm64_bitops.txt",
             _arm64_clz64, _cintrin_clz64
         );
         _libdnml_lsuite ctz64_suite = {}; ctz_setup(
             &ctz64_suite, "ctz64", eslices[5],
             rslices[5], rcount, rinslices[5], resslices[5],
-            "../logs/arm64_bitops.txt",
+            "logs/arm64_bitops.txt",
             _arm64_ctz64, _cintrin_ctz64
         );
         _libdnml_lsuite bswap64_suite = {}; bswap_setup(
             &bswap64_suite, "bswap64", eslices[6],
             rslices[6], rcount, rinslices[6], resslices[6],
-            "../logs/arm64_bitops.txt",
+            "logs/arm64_bitops.txt",
             _arm64_bswap64, _cintrin_bswap64
         );
         _libdnml_lsuite pcnt64_suite = {}; pcnt_setup(
             &pcnt64_suite, "pcnt64", eslices[7],
             rslices[7], rcount, rinslices[7], resslices[7],
-            "../logs/arm64_bitops.txt",
-            _arm64_pcnt64, _cintrin_clz64
+            "logs/arm64_bitops.txt",
+            _arm64_pcnt64, _cintrin_pcnt64
         );
 
 
@@ -98,7 +101,7 @@ int main(int argc, char **argv) {
         arm64_slist[6] = bswap64_suite;     arm64_slist[7] = pcnt64_suite;
         _libdnml_session arm64_sesh; create_lsession(
             &arm64_sesh, "Low-level ARM64 Intrinsics",
-            100, arm64_scount, arm64_slist, arm64_omode
+            10, arm64_scount, arm64_slist, arm64_omode
         ); start_low_session(&arm64_sesh);
     #endif
     return 0;

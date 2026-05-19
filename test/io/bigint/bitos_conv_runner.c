@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -597,11 +597,12 @@ int main(int argc, char **argv) {
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
+    FILE *idk = fopen("logs/bigint_to_str.txt", "w"); fclose(idk); 
     // to_str() - Non-base-parameter, No length param
     suite to_str_suite = {0};
     create_str_suite(&to_str_suite, "to_str - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_str_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_str_suite,
@@ -616,7 +617,7 @@ int main(int argc, char **argv) {
     suite to_strb_suite = {0};
     create_str_suite(&to_strb_suite, "to_strb - BigInt Conversion", 
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[1], 
-        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_strb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strb_suite,
@@ -631,7 +632,7 @@ int main(int argc, char **argv) {
     suite to_strn_suite = {0};
     create_str_suite(&to_strn_suite, "to_strn - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[2], 
-        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_strn_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strn_suite,
@@ -646,7 +647,7 @@ int main(int argc, char **argv) {
     suite to_strnb_suite = {0};
     create_str_suite(&to_strnb_suite, "to_strnb - BigInt Conversion",
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[3],
-        "../logs/bi_logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_strnb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strnb_suite,

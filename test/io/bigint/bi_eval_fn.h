@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include "../../../sconfigs/memory/_scratch.h"
 #include "../../../test_ui/_strui.h"
-#include "../../../adynamol/big_numbers/bigNums.h"
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigNums.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 #include "../_ioconv.h"
 #include "bi_indef.h"
 
@@ -52,21 +52,21 @@
 // Any settings of other metadata outside of out->status are for safety measures
 #define BITOS_INVALCAP(out) do { \
     out->status = STR_INVALID_CAP;              \
-    out->type = OP_NONE;                        \
+    out->type = STRING;                        \
     out->data.len = 0;                          \
-    out->str[0] = '\0'; out->cap = 0;           \
+    out->pstr[0] = '\0'; out->cap = 0;           \
 } while (0);
 #define BITOS_INVALBASE(out) do { \
     out->status = STR_INVALID_BASE;             \
-    out->type = OP_NONE;                        \
+    out->type = STRING;                        \
     out->data.len = 0;                          \
-    out->str[0] = '\0'; out->cap = 0;           \
+    out->pstr[0] = '\0'; out->cap = 0;           \
 } while (0);
 #define BITOS_SUCCESS(out) do { \
     out->status = STR_SUCCESS;                  \
-    out->type = OP_NONE;                        \
+    out->type = STRING;                        \
     out->data.len = 0;                          \
-    out->str[0] = '\0'; out->cap = 0;           \
+    out->pstr[0] = '\0'; out->cap = 0;           \
 } while (0);
 
 
@@ -124,7 +124,7 @@ stinl void inv_bitos_conv_nob(cvoid *vin, csres *out, void *recon, void *vctx) {
     size_t lcnt = __BIGINT_LIMBS_NEEDED__(bcount);
     limb_t *tmp_limbs = (limb_t*)vctx;
     bigInt tmp = { .limbs = tmp_limbs, .n = 0, .sign = 1, .cap = lcnt };
-    if (bigInt_get_strn(&tmp, out->str, out->data.len) == BIGINT_ERR_RANGE) {
+    if (bigInt_get_strn(&tmp, out->pstr, out->data.len) == BIGINT_ERR_RANGE) {
         fputs("Testing allocation / internal processes gone wrong\nTerminating session...", stderr);
         abort();
     } *(bigInt*)recon = tmp;
@@ -135,7 +135,7 @@ stinl void inv_bitos_conv_b(cvoid *vin, csres *out, void *recon, void *vctx) {
     size_t lcnt = __BIGINT_LIMBS_NEEDED__(bcount);
     limb_t *tmp_limbs = (limb_t*)vctx;
     bigInt tmp = { .limbs = tmp_limbs, .n = 0, .sign = 1, .cap = lcnt };
-    if (bigInt_get_strnb(&tmp, out->str, out->data.len, in->base) == BIGINT_ERR_RANGE) {
+    if (bigInt_get_strnb(&tmp, out->pstr, out->data.len, in->base) == BIGINT_ERR_RANGE) {
         fputs("Testing allocation / internal processes gone wrong\nTerminating session...", stderr);
         abort();
     } *(bigInt*)recon = tmp;
@@ -144,7 +144,7 @@ stinl void eval_bitos_tto_str(cvoid *vin, str_res *exp, void *vctx) {
     // For: tto_str, tto_strn
     const bitos_conv_in *in = (bitos_conv_in*)in;
     size_t needed = __BIGINT_COUNTDB__(&in->x, 10);
-    exp->status = bigInt_to_strn(exp->str, needed + 1, in->x, &needed);
+    exp->status = bigInt_to_strn(exp->pstr, needed + 1, in->x, &needed);
     exp->data.len = needed; exp->type = STRING;
 }
 stinl void eval_bitos_tto_strb(cvoid *vin, str_res *exp, void *vctx) {
@@ -152,7 +152,7 @@ stinl void eval_bitos_tto_strb(cvoid *vin, str_res *exp, void *vctx) {
     const bitos_conv_in *in = (bitos_conv_in*)in;
     size_t needed = __BIGINT_COUNTDB__(&in->x, in->base);
     exp->status = bigInt_to_strnb(
-        exp->str, needed + 1, in->x, 
+        exp->pstr, needed + 1, in->x, 
         in->base, &needed
     ); exp->data.len = needed; exp->type = STRING;
 }
@@ -161,7 +161,7 @@ stinl void eval_bitos_tto_strf(cvoid *vin, str_res *exp, void *vctx) {
     const bitos_conv_in *in = (bitos_conv_in*)in;
     size_t needed = __BIGINT_COUNTDB__(&in->x, in->base);
     exp->status = bigInt_to_strf(
-        exp->str, needed + 1, 
+        exp->pstr, needed + 1, 
         in->x, in->base, 
         in->uppercase, &needed
     ); exp->data.len = needed; exp->type = STRING;
@@ -172,7 +172,7 @@ stinl void inv_bitos_fput_nob(cvoid *vin, csres *out, void *recon, void *vctx) {
     size_t lcnt = __BIGINT_LIMBS_NEEDED__(bcount);
     limb_t *tmp_limbs = (limb_t*)vctx;
     bigInt tmp = { .limbs = tmp_limbs, .n = 0, .sign = 1, .cap = lcnt };
-    if (bigInt_get_strn(&tmp, out->str, out->data.len) == BIGINT_ERR_RANGE) {
+    if (bigInt_get_strn(&tmp, out->pstr, out->data.len) == BIGINT_ERR_RANGE) {
         fputs("Testing allocation / internal processes gone wrong\nTerminating session...", stderr);
         abort();
     } *(bigInt*)recon = tmp;
@@ -183,7 +183,7 @@ stinl void inv_bitos_fput_b(cvoid *vin, csres *out, void *recon, void *vctx) {
     size_t lcnt = __BIGINT_LIMBS_NEEDED__(bcount);
     limb_t *tmp_limbs = (limb_t*)vctx;
     bigInt tmp = { .limbs = tmp_limbs, .n = 0, .sign = 1, .cap = lcnt };
-    if (bigInt_get_strnb(&tmp, out->str, out->data.len, in->base) == BIGINT_ERR_RANGE) {
+    if (bigInt_get_strnb(&tmp, out->pstr, out->data.len, in->base) == BIGINT_ERR_RANGE) {
         fputs("Testing allocation / internal processes gone wrong\nTerminating session...", stderr);
         abort();
     } *(bigInt*)recon = tmp;
@@ -364,12 +364,12 @@ stinl void eval_stobi_ftread(cvoid *vin, str_res *exp, void *vctx) { DNML_UNFINI
 // Any settings of other metadata outside of out->status are for safety measures
 #define STOBI_STAT_SETOUT(out, received_status) do { \
     out->status = received_status;      \
-    out->type = OP_NONE;                \
+    out->type = BIGINT;                \
     out->data.bi.limbs = NULL;          \
     out->data.bi.sign = 0;              \
     out->data.bi.cap = 0;               \
     out->data.bi.n = 1;                 \
-    out->str[0] = '\0'; out->cap = 0;   \
+    out->pstr[0] = '\0'; out->cap = 0;   \
 } while (0);
 
 //* ========================= STOBI STATUS CHECKING WRAPPERS ======================= *//

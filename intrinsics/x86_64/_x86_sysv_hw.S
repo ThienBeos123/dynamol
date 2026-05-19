@@ -17,8 +17,8 @@ asm_text_section
 
 
 
-# Halt CPU Execution by a few cycles via the PAUSE instruction,
-# Which does a system flush or whatever I'm sorry dawg
+; Halt CPU Execution by a few cycles via the PAUSE instruction,
+; Which does a system flush or whatever I'm sorry dawg
 /* ----- HARDWRE CPU EXECUTION HALT - FULL SYSTEM FLUSH -----
 * void _x86sv_full_halt(void)
 * arg: NONE
@@ -29,9 +29,9 @@ _x86sv_full_halt:
     ret
 
 
-# Halt CPU Execution by a single cycles via the 9-byte NOP instruction.
-# It basically does nothing, and is a really shallow NOP, in
-# which it delays about at 1 CPU cycle / call
+; Halt CPU Execution by a single cycles via the 9-byte NOP instruction.
+; It basically does nothing, and is a really shallow NOP, in
+; which it delays about at 1 CPU cycle / call
 /* ----- HARDWRE CPU EXECUTION HALT - SHALLOW NOP HALTH -----
 * void _x86sv_shallow_halt(void)
 * arg: NONE

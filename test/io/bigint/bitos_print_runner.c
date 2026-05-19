@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -597,10 +597,11 @@ int main(int argc, char **argv) {
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
     // fput() - Stream-based Printing
+    FILE *idk = fopen("logs/bigInt_fput.txt", "w"); fclose(idk); 
     suite fput_suite = {0};
     create_str_suite(&fput_suite, "fput - BigInt Printing", 
         print_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fput_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fput_suite,
@@ -615,7 +616,7 @@ int main(int argc, char **argv) {
     suite sfput_suite = {0};
     create_str_suite(&sfput_suite, "sfput - BigInt Printing", 
         print_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfput_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sfput_suite,
@@ -630,7 +631,7 @@ int main(int argc, char **argv) {
     suite fputb_suite = {0};
     create_str_suite(&fputb_suite, "fputb - BigInt Printing",
         print_scount, rcount, ecases_b, INVERSE, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fputb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fputb_suite,
@@ -645,7 +646,7 @@ int main(int argc, char **argv) {
     suite sfputb_suite = {0};
     create_str_suite(&sfputb_suite, "sfputb - BigInt Printing", 
         print_scount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fput.txt", &print_ectx, &print_rcon,
+        "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfputb_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sfputb_suite,

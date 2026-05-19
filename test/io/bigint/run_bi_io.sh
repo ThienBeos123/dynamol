@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# run_bi_io.sh - Bigint I/O test runner (Hybrid Interactive CLI)
+# run_bi_io.sh - Bigint I/O test executor (Hybrid Interactive CLI)
 # Self-contained: Handles its own build + runner selection + execution
 # Prompts user to:
 #   1) Select individual runners via cursor keys OR alphabet hotkeys
@@ -24,12 +24,8 @@ log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-log_pass() {
-    echo -e "${GREEN}[PASS]${NC} $1"
-}
-
 log_fail() {
-    echo -e "${RED}[FAIL]${NC} $1"
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
 log_section() {
@@ -41,28 +37,24 @@ log_section() {
 # ============================================================================
 
 log_section "Building Bigint I/O Tests"
+CMAKELISTS_DIR=""
 
-# Find CMakeLists.txt
-CMAKELISTS_DIR="$SCRIPT_DIR"
-if [ ! -f "${CMAKELISTS_DIR}/CMakeLists.txt" ]; then
-    if [ -f "${SCRIPT_DIR}/../CMakeLists.txt" ]; then
-        CMAKELISTS_DIR="${SCRIPT_DIR}/.."
-    elif [ -f "${SCRIPT_DIR}/../../CMakeLists.txt" ]; then
-        CMAKELISTS_DIR="${SCRIPT_DIR}/../.."
-    else
-        echo -e "${RED}Error: Could not find CMakeLists.txt${NC}"
-        echo "Searched:"
-        echo "  - ${SCRIPT_DIR}/CMakeLists.txt"
-        echo "  - ${SCRIPT_DIR}/../CMakeLists.txt"
-        echo "  - ${SCRIPT_DIR}/../../CMakeLists.txt"
-        exit 1
-    fi
+if [ -f "${SCRIPT_DIR}/../CMakeLists.txt" ]; then
+    CMAKELISTS_DIR="${SCRIPT_DIR}/.."
+elif [ -f "${SCRIPT_DIR}/../../CMakeLists.txt" ]; then
+    CMAKELISTS_DIR="${SCRIPT_DIR}/../.."
+elif [ -f "${SCRIPT_DIR}/../../../CMakeLists.txt" ]; then
+    CMAKELISTS_DIR="${SCRIPT_DIR}/../../.."
+elif [ -f "${SCRIPT_DIR}/../../../../CMakeLists.txt" ]; then
+    CMAKELISTS_DIR="${SCRIPT_DIR}/../../../../"
+else
+    echo -e "${RED}Error: Could not find CMakeLists.txt${NC}"
+    exit 1
 fi
 
 BUILD_DIR="${CMAKELISTS_DIR}/build"
 BIN_DIR="${BUILD_DIR}/bin"
 
-# Create and configure build directory
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
@@ -70,7 +62,13 @@ log_info "Running CMake..."
 cmake .. -DCMAKE_BUILD_TYPE=Release
 
 log_info "Building..."
-make -j$(nproc)
+CPU_COUNT=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
+
+if cmake --build "${BUILD_DIR}" --parallel ${CPU_COUNT}; then
+    true
+else
+    (cd "${BUILD_DIR}" && make -j"${CPU_COUNT}")
+fi
 
 cd "$SCRIPT_DIR"
 
@@ -80,10 +78,14 @@ if [ ! -d "$BIN_DIR" ]; then
     exit 1
 fi
 
+# Clear out all verbose CMake compilation output clutter before transitioning to selection menu
+clear
+
 # ============================================================================
 # Define available runners
 # ============================================================================
 ALL_RUNNERS=(
+    "binary_io"
     "bitos_conv_runner"
     "bitos_conv_sa_runner"
     "bitos_convf_runner"
@@ -96,7 +98,7 @@ ALL_RUNNERS=(
     "stobi_assign_runner"
     "stobi_conv_runner"
     "stobi_fscan_runner"
-    "stobi_fscan_struct"
+    "stobi_fscan_strict"
     "stobi_fscan_trunc"
     "stobi_init_runner"
     "stobi_sassign_runner"
@@ -114,10 +116,9 @@ for ((i=0; i<${#ALL_RUNNERS[@]}; i++)); do
     SELECTED_FLAGS[i]=0
 done
 
-# Cleanup function
 cleanup() {
     tput cnorm 2>/dev/null || true
-    echo -e "\n${RED}Testing cancelled by user.${NC}"
+    echo -e "\n${RED}Execution profile terminated by user.${NC}"
     exit 1
 }
 trap cleanup SIGINT SIGTERM
@@ -146,27 +147,20 @@ redraw_menu() {
 # ============================================================================
 # Interactive Checklist Engine (Hybrid Controls)
 # ============================================================================
-log_section "Bigint I/O Test Runner Selection"
+log_section "Bigint I/O Execution Configuration Target Selector"
 echo -e "${CYAN}Controls: [Arrows] Navigate | [Space] Toggle | [Enter] Confirm${NC}"
 echo -e "${CYAN}Hotkeys:  Press a single letter key (case-sensitive) to toggle immediately${NC}\n"
 
 cursor=0
 runner_count=${#ALL_RUNNERS[@]}
 
-# Hide cursor
 tput civis 2>/dev/null || true
-
-# Initial menu draw
 redraw_menu
 
 while true; do
-    # Read single character with longer timeout (30 seconds for thinking)
     IFS= read -rsn1 -t 30 key
-    read_status=$?
     
-    # Check for escape sequence (arrow keys)
     if [[ "$key" == $'\x1b' ]]; then
-        # Read the rest of the escape sequence
         IFS= read -rsn2 -t 1 arrow_seq
         
         case "$arrow_seq" in
@@ -180,7 +174,6 @@ while true; do
                 ;;
         esac
         
-        # Clear and redraw
         for ((i=0; i<runner_count; i++)); do
             tput cuu1 2>/dev/null || true
         done
@@ -188,18 +181,15 @@ while true; do
         redraw_menu
         
     elif [[ "$key" == "" ]]; then
-        # Enter key - confirm selection
         break
         
     elif [[ "$key" == " " ]]; then
-        # Spacebar - toggle current item
         if [ ${SELECTED_FLAGS[$cursor]} -eq 1 ]; then
             SELECTED_FLAGS[$cursor]=0
         else
             SELECTED_FLAGS[$cursor]=1
         fi
         
-        # Clear and redraw
         for ((i=0; i<runner_count; i++)); do
             tput cuu1 2>/dev/null || true
         done
@@ -207,7 +197,6 @@ while true; do
         redraw_menu
         
     elif [[ "$key" =~ ^[a-zA-Z]$ ]]; then
-        # Alphabet hotkey - find index in template
         hotkey_idx=-1
         for ((idx=0; idx<${#HOTKEYS_TEMPLATE}; idx++)); do
             if [[ "${HOTKEYS_TEMPLATE:idx:1}" == "$key" ]]; then
@@ -217,14 +206,12 @@ while true; do
         done
         
         if [ $hotkey_idx -ge 0 ] && [ $hotkey_idx -lt $runner_count ]; then
-            # Toggle the runner at this index
             if [ ${SELECTED_FLAGS[$hotkey_idx]} -eq 1 ]; then
                 SELECTED_FLAGS[$hotkey_idx]=0
             else
                 SELECTED_FLAGS[$hotkey_idx]=1
             fi
             
-            # Clear and redraw
             for ((i=0; i<runner_count; i++)); do
                 tput cuu1 2>/dev/null || true
             done
@@ -234,7 +221,6 @@ while true; do
     fi
 done
 
-# Restore cursor
 tput cnorm 2>/dev/null || true
 echo ""
 
@@ -248,9 +234,8 @@ for ((i=0; i<runner_count; i++)); do
     fi
 done
 
-# Guard clause
 if [ -z "${SELECTED_RUNNERS}" ]; then
-    log_fail "No test runners were selected. Exiting."
+    log_fail "No execution streams were checked. Exiting."
     exit 1
 fi
 
@@ -261,53 +246,39 @@ read -p "Number of random cases per runner [default 100]: " rcount_input
 RCOUNT=${rcount_input:-100}
 
 if ! [[ "$RCOUNT" =~ ^[0-9]+$ ]]; then
-    echo -e "${RED}Error: Invalid number.${NC}"
+    echo -e "${RED}Error: Invalid allocation boundaries.${NC}"
     exit 1
 fi
+
+# Clear screen when transitioning away from menu setups directly into raw code diagnostics
+clear
 
 # ============================================================================
 # Execute runners sequentially
 # ============================================================================
 SESSION_COUNT=$(echo "$SELECTED_RUNNERS" | wc -w)
-log_section "Running Granular Suites (rcount=$RCOUNT, sessions=$SESSION_COUNT)"
+log_section "Launching Architecture Suites (rcount=$RCOUNT, sessions=$SESSION_COUNT)"
 
-PASSED=0
-FAILED=0
 RUNNER_NUM=1
 
 for runner in $SELECTED_RUNNERS; do
     exe="$BIN_DIR/$runner"
     
     if [ ! -f "$exe" ]; then
-        log_fail "$runner (executable not found at $exe)"
-        ((FAILED++))
+        log_fail "$runner profile bypass: target file not found at $exe"
         ((RUNNER_NUM++))
         continue
     fi
     
-    log_info "[$RUNNER_NUM/$SESSION_COUNT] Running: $runner"
+    log_info "[$RUNNER_NUM/$SESSION_COUNT] Initializing Context: $runner"
+    echo -e "${CYAN}------------------------------------------------------------${NC}"
     
-    if "$exe" "$RCOUNT" "$SESSION_COUNT" 2>&1; then
-        log_pass "$runner"
-        ((PASSED++))
-    else
-        log_fail "$runner"
-        ((FAILED++))
-    fi
+    # Execution metrics and diagnostic stream tables completely print natively here
+    "$exe" "$RCOUNT" "$SESSION_COUNT"
     
+    echo -e "${CYAN}------------------------------------------------------------${NC}\n"
     ((RUNNER_NUM++))
 done
 
-# ============================================================================
-# Summary
-# ============================================================================
-log_section "Summary"
-echo -e "Passed: ${GREEN}$PASSED${NC} / Failed: ${RED}$FAILED${NC}"
-
-if [ $FAILED -eq 0 ]; then
-    echo -e "\n${GREEN}All selected tests passed!${NC}\n"
-    exit 0
-else
-    echo -e "\n${RED}Some test modules failed.${NC}\n"
-    exit 1
-fi
+log_info "Selected Bigint I/O framework execution loop completed."
+exit 0

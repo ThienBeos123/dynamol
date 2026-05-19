@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -706,11 +706,12 @@ int main(int argc, char **argv) {
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
+    FILE *idk = fopen("logs/bigint_to_strf_sa.txt", "w"); fclose(idk); 
     // to_strf() - Size-aware Testing
     suite to_sstrf_suite = {0};
     create_str_suite(&to_sstrf_suite, "to_strf - BigInt Conversion", 
         conv_scount, rcount, ecases_strict, INVERSE, ebuf_slices[2], 
-        "../logs/bi_logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_strf_sa.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); to_sstrf_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&to_sstrf_suite,
@@ -725,7 +726,7 @@ int main(int argc, char **argv) {
     suite tto_sstrf_suite = {0};
     create_str_suite(&tto_sstrf_suite, "tto_strf - BigInt Conversion",
         conv_scount, rcount, ecases_trunc, INVERSE, ebuf_slices[3],
-        "../logs/bi_logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_strf_sa.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_sstrf_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tto_sstrf_suite,

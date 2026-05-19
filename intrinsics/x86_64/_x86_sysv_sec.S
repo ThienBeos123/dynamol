@@ -14,8 +14,8 @@ asm_text_section
 
 
 
-# Uses hardware DRBG, in which it alos utilizes hardware entropy, 
-# to seed entropy to the user swiftly
+; Uses hardware DRBG, in which it alos utilizes hardware entropy, 
+; to seed entropy to the user swiftly
 /* ----- HARDWRE DETERMINISTIC RANDOM BIT GENERATOR -----
 * uint64_t _x86sv_hw_drbg(int *err)
 * arg:
@@ -25,16 +25,16 @@ asm_text_section
 *   rdi: 1 (error) / 0 (success)
 */
 _x86sv_hw_drbg:
-    rdrand rax # Return with the random number
-    setnc sil # Set the error flag inversely of RDRAND error returns
-    # RDRAND Success --> CF = 1 and vice versa
-    movzx rsi, sil # Zero extends sil (1-byte) --> rsi (8-byte)
-    mov [rdi], rsi # *rdi = rsi
+    rdrand rax ; Return with the random number
+    setnc sil ; Set the error flag inversely of RDRAND error returns
+    ; RDRAND Success --> CF = 1 and vice versa
+    movzx rsi, sil ; Zero extends sil (1-byte) --> rsi (8-byte)
+    mov [rdi], rsi ; *rdi = rsi
     ret
 
 
 
-# Harvests raw, unmanipulated True Entropy from hardware entropy pool
+; Harvests raw, unmanipulated True Entropy from hardware entropy pool
 /* ----- HARDWRE TRUE RANDOM NUMBER GENERATOR -----
 * uint64_t _x86sv_hw_trng(int *err)
 * arg:
@@ -44,11 +44,11 @@ _x86sv_hw_drbg:
 *   rdi: 1 (error) / 0 (success)
 */
 _x86sv_hw_trng:
-    rdseed rax # Return with the random number
-    setnc sil # Set the error flag inversely of RDRAND error returns
-    # RDRAND Success --> CF = 1 and vice versa
-    movzx rsi, sil # Zero extends sil (1-byte) --> rsi (8-byte)
-    mov [rdi], rsi # *rdi = rsi
+    rdseed rax ; Return with the random number
+    setnc sil ; Set the error flag inversely of RDRAND error returns
+    ; RDRAND Success --> CF = 1 and vice versa
+    movzx rsi, sil ; Zero extends sil (1-byte) --> rsi (8-byte)
+    mov [rdi], rsi ; *rdi = rsi
     ret
 
 

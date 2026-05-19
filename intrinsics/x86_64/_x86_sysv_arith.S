@@ -28,20 +28,20 @@ asm_text_section
 *   rdx: boolean - 1/0
 */
 _x86sv_add64c:
-    mov rax, qword ptr [rdx] # Load *carry into rax
-    add rax, -1 # rax + UINT64_MAX:
-    # +) If rax = 1 ---> UINT64_MAX + 1 overflows --> C flag set (carry)
-    # +) If rax = 0 ---> UINT64_MAX + 0 is normal --> C flag not set (no carry)
-    # Add a = a + b + *carry
-    # --> rdi = rdi + rsi + C flag
+    mov rax, qword ptr [rdx] ; Load *carry into rax
+    add rax, -1 ; rax + UINT64_MAX:
+    ; +) If rax = 1 ---> UINT64_MAX + 1 overflows --> C flag set (carry)
+    ; +) If rax = 0 ---> UINT64_MAX + 0 is normal --> C flag not set (no carry)
+    ; Add a = a + b + *carry
+    ; --> rdi = rdi + rsi + C flag
     adc rdi, rsi
 
-    xor rax, rax # Clearing out rax
-    setc    al # Set rax/al based on C flag
-    movzx rax, al # Zero-extends al into rcx
+    xor rax, rax ; Clearing out rax
+    setc    al ; Set rax/al based on C flag
+    movzx rax, al ; Zero-extends al into rcx
 
-    mov [rdx], rax # *carry/*rdx = rax
-    mov rax, rdi # return rdi
+    mov [rdx], rax ; *carry/*rdx = rax
+    mov rax, rdi ; return rdi
     ret
 
 
@@ -56,18 +56,18 @@ _x86sv_add64c:
 *   rdx: boolean - 1/0
 */
 _x86sv_sub64b:
-    mov rax, qword ptr [rdx] # Load *borrow into rax
-    bt  rax, 0 # Copies rax_bits[0] into C_flag
-    # Subtract a = a - b - *borrow
-    # -------> rdi = rdi - rsi - C flag
+    mov rax, qword ptr [rdx] ; Load *borrow into rax
+    bt  rax, 0 ; Copies rax_bits[0] into C_flag
+    ; Subtract a = a - b - *borrow
+    ; -------> rdi = rdi - rsi - C flag
     sbc rdi, rsi
 
-    xor rax, rax # Clearing out rax
-    setc    al # Set rax/al based on C flag
-    movzx rax, al # Zero-extends al into rax
+    xor rax, rax ; Clearing out rax
+    setc    al ; Set rax/al based on C flag
+    movzx rax, al ; Zero-extends al into rax
     
-    mov [rdx], rax # *carry/*rdi = rax
-    mov rax, rdi # return rdi
+    mov [rdx], rax ; *carry/*rdi = rax
+    mov rax, rdi ; return rdi
     ret
 
 
@@ -82,11 +82,11 @@ _x86sv_sub64b:
 *   rdx - hi: (a * b) >> 64;
 */
 _x86sv_wmul128:
-    mov rax, rdi # rax = rdi/a
-    mov rcx, rdx # rcx = rdx (the pointer adress)
-    mul rsi # rax * rsi --> stored in [rdx:rax]
-    mov [rcx], rdx # *rcx = rdx (the high 64 bit)
-    mov rdx, rcx # rdx = rcx (return the original adress to rdx)
+    mov rax, rdi ; rax = rdi/a
+    mov rcx, rdx ; rcx = rdx (the pointer adress)
+    mul rsi ; rax * rsi --> stored in [rdx:rax]
+    mov [rcx], rdx ; *rcx = rdx (the high 64 bit)
+    mov rdx, rcx ; rdx = rcx (return the original adress to rdx)
     ret
 
 
@@ -107,12 +107,12 @@ _x86sv_wmul128:
 *   hi/rsi < div
 */
 _x86sv_wdiv128:
-    mov r9, rdx # r9 = div
-    mov rdx, rsi # rdx = hi
-    mov rax, rdi # rax = lo
-    div r9 # [rdx:rax] / r9
-    # rax = quot
-    # rdx = rem
+    mov r9, rdx ; r9 = div
+    mov rdx, rsi ; rdx = hi
+    mov rax, rdi ; rax = lo
+    div r9 ; [rdx:rax] / r9
+    ; rax = quot
+    ; rdx = rem
     mov [rcx], rdx
     ret
 

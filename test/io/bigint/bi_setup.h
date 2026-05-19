@@ -2,7 +2,7 @@
 #define DNML_BI_SETUP_H
 
 
-#include "../../../adynamol/big_numbers/bigNums.h"
+#include "../../../dynamol/big_numbers/bigNums.h"
 #include "../../../test_ui/_strui.h"
 #include "../../../intrinsics/intrinsics.h"
 #include "../../case_gen/case_gen.h"
@@ -93,18 +93,17 @@ void _stobi_deserialize_inlink(void *in, rand_container *incon) {
 //* ===================== OUTPUT SETUP FUNCTIONS ===================== *//
 // Output Buffer Linker - BITOS
 void _bitos_outlink(str_res *out, rand_container *rcon) {
-    out = (str_res*)(rcon->res_cont->res_buf);
+    out->pstr = (char*)(rcon->res_cont->res_buf);
     out->type = STRING; out->cap = STR_CAP;
     out->data.len = 0;
 }
 void _bitos_aux2link(str_res *out, rand_container *rcon) {
-    out = (str_res*)(rcon->res_cont->aux2_buf);
+    out->pstr = (char*)(rcon->res_cont->aux2_buf);
     out->type = STRING; out->cap = STR_CAP;
     out->data.len = 0;
 }
 // Output Buffer Linker - STOBI
 void _stobi_outlink(str_res *out, rand_container *rcon) {
-    out = (str_res*)(rcon->res_cont->res_buf);
     limb_t *limb = (limb_t*)(
         rcon->res_cont->res_buf 
       + ALIGN_UP(sizeof(str_res), _Alignof(max_align_t))
@@ -116,7 +115,6 @@ void _stobi_outlink(str_res *out, rand_container *rcon) {
     out->data.bi.sign = 1;
 }
 void _stobi_aux2link(str_res *aux2, rand_container *rcon) {
-    aux2 = (str_res*)(rcon->res_cont->aux2_buf);
     limb_t *limb = (limb_t*)(
         rcon->res_cont->aux2_buf 
       + ALIGN_UP(sizeof(str_res), _Alignof(max_align_t))
@@ -238,47 +236,47 @@ void _stobi_init_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, 
     stobi_init_in *vin = (stobi_init_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
     // --- String Generation setup
-    strgen_write(vin->str, STR_CAP, &config, true);
+    strgen_write(vin->str, STR_CAP, config, true);
     vin->len = config->str_len; vin->base = config->base; // Base is set for safety
 }
 void _stobi_init_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_init_in *vin = (stobi_init_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
     uint8_t rand_gmode = __rng_range(state, 0, 2);
-    strgen_write(vin->str, STR_CAP, &config, false);
+    strgen_write(vin->str, STR_CAP, config, false);
     vin->len = config->str_len; vin->base = config->base;
 }
 void _stobi_conv_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_conv_in *vin = (stobi_conv_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
     uint8_t rand_gmode = __rng_range(state, 0, 2);
-    strgen_write(vin->str, STR_CAP, &config, true);
+    strgen_write(vin->str, STR_CAP, config, true);
     vin->len = config->str_len; vin->base = config->base; // Base is set for safety
 }
 void _stobi_conv_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_conv_in *vin = (stobi_conv_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    strgen_write(vin->str, STR_CAP, &config, false);
+    strgen_write(vin->str, STR_CAP, config, false);
     vin->len = config->str_len; vin->base = config->base;
 }
 void _stobi_assign_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_assign_in *vin = (stobi_assign_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    strgen_write(vin->str, STR_CAP, &config, true);
+    strgen_write(vin->str, STR_CAP, config, true);
     vin->len = config->str_len; vin->base = config->base; // Base is set for safety
     vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
 }
 void _stobi_assign_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_assign_in *vin = (stobi_assign_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    strgen_write(vin->str, STR_CAP, &config, false);
+    strgen_write(vin->str, STR_CAP, config, false);
     vin->len = config->str_len; vin->base = config->base;
     vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
 }
 void _stobi_scan_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_scan_in *vin = (stobi_scan_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, true);
+    strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, config, true);
     fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config->str_len, vin->stream);
     memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config->base;
     vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);
@@ -286,7 +284,7 @@ void _stobi_scan_ingen_nob(void *in, void *rconfig, rstate *state, cmode incap, 
 void _stobi_scan_ingen_b(void *in, void *rconfig, rstate *state, cmode incap, rand_container *rcont) {
     stobi_scan_in *vin = (stobi_scan_in*)in;
     str_rand_mod *config = (str_rand_mod*)rconfig;
-    strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, &config, false);
+    strgen_write((char*)(rcont->in_cont.rctx->in_buf), STR_CAP, config, false);
     fwrite(rcont->in_cont.rctx->in_buf, sizeof(char), config->str_len, vin->stream);
     memset(rcont->in_cont.rctx->in_buf, 0, STR_CAP); vin->base = config->base;
     vin->bi_size = bisize_to_rcap_dist(config->str_len, config->base, incap, state);

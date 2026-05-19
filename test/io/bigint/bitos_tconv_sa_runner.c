@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -734,11 +734,12 @@ int main(int argc, char **argv) {
 
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
+    FILE *idk = fopen("logs/bigint_tto_str_sa.txt", "w"); fclose(idk); 
     // tto_str() - Non-base-parameter, No length param
     suite tto_str_suite = {0};
     create_str_suite(&tto_str_suite, "tto_str - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tto_str_suite,
@@ -751,7 +752,7 @@ int main(int argc, char **argv) {
     suite tto_strb_suite = {0};
     create_str_suite(&tto_strb_suite, "tto_strb - BigInt Conversion", 
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tto_strb_suite,
@@ -764,7 +765,7 @@ int main(int argc, char **argv) {
     suite tto_strn_suite = {0};
     create_str_suite(&tto_strn_suite, "tto_strn - BigInt Conversion", 
         conv_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tto_strn_suite,
@@ -777,7 +778,7 @@ int main(int argc, char **argv) {
     suite tto_strnb_suite = {0};
     create_str_suite(&tto_strnb_suite, "tto_strnb - BigInt Conversion",
         conv_scount, rcount, ecases_b, INVERSE, ebuf_slices[0],
-        "../logs/bi_logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_tto_str_sa.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); tto_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tto_strnb_suite,

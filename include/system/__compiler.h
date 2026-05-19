@@ -68,10 +68,9 @@
     #define inline __forceinline
     #define restrict __restrict
 #elif (__compiler_clang || __compiler_gcc)
-    #define inline __attribute__((always_inline))
+    /* Do not redefine the C keyword inline; use standard inline semantics. */
     #define restrict __restrict__
 #else
-    #define inline inline
     #define restrict 
 #endif
 

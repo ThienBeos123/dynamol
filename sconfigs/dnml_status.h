@@ -1,6 +1,7 @@
 #ifndef __DNML_STAT_H__
 #define __DNML_STAT_H__
 
+#include <stdio.h>
 
 typedef enum ___44594E414D4F4C_737461747573___ {
     BIGINT_SUCCESS = 0,         // 0

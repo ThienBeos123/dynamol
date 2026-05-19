@@ -112,9 +112,6 @@ uint8_t __PCNT_UI64__(uint64_t x);
 //* --------------------------------------------------------------------------------------- *//
 //*                                   GENERAL MEMORY UTILITIES                              *//
 //* --------------------------------------------------------------------------------------- *//
-// STANDARD MEMORY UTILITIES - Fast and Efficient (may utilize SIMD)
-void __MEMCPY_STD__(void *buf, const void *src, size_t bytes);
-void __MEMWIPE_STD__(void *buf, size_t len);
 // STRICT, SECURED MEM UTILS - Secured (does NOT utilize SIMD)
 void __MEMCPY_STRICT__(void *buf, const void *src, size_t bytes);
 void __MEMWIPE_STRICT__(void *buf, size_t len);
@@ -124,8 +121,8 @@ void __MEMWIPE_STRICT__(void *buf, size_t len);
 //*                                HARDWARE INTERACTION UTILITIES                           *//
 //* --------------------------------------------------------------------------------------- *//
 /* Security-Extension Hardware Functionalities */
-int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max);
-int __CPU_TRNG_SEED__(void *buf, size_t len, int retry_max, bool crypt);
+int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written);
+int __CPU_TRNG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written);
 /* Hardware-Interactive Functionalities */
 void __CPU_FULL_HALT__(void);
 void __CPU_SHALLOW_HALT__(void);
@@ -137,7 +134,7 @@ void __CPU_SHALLOW_HALT__(void);
 //* --------------------------------------------------------------------------------------- *//
 void __GET_ENTROPY_FAST(void* buf, size_t len);
 void __GET_ENTROPY_STD(void *buf, size_t len);
-void __GET_ENTROPY_PQC(void *buf, size_t len);
+int __GET_ENTROPY_PQC(void *buf, size_t len);
 
 
 #endif

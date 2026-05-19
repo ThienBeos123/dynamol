@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -367,10 +367,11 @@ int main(int argc, char **argv) {
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
     // to_strf()
+    FILE *idk = fopen("logs/bigint_to_strf.txt", "w"); fclose(idk); 
     suite to_strf_suite = {0};
     create_str_suite(&to_strf_suite, "to_strf - BigInt Conversion", 
         conv_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
         &convf_rconfig, &conv_rstate
     ); to_strf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&to_strf_suite,
@@ -385,7 +386,7 @@ int main(int argc, char **argv) {
     suite tto_strf_suite = {0};
     create_str_suite(&tto_strf_suite, "tto_strf - BigInt Conversion",
         conv_scount, rcount, ecases, INVERSE, ebuf_slices[1],
-        "../logs/bi_logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
+        "logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
         &convf_rconfig, &conv_rstate
     ); tto_strf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&tto_strf_suite,

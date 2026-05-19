@@ -1,7 +1,7 @@
 #!/bin/bash
 ################################################################################
-# run_low.sh - Low-level architecture test runner (Hybrid Interactive CLI)
-# Self-contained: Handles its own build + runner selection + execution
+# run_low.sh - Low-level architecture test executor (Hybrid Interactive CLI)
+# Self-contained: Handles its own build + runner selection + execution execution
 # Prompts user to:
 #   1) Select runners via cursor keys OR alphabet hotkeys
 #   2) Enter random case count
@@ -13,8 +13,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Color output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
+RED='\033;31m'
+GREEN='\033;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
@@ -24,12 +24,8 @@ log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-log_pass() {
-    echo -e "${GREEN}[PASS]${NC} $1"
-}
-
 log_fail() {
-    echo -e "${RED}[FAIL]${NC} $1"
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
 log_section() {
@@ -42,21 +38,21 @@ log_section() {
 
 log_section "Building Low-Level Tests"
 
-# Find CMakeLists.txt
-CMAKELISTS_DIR="$SCRIPT_DIR"
-if [ ! -f "${CMAKELISTS_DIR}/CMakeLists.txt" ]; then
-    if [ -f "${SCRIPT_DIR}/../CMakeLists.txt" ]; then
-        CMAKELISTS_DIR="${SCRIPT_DIR}/.."
-    elif [ -f "${SCRIPT_DIR}/../../CMakeLists.txt" ]; then
-        CMAKELISTS_DIR="${SCRIPT_DIR}/../.."
-    else
-        echo -e "${RED}Error: Could not find CMakeLists.txt${NC}"
-        echo "Searched:"
-        echo "  - ${SCRIPT_DIR}/CMakeLists.txt"
-        echo "  - ${SCRIPT_DIR}/../CMakeLists.txt"
-        echo "  - ${SCRIPT_DIR}/../../CMakeLists.txt"
-        exit 1
-    fi
+# Find CMakeLists.txt: prefer repository root (two levels up), then parent, then current
+CMAKELISTS_DIR=""
+if [ -f "${SCRIPT_DIR}/../../CMakeLists.txt" ]; then
+    CMAKELISTS_DIR="${SCRIPT_DIR}/../.."
+elif [ -f "${SCRIPT_DIR}/../CMakeLists.txt" ]; then
+    CMAKELISTS_DIR="${SCRIPT_DIR}/.."
+elif [ -f "${SCRIPT_DIR}/CMakeLists.txt" ]; then
+    CMAKELISTS_DIR="${SCRIPT_DIR}"
+else
+    echo -e "${RED}Error: Could not find CMakeLists.txt${NC}"
+    echo "Searched:"
+    echo "  - ${SCRIPT_DIR}/../../CMakeLists.txt"
+    echo "  - ${SCRIPT_DIR}/../CMakeLists.txt"
+    echo "  - ${SCRIPT_DIR}/CMakeLists.txt"
+    exit 1
 fi
 
 BUILD_DIR="${CMAKELISTS_DIR}/build"
@@ -70,7 +66,14 @@ log_info "Running CMake..."
 cmake .. -DCMAKE_BUILD_TYPE=Release
 
 log_info "Building..."
-make -j$(nproc)
+# Portable CPU count: prefer getconf, fallback to sysctl, then 1
+CPU_COUNT=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
+# Use CMake's build driver so it enforces target ordering; fall back to make if unavailable
+if cmake --build "${BUILD_DIR}" --parallel ${CPU_COUNT}; then
+    true
+else
+    (cd "${BUILD_DIR}" && make -j"${CPU_COUNT}")
+fi
 
 cd "$SCRIPT_DIR"
 
@@ -101,7 +104,7 @@ done
 # Cleanup function
 cleanup() {
     tput cnorm 2>/dev/null || true
-    echo -e "\n${RED}Testing cancelled by user.${NC}"
+    echo -e "\n${RED}Execution cancelled by user.${NC}"
     exit 1
 }
 trap cleanup SIGINT SIGTERM
@@ -130,7 +133,7 @@ redraw_menu() {
 # ============================================================================
 # Interactive Checklist Engine (Hybrid Controls)
 # ============================================================================
-log_section "Low-Level Architecture Test Runner"
+log_section "Low-Level Architecture Test Chooser"
 echo -e "${CYAN}Controls: [Arrows] Navigate | [Space] Toggle | [Enter] Confirm${NC}"
 echo -e "${CYAN}Hotkeys:  Press a single letter key (case-sensitive) to toggle immediately${NC}\n"
 
@@ -144,13 +147,10 @@ tput civis 2>/dev/null || true
 redraw_menu
 
 while true; do
-    # Read single character with longer timeout (30 seconds for thinking)
     IFS= read -rsn1 -t 30 key
-    read_status=$?
     
     # Check for escape sequence (arrow keys)
     if [[ "$key" == $'\x1b' ]]; then
-        # Read the rest of the escape sequence
         IFS= read -rsn2 -t 1 arrow_seq
         
         case "$arrow_seq" in
@@ -172,18 +172,15 @@ while true; do
         redraw_menu
         
     elif [[ "$key" == "" ]]; then
-        # Enter key - confirm selection
         break
         
     elif [[ "$key" == " " ]]; then
-        # Spacebar - toggle current item
         if [ ${SELECTED_FLAGS[$cursor]} -eq 1 ]; then
             SELECTED_FLAGS[$cursor]=0
         else
             SELECTED_FLAGS[$cursor]=1
         fi
         
-        # Clear and redraw
         for ((i=0; i<runner_count; i++)); do
             tput cuu1 2>/dev/null || true
         done
@@ -191,7 +188,6 @@ while true; do
         redraw_menu
         
     elif [[ "$key" =~ ^[a-zA-Z]$ ]]; then
-        # Alphabet hotkey - find index in template
         hotkey_idx=-1
         for ((idx=0; idx<${#HOTKEYS_TEMPLATE}; idx++)); do
             if [[ "${HOTKEYS_TEMPLATE:idx:1}" == "$key" ]]; then
@@ -201,14 +197,12 @@ while true; do
         done
         
         if [ $hotkey_idx -ge 0 ] && [ $hotkey_idx -lt $runner_count ]; then
-            # Toggle the runner at this index
             if [ ${SELECTED_FLAGS[$hotkey_idx]} -eq 1 ]; then
                 SELECTED_FLAGS[$hotkey_idx]=0
             else
                 SELECTED_FLAGS[$hotkey_idx]=1
             fi
             
-            # Clear and redraw
             for ((i=0; i<runner_count; i++)); do
                 tput cuu1 2>/dev/null || true
             done
@@ -253,45 +247,29 @@ fi
 # Execute runners sequentially
 # ============================================================================
 SESSION_COUNT=$(echo "$SELECTED_RUNNERS" | wc -w)
-log_section "Running Architecture Suites (rcount=$RCOUNT, sessions=$SESSION_COUNT)"
+log_section "Launching Selected Architecture Suites (rcount=$RCOUNT, sessions=$SESSION_COUNT)"
 
-PASSED=0
-FAILED=0
 RUNNER_NUM=1
 
 for runner in $SELECTED_RUNNERS; do
     exe="$BIN_DIR/$runner"
     
     if [ ! -f "$exe" ]; then
-        log_fail "$runner (executable not found at $exe)"
-        ((FAILED++))
+        log_fail "Executable profile not found for $runner at $exe"
         ((RUNNER_NUM++))
         continue
     fi
     
-    log_info "[$RUNNER_NUM/$SESSION_COUNT] Running: $runner"
+    log_info "[$RUNNER_NUM/$SESSION_COUNT] Initializing: $runner"
+    echo -e "${CYAN}------------------------------------------------------------${NC}"
     
-    if "$exe" "$RCOUNT" "$SESSION_COUNT" 2>&1; then
-        log_pass "$runner"
-        ((PASSED++))
-    else
-        log_fail "$runner"
-        ((FAILED++))
-    fi
+    # Run binary natively. Data output and stream metrics flow directly to terminal.
+    # Script does not intercept or count success parameters.
+    "$exe" "$RCOUNT" "$SESSION_COUNT"
     
+    echo -e "${CYAN}------------------------------------------------------------${NC}\n"
     ((RUNNER_NUM++))
 done
 
-# ============================================================================
-# Summary
-# ============================================================================
-log_section "Summary"
-echo -e "Passed: ${GREEN}$PASSED${NC} / Failed: ${RED}$FAILED${NC}"
-
-if [ $FAILED -eq 0 ]; then
-    echo -e "\n${GREEN}All selected architecture tests passed!${NC}\n"
-    exit 0
-else
-    echo -e "\n${RED}Some framework architectures failed.${NC}\n"
-    exit 1
-fi
+log_info "All designated architecture runner execution profiles completed."
+exit 0

@@ -42,11 +42,22 @@ uint64_t _stou64(const char *buf, int buflen) {
 
 int _itosn(uint64_t x, char *buf, int buflen) {
     if (!buflen) return 0;
-    int i = buflen - 1, xlen = 0;
-    while (x) { if (i < 0) { break; }
+    if (buflen < 2) { buf[0] = '\0'; return 0; }
+    if (x == 0) { buf[0] = '0'; buf[1] = '\0'; return 1; }
+    // Fill buffer from the end backwards
+    int i = buflen - 2, count = 0;
+    while (x && i >= 0) {
         buf[i] = '0' + (char)(x % 10);
-        x /= 10; --i;
-    } return xlen;
+        x /= 10; --i; ++count;
+    }
+    if (x) return 0;
+    // Shift string to beginning of buffer
+    int start = i + 1;
+    if (start > 0) {
+        for (int j = 0; j < count; ++j) {
+            buf[j] = buf[start + j];
+        }
+    } buf[count] = '\0'; return count;
 }
 
 uint64_t _dnml_ipower_u64(uint64_t base, uint8_t power) {

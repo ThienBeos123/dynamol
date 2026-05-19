@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -366,10 +366,11 @@ int main(int argc, char **argv) {
 
     //* ------------------------------------ SUITE SETUP ------------------------------------ *//
     // fputf() - Stream-based Printing
+    FILE *idk = fopen("logs/bigInt_fputf.txt", "w"); fclose(idk); 
     suite fputf_suite = {0};
     create_str_suite(&fputf_suite, "fputf - BigInt Printing", 
         print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
+        "logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fputf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&fputf_suite,
@@ -384,7 +385,7 @@ int main(int argc, char **argv) {
     suite sfputf_suite = {0};
     create_str_suite(&sfputf_suite, "sfputf - BigInt Printing", 
         print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
+        "logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfputf_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&sfputf_suite,

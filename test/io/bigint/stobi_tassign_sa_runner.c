@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -719,11 +719,12 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
+    FILE *idk = fopen("logs/bigInt_tget_str_sa.txt", "w"); fclose(idk);
     // tget_str() -- Base-prefix, No length param
     suite tget_str_suite = {0};
     create_str_suite(&tget_str_suite, "bigInt_tget_str - String Assignment", 
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -737,7 +738,7 @@ int main(int argc, char **argv) {
     suite tget_strn_suite = {0};
     create_str_suite(&tget_strn_suite, "bigInt_tget_strn - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[1],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); tget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -751,7 +752,7 @@ int main(int argc, char **argv) {
     suite tget_strb_suite = {0};
     create_str_suite(&tget_strb_suite, "bigInt_tget_strb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[2],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,
@@ -765,7 +766,7 @@ int main(int argc, char **argv) {
     suite tget_strnb_suite = {0};
     create_str_suite(&tget_strnb_suite, "bigInt_tget_strnb - String Assignment",
         tassign_scount, rcount, ecases_bprefix, EVAL, ebuf_slices[3],
-        "../logs/bi_logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
+        "logs/bigInt_tget_str_sa.txt", &tassign_ectx, &tassign_rcon,
         &assign_rconfig, &assign_rstate
     ); tget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_reval(&tget_str_suite,

@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -521,11 +521,12 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- STRICT API SUITE ---------------------------------- *//
+    FILE *idk = fopen("logs/bigInt_fscan_sa.txt", "w"); fclose(idk); 
     // fsscan() -- Base-prefix, No length param
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan",
         sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_fscan_sa.txt", &sscan_ectx, &sscan_rcon,
+        "logs/bigInt_fscan_sa.txt", &sscan_ectx, &sscan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); fsscan_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&fsscan_suite,
@@ -540,7 +541,7 @@ int main(int argc, char **argv) {
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan",
         sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bi_logs/bigInt_fscan_sa.txt", &sscan_ectx, &sscan_rcon,
+        "logs/bigInt_fscan_sa.txt", &sscan_ectx, &sscan_rcon,
         &scan_rconfig, &scan_rstate
     ); fsscanb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&fsscanb_suite,

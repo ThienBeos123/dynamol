@@ -44,28 +44,28 @@ int main(int argc, char **argv) {
             &add64c_suite, "add64c", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice], 
-            "../logs/x86_arith.txt",
+            "logs/x86_arith.txt",
             _x86_add64c, _cintrin_add64c
         ); ++curr_slice; x86_slist[curr_slice] = add64c_suite;
         _libdnml_lsuite sub64b_suite = {}; subb_setup(                   // Slice 1
             &sub64b_suite, "sub64b", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice], 
-            "../logs/x86_arith.txt",
+            "logs/x86_arith.txt",
             _x86_sub64b, _cintrin_sub64b
         ); ++curr_slice; x86_slist[curr_slice] = sub64b_suite;
         _libdnml_lsuite wmul128_suite = {}; wmul_setup(                  // Slice 2
             &wmul128_suite, "wmul128", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/x86_arith.txt",
+            "logs/x86_arith.txt",
             _x86_wmul128, _cintrin_wmul128
         ); ++curr_slice; x86_slist[curr_slice] = wmul128_suite;
         _libdnml_lsuite wdiv128_suite = {}; wdiv_setup(                  // Slice 3
             &wdiv128_suite, "wdiv128", 
             eslices[curr_slice], rslices[curr_slice], rcount,
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/x86_arith.txt",
+            "logs/x86_arith.txt",
             _x86_wdiv128, _cintrin_wdiv128
         ); ++curr_slice; x86_slist[curr_slice] = wdiv128_suite;
         // -------------- MODULAR ARITHETMIC TEST SUITES -------------- //
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
             &modinv64_suite, "modinv64", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/x86_marith.txt",
+            "logs/x86_marith.txt",
             _x86_modinv64, _cintrin_modinv64
         ); ++curr_slice; x86_slist[curr_slice] = modinv64_suite;
         // -------------- BITWISE OPERATIONS TEST SUITES -------------- //
@@ -81,21 +81,21 @@ int main(int argc, char **argv) {
                 &clz64e_suite, "clz64e", 
                 eslices[curr_slice], rslices[curr_slice], rcount,
                 rinslices[curr_slice], resslices[curr_slice],
-                "../logs/x86_bitops.txt",
+                "logs/x86_bitops.txt",
                 _x86_clz64e, _cintrin_clz64
             ); ++curr_slice; x86_slist[curr_slice] = clz64e_suite;
         } if (libdnml_caps.x86_bmi1) { _libdnml_lsuite ctz64e_suite = {}; ctz_setup( // Slice 6
                 &ctz64e_suite, "ctz64e", 
                 eslices[curr_slice], rslices[curr_slice], rcount, 
                 rinslices[curr_slice], resslices[curr_slice],
-                "../logs/x86_bitops.txt",
+                "logs/x86_bitops.txt",
                 _x86_ctz64e, _cintrin_ctz64
             ); ++curr_slice; x86_slist[curr_slice] = ctz64e_suite;
         } if (libdnml_caps.x86_sse4_2) { _libdnml_lsuite pcnt64_suite = {}; pcnt_setup(  // Slice 7
                 &pcnt64_suite, "pcnt64", 
                 eslices[curr_slice], rslices[curr_slice], rcount, 
                 rinslices[curr_slice], resslices[curr_slice],
-                "../logs/x86_bitops.txt",
+                "logs/x86_bitops.txt",
                 _x86_pcnt64e, _cintrin_clz64
             ); ++curr_slice; x86_slist[curr_slice] = pcnt64_suite;
         } 
@@ -103,21 +103,21 @@ int main(int argc, char **argv) {
             &bswap64_suite, "bswap64", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/x86_bitops.txt",
+            "logs/x86_bitops.txt",
             _x86_bswap64, _cintrin_bswap64
         ); ++curr_slice; x86_slist[curr_slice] = bswap64_suite;
         _libdnml_lsuite clz64s_suite = {}; clz_setup(                // Slice 6/9
             &clz64s_suite, "clz64e", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/x86_bitops.txt",
+            "logs/x86_bitops.txt",
             _x86_clz64s, _cintrin_clz64
         ); ++curr_slice; x86_slist[curr_slice] = clz64s_suite;
         _libdnml_lsuite ctz64s_suite = {}; ctz_setup(                // Slice 7/10
             &ctz64s_suite, "ctz64e", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], rinslices[curr_slice],
-            "../logs/x86_bitops.txt",
+            "logs/x86_bitops.txt",
             _x86_ctz64s, _cintrin_ctz64
         ); ++curr_slice; x86_slist[curr_slice] = ctz64s_suite;
 

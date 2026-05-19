@@ -1,8 +1,8 @@
-#include "../../intrinsics/risc-v64/_rv64_conn.h"
-#include "../../intrinsics/zvanillc/_vanillc_conn.h"
+#include "../intrinsics/risc-v64/_rv64_conn.h"
+#include "../intrinsics/zvanillc/_vanillc_conn.h"
 // Utilities
-#include "../../util/util.h"
-#include "../../test_ui/lowui.h"
+#include "../util/util.h"
+#include "../test_ui/lowui.h"
 #include "low_setup.h"
 // STDLIB utilities
 #include <system/sys.h>
@@ -39,21 +39,21 @@ int main(int argc, char **argv) {
             &add64c_suite, "add64c", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/rv64_arith.txt",
+            "logs/rv64_arith.txt",
             _rv64_add64c, _cintrin_add64c
         ); ++curr_slice; rv64_slist[curr_slice] = add64c_suite;
         _libdnml_lsuite sub64b_suite; subb_setup(
             &sub64b_suite, "sub64b", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice], 
-            "../logs/rv64_arith.txt",
+            "logs/rv64_arith.txt",
             _rv64_sub64b, _cintrin_sub64b
         ); ++curr_slice; rv64_slist[curr_slice] = sub64b_suite;
         _libdnml_lsuite wmul128_suite; wmul_setup(
             &wmul128_suite, "wmul128", 
             eslices[curr_slice], rslices[curr_slice], rcount,
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/rv64_arith.txt",
+            "logs/rv64_arith.txt",
             _rv64_wmul128, _cintrin_wmul128
         ); ++curr_slice; rv64_slist[curr_slice] = wmul128_suite;
         // -------------- MODULAR ARITHETMIC TEST SUITES -------------- //
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
             &modinv64_suite, "modinv64", 
             eslices[curr_slice], rslices[curr_slice], rcount, 
             rinslices[curr_slice], resslices[curr_slice],
-            "../logs/rv64_marith.txt",
+            "logs/rv64_marith.txt",
             _rv64_modinv64, _cintrin_modinv64
         ); ++curr_slice; rv64_slist[curr_slice] = modinv64_suite;
         // -------------- BITWISE OPERATIONS TEST SUITES -------------- //
@@ -70,29 +70,29 @@ int main(int argc, char **argv) {
                 &clz64_suite, "clz64e", 
                 eslices[curr_slice], rslices[curr_slice], rcount, 
                 rinslices[curr_slice], resslices[curr_slice],
-                "../logs/rv64_bitops.txt",
+                "logs/rv64_bitops.txt",
                 _rv64_clz64, _cintrin_clz64
             ); ++curr_slice; rv64_slist[curr_slice] = clz64_suite;
             _libdnml_lsuite ctz64_suite; ctz_setup(
                 &ctz64_suite, "ctz64e", 
                 eslices[curr_slice], rslices[curr_slice], rcount, 
                 rinslices[curr_slice], resslices[curr_slice],
-                "../logs/rv64_bitops.txt",
+                "logs/rv64_bitops.txt",
                 _rv64_ctz64, _cintrin_ctz64
             ); ++curr_slice; rv64_slist[curr_slice] = ctz64_suite;
             _libdnml_lsuite bswap64_suite; bswap_setup(
                 &bswap64_suite, "bswap64", 
                 eslices[curr_slice], rslices[curr_slice], rcount, 
                 rinslices[curr_slice], resslices[curr_slice],
-                "../logs/rv64_bitops.txt",
+                "logs/rv64_bitops.txt",
                 _rv64_bswap64, _cintrin_bswap64
             ); ++curr_slice; rv64_slist[curr_slice] = bswap64_suite;
             _libdnml_lsuite pcnt64_suite; pcnt_setup(
                 &pcnt64_suite, "pcnt64", 
                 eslices[curr_slice], rslices[curr_slice], rcount, 
                 rinslices[curr_slice], resslices[curr_slice],
-                "../logs/rv64_bitops.txt",
-                _rv64_pcnt64, _cintrin_clz64
+                "logs/rv64_bitops.txt",
+                _rv64_pcnt64, _cintrin_pcnt64
             ); ++curr_slice; rv64_slist[curr_slice] = pcnt64_suite;
         }
 

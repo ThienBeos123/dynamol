@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 4.3)
+project(lib-dnml LANGUAGES C ASM)
 
 # Redirect compiled binary targets directly into the folder expected by run_low.sh
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

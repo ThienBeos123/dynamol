@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -678,11 +678,12 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
+    FILE *idk = fopen("logs/bigInt_sget_str_sa.txt", "w"); fclose(idk);
     // sget_str() -- Base-prefix, No length param
     suite sget_str_suite = {0};
     create_str_suite(&sget_str_suite, "bigInt_sget_str - String Assignment", 
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
-        "../logs/bi_logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
+        "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); sget_str_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_str_suite,
@@ -697,7 +698,7 @@ int main(int argc, char **argv) {
     suite sget_strn_suite = {0};
     create_str_suite(&sget_strn_suite, "bigInt_sget_strn - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
-        "../logs/bi_logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
+        "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); sget_strn_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_strn_suite,
@@ -712,7 +713,7 @@ int main(int argc, char **argv) {
     suite sget_strb_suite = {0};
     create_str_suite(&sget_strb_suite, "bigInt_sget_strb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
-        "../logs/bi_logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
+        "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_rconfig, &assign_rstate
     ); sget_strb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_strb_suite,
@@ -727,7 +728,7 @@ int main(int argc, char **argv) {
     suite sget_strnb_suite = {0};
     create_str_suite(&sget_strnb_suite, "bigInt_sget_strnb - String Assignment",
         sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
-        "../logs/bi_logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
+        "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_rconfig, &assign_rstate
     ); sget_strnb_suite.cap_mode = RANDOMIZED;
     fill_suite_rinv(&sget_strnb_suite,

@@ -1,5 +1,0 @@
-/Users/admin/Desktop/Programming/lib-dnml/test/low/build/CMakeFiles/arm64_runner.dir
-/Users/admin/Desktop/Programming/lib-dnml/test/low/build/CMakeFiles/rv64_runner.dir
-/Users/admin/Desktop/Programming/lib-dnml/test/low/build/CMakeFiles/x86_runner.dir
-/Users/admin/Desktop/Programming/lib-dnml/test/low/build/CMakeFiles/edit_cache.dir
-/Users/admin/Desktop/Programming/lib-dnml/test/low/build/CMakeFiles/rebuild_cache.dir

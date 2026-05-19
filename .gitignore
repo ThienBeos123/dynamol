@@ -1,4 +1,5 @@
 zbuild/
+build/
 *.o
 *.out
 *.a

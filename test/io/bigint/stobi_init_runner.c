@@ -12,7 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
-#include "../../../adynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"
@@ -394,11 +394,12 @@ int main(int argc, char **argv) {
 
 
     //* ---------------------------------- SUITE SETUP ---------------------------------- *//
+    FILE *idk = fopen("logs/bigint_strinit.txt", "w"); fclose(idk);
     // strinit() -- Base-prefix, No length param
     suite strinit_suite = {0};
     create_str_suite(&strinit_suite, "strinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0], 
-        "../logs/bi_logs/bigint_strinit.txt", &init_ectx, &init_rcon,
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_bp_rconfig, &init_rstate
     ); strinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strinit_suite,
@@ -413,7 +414,7 @@ int main(int argc, char **argv) {
     suite strninit_suite = {0};
     create_str_suite(&strninit_suite, "strninit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1], 
-        "../logs/bi_logs/bigint_strinit.txt", &init_ectx, &init_rcon,
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_bp_rconfig, &init_rstate
     ); strninit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strninit_suite,
@@ -428,7 +429,7 @@ int main(int argc, char **argv) {
     suite strbinit_suite = {0};
     create_str_suite(&strbinit_suite, "strbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
-        "../logs/bi_logs/bigint_strinit.txt", &init_ectx, &init_rcon,
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_rconfig, &init_rstate
     ); strbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strbinit_suite,
@@ -443,7 +444,7 @@ int main(int argc, char **argv) {
     suite strnbinit_suite = {0};
     create_str_suite(&strnbinit_suite, "strnbinit - String Intialization", 
         init_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3], 
-        "../logs/bi_logs/bigint_strinit.txt", &init_ectx, &init_rcon,
+        "logs/bigint_strinit.txt", &init_ectx, &init_rcon,
         &init_rconfig, &init_rstate
     ); strnbinit_suite.cap_mode = ENOUGH;
     fill_suite_rinv(&strnbinit_suite,

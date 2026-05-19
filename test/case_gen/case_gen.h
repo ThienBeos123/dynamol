@@ -64,8 +64,8 @@ typedef struct {
     float data_prob_spectrum[BIGINT_CASE_COUNT];
 } bi_rand_mod;
 
-inline void bigen_init_sesh(bi_rand_mod *config, xoshiro256_state *add_state);
-inline size_t bigen_len(void);
+void bigen_init_sesh(bi_rand_mod *config, xoshiro256_state *add_state);
+size_t bigen_len(void);
 void bigen_write(bigInt *buf, bi_rand_mod *config);
 
 
@@ -97,8 +97,8 @@ typedef struct {
     str_gen_mode mod_gen_mode;
 } str_rand_mod;
 
-inline void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_state *add_state);
-inline size_t strgen_len(void);
+void strgen_init_sesh(str_rand_mod *config, bool bprefix, xoshiro256_state *add_state);
+size_t strgen_len(void);
 void strgen_write(char *buf, size_t len, str_rand_mod* config, bool bprefix);
 
 

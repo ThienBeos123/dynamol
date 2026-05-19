@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include "bi_indef.h"
 #include "../../../test_ui/_strui.h"
-#include "../../../adynamol/big_numbers/bigNums.h"
+#include "../../../dynamol/big_numbers/bigNums.h"
 #include "../_ioconv.h"
 
 
@@ -140,9 +140,9 @@ stinl bool cmp_eval_bitos(csres *exp, csres *res) {
     if (res->status != exp->status) return false;
     if (res->status != STR_SUCCESS || res->status != STR_TRUNC_SUCCESS) return true;
     // Main Check
-    if (res->data.len == exp->data.len) return strcmp(res->str, exp->str) == 0;
+    if (res->data.len == exp->data.len) return strcmp(res->pstr, exp->pstr) == 0;
     else if (res->data.len > exp->data.len) return false;
-    else return strncmp(res->str, exp->str, res->data.len) == 0;
+    else return strncmp(res->pstr, exp->pstr, res->data.len) == 0;
 }
 stinl bool cmp_eval_stobi(csres *exp, csres *res) {
     if (res->status != exp->status) return false;
@@ -168,7 +168,7 @@ stinl bool cmp_eval_stobi(csres *exp, csres *res) {
 */
 stinl void fmt_recon_bitos(FILE *f, cvoid *vrecon, int tab_depth) {
     const bigInt *recon = (bigInt*)vrecon;
-    _print_bigint(f, &recon, tab_depth);
+    _print_bigint(f, recon, tab_depth);
 }
 // Inverse Formatter - BITOS_CONV
 stinl void fmt_in_to_str(FILE *f, cvoid *vin, int tab_depth) {

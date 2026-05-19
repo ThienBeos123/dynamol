@@ -52,6 +52,7 @@ ASM_SYM(arm64_add64c):
 */
 ASM_SYM(arm64_sub64b):
     ldr x3, [x2] // Load *carry into register x3
+    and x3, x3, #1 // Force x3 to be strictly 0 or 1
     // - Sets the C flag inversely relative to x3
     // +) x3 = 1 (BORROW) --> 0 - 1 = -1 (UNDERFLOWS) ---> C_flag = 0
     // +) x3 = 0 (NO BORROW) -> 0 - 0 = 0 (NORMAL) ------> C_flag = 1
