@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -48,7 +49,7 @@
 *      preferrably, explicit through type-casting.
 */
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     fputs(
         "\033[91mERROR\033[0m: This test unit is \033[91myet to be implemented or finished\033[0m due to:\n"
         "   - The feature in the main-unit that is being tested has \033[91myet to be implemented\n\033[0m"

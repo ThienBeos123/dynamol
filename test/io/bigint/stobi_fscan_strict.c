@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -473,7 +474,7 @@ static inline void setup_cases(FILE *nob, FILE *b, u8 ecount) {
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -525,7 +526,7 @@ int main(int argc, char **argv) {
     // fsscan() -- Base-prefix, No length param
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan",
-        sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
+        sscan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
         "logs/bigInt_fscan_sa.txt", &sscan_ectx, &sscan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); fsscan_suite.cap_mode = RANDOMIZED;
@@ -540,7 +541,7 @@ int main(int argc, char **argv) {
     // fsscanb() -- Base-param, No length param
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan",
-        sscan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        sscan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "logs/bigInt_fscan_sa.txt", &sscan_ectx, &sscan_rcon,
         &scan_rconfig, &scan_rstate
     ); fsscanb_suite.cap_mode = RANDOMIZED;

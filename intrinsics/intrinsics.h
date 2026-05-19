@@ -80,6 +80,7 @@ void _libdnml_fill_gbitops(void);
 void _libdnml_fill_garith(void);
 void _libdnml_fill_gmarith(void);
 void _libdnml_fill_galg(void);
+void _libdnml_fill_ghw(void);
 
 
 //* --------------------------------------------------------------------------------------- *//

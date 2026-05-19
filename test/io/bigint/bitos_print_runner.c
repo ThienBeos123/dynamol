@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -564,7 +565,7 @@ scase ecases_b[25] = { // 2215 bytes of memory usage + 65 bytes = 2280 bytes
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -600,7 +601,7 @@ int main(int argc, char **argv) {
     FILE *idk = fopen("logs/bigInt_fput.txt", "w"); fclose(idk); 
     suite fput_suite = {0};
     create_str_suite(&fput_suite, "fput - BigInt Printing", 
-        print_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
+        print_ecount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
         "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fput_suite.cap_mode = ENOUGH;
@@ -615,7 +616,7 @@ int main(int argc, char **argv) {
     // sfput() - Buffered Printing
     suite sfput_suite = {0};
     create_str_suite(&sfput_suite, "sfput - BigInt Printing", 
-        print_scount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
+        print_ecount, rcount, ecases_nob, INVERSE, ebuf_slices[0], 
         "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfput_suite.cap_mode = ENOUGH;
@@ -630,7 +631,7 @@ int main(int argc, char **argv) {
     // fputb() - Stream-based Printing
     suite fputb_suite = {0};
     create_str_suite(&fputb_suite, "fputb - BigInt Printing",
-        print_scount, rcount, ecases_b, INVERSE, ebuf_slices[0],
+        print_ecount, rcount, ecases_b, INVERSE, ebuf_slices[0],
         "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fputb_suite.cap_mode = ENOUGH;
@@ -645,7 +646,7 @@ int main(int argc, char **argv) {
     // sfput() - Buffered Printing
     suite sfputb_suite = {0};
     create_str_suite(&sfputb_suite, "sfputb - BigInt Printing", 
-        print_scount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
+        print_ecount, rcount, ecases_b, INVERSE, ebuf_slices[0], 
         "logs/bigInt_fput.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfputb_suite.cap_mode = ENOUGH;

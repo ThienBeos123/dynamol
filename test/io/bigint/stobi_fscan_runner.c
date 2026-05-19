@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -366,7 +367,7 @@ static inline void setup_cases(FILE *nob, FILE *b, u8 ecount) {
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -412,7 +413,7 @@ int main(int argc, char **argv) {
     // fscan() -- Base-prefix, No length param
     suite fscan_suite = {0};
     create_str_suite(&fscan_suite, "bigInt_fscan - String Stream Scan", 
-        scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
+        scan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
         "logs/bigInt_fscan.txt", &scan_ectx, &scan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); fscan_suite.cap_mode = ENOUGH;
@@ -427,7 +428,7 @@ int main(int argc, char **argv) {
     // fscanb() -- Base-param, No length param
     suite fscanb_suite = {0};
     create_str_suite(&fscanb_suite, "bigInt_fscanb - String Stream Scan", 
-        scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        scan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "logs/bigInt_fscan.txt", &scan_ectx, &scan_rcon,
         &scan_rconfig, &scan_rstate
     ); fscanb_suite.cap_mode = ENOUGH;
@@ -444,7 +445,7 @@ int main(int argc, char **argv) {
     // fsscan() -- Base-prefix, No length param
     suite fsscan_suite = {0};
     create_str_suite(&fsscan_suite, "bigInt_fsscan - String Stream Scan", 
-        scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        scan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
         "logs/bigInt_fscan.txt", &scan_ectx, &scan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); fsscan_suite.cap_mode = ENOUGH;
@@ -459,7 +460,7 @@ int main(int argc, char **argv) {
     // fsscanb() -- Base-param, No length param
     suite fsscanb_suite = {0};
     create_str_suite(&fsscanb_suite, "bigInt_fsscanb - String Stream Scan", 
-        scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
+        scan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
         "logs/bigInt_fscan.txt", &scan_ectx, &scan_rcon,
         &scan_rconfig, &scan_rstate
     ); fsscanb_suite.cap_mode = ENOUGH;
@@ -476,7 +477,7 @@ int main(int argc, char **argv) {
     // ftscan() -- Base-prefix, No length param
     suite ftscan_suite = {0};
     create_str_suite(&ftscan_suite, "bigInt_ftscan - String Stream Scan", 
-        scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[4],
+        scan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[4],
         "logs/bigInt_fscan.txt", &scan_ectx, &scan_rcon,
         &scan_rconfig, &scan_rstate
     ); ftscan_suite.cap_mode = ENOUGH;
@@ -491,7 +492,7 @@ int main(int argc, char **argv) {
     // ftscanb() -- Base-param, No length param
     suite ftscanb_suite = {0};
     create_str_suite(&ftscanb_suite, "bigInt_ftscanb - String Stream Scan", 
-        scan_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[5],
+        scan_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[5],
         "logs/bigInt_fscan.txt", &scan_ectx, &scan_rcon,
         &scan_bp_rconfig, &scan_rstate
     ); ftscanb_suite.cap_mode = ENOUGH;

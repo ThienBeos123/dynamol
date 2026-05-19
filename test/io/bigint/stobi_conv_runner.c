@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -360,7 +361,7 @@ scase ecases_base[27] = { // 19 limbs ---> 152 bytes
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -399,7 +400,7 @@ int main(int argc, char **argv) {
     // from_str() -- Base-prefix, No length param
     suite from_str_suite = {0};
     create_str_suite(&from_str_suite, "bigInt_from_str - String Conversion", 
-        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
+        conv_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
         "logs/bigint_from_str.txt", &conv_ectx, &conv_rcon,
         &conv_bp_rconfig, &conv_rstate
     ); from_str_suite.cap_mode = ENOUGH;
@@ -414,7 +415,7 @@ int main(int argc, char **argv) {
     // from_strn() -- Base-prefix, Length param
     suite from_strn_suite = {0};
     create_str_suite(&from_strn_suite, "bigInt_from_strn - String Conversion", 
-        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        conv_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "logs/bigint_from_str.txt", &conv_ectx, &conv_rcon,
         &conv_bp_rconfig, &conv_rstate
     ); from_strn_suite.cap_mode = ENOUGH;
@@ -429,7 +430,7 @@ int main(int argc, char **argv) {
     // from_strb() -- Base-param, No length param
     suite from_strb_suite = {0};
     create_str_suite(&from_strb_suite, "bigInt_from_strb - String Conversion", 
-        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        conv_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
         "logs/bigint_from_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); from_strb_suite.cap_mode = ENOUGH;
@@ -444,7 +445,7 @@ int main(int argc, char **argv) {
     // from_strnb() -- Base-param, Length param
     suite from_strnb_suite = {0};
     create_str_suite(&from_strnb_suite, "bigInt_from_strnb - String Conversion", 
-        conv_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
+        conv_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
         "logs/bigint_from_str.txt", &conv_ectx, &conv_rcon,
         &conv_rconfig, &conv_rstate
     ); from_strnb_suite.cap_mode = ENOUGH;

@@ -18,11 +18,13 @@ typedef rcap_mode cmode;
 size_t _stobi_recon_size(void) { return sizeof(unsigned char*); }
 size_t _bitos_recon_size(void) { return sizeof(bigInt); }
 // Auxilary 1 Linker
-void _stobi_recon_linker(void *in, rctx_input_t *rctx) {
+void _stobi_recon_linker(void *in, rand_container *incon) {
+    rctx_input_t *rctx = incon->in_cont.rctx;
     unsigned char *cin = (unsigned char*)in;
     cin = rctx->aux1_buf;
 }
-void _bitos_recon_linker(void *in, rctx_input_t *rctx) {
+void _bitos_recon_linker(void *in, rand_container *incon) {
+    rctx_input_t *rctx = incon->in_cont.rctx;
     bigInt *bin = (bigInt*)in;
     bin->limbs = (limb_t*)rctx->aux1_buf;
 }

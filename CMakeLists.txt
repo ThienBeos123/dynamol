@@ -106,11 +106,12 @@ add_library(dnml_core STATIC
 target_compile_options(dnml_core PUBLIC
     # Add this to prevent GCC/Clang flags pollution into MSVC Build
     $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
+        -fsanitize=address,undefined -fno-omit-frame-pointer -g
         -Wall -Wextra -pedantic
     >
     # Add this to prevent MSVC flags pollution in GCC/Clang build
     $<$<CXX_COMPILER_ID:MSVC>:
-        /W4 /permissive-
+        /W4 /permissive- /fsanitize=address
     >
 )
 

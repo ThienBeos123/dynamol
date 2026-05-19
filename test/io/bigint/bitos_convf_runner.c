@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -334,7 +335,7 @@ scase ecases[25] = { // 2270 bytes of memory ---> Rounded up to 2304
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -370,7 +371,7 @@ int main(int argc, char **argv) {
     FILE *idk = fopen("logs/bigint_to_strf.txt", "w"); fclose(idk); 
     suite to_strf_suite = {0};
     create_str_suite(&to_strf_suite, "to_strf - BigInt Conversion", 
-        conv_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
+        conv_ecount, rcount, ecases, INVERSE, ebuf_slices[0], 
         "logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
         &convf_rconfig, &conv_rstate
     ); to_strf_suite.cap_mode = ENOUGH;
@@ -385,7 +386,7 @@ int main(int argc, char **argv) {
     // tto_strf()
     suite tto_strf_suite = {0};
     create_str_suite(&tto_strf_suite, "tto_strf - BigInt Conversion",
-        conv_scount, rcount, ecases, INVERSE, ebuf_slices[1],
+        conv_ecount, rcount, ecases, INVERSE, ebuf_slices[1],
         "logs/bigint_to_strf.txt", &conv_ectx, &conv_rcon,
         &convf_rconfig, &conv_rstate
     ); tto_strf_suite.cap_mode = ENOUGH;

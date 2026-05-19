@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -644,7 +645,7 @@ scase ecases_base[32] = { // 88 limbs --> 704 bytes
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -682,7 +683,7 @@ int main(int argc, char **argv) {
     // sget_str() -- Base-prefix, No length param
     suite sget_str_suite = {0};
     create_str_suite(&sget_str_suite, "bigInt_sget_str - String Assignment", 
-        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
+        sassign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
         "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); sget_str_suite.cap_mode = RANDOMIZED;
@@ -697,7 +698,7 @@ int main(int argc, char **argv) {
     // sget_strn() -- Base-prefix, Length param
     suite sget_strn_suite = {0};
     create_str_suite(&sget_strn_suite, "bigInt_sget_strn - String Assignment",
-        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        sassign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); sget_strn_suite.cap_mode = RANDOMIZED;
@@ -712,7 +713,7 @@ int main(int argc, char **argv) {
     // sget_strb() -- Base-param, No length param
     suite sget_strb_suite = {0};
     create_str_suite(&sget_strb_suite, "bigInt_sget_strb - String Assignment",
-        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        sassign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
         "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_rconfig, &assign_rstate
     ); sget_strb_suite.cap_mode = RANDOMIZED;
@@ -727,7 +728,7 @@ int main(int argc, char **argv) {
     // sget_strnb() -- Base-param, Length param
     suite sget_strnb_suite = {0};
     create_str_suite(&sget_strnb_suite, "bigInt_sget_strnb - String Assignment",
-        sassign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
+        sassign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
         "logs/bigInt_sget_str_sa.txt", &sassign_ectx, &sassign_rcon,
         &assign_rconfig, &assign_rstate
     ); sget_strnb_suite.cap_mode = RANDOMIZED;

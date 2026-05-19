@@ -10,6 +10,10 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include
 )
 
+# Add sanitization flags and debug symbols
+add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
+add_link_options(-fsanitize=address,undefined)
+
 # Define your isolated test runners
 add_executable(arm64_runner arm64_runner.c)
 add_executable(rv64_runner  rv64_runner.c)

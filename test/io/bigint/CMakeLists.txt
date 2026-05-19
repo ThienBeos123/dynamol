@@ -11,6 +11,11 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../../case_gen/
 )
 
+# Add sanitization flags and debug symbols
+add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
+add_link_options(-fsanitize=address,undefined)
+
+
 # Define your isolated test runners - BITOS
 add_executable(binary_io                binary_io.c)
 add_executable(bitos_conv_runner        bitos_conv_runner.c)

@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -366,7 +367,7 @@ scase ecases_base[27] = { // 19 limbs ---> 152 bytes
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -404,7 +405,7 @@ int main(int argc, char **argv) {
     // get_str() -- Base-prefix, No length param
     suite get_str_suite = {0};
     create_str_suite(&get_str_suite, "bigInt_get_str - String Assignment", 
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
+        assign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[0],
         "logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); get_str_suite.cap_mode = ENOUGH;
@@ -419,7 +420,7 @@ int main(int argc, char **argv) {
     // get_strn() -- Base-prefix, Length param
     suite get_strn_suite = {0};
     create_str_suite(&get_strn_suite, "bigInt_get_strn - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
+        assign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[1],
         "logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_bp_rconfig, &assign_rstate
     ); get_strn_suite.cap_mode = ENOUGH;
@@ -434,7 +435,7 @@ int main(int argc, char **argv) {
     // get_strb() -- Base-param, No length param
     suite get_strb_suite = {0};
     create_str_suite(&get_strb_suite, "bigInt_get_strb - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
+        assign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[2],
         "logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_rconfig, &assign_rstate
     ); get_strb_suite.cap_mode = ENOUGH;
@@ -449,7 +450,7 @@ int main(int argc, char **argv) {
     // get_strnb() -- Base-param, Length param
     suite get_strnb_suite = {0};
     create_str_suite(&get_strnb_suite, "bigInt_get_strnb - String Assignment",
-        assign_scount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
+        assign_ecount, rcount, ecases_bprefix, INVERSE, ebuf_slices[3],
         "logs/bigInt_get_str.txt", &assign_ectx, &assign_rcon,
         &assign_rconfig, &assign_rstate
     ); get_strnb_suite.cap_mode = ENOUGH;

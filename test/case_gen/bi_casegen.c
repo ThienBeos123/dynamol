@@ -293,4 +293,6 @@ void bigen_write(bigInt *buf, bi_rand_mod *config) {
     }
     if (config->len) buf->sign = (__rng_range(&config->state, 0, 1)) ? 1 : -1;
     else buf->sign = 1;
+    __BIGINT_INTERNAL_TRIM_LZ__(buf);
+    if (buf->n == 0) buf->sign = 1;
 }

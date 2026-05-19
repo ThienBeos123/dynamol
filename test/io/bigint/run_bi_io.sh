@@ -72,6 +72,9 @@ fi
 
 cd "$SCRIPT_DIR"
 
+# Ensure log output directory exists for runners that write logs before test execution
+mkdir -p "$SCRIPT_DIR/logs"
+
 # Verify BIN_DIR exists
 if [ ! -d "$BIN_DIR" ]; then
     echo -e "${RED}Error: Build failed - ${BIN_DIR} not created${NC}"

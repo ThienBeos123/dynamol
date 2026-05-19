@@ -48,8 +48,8 @@ uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity */
     if (x->n > x->cap) return 0;
     if (x->sign != 1 && x->sign != -1) return 0;
     /* Arithmetic Validation */
+    if (x->n == 0) return (x->sign == 1);
     if (x->limbs[x->n - 1] == 0) return 0;
-    if (x->n == 0 && x->sign != 1) return 0;
     return 1;
 }
 uint8_t __BIGINT_INTERNAL_PVALID__(const bigInt *x) { /* BigInt Pointer State Validity */

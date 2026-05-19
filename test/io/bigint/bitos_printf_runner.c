@@ -12,6 +12,7 @@
 #include "bi_eval_fn.h"
 #include "bi_util_func.h"
 // Functions to be tested
+#include "../../../libdnml_base.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
@@ -333,7 +334,7 @@ scase ecases[25] = { // 2270 bytes of memory ---> Rounded up to 2304
 
 
 // Main Code
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { _libdnml_init();
     //* ---------------------------------- PRE-TEST SETUP ---------------------------------- *//
     // Parse terminal args + Setup env constants
     u16 rcount = (argc >= 1) ? (u16)(_stou64(argv[1], strlen(argv[1]))) : 100;
@@ -369,7 +370,7 @@ int main(int argc, char **argv) {
     FILE *idk = fopen("logs/bigInt_fputf.txt", "w"); fclose(idk); 
     suite fputf_suite = {0};
     create_str_suite(&fputf_suite, "fputf - BigInt Printing", 
-        print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
+        print_ecount, rcount, ecases, INVERSE, ebuf_slices[0], 
         "logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); fputf_suite.cap_mode = ENOUGH;
@@ -384,7 +385,7 @@ int main(int argc, char **argv) {
     // sfputf() - Buffered Printing
     suite sfputf_suite = {0};
     create_str_suite(&sfputf_suite, "sfputf - BigInt Printing", 
-        print_scount, rcount, ecases, INVERSE, ebuf_slices[0], 
+        print_ecount, rcount, ecases, INVERSE, ebuf_slices[0], 
         "logs/bigInt_fputf.txt", &print_ectx, &print_rcon,
         &print_rconfig, &print_rstate
     ); sfputf_suite.cap_mode = ENOUGH;
