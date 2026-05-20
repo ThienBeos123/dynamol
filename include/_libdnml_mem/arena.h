@@ -1,8 +1,8 @@
 #ifndef __DNML_ARENA_H__
 #define __DNML_ARENA_H__
 
-#include <include.h>
-#include <system/sys.h>
+#include "../include.h" // In /include, relative path for easier pathfind
+#include "../dnml_sys/sys.h" // In /include, relative path for easier pathfind
 #include <stdalign.h>
 
 //* ============= Declarations =============

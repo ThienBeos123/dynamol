@@ -3,12 +3,11 @@
 
 
 
-
-#include <system/sys.h>
-#include "../../dynamol/big_numbers/bigNums.h"
-#include "../sconfigs/memory/_ctx.h"
-#include "../sconfigs/memory/arena.h"
-#include "../sconfigs/settings/numeric_config.h"
+#include <libdnml_types.h>
+#include <dnml_sys/sys.h>
+#include <_libdnml_mem/_ctx.h>
+#include <_libdnml_mem/arena.h>
+#include <_libdnml_config/numeric_config.h>
 
 
 #define BIGINT_TEMP(name, limb_count, ctx) \

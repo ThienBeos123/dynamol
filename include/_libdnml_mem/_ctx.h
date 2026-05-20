@@ -1,9 +1,9 @@
 #ifndef __DNML_CTX__
 #define __DNML_CTX__
 
-#include <system/sys.h>
-#include "../../dynamol/big_numbers/bigNums.h"
-#include <include.h>
+#include "../dnml_sys/sys.h" // In /include, relative path for easier pathfind
+#include "../libdnml_types.h" // In /include, relative path for easier pathfind
+#include "../include.h" // In /include, relative path for easier pathfind
 #include <stdalign.h>
 
 typedef struct mont_ctx {

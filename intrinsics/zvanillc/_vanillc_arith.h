@@ -2,7 +2,7 @@
 #define ____DNML_VANILLC_ARITH_H
 
 #include <stdint.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 
 
 // 64 bit Addition with Carry-over

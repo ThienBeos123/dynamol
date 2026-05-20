@@ -2,14 +2,14 @@
 #define DNML_BI_SETUP_H
 
 
-#include "../../../dynamol/big_numbers/bigNums.h"
+#include <libdnml_types.h>
 #include "../../../test_ui/_strui.h"
 #include "../../../intrinsics/intrinsics.h"
 #include "../../case_gen/case_gen.h"
 #include "../_ioconv.h"
 #include "bi_indef.h"
 #include <include.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 
 typedef rcap_mode cmode;
 

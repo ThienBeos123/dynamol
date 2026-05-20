@@ -1,4 +1,4 @@
-#include "util.h"
+#include "../util.h"
 
 //* ----------- SIMPLE/BIT-WISE RNG ALGORITHMS ----------- *//
 // SplitMix64

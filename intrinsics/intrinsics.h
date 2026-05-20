@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
-#include <system/sys.h>
-#include "../sconfigs/settings/numeric_config.h"
-#include "../sconfigs/settings/settings.h"
+#include <dnml_sys/sys.h>
+#include <_libdnml_config/numeric_config.h>
+#include <_libdnml_config/settings.h>
 
 #include "arm64/_arm64_conn.h"
 #include "x86_64/_x86_conn.h"
@@ -111,11 +111,12 @@ uint8_t __PCNT_UI64__(uint64_t x);
 
 
 //* --------------------------------------------------------------------------------------- *//
-//*                                   GENERAL MEMORY UTILITIES                              *//
+//*                                     FAST MEMORY UTILITIES                               *//
 //* --------------------------------------------------------------------------------------- *//
-// STRICT, SECURED MEM UTILS - Secured (does NOT utilize SIMD)
-void __MEMCPY_STRICT__(void *buf, const void *src, size_t bytes);
-void __MEMWIPE_STRICT__(void *buf, size_t len);
+// FAST MEMORY UTILITIES (UTILIZE SIMD EXTENSIVELY)
+void __libdnml_MEMSET_FAST__(void *buf, uint64_t val, size_t len);
+void __libdnml_MEMCPY_FAST__(void *buf, const void *src, size_t len);
+void __libdnml_MEMWIPE__(void *buf, size_t len);
 
 
 //* --------------------------------------------------------------------------------------- *//

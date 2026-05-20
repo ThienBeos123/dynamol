@@ -5,7 +5,7 @@
 #include "../../test_ui/lowui.h"
 #include "low_setup.h"
 // STDLIB utilities
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 #include <stdint.h>
 #include <stdio.h>
 

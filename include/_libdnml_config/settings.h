@@ -7,8 +7,6 @@
 
 #if _DNML_DEBUG_MODE
     #undef NDEBUG
-#else
-    #define NDEBUG
 #endif
 
 

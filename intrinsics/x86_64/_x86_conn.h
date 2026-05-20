@@ -7,9 +7,9 @@
     #else
         #define __ARCH_X86_64__ 0
     #endif
-    #include <system/asm/__asm_macros.h>
+    #include <dnml_sys/asm/__asm_macros.h>
 #else
-    #include <system/sys.h>
+    #include <dnml_sys/sys.h>
 #endif
 
 #if __ARCH_X86_64__

@@ -5,12 +5,12 @@
 extern "C" {
 #endif
 
+#include <libdnml_types.h>
 #include <include.h>
-#include <system/sys.h>
-#include "../sconfigs/settings/numeric_config.h"
-#include "../sconfigs/memory/_ctx.h"
+#include <dnml_sys/sys.h>
+#include <_libdnml_config/numeric_config.h>
+#include <_libdnml_mem/_ctx.h>
 #include "../intrinsics/intrinsics.h"
-#include "../../dynamol/big_numbers/bigNums.h"
 #include "aconv_macros.h"
 
 

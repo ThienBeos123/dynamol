@@ -1,17 +1,17 @@
 #ifndef dnml_bi_func
 #define dnml_bi_func
 
+#include <libdnml_types.h>
 #include <include.h>
 #include <char_tables.h>
-#include <system/sys.h>
-#include "../../sconfigs/settings/settings.h"
-#include "../../sconfigs/memory/arena.h"
-#include "../../sconfigs/dnml_status.h"
+#include <dnml_sys/sys.h>
+#include <_libdnml_config/settings.h>
+#include <_libdnml_mem/arena.h>
+#include <dnml_status.h>
 
 #include "../../intrinsics/intrinsics.h"
 #include "../../calc_algo/perf_calc.h"
 #include "../../util/util.h"
-#include "bigNums.h"
 
 
 // Pre-opreration evaluation asserts

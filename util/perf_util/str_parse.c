@@ -1,4 +1,4 @@
-#include "util.h"
+#include "../util.h"
 
 #define PRECHECK_NLEN(str, curr_pos, off_plus, checked, len) do { \
     if ((*curr_pos) + off_plus == len \

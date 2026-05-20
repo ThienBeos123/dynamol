@@ -59,10 +59,10 @@ add_library(dnml_core STATIC
     calc_algo/perf_based/pow_root.c
 
     # 3. Utility Files
-    util/bigNum_utils.c
-    util/misc_utils.c
-    util/str_parse.c
-    util/sec_util.c
+    util/perf_util/bigNum_utils.c
+    util/perf_util/misc_utils.c
+    util/perf_util/str_parse.c
+    util/perf_util/rng_util.c
 
     # 4. Mathematical Intrinsic Operations Files
     intrinsics/intrinsics.c

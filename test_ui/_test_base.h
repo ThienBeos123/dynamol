@@ -1,10 +1,10 @@
 #ifndef ___LIBDNML_TEST_BASE
 #define ___LIBDNML_TEST_BASE
 
+#include <libdnml_types.h>
 #include <include.h>
-#include <system/sys.h>
-#include "../dynamol/big_numbers/bigNums.h"
-#include "../sconfigs/dnml_status.h"
+#include <dnml_sys/sys.h>
+#include <dnml_status.h>
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
 #elif defined(__unix__) || defined(__APPLE__)

@@ -1,4 +1,4 @@
-#include "util.h"
+#include "../util.h"
 
 const uint64_t inv3 = 0xAAAAAAAAAAAAAAABULL; 
 

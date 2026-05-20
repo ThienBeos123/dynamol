@@ -2,13 +2,9 @@
 #define _BIGINT_INV_FUNC_H
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include "../../../sconfigs/memory/_scratch.h"
+#include <include.h>
+#include <libdnml_types.h>
 #include "../../../test_ui/_strui.h"
-#include "../../../dynamol/big_numbers/bigNums.h"
 #include "../../../dynamol/big_numbers/bigInt_func.h"
 #include "../_ioconv.h"
 #include "bi_indef.h"

@@ -274,11 +274,12 @@ uint8_t __PCNT_UI64__(uint64_t x) {
 
 
 //* --------------------------------------------------------------------------------------- *//
-//*                                   GENERAL MEMORY UTILITIES                              *//
+//*                                     FAST MEMORY UTILITIES                               *//
 //* --------------------------------------------------------------------------------------- *//
-// STRICT, SECURED MEM UTILS - Secured (does NOT utilize SIMD)
-void __MEMCPY_STRICT__(void *buf, const void *src, size_t bytes) {}
-void __MEMWIPE_STRICT__(void *buf, size_t len) {}
+// FAST MEMORY UTILITIES (UTILIZE SIMD EXTENSIVELY)
+void __libdnml_MEMSET_FAST__(void *buf, uint64_t val, size_t len) {}
+void __libdnml_MEMCPY_FAST__(void *buf, const void *src, size_t len) {}
+void __libdnml_MEMWIPE__(void *buf, size_t len) {}
 
 
 

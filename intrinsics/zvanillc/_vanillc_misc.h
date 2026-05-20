@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 
 // I argue this file is for filler, meaningless operations
 // in Vanilla C just to ensure cross-platform compatibility can still runs

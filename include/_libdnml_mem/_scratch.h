@@ -2,7 +2,7 @@
 #define __DNML_SCRATCH__
 
 
-#include <system/sys.h>
+#include "../dnml_sys/sys.h" // In /include, relative path for easier pathfind
 #include <stdint.h>
 #include <stddef.h>
 #include <stdalign.h>
