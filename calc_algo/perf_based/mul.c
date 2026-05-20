@@ -49,15 +49,9 @@ void __BIGINT_SCHOOLBOOK__(const bigInt *a, const bigInt *b, bigInt *res) {
         for (size_t j = 0; j < b->n; ++j) {
             uint64_t low, high;
             low = __MUL_UI64__(a->limbs[i], b->limbs[j], &high);
-            // Stored and calculated kinda in a staircase pattern seen in the sums of Schoolbook
-            uint64_t sum = res->limbs[i + j] /* Potential data from last iteration */ 
-                         + low /* Lower half (64 bit) */ 
-                         + carry /* Carry from the last iteration */;
-            // Manipulate carry
-            carry = high /* The remaining half (64 bit) */ 
-                  + (sum < low) /* Overflow from adding the lower half */ 
-                  + (sum < carry) /* Overflow from adding the last iteration's carry */;
-            res->limbs[i + j] = sum; // Apply the new sum
+            uint64_t sum = res->limbs[i + j] + low; uint8_t c1 = (sum < low);
+            uint64_t sum2 = sum + carry; uint8_t c2 = (sum2 < carry);
+            carry = high + (c1 | c2); res->limbs[i + j] = sum2;
         } res->limbs[i + b->n] += carry; // Add the remaining carry to the MSL
     } res->n = a->n + b->n; __BIGINT_INTERNAL_TRIM_LZ__(res);
 }
