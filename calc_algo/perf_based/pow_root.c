@@ -5,12 +5,12 @@
 
 
 /* ----------------- WORKSPACE ----------------- */
-static size_t __BIGINT_BINEXP_WS__(size_t base_size, uint64_t pow) {
+size_t __BIGINT_BINEXP_WS__(size_t base_size, uint64_t pow) {
     size_t raw = base_size * pow;
     size_t fcall_size = __BIGINT_MUL_WS__((raw - base_size), (raw - base_size));
     return raw + fcall_size;
 }
-static size_t __BIGINT_2K_ARY_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
+size_t __BIGINT_2K_ARY_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
     // RAW OBJECTS
     size_t table_size = 1 << (ksize - 1);
     size_t raw_outside = (base_size << 1) + (base_size * pow);
@@ -27,7 +27,7 @@ static size_t __BIGINT_2K_ARY_WS__(size_t base_size, uint64_t pow, uint8_t ksize
                                   max(main_loop_even, main_loop_odd)));
     return raw_outside + table_pows + max_fcall;
 }
-static size_t __BIGINT_SLIDIN_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
+size_t __BIGINT_SLIDIN_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
     // RAW OBJECTS
     size_t table_size = 1 << (ksize - 1);
     size_t raw_outside = (base_size << 1) + (base_size * pow);
@@ -44,26 +44,26 @@ static size_t __BIGINT_SLIDIN_WS__(size_t base_size, uint64_t pow, uint8_t ksize
                                   max(main_loop_even, main_loop_odd)));
     return raw_outside + table_pows + max_fcall;
 }
-static size_t __BIGINT_HERON_WS__(size_t a_size) {
+size_t __BIGINT_HERON_WS__(size_t a_size) {
     size_t raw_size = 3 * a_size + 1;
     size_t fcall = __BIGINT_DIVMOD_WS__(a_size, a_size);
     return raw_size + fcall;
 }
-static size_t __BIGINT_NEWTON_CBRT_WS__(size_t a_size) {
+size_t __BIGINT_NEWTON_CBRT_WS__(size_t a_size) {
     size_t raw_size = 7 * (a_size + 1);
     size_t fcall = max(
         __BIGINT_MUL_WS__(a_size + 1, a_size + 1),
         __BIGINT_DIVMOD_WS__(a_size, (a_size + 1) << 1)
     ); return raw_size + fcall;
 }
-static size_t __BIGINT_NEWTON_2NROOT_WS__(size_t a_size, uint64_t root) {
+size_t __BIGINT_NEWTON_2NROOT_WS__(size_t a_size, uint64_t root) {
     size_t raw_size = 3 * (a_size * (root - 1));
     size_t fcall = max(
         __BIGINT_EXP_WS__(a_size, root - 1),
         __BIGINT_DIVMOD_WS__(a_size, a_size * (root - 1))
     ); return raw_size + a_size + fcall;
 }
-static size_t __BIGINT_NEWTON_NROOT_WS__(size_t a_size, uint64_t root) {
+size_t __BIGINT_NEWTON_NROOT_WS__(size_t a_size, uint64_t root) {
     size_t raw_size = 3 * (a_size * (root - 1));
     size_t fcall = max(
         __BIGINT_EXP_WS__(a_size, root - 1),
@@ -74,7 +74,7 @@ static size_t __BIGINT_NEWTON_NROOT_WS__(size_t a_size, uint64_t root) {
 
 
 /* ----------------- ALGORITHMS ----------------- */
-static void __BIGINT_BINARY_EXP__(bigInt *res, const bigInt *base, uint64_t power, calc_ctx binexp_ctx) {
+void __BIGINT_BINARY_EXP__(bigInt *res, const bigInt *base, uint64_t power, calc_ctx binexp_ctx) {
     // SETUP
     size_t binexp_mark = scratch_mark(&binexp_ctx);
     BIGINT_TEMP(tmp_res, base->n * power, binexp_ctx);
@@ -92,7 +92,7 @@ static void __BIGINT_BINARY_EXP__(bigInt *res, const bigInt *base, uint64_t powe
     } __BIGINT_INTERNAL_COPY__(res, &tmp_res); 
     scratch_reset(&binexp_ctx, binexp_mark);
 }
-static void __BIGINT_2K_ARY__(bigInt *res, const bigInt *base, uint64_t power, uint8_t k, calc_ctx fixed_ctx) {
+void __BIGINT_2K_ARY__(bigInt *res, const bigInt *base, uint64_t power, uint8_t k, calc_ctx fixed_ctx) {
     //* --- 1. SETUP ---- *//
     size_t table_size = 1 << (k - 1), _2kary_mark = scratch_mark(&fixed_ctx);
     bigInt table[table_size]; table[0] = *base;
@@ -124,7 +124,7 @@ static void __BIGINT_2K_ARY__(bigInt *res, const bigInt *base, uint64_t power, u
         for (uint8_t j = 1; j <= s; ++j) __BIGINT_MUL_DISPATCH__(&tmp_res, &tmp_res, &tmp_res, fixed_ctx);
     } __BIGINT_INTERNAL_COPY__(res, &tmp_res); scratch_reset(&fixed_ctx, _2kary_mark);
 }
-static void __BIGINT_SLIDING__(bigInt *res, const bigInt *base, uint64_t power, uint8_t k, calc_ctx slide_ctx) {
+void __BIGINT_SLIDING__(bigInt *res, const bigInt *base, uint64_t power, uint8_t k, calc_ctx slide_ctx) {
     //* --- 1. SETUP ---- *//
     size_t table_size = 1 << (k - 1), slidin_mark = scratch_mark(&slide_ctx);
     bigInt table[table_size]; table[0] = *base;
@@ -161,7 +161,7 @@ static void __BIGINT_SLIDING__(bigInt *res, const bigInt *base, uint64_t power, 
     scratch_reset(&slide_ctx, slidin_mark);
 
 }
-static void __BIGINT_HERON__(bigInt *res, const bigInt *a, calc_ctx heron_ctx) {
+void __BIGINT_HERON__(bigInt *res, const bigInt *a, calc_ctx heron_ctx) {
     uint64_t guess_bits = (__BIGINT_COUNTDB__(a, 2) + 1) >> 1;
     size_t heron_mark = scratch_mark(&heron_ctx);
     BIGINT_TEMP(guess, a->n, heron_ctx); 
@@ -179,7 +179,7 @@ static void __BIGINT_HERON__(bigInt *res, const bigInt *a, calc_ctx heron_ctx) {
         __BIGINT_INTERNAL_SWAP__(&guess, &next);
     } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_reset(&heron_ctx, heron_mark);
 }
-static void __BIGINT_NEWTON_CBRT__(bigInt *res, const bigInt *a, calc_ctx cbrt_ctx) {
+void __BIGINT_NEWTON_CBRT__(bigInt *res, const bigInt *a, calc_ctx cbrt_ctx) {
     uint64_t guess_bits = (__BIGINT_COUNTDB__(a, 2) + 2) / 3;
     size_t cbrt_mark = scratch_mark(&cbrt_ctx);
     BIGINT_TEMP(guess,  (a->n + 1) << 1,  cbrt_ctx); 
@@ -200,7 +200,7 @@ static void __BIGINT_NEWTON_CBRT__(bigInt *res, const bigInt *a, calc_ctx cbrt_c
         __BIGINT_INTERNAL_SWAP__(&guess, &next);
     } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_reset(&cbrt_ctx, cbrt_mark);
 }
-static uint64_t __UI64_NROOT__(uint64_t a, uint64_t root) {
+uint64_t __UI64_NROOT__(uint64_t a, uint64_t root) {
     if (__IS_2POW__(root)) {
         uint8_t shift = __CTZ_UI64__(root);
         uint64_t guess = ((BITS_IN_UINT64_T - __CLZ_UI64__(a)) + root - 1) >> shift;
@@ -230,7 +230,7 @@ static uint64_t __UI64_NROOT__(uint64_t a, uint64_t root) {
         } return guess;
     }
 }
-static void __BIGINT_NEWTON_2NROOT__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx _2nroot_ctx) {
+void __BIGINT_NEWTON_2NROOT__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx _2nroot_ctx) {
     // ! WARNING ! WARNING ! WARNING ! WARNING !
     //   THIS FUNCTION EXPECTS THE ROOT TO A POWER OF 2
     // ! WARNING ! WARNING ! WARNING ! WARNING !
@@ -257,7 +257,7 @@ static void __BIGINT_NEWTON_2NROOT__(bigInt *res, const bigInt *a, uint64_t root
         __BIGINT_EXP_DISPATCH__(&xpow, &guess, (root - 1), _2nroot_ctx);
     } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_reset(&_2nroot_ctx, _2nroot_mark);
 }
-static void __BIGINT_NEWTON_NROOT__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx nroot_ctx) {
+void __BIGINT_NEWTON_NROOT__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx nroot_ctx) {
     uint64_t guess_bits = (__BIGINT_COUNTDB__(a, 2) + root - 1) / root;
     size_t nroot_mark = scratch_mark(&nroot_ctx);
     BIGINT_TEMP(guess, a->n * (root - 1), nroot_ctx); 

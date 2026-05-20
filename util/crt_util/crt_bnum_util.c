@@ -1,7 +1,9 @@
 #include "../crt_util.h"
 
 
-void __BICRT_TRIM_LZ__(bigInt *x) {
+drypto_stat __CRINT_TRIM_LZ__(cryptInt *x) {
+    cryptInt_poison(x);
+    if (x->poisoned) return CRYPTINT_POISOINED;
     uint8_t found_msl = 0;
     for (size_t i = x->cap - 1; i >= 0; --i) {
         uint8_t behind_n = (i < x->n);
@@ -10,5 +12,5 @@ void __BICRT_TRIM_LZ__(bigInt *x) {
         x->n -= ((behind_n & zero) & (~found_msl));
         // Checks if i < n AND i != 0 AND msl has not been set
         found_msl |= (behind_n & (~zero));
-    }
+    } return CRYPTINT_SUCCESS;
 }

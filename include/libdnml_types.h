@@ -9,18 +9,14 @@ extern "C" {
 #include "dnml_sys/sys.h"
 #include "_libdnml_config/settings.h"
 
-// todo =========================================== TYPE DEFINITION
-// =============================================
+//* ======================================= DYNAMOL DEFINITION ========================================= *//
 #define BIGINT_LIMBS_BITS 64
 #define DASI_OVERFLOW_THRES10                                                  \
   1844677407370955161 // 1,844,674,407,370,955,161 (UINT64_MAX / 10)
 typedef uint64_t limb_t;
-
-typedef struct __424947696E7465676572__ {
-  size_t n;   /* Used limbs */
-  size_t cap; /* Maximum limbs */
-  limb_t *limbs;
-  int8_t sign;
+typedef struct {
+    size_t n; size_t cap;
+    limb_t *limbs; int8_t sign;
 } bigInt;
 
 typedef struct __424947666C6F6174__ {
@@ -31,6 +27,20 @@ typedef struct __424947666C6F6174__ {
   // ------> Approximately 550MB
   // ------> Doable, but extremely heavy for computers
 } bigFloat;
+
+
+
+//* ======================================= DYNAMOL DEFINITION ========================================= *//
+#define CRYPTINT_LIMBS_BITS 64
+typedef struct {
+    size_t n; size_t cap;
+    limb_t *limbs; int8_t sign;
+    bool poisoned;
+} cryptInt;
+
+
+
+
 
 #ifdef __cplusplus
 }

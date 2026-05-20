@@ -2,7 +2,7 @@
 
 
 /* BIGINT WORKSPACE SIZE */
-static size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size) {
+size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size) {
     size_t m = (size_t)(max(x_size, y_size) / 2);
     size_t  x0_range = m,  x1_range = x_size - m;
     size_t  y0_range = m,  y1_range = y_size - m;
@@ -14,7 +14,7 @@ static size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size) {
     size_t z2_size = max(max(z1_size, x1_range + y1_range + 2*m), x0_range + y0_range) + 1;
     return 3*(tmp1_size + tmp2_size + z0_size + z1_size + z2_size);
 }
-static size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
+size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     size_t k = (size_t)(max(m_size, n_size) / 3) + 1;
     size_t total_points_p = (k << 2 + 6);
     size_t total_points_q = (k << 2 + 6);
@@ -22,12 +22,12 @@ static size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     size_t res_alias = (k << 1) + 14;
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
-static size_t __BIGINT_TOOM_4_WS__(size_t m_size, size_t n_size) {}
-static size_t __BIGINT_TOOM_5_WS__(size_t m_size, size_t n_size) {}
-static size_t __BIGINT_TOOM_6p5_WS__(size_t m_size, size_t n_size) {}
-static size_t __BIGINT_TOOM_7p5_WS__(size_t m_size, size_t n_size) {}
-static size_t __BIGINT_TOOM_8p5_WS__(size_t m_size, size_t n_size) {}
-static size_t __BIGINT_SSA_WS__(size_t a_size, size_t b_size) {}
+size_t __BIGINT_TOOM_4_WS__(size_t m_size, size_t n_size) {}
+size_t __BIGINT_TOOM_5_WS__(size_t m_size, size_t n_size) {}
+size_t __BIGINT_TOOM_6p5_WS__(size_t m_size, size_t n_size) {}
+size_t __BIGINT_TOOM_7p5_WS__(size_t m_size, size_t n_size) {}
+size_t __BIGINT_TOOM_8p5_WS__(size_t m_size, size_t n_size) {}
+size_t __BIGINT_SSA_WS__(size_t a_size, size_t b_size) {}
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
     if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0; // Doesn't need any
     else if (min(a_size, b_size) * 2 <= max(a_size, b_size)) return 0;
@@ -42,32 +42,26 @@ size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
 }
 
 /* BIGINT ALGORITHMS */
-static void __BIGINT_SCHOOLBOOK__(const bigInt *a, const bigInt *b, bigInt *res) {
-    memset(res->limbs, 0, (a->n + b->n) * sizeof(uint64_t)); // Set every bytes to 0 in res, basically CALLOC() without the MALLOC()
-    // Implementing schoolbook multiplication, treating each limb like a digit
-    // -----> Inner loop access each limb of b and multiplying by 1 limb of a before going to the next a's limb
+void __BIGINT_SCHOOLBOOK__(const bigInt *a, const bigInt *b, bigInt *res) {
+    memset(res->limbs, 0, a->n + b->n);
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t carry = 0;
         for (size_t j = 0; j < b->n; ++j) {
             uint64_t low, high;
             low = __MUL_UI64__(a->limbs[i], b->limbs[j], &high);
             // Stored and calculated kinda in a staircase pattern seen in the sums of Schoolbook
-            uint64_t sum =      res->limbs[i + j] /* Potential data from last iteration */ 
-                            +   low /* Lower half (64 bit) */ 
-                            +   carry /* Carry from the last iteration */;
-
-            carry =     high /* The remaining half (64 bit) */ 
-                    +   (sum < low) /* Overflow from adding the lower half */ 
-                    +   (sum < carry) /* Overflow from adding the last iteration's carry */;
-
+            uint64_t sum = res->limbs[i + j] /* Potential data from last iteration */ 
+                         + low /* Lower half (64 bit) */ 
+                         + carry /* Carry from the last iteration */;
+            // Manipulate carry
+            carry = high /* The remaining half (64 bit) */ 
+                  + (sum < low) /* Overflow from adding the lower half */ 
+                  + (sum < carry) /* Overflow from adding the last iteration's carry */;
             res->limbs[i + j] = sum; // Apply the new sum
-        }
-        res->limbs[i + b->n] += carry; // Add the remaining carry to the largest, 
-                                       // most significant limb of the current sum
-    }
-    res->n = a->n + b->n;
+        } res->limbs[i + b->n] += carry; // Add the remaining carry to the MSL
+    } res->n = a->n + b->n; __BIGINT_INTERNAL_TRIM_LZ__(res);
 }
-static void __BIGINT_KARATSUBA__(const bigInt *x, const bigInt *y, bigInt *res, calc_ctx karat_ctx) {
+void __BIGINT_KARATSUBA__(const bigInt *x, const bigInt *y, bigInt *res, calc_ctx karat_ctx) {
     if (x->n <= BIGINT_SCHOOLBOOK && y->n <= BIGINT_SCHOOLBOOK) {
         __BIGINT_SCHOOLBOOK__(x, y, res); return;
     } //* ---- 1. SETUP ---- *?/
@@ -113,7 +107,7 @@ static void __BIGINT_KARATSUBA__(const bigInt *x, const bigInt *y, bigInt *res, 
     __BIGINT_INTERNAL_COPY__(res, &z2);
     scratch_reset(&karat_ctx, karat_mark);
 }
-static void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {
+void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {
     if (m->n <= BIGINT_SCHOOLBOOK && n->n <= BIGINT_SCHOOLBOOK) {
         __BIGINT_SCHOOLBOOK__(m, n, res); return;
     } //* -------- 1. SETUP & SPLITTING -------- *//
@@ -185,12 +179,12 @@ static void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, cal
     __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
     __BIGINT_INTERNAL_COPY__(res, &final_res); scratch_reset(&toom_ctx, toom_mark);
 }
-static void __BIGINT_TOOM_4__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-static void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-static void __BIGINT_TOOM_6p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-static void __BIGINT_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-static void __BIGINT_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-static void __BIGINT_SSA__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx) {}
+void __BIGINT_TOOM_4__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
+void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
+void __BIGINT_TOOM_6p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
+void __BIGINT_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
+void __BIGINT_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
+void __BIGINT_SSA__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx) {}
 void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx mul_ctx) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) __BIGINT_SCHOOLBOOK__(a, b, res);
     else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) __BIGINT_SCHOOLBOOK__(a, b, res);

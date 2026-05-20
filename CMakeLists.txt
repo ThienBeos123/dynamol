@@ -21,17 +21,18 @@ endif()
 # Add include directories globally
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/system
-    ${CMAKE_SOURCE_DIR}/include/system/asm
-    ${CMAKE_SOURCE_DIR}/sconfigs
-    ${CMAKE_SOURCE_DIR}/sconfigs/memory
-    ${CMAKE_SOURCE_DIR}/sconfigs/perf
-    ${CMAKE_SOURCE_DIR}/sconfigs/settings
+    ${CMAKE_SOURCE_DIR}/include/dnml_sys
+    ${CMAKE_SOURCE_DIR}/include/dnml_sys/asm
+    ${CMAKE_SOURCE_DIR}/include/_libdnml_config
+    ${CMAKE_SOURCE_DIR}/include/_libdnml_mem
+    ${CMAKE_SOURCE_DIR}/include/_libdnml_perf
+
     ${CMAKE_SOURCE_DIR}/intrinsics
     ${CMAKE_SOURCE_DIR}/intrinsics/arm64
     ${CMAKE_SOURCE_DIR}/intrinsics/risc-v64
     ${CMAKE_SOURCE_DIR}/intrinsics/x86_64
     ${CMAKE_SOURCE_DIR}/intrinsics/zvanillc
+
     ${CMAKE_SOURCE_DIR}/util
     ${CMAKE_SOURCE_DIR}/calc_algo
     ${CMAKE_SOURCE_DIR}/calc_algo/perf_based
@@ -49,7 +50,44 @@ add_library(dnml_core STATIC
     dynamol/big_numbers/bigInt.c
     dynamol/big_numbers/bigInt_io.c
 
-    # 2. Calculational Algorithms Files - calc_algo
+    # 2. System Assembly files
+    include/system/__hwcaps.c
+    include/system/asm/_dnml_cpuid.S
+    # Character tables (lookup arrays)
+    include/char_table.c
+
+    # 3. Mathematical Intrinsic Operations Files
+    intrinsics/intrinsics.c
+    # 3a. ARM64 Intrinsic Files
+    intrinsics/arm64/_arm64_alg.S
+    intrinsics/arm64/_arm64_arith.S
+    intrinsics/arm64/_arm64_bitops.S
+    intrinsics/arm64/_arm64_marith.S
+    intrinsics/arm64/_arm64_sec.S
+    intrinsics/arm64/_arm64_hw.S
+    # 3b. x86_64 Intrinsic Files - SYSTEM-V
+    intrinsics/x86_64/_x86_sysv_alg.S
+    intrinsics/x86_64/_x86_sysv_arith.S
+    intrinsics/x86_64/_x86_sysv_marith.S
+    intrinsics/x86_64/_x86_sysv_bitops.S
+    intrinsics/x86_64/_x86_sysv_sec.S
+    intrinsics/x86_64/_x86_sysv_hw.S
+    # 3c. x86_64 Intrinsic Files - WIN64
+    intrinsics/x86_64/_x86_win64_alg.S
+    intrinsics/x86_64/_x86_win64_arith.S
+    intrinsics/x86_64/_x86_win64_marith.S
+    intrinsics/x86_64/_x86_win64_bitops.S
+    intrinsics/x86_64/_x86_win64_sec.S
+    intrinsics/x86_64/_x86_win64_hw.S
+    # 3d. RISC-V 64 bit Intrinsics Files
+    intrinsics/risc-v64/_rv64_alg.S
+    intrinsics/risc-v64/_rv64_arith.S
+    intrinsics/risc-v64/_rv64_marith.S
+    intrinsics/risc-v64/_rv64_bitops.S
+    intrinsics/risc-v64/_rv64_sec.S
+    intrinsics/risc-v64/_rv64_hw.S
+
+    # 4. Calculational Algorithms Files - calc_algo
     calc_algo/perf_based/add_sub.c
     calc_algo/perf_based/mul.c
     calc_algo/perf_based/div.c
@@ -58,48 +96,11 @@ add_library(dnml_core STATIC
     calc_algo/perf_based/num_theory.c
     calc_algo/perf_based/pow_root.c
 
-    # 3. Utility Files
+    # 5. Utility Files
     util/perf_util/bigNum_utils.c
     util/perf_util/misc_utils.c
     util/perf_util/str_parse.c
     util/perf_util/rng_util.c
-
-    # 4. Mathematical Intrinsic Operations Files
-    intrinsics/intrinsics.c
-    # 4a. ARM64 Intrinsic Files
-    intrinsics/arm64/_arm64_alg.S
-    intrinsics/arm64/_arm64_arith.S
-    intrinsics/arm64/_arm64_bitops.S
-    intrinsics/arm64/_arm64_marith.S
-    intrinsics/arm64/_arm64_sec.S
-    intrinsics/arm64/_arm64_hw.S
-    # 4b. x86_64 Intrinsic Files - SYSTEM-V
-    intrinsics/x86_64/_x86_sysv_alg.S
-    intrinsics/x86_64/_x86_sysv_arith.S
-    intrinsics/x86_64/_x86_sysv_marith.S
-    intrinsics/x86_64/_x86_sysv_bitops.S
-    intrinsics/x86_64/_x86_sysv_sec.S
-    intrinsics/x86_64/_x86_sysv_hw.S
-    # 4c. x86_64 Intrinsic Files - WIN64
-    intrinsics/x86_64/_x86_win64_alg.S
-    intrinsics/x86_64/_x86_win64_arith.S
-    intrinsics/x86_64/_x86_win64_marith.S
-    intrinsics/x86_64/_x86_win64_bitops.S
-    intrinsics/x86_64/_x86_win64_sec.S
-    intrinsics/x86_64/_x86_win64_hw.S
-    # 4d. RISC-V 64 bit Intrinsics Files
-    intrinsics/risc-v64/_rv64_alg.S
-    intrinsics/risc-v64/_rv64_arith.S
-    intrinsics/risc-v64/_rv64_marith.S
-    intrinsics/risc-v64/_rv64_bitops.S
-    intrinsics/risc-v64/_rv64_sec.S
-    intrinsics/risc-v64/_rv64_hw.S
-
-    # 5. System Assembly files
-    include/system/__hwcaps.c
-    include/system/asm/_dnml_cpuid.S
-    # Character tables (lookup arrays)
-    include/char_table.c
 )
 
 # Extra commands for clearer debugging and cleaning up

@@ -16,7 +16,7 @@ extern "C" {
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
 
-#include "add_sub.h"
+#include "../algo_base/add_sub.h"
 #include "mul.h"
 
 

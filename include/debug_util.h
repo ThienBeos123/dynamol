@@ -44,14 +44,16 @@
     } \
 } while (0);
 
-// Stream-based Scanning EOF Handling
+// CONVENIENT MACROS
 #define scan_eof(curr_char, stream, ret) do { \
     if (curr_char == EOF) { \
         if (ferror(stream)) return FILE_ERR_PARSE; \
         else return ret; \
     } \
 } while (0);
-
+#define cryptInt_poison(x) do { \
+    DNML_ASSERT((!x->poisoned), "cryptInt x is invalid/poisoined (-Ecryptin_poisoined)"); \
+} while(0);
 
 
 

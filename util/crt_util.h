@@ -2,8 +2,10 @@
 #define _CRT_UTIL_H
 
 
+#include <debug_util.h>
 #include <libdnml_types.h>
 #include <include.h>
+#include <dnml_status.h>
 #include <dnml_sys/sys.h>
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/_ctx.h>
@@ -18,7 +20,7 @@ void __libdnml_memwipe_strict(void *buf, size_t len);
 
 
 /* crt_bnum_util.c */
-void __BICRT_TRIM_LZ__(bigInt *x);
+drypto_stat __CRINT_TRIM_LZ__(cryptInt *x);
 
 
 

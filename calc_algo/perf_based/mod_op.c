@@ -15,13 +15,13 @@ size_t __BIGINT_MONTMUL_WS__(size_t a_size, size_t b_size, mont_ctx ctx) {
     size_t mul_size = __BIGINT_MUL_WS__(a_size, b_size);
     return raw_size + mul_size;
 }
-static size_t __BIGINT_BIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size) {
+size_t __BIGINT_BIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size) {
     size_t raw_size = base_size + 2*mod_size + pow_size;
     size_t fcall_size = max(__BIGINT_MOD_WS__(base_size, mod_size), 
                             __BIGINT_CMODMUL_WS__(mod_size, mod_size, mod_size));
     return raw_size + fcall_size;
 }
-static size_t __BIGINT_MBIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size) {
+size_t __BIGINT_MBIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size) {
     // Binary ModExp's objects
     size_t max_tsize = max(2*mod_size, max(base_size, pow_size));
     size_t rsize_tmpsize = max_tsize, rmodn_size = mod_size;
@@ -83,7 +83,7 @@ void __BIGINT_MONTMUL__(
     __BIGINT_MONT_REDC__(&t, ctx, res, montmul_ctx);
     scratch_reset(&montmul_ctx, montmul_mark); 
 }
-static void __BIGINT_BIN_MODEXP__(
+void __BIGINT_BIN_MODEXP__(
     const bigInt *base, const bigInt *power, 
     const bigInt *modulus, bigInt *res, calc_ctx binexp_ctx
 ) {
@@ -107,7 +107,7 @@ static void __BIGINT_BIN_MODEXP__(
     scratch_reset(&binexp_ctx, binexp_mark);
 
 }
-static void __BIGINT_MBIN_MODEXP__(
+void __BIGINT_MBIN_MODEXP__(
     const bigInt *base, const bigInt *power, 
     const bigInt *modulus, bigInt *res, calc_ctx binexp_ctx
 ) {

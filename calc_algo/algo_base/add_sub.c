@@ -77,7 +77,7 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
         if (!comp_res) __BIGINT_INTERNAL_ZSET__(x);
         else {
             if (comp_res > 0) { __BIGINT_SUB_WB__(res, x, y); res->sign = x->sign; }
-            else              { __BIGINT_SUB_WB__(res, x, y); res->sign = -x->sign; }
+            else { __BIGINT_SUB_WB__(res, x, y); res->sign = -x->sign; }
         }
     } else {
         __BIGINT_ADD_WC__(res, x, y);
@@ -87,27 +87,36 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 
 
 //* =============== ADDITION + SUBTRACTION CONSTANT ENGINE =============== *//
-void __BIGINT_CRT_ADD__(bigInt *res, const bigInt *a, const bigInt *b) {
-    DNML_ASSERT(
+drypto_stat __CRINT_ADD_WC__(cryptInt *res, const cryptInt *a, const cryptInt *b) {
+    // Static Analysis
+    cryptInt_poison(a); cryptInt_poison(b); 
+    cryptInt_poison(res); DNML_ASSERT(
         (res->cap >= max(a->n, b->n) + 1),
         "res->cap < (max(a->n + b->n) + 1) --- (a + b)"
         " (-Eadd_insufficient_cap)"
-    ); size_t max = max(a->n, b->n); uint64_t carry = 0;
+    ); // Main Algorithms
+    if (res->poisoned || a->poisoned || b->poisoned) return CRYPTINT_POISOINED;
+    size_t max = max(a->n, b->n); uint64_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
         uint64_t x = (i < a->n) ? a->limbs[i] : 0;
         uint64_t y = (i < b->n) ? b->limbs[i] : 0;
         res->limbs[i] = __ADD_UI64__(x, y, &carry);
     } res->limbs[max] = carry; res->n = max + (!!carry);
     __libdnml_memset_strict(res->limbs, 0, res->cap, res->n);
+    return CRYPTINT_SUCCESS;
 }
-void __BIGINT_CRT_SUB__(bigInt *res, const bigInt *a, const bigInt *b) {
-    DNML_ASSERT(
+drypto_stat __CRINT_SUB_WC__(cryptInt *res, const cryptInt *a, const cryptInt *b) {
+    cryptInt_poison(a); cryptInt_poison(b); 
+    cryptInt_poison(res); DNML_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),
         "abs(a->n) < abs(b->n) (-Esub_underflow)"
-    ); uint64_t borrow = 0;
+    ); // Main Algorithms
+    if (res->poisoned || a->poisoned || b->poisoned) 
+    return CRYPTINT_POISOINED;  uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t y = (i < b->n) ? b->limbs[i] : 0;
         res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
     } res->n = a->n; __BICRT_TRIM_LZ__(res);
     __libdnml_memset_strict(res->limbs, 0, res->cap, res->n);
+    return CRYPTINT_SUCCESS;
 }

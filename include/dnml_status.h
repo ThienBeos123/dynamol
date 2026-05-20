@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-typedef enum ___44594E414D4F4C_737461747573___ {
-    BIGINT_SUCCESS = 0,         // 0
+typedef enum {
+    BIGINT_SUCCESS,             // 0
     BIGINT_TRUNC_SUCCESS,       // 1
     BIGINT_NULL,                // 2
     BIGINT_ERR_INVAL,           // 3
@@ -52,6 +52,13 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case FILE_ILLEGAL:      fputs("FILE_ILLEGAL", f);   break;
     }
 }
+
+
+typedef enum {
+    CRYPTINT_SUCCESS,       // 0
+    CRYPTINT_NULL,          // 1
+    CRYPTINT_POISOINED      // 2
+} drypto_stat;
 
 
 #endif

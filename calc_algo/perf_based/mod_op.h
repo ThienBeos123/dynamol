@@ -12,13 +12,15 @@
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
 
-#include "add_sub.h"
+#include "../algo_base/add_sub.h"
 #include "div.h"
 #include "mul.h"
 #include "mod.h"
 
 size_t __BIGINT_CMODMUL_WS__(size_t a_size, size_t b_size, size_t mod_size);
 size_t __BIGINT_MONTMUL_WS__(size_t a_size, size_t b_size, mont_ctx ctx);
+size_t __BIGINT_BIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
+size_t __BIGINT_MBIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
 size_t __BIGINT_MODMUL_WS__(size_t a_size, size_t b_size, size_t mod_size);
 size_t __BIGINT_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
 
@@ -30,6 +32,14 @@ void __BIGINT_MONTMUL__(
 void __BIGINT_CLASSICAL_MODMUL__(
     const bigInt *a, const bigInt *b, 
     const bigInt *modulus, bigInt *res, calc_ctx modmul_ctx
+);
+void __BIGINT_BIN_MODEXP__(
+    const bigInt *base, const bigInt *power, 
+    const bigInt *modulus, bigInt *res, calc_ctx binexp_ctx
+);
+void __BIGINT_MBIN_MODEXP__(
+    const bigInt *base, const bigInt *power, 
+    const bigInt *modulus, bigInt *res, calc_ctx binexp_ctx
 );
 void __BIGINT_MODMUL_DISPATCH__(
     const bigInt *a, const bigInt *b, 
