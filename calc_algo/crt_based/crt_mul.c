@@ -2,6 +2,11 @@
 
 
 /* CRYPTINT WORKSPACE SIZE */
+size_t __CRINT_NTT_WS__(size_t a_size, size_t b_size) {}
+size_t __CRINT_MUL_WS__(size_t a_size, size_t b_size) {
+    if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0;
+    else return __CRINT_NTT_WS__(a_size, b_size);
+}
 
 
 
@@ -28,4 +33,10 @@ drypto_stat __CRINT_SCHOOLBOOK__(const cryptInt *a, const cryptInt *b, cryptInt 
     } res->n = a->n + b->n; __CRINT_TRIM_LZ__(res);
     __libdnml_memset_strict(res->limbs, 0, res->cap, res->n);
     return CRYPTINT_SUCCESS;
+}
+drypto_stat __CRINT_NTT__(const cryptInt *a, const cryptInt *b, cryptInt *res, calc_ctx *ntt_ctx) {}
+drypto_stat __CRINT_MUL_DISP__(const cryptInt *a, const cryptInt *b, cryptInt *res, calc_ctx *mul_ctx) {
+    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) 
+        return __CRINT_SCHOOLBOOK__(a, b, res);
+    else return __CRINT_NTT__(a, b, res, mul_ctx);
 }

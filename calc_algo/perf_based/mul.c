@@ -178,7 +178,7 @@ void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
 void __BIGINT_TOOM_6p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
 void __BIGINT_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
 void __BIGINT_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-void __BIGINT_SSA__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx) {}
+void __BIGINT_NTT__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx) {}
 void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx mul_ctx) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) __BIGINT_SCHOOLBOOK__(a, b, res);
     else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) __BIGINT_SCHOOLBOOK__(a, b, res);
@@ -189,5 +189,5 @@ void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc
     else if (a->n <= BIGINT_TOOM_6p5 && b->n <= BIGINT_TOOM_6p5) __BIGINT_TOOM_6p5__(a, b, res, mul_ctx);
     else if (a->n <= BIGINT_TOOM_7p5 && b->n <= BIGINT_TOOM_7p5) __BIGINT_TOOM_7p5__(a, b, res, mul_ctx);
     else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) __BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
-    else __BIGINT_SSA__(a, b, res, mul_ctx);
+    else __BIGINT_NTT__(a, b, res, mul_ctx);
 }

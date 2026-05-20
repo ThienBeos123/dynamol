@@ -36,7 +36,7 @@ void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
 void __BIGINT_TOOM_6p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx);
 void __BIGINT_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx);
 void __BIGINT_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx);
-void __BIGINT_SSA__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx);
+void __BIGINT_NTT__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx);
 void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx mul_ctx);
 
 

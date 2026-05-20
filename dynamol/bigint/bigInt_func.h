@@ -14,38 +14,6 @@
 #include "../../util/util.h"
 
 
-// Pre-opreration evaluation asserts
-#define test_assert(cond, err_code) do { \
-    if (_DNML_DEBUG_MODE) { \
-        assert(!(cond)); \
-    } else { \
-        if (cond) return err_code; \
-    } \
-} while (0);
-#define test_assert_mut(cond, err, err_code, retval) do { \
-    if (_DNML_DEBUG_MODE) { \
-        assert(!(cond)); \
-    } else { \
-        if (cond) { (*err) = (err_code); return retval; } \
-    } \
-} while (0);
-#define test_assert_pre(cond, err, err_code, baseout, base, retsize ) do { \
-    if (_DNML_DEBUG_MODE) { \
-        assert(cond); \
-    } else { \
-        if (cond) { (*err) = (err_code); (*baseout) = (base); return retsize; } \
-    } \
-} while (0);
-
-// Stream-based Scanning EOF Handling
-#define scan_eof(curr_char, stream, ret) do { \
-    if (curr_char == EOF) { \
-        if (ferror(stream)) return FILE_ERR_PARSE; \
-        else return ret; \
-    } \
-} while (0);
-
-
 //todo ===================================== NUMERIC FUNCTIONALITIES ===================================== todo//
 //* ------------- CONSTRUCTORS & DESCTRUCTORS -------------- */
 inline void __BIGINT_FREE__(bigInt *x); // Destructor
@@ -55,42 +23,6 @@ void __BIGINT_STANDARD_INIT__(bigInt *__bigInteger, const bigInt __preBigInt);
 void __BIGINT_UI64_INIT__(bigInt *__bigInteger, uint64_t __unsigned_int);
 void __BIGINT_I64_INIT__(bigInt *__bigInteger, int64_t __signed_int);
 void __BIGINT_LD_INIT__(bigInt *__bigInteger, long double __float );
-
-#define bigInt_free __BIGINT_FREE__
-#define bigInt_init(initializing, initializer) \
-    _Generic((initializer)                                                  \
-        /* Signed, INTEGER Initialization */                                \
-        char:                       __BIGINT_I64_INIT__,                    \
-        int:                        __BIGINT_I64_INIT__,                    \
-        long:                       __BIGINT_I64_INIT__,                    \
-        long long:                  __BIGINT_I64_INIT__,                    \
-        int8_t:                     __BIGINT_I64_INIT__,                    \
-        int16_t:                    __BIGINT_I64_INIT__,                    \
-        int32_t:                    __BIGINT_I64_INIT__,                    \
-        int64_t:                    __BIGINT_I64_INIT__,                    \
-                                                                            \
-        /* Unsigned, INTEGER Initialization */                              \
-        unsigned char:              __BIGINT_UI64_INIT__,                   \
-        unsigned int:               __BIGINT_UI64_INIT__,                   \
-        unsigned long:              __BIGINT_UI64_INIT__,                   \
-        unsigned long long:         __BIGINT_UI64_INIT__,                   \
-        uint8_t:                    __BIGINT_UI64_INIT__,                   \
-        uint16_t:                   __BIGINT_UI64_INIT__,                   \
-        uint32_t:                   __BIGINT_UI64_INIT__,                   \
-        uint64_t:                   __BIGINT_UI64_INIT__,                   \
-                                                                            \
-        /* Float Initialization */                                          \
-        float:                      __BIGINT_LD_INIT__,                     \
-        double:                     __BIGINT_LD_INIT__,                     \
-        long double:                __BIGINT_LD_INIT__,                     \
-                                                                            \
-        /* BigInt Initialization */                                         \
-        bigInt                     __BIGINT_STANDARD_INIT__,                \
-        size_t                     bigInt_linit,                            \
-                                                                            \
-        /* Empty Initialization */                                          \
-        default:                    __BIGINT_EMPTY_INIT__                   \
-)(initializing, initializer);
 
 
 
@@ -109,37 +41,6 @@ void __BIGINT_GET_UI64__(uint64_t x, bigInt *receiver);
 void __BIGINT_GET_I64__(int64_t x, bigInt *receiver);
 void __BIGINT_GET_LD__(long double x, bigInt *receiver);
 dnml_status __BIGINT_GET_LD_SAFE__(long double x, bigInt *receiver);
-
-#define bigInt_set(receiver, giver) \
-    _Generic((receiver)                                         \
-        /* Signed, INTEGER Variants */                          \
-        char*:                       __BIGINT_SET_I64__,        \
-        int*:                        __BIGINT_SET_I64__,        \
-        long*:                       __BIGINT_SET_I64__,        \
-        long long*:                  __BIGINT_SET_I64__,        \
-        int8_t*:                     __BIGINT_SET_I64__,        \
-        int16_t*:                    __BIGINT_SET_I64__,        \
-        int32_t*:                    __BIGINT_SET_I64__,        \
-        int64_t*:                    __BIGINT_SET_I64__,        \
-                                                                \
-        /* Unsigned, INTEGER Variants */                        \
-        unsigned char*:              __BIGINT_SET_UI64__,       \
-        unsigned int*:               __BIGINT_SET_UI64__,       \
-        unsigned long*:              __BIGINT_SET_UI64__,       \
-        unsigned long long*:         __BIGINT_SET_UI64__,       \
-        uint8_t*:                    __BIGINT_SET_UI64__,       \
-        uint16_t*:                   __BIGINT_SET_UI64__,       \
-        uint32_t*:                   __BIGINT_SET_UI64__,       \
-        uint64_t*:                   __BIGINT_SET_UI64__,       \
-                                                                \
-        /* Floating Point Variants */                           \
-        float*:                      __BIGINT_SET_LD__,         \
-        double*:                     __BIGINT_SET_LD__,         \
-        long double*:                __BIGINT_SET_LD__,         \
-                                                                \
-        /* Normal/BigInt Variant */                             \
-        bigInt*                     __BIGINT_SET_BIGINT__       \
-)(receiver, giver) /* Don't accept no input */
 
 
 

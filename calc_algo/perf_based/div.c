@@ -248,7 +248,7 @@ void __BIGINT_BURNIKEL__(
 }
 void __BIGINT_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx newton_ctx) {}
 void __BIGINT_DIVMOD_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx div_ctx) {
-    if      (b->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
+    if (b->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
     else if (b->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, b, quot, rem, div_ctx);
     else if (b->n < BIGINT_BURNIKEL) {
         size_t k = (size_t)(b->n >> 1) + 1;
