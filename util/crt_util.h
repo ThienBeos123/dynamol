@@ -13,10 +13,10 @@
 
 
 /* crt_misc_util.c */
-void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t start);
-void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start);
+void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t start, size_t end);
+void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, size_t end);
 void __libdnml_memwipe_strict(void *buf, size_t len);
-
+uint64_t __MAG_I64__(int64_t x);
 
 
 /* crt_bnum_util.c */

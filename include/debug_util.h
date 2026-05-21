@@ -8,17 +8,37 @@
 
 // CUSTOM DNML_ASSERT
 #if _DNML_DEBUG_MODE 
-#define DNML_ASSERT(condition, message) do { \
+/* This version is design for quick debugging, 
+and is generally unsafe for production-use for the user */
+#define DNML_TEST_ASSERT(condition, message) do { \
     if (!(condition)) { \
-        fprintf(stderr, "[FATAL] Assertion Failed: %s\n", message); \
-        fprintf(stderr, "File: %s | Line: %d\n", __FILE__, __LINE__); \
-        /* NASA Rule: Take explicit recovery action instead of just aborting */ \
+        fprintf(stderr, "  - [FATAL] Assertion Failed: (%s)", #condition); \
+        fprintf(stderr, "    Function %s(): %s\n", __func__, message); \
+        fprintf(stderr, "     File: %s | Line: %d\n", __FILE__, __LINE__); \
         exit(EXIT_FAILURE); \
     } \
 } while (0)
 #else
-#define DNML_ASSERT(condition, message)
+#define DNML_TEST_ASSERT(condition, message)
 #endif
+
+/* 
+This version is targeted as the production-ready assertion, 
+allowing for detailed fail reason to the user + 
+cryptographically-ready cleanup code insertions 
+
+! PLEASE ALSO CLEARLY DOCUMENT THIS FUNCTION MACRO, AS IT
+! USES POTENTIALLY DANGEROUS AND BUG-RIDDEN COD INSERTION
+*/
+#define DNML_ASSERT(condition, message, cleanup_code) do { \
+    if (!(condition)) { \
+        do { cleanup_code } while (0); \
+        fprintf(stderr, "  - [FATAL] Assertion Failed: (%s)", #condition); \
+        fprintf(stderr, "    Function %s(): %s\n", __func__, message); \
+        fprintf(stderr, "     File: %s | Line: %d\n", __FILE__, __LINE__); \
+        exit(EXIT_FAILURE); \
+    } \
+} while (0)
 
 
 // Pre-opreration evaluation asserts
@@ -51,8 +71,8 @@
         else return ret; \
     } \
 } while (0);
-#define cryptInt_poison(x) do { \
-    DNML_ASSERT((!x->poisoned), "cryptInt x is invalid/poisoined (-Ecryptin_poisoined)"); \
+#define crint_poison(x) do { \
+    DNML_TEST_ASSERT((!x->poisoned), "cryptInt x is invalid/poisoined (-Ecryptin_poisoined)"); \
 } while(0);
 
 
