@@ -3,10 +3,10 @@
 
 //* =============== ADDITION ARITHMETIC ENGINE =============== *//
 void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
-    DNML_ASSERT(
+    DNML_TEST_ASSERT(
         (res->cap >= max(a->n, b->n) + 1),
-        "res->cap < (max(a->n + b->n) + 1) --- (a + b)"
-        " (-add_insufficient_cap)"
+        "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b"
+        " (-Eadd_insufficient_cap)"
     ); size_t max = max(a->n, b->n); uint64_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
         uint64_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
@@ -21,12 +21,14 @@ void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
     // Static analysis
     if ((x->sign == 1 && y->sign == 1) ||
         (x->sign == -1 && y->sign == -1)
-    ) DNML_ASSERT(
+    ) DNML_TEST_ASSERT(
         (res->cap >= max(x->n, y->n) + 1),
         (x->sign == 1 && y->sign == 1) ?
-        "res->cap < (max(x->n + y->n) + 1) --- (a + b)"
+        "Insufficient Sum Buffer:"
+        " Capacity Unsatisfactory for a + b"
         " (-Eadd_saw_insufficient_cap)" :
-        "res->cap < (max(x->n + y->n) + 1) --- ((-a) + (-b))"
+        "Insufficient Sum Buffer:"
+        " Capacity Unsatisfactory for (-a) + (-b)"
         " (-Eadd_saw_insufficient_cap)"
     );
     // Main operation
@@ -47,9 +49,10 @@ void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 
 //* =============== SUBTRACTION ARITHMETIC ENGINE =============== *//
 void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b) {
-    DNML_ASSERT(
+    DNML_TEST_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),
-        "abs(a->n) < abs(b->n) (-Esub_underflow)"
+        "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
+        " (-Esub_underflow)"
     ); uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t y = (i < b->n) ? b->limbs[i] : 0;
@@ -61,12 +64,14 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
     // Static Analysis
     if ((x->sign == 1 && y->sign == -1) ||
         (x->sign == -1 && y->sign == 1)
-    ) DNML_ASSERT(
+    ) DNML_TEST_ASSERT(
         (res->cap >= max(x->n, y->n) + 1),
         (x->sign == 1 && y->sign == -1) ?
-        "res->cap < (max(x->n + y->n) + 1) --- (a - (-b))"
+        "Insufficient Difference Buffer:"
+        " Capacity Unsatisfactory for a - (-b)"
         " (-Esub_saw_insufficient_cap)" :
-        "res->cap < (max(x->n + y->n) + 1) --- ((-a) - b)"
+        "Insufficient Difference Buffer:"
+        " Capacity Unsatisfactory for (-a) - b"
         " (-Esub_saw_insufficient_cap)"
     );
     // Main Operation
@@ -89,34 +94,40 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 //* =============== ADDITION + SUBTRACTION CONSTANT ENGINE =============== *//
 drypto_stat __CRINT_ADD_WC__(cryptInt *res, const cryptInt *a, const cryptInt *b) {
     // Static Analysis
-    cryptInt_poison(a); cryptInt_poison(b); 
-    cryptInt_poison(res); DNML_ASSERT(
+    crint_poison(a); crint_poison(b); 
+    crint_poison(res); DNML_TEST_ASSERT(
         (res->cap >= max(a->n, b->n) + 1),
-        "res->cap < (max(a->n + b->n) + 1) --- (a + b)"
+        "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b"
         " (-Eadd_insufficient_cap)"
     ); // Main Algorithms
     if (res->poisoned || a->poisoned || b->poisoned) return CRYPTINT_POISOINED;
     size_t max = max(a->n, b->n); uint64_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
-        uint64_t x = (i < a->n) ? a->limbs[i] : 0;
-        uint64_t y = (i < b->n) ? b->limbs[i] : 0;
+        uint64_t a_curr = a->limbs[i], b_curr = b->limbs[i], x, y;
+        // uint64_t x = (i < a->n) ? a->limbs[i] : 0;
+        // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
+        CHOOSE_OPTION(x, (i < a->n), a_curr, 0);
+        CHOOSE_OPTION(y, (i < b->n), b_curr, 0);
         res->limbs[i] = __ADD_UI64__(x, y, &carry);
     } res->limbs[max] = carry; res->n = max + (!!carry);
-    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n);
+    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
     return CRYPTINT_SUCCESS;
 }
 drypto_stat __CRINT_SUB_WC__(cryptInt *res, const cryptInt *a, const cryptInt *b) {
-    cryptInt_poison(a); cryptInt_poison(b); 
-    cryptInt_poison(res); DNML_ASSERT(
+    crint_poison(a); crint_poison(b); 
+    crint_poison(res); DNML_TEST_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),
-        "abs(a->n) < abs(b->n) (-Esub_underflow)"
+        "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
+        " (-Esub_underflow)"
     ); // Main Algorithms
     if (res->poisoned || a->poisoned || b->poisoned) 
     return CRYPTINT_POISOINED;  uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
-        uint64_t y = (i < b->n) ? b->limbs[i] : 0;
+        uint64_t curr = b->limbs[i], y;
+        // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
+        CHOOSE_OPTION(y, (i < b->n), curr, 0);
         res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
     } res->n = a->n; __BICRT_TRIM_LZ__(res);
-    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n);
+    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
     return CRYPTINT_SUCCESS;
 }

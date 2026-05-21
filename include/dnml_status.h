@@ -55,9 +55,9 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
 
 
 typedef enum {
-    CRYPTINT_SUCCESS,       // 0
-    CRYPTINT_NULL,          // 1
-    CRYPTINT_POISOINED      // 2
+    CRYPTINT_SUCCESS,           // 0
+    CRYPTINT_INVAL_CAP_REQUEST, // 1
+    CRYPTINT_POISOINED          // 2
 } drypto_stat;
 
 

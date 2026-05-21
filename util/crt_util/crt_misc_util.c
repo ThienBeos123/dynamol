@@ -2,6 +2,8 @@
 
 
 
+
+
 void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t start, size_t end) {}
 void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, size_t end) {
     uint8_t *p = (uint8_t*)buf;

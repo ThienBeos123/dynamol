@@ -1,4 +1,5 @@
 #include "cryptInt_func.h"
+#include <stdbool.h>
 
 
 
@@ -6,26 +7,32 @@
 //* ===================================== TYPE SETUP FUNCTION ===================================== *//
 void crint_free(cryptInt *x) {
     if (x->limbs == NULL) return;
-    __libdnml_memwipe_strict(x->limbs, x->cap);
+    __libdnml_memwipe_strict(x->limbs, x->cap * BYTES_IN_UINT64_T);
     free(x->limbs); x->limbs = NULL;
     x->n = 0; x->cap = 0; x->sign = 0;
     x->poisoned = 0;
 }
-void crint_new(cryptInt *x){
+void crint_new(cryptInt *x) {
     if (x->limbs != NULL) return; // already initialized
-    limb_t *P_BUFFER__ = calloc(1, sizeof(limb_t));
+    limb_t *P_BUFFER__ = calloc(1, BYTES_IN_UINT64_T);
     DNML_ASSERT(P_BUFFER__ != NULL,
     "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
     { /* Set everything to 0 to completely wipe out memory */
         x->n = 0; x->sign = 0; x->cap = 0;
-        x->poisoned = 0; x->limbs = 0;
-    }); x->limbs = P_BUFFER__; x->cap = 1;
+        x->poisoned = 0; x->limbs = 0; P_BUFFER__ = 0;
+    });
+    x->limbs = P_BUFFER__; x->cap = 1;
     x->n = 0; x->sign = 1; x->poisoned = false;
 }
 void crint_snew(cryptInt *x, const size_t n) {
     if (x->limbs != NULL) return; // already initialized
-    limb_t *__BUFFER_P = calloc(n, sizeof(limb_t));
-    if (__BUFFER_P == NULL) abort();
+    limb_t *__BUFFER_P = calloc(n, BYTES_IN_UINT64_T);
+    DNML_ASSERT(__BUFFER_P != NULL,
+    "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
+    { /* Set everything to 0 to completely wipe out memory */
+        x->n = 0; x->sign = 0; x->cap = 0;
+        x->poisoned = 0; x->limbs = 0; __BUFFER_P = 0;
+    }); 
     x->limbs = __BUFFER_P; x->cap = n;
     x->n = 0; x->sign = 1; x->poisoned = false;
 }
@@ -35,56 +42,53 @@ drypto_stat crint_cinew(cryptInt *x, cryptInt *y) {
     DNML_ASSERT((crint_pvalidate(y)), 
     "Contract Violation: Invalid CryptInt (-Ecrypt_int_invalid)",
         { /* Set everything to 0 to completely wipe out memory */
-            __libdnml_memwipe_strict(y->limbs, y->cap);
-            crint_free(y); x->limbs = NULL; x->n = 0;
+            __libdnml_memwipe_strict(y->limbs, y->cap * BYTES_IN_UINT64_T);
+            crint_free(y); x->limbs = 0; x->n = 0;
             x->cap = 0; x->sign = 0; x->poisoned = 0;
         }
     ); DNML_TEST_ASSERT((!(y->poisoned)), "Mathematical Error: CryptInt Poisoned (-Ecrypt_int_invalid)");
     if (y->poisoned) { x->n = 0; x->sign = 0; x->cap = 0; x->limbs = 0; return CRYPTINT_POISOINED; }
-    // Main Operations
-    if (x->limbs == y->limbs) {
-        if (x == y) return;
-        x->n = y->n; x->cap = y->cap;
-        x->sign = y->sign; x->poisoned = y->poisoned;
-    } size_t alloc_size = (y->n) ? y->n : 1;
-    limb_t *__BUFFER_P = calloc(y->n, sizeof(limb_t));
+    /* Main Operations */
+    size_t alloc_size; CHOOSE_OPTION((alloc_size), (y->n), (y->n), (1));
+    limb_t *__BUFFER_P = calloc(y->n, BYTES_IN_UINT64_T);
     DNML_ASSERT(__BUFFER_P != NULL,
     "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
     { /* Set everything to 0 to completely wipe out memory */
         crint_free(y); y->limbs = 0; x->limbs = 0; x->n = 0;
-        x->cap = 0; x->sign = 0; x->poisoned = 0;
-    }
-    ); x->limbs = __BUFFER_P;
+        x->cap = 0; x->sign = 0; x->poisoned = 0; __BUFFER_P = 0;
+    }); 
+    x->limbs = __BUFFER_P;
     if (y->n) __libdnml_memcpy_strict(
-        x->limbs, y->limbs, 
-        y->n * sizeof(limb_t), 0, 
-        y->n * sizeof(limb_t)
+        x->limbs, y->limbs,
+        y->n * BYTES_IN_UINT64_T, 0,
+        (y->n - 1) * BYTES_IN_UINT64_T
     ); x->n = y->n; x->cap = alloc_size; 
     x->sign = (y->n) ? y->sign : 1; x->poisoned = false;
 }
 drypto_stat crint_new_u64(cryptInt *x, const uint64_t in) {
     if (x->limbs != NULL) return; // already initialized
-    limb_t *__BUFFER_P = calloc(1, sizeof(limb_t));
+    limb_t *__BUFFER_P = calloc(1, BYTES_IN_UINT64_T);
     DNML_ASSERT(__BUFFER_P != NULL,
     "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
     { /* Set everything to 0 to completely wipe out memory */
         x->n = 0; x->sign = 0; x->cap = 0;
-        x->poisoned = 0; x->limbs = 0;
-    }); x->limbs = __BUFFER_P; x->cap = 1;
-    x->limbs[0] = in; x->n = !!(in); x->sign = 1;
-    x->poisoned = false;
+        x->poisoned = 0; x->limbs = 0; __BUFFER_P = 0;
+    }); 
+    x->limbs = __BUFFER_P; x->limbs[0] = in;
+    x->cap = 1; x->n = !!(in); x->sign = 1; x->poisoned = false;
 }
 drypto_stat crint_new_i64(cryptInt *x, const int64_t in) {
     if (x->limbs != NULL) return; // already initialized
-    limb_t *__BUFFER_P = calloc(1, sizeof(limb_t));
+    limb_t *__BUFFER_P = calloc(1, BYTES_IN_UINT64_T);
     DNML_ASSERT(__BUFFER_P != NULL,
     "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
     { /* Set everything to 0 to completely wipe out memory */
         x->n = 0; x->sign = 0; x->cap = 0;
-        x->poisoned = 0; x->limbs = 0;
-    }); x->limbs = __BUFFER_P; 
-    x->limbs[0] = __MAG_I64__(in); x->cap = 1; x->n = !!(in); 
-    x->sign = (in < 0) ? 1 : -1; x->poisoned = false;
+        x->poisoned = 0; x->limbs = 0; __BUFFER_P = 0;
+    });
+    x->limbs = __BUFFER_P; x->limbs[0] = __MAG_I64__(in); 
+    x->cap = 1; x->n = !!(in); x->poisoned = false;
+    CHOOSE_OPTION((x->sign), (!x->n), (1), (-1));
 }
 drypto_stat crint_new_f128(cryptInt *x, long double in) {}
 
@@ -94,13 +98,95 @@ drypto_stat crint_new_f128(cryptInt *x, long double in) {}
 
 
 //* ===================================== STATE ALTERATION FUNCTIONS ===================================== *//
-void crint_canonicalize(cryptInt *x) {}
-void crint_normalize(cryptInt *x) {}
-void crint_resize(cryptInt *x, size_t k) {}
-void crint_reserve(cryptInt *x, size_t k) {}
-void crint_shrink(cryptInt *x, size_t k) {}
-void crint_reset(cryptInt *x, size_t k) {}
+void crint_canonicalize(cryptInt *x) {
+    // Fix invalid capacity
+    uint8_t cap_invalid = (x->cap < 1);
+    CT_COND_ASSIGN(x->cap, cap_invalid, 1);
+    CT_COND_ASSIGN(x->n, cap_invalid, 0);
+    CT_COND_ASSIGN(x->sign, cap_invalid, 1);
+    
+    // Clamp n to capacity
+    uint8_t n_overflow = (x->n > x->cap);
+    CT_COND_ASSIGN(x->n, n_overflow, x->cap);
+    
+    // Fix invalid sign
+    uint8_t sign_invalid = (x->sign != 1) & (x->sign != -1);
+    CT_COND_ASSIGN(x->n, sign_invalid, 0);
+    CT_COND_ASSIGN(x->sign, sign_invalid, 1);
+}
+void crint_normalize(cryptInt *x) { __CRINT_TRIM_LZ__(x); CHOOSE_OPTION((x->sign), (!x->n), (1), (-1)); }
+drypto_stat crint_resize(cryptInt *x, size_t k) {
+    // Pre-operation Validation & Static Analysis
+    DNML_ASSERT(__STORAGE_VAL__(x),
+    "Partial Contract Violation: CryptInt invalid for storage "
+    "(-Ecrypt_int_sinvalid)", {
+        x->limbs = 0; x->cap = 0; x->n = 0; 
+        x->poisoned = 0; x->sign = 0;
+    }); DNML_TEST_ASSERT((k), "Invalid Capacity Request (-Einval_cap_request)");
+    if (!k) return CRYPTINT_INVAL_CAP_REQUEST;
+    // Main Resizing
+    limb_t *__BUFFER_P = realloc(x->limbs, k * BYTES_IN_UINT64_T);
+    DNML_ASSERT(__BUFFER_P != NULL,
+    "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
+    { /* Set everything to 0 to completely wipe out memory */
+        x->limbs = 0; x->n = 0; x->cap = 0; 
+        x->sign = 0; x->poisoned = 0; __BUFFER_P = 0;
+    });
+    x->limbs = __BUFFER_P; x->cap = k;
+    CHOOSE_OPTION((x->n), (x->n > x->cap), (x->cap), (x->n));
+    return CRYPTINT_SUCCESS;
+}
+drypto_stat crint_reserve(cryptInt *x, size_t k) {
+    DNML_ASSERT(__STORAGE_VAL__(x),
+    "Partial Contract Violation: CryptInt invalid for storage "
+    "(-Ecrypt_int_sinvalid)", {
+        x->limbs = 0; x->cap = 0; x->n = 0; 
+        x->poisoned = 0; x->sign = 0;
+    });
+    size_t new_cap = x->cap; while (new_cap < k) new_cap *= 2;
+    limb_t *__BUFFER_P = realloc(x->limbs, new_cap * BYTES_IN_UINT64_T);
+    DNML_ASSERT(__BUFFER_P != NULL,
+    "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
+    { /* Set everything to 0 to completely wipe out memory */
+        x->limbs = 0; x->n = 0; x->cap = 0; 
+        x->sign = 0; x->poisoned = 0; __BUFFER_P = 0;
+    });
+    x->limbs = __BUFFER_P; x->cap = new_cap;
+}
+drypto_stat crint_shrink(cryptInt *x, size_t k) {
+    DNML_ASSERT(__STORAGE_VAL__(x),
+    "Partial Contract Violation: CryptInt invalid for storage "
+    "(-Ecrypt_int_sinvalid)", {
+        x->limbs = 0; x->cap = 0; x->n = 0; 
+        x->poisoned = 0; x->sign = 0;
+    });
+    size_t new_cap = x->cap; while (new_cap > k) --new_cap;
+    limb_t *__BUFFER_P = realloc(x->limbs, new_cap * BYTES_IN_UINT64_T);
+    DNML_ASSERT(__BUFFER_P != NULL,
+    "Allocation Failure: calloc() returned NULL (-Ealloc_malloc_fail)",
+    { /* Set everything to 0 to completely wipe out memory */
+        x->limbs = 0; x->n = 0; x->cap = 0; 
+        x->sign = 0; x->poisoned = 0; __BUFFER_P = 0;
+    });
+    x->limbs = __BUFFER_P; x->cap = new_cap;
+}
+drypto_stat crint_reset(cryptInt *x) {
+    DNML_ASSERT(__STORAGE_VAL__(x),
+    "Partial Contract Violation: CryptInt State Invariant is violated "
+    "(-Ecrypt_int_state_invalid)", {
+        x->limbs = 0; x->cap = 0; x->n = 0; 
+        x->poisoned = 0; x->sign = 0;
+    });
+    __libdnml_memwipe_strict(x->limbs, x->cap * BYTES_IN_UINT64_T);
+    x->n = 0; x->sign = 1;
+}
 static inline uint8_t __MUT_SUBJ_VAL__(cryptInt *x) { return (x->limbs != NULL); }
+static inline uint8_t __STORAGE_VAL__(const cryptInt *x) {
+    if (x == NULL) return 0;
+    if (x->limbs == NULL) return 0;
+    if (x->cap < 1) return 0;
+    return 1;
+}
 bool crint_validate(cryptInt x) {
     /* State Validation */
     if (x.limbs == NULL) return false;

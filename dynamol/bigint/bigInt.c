@@ -2721,7 +2721,7 @@ void bigInt_resize(bigInt *x, size_t k) { //* Exact Capacity resize
     if (__BUFFER_P == NULL) abort();
     x->limbs = __BUFFER_P;
     x->cap   = k;
-    if (x->n < x->cap) x->n = x->cap;
+    if (x->n > x->cap) x->n = x->cap;
 }
 void bigInt_reserve(bigInt *x, size_t k) { //* Minimum Capacity
     assert(__BIGINT_INTERNAL_SVALID__(x));
