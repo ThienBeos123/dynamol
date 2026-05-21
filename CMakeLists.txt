@@ -37,8 +37,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/calc_algo
     ${CMAKE_SOURCE_DIR}/calc_algo/perf_based
     ${CMAKE_SOURCE_DIR}/calc_algo/crt_based
-    ${CMAKE_SOURCE_DIR}/dynamol/big_numbers
-    ${CMAKE_SOURCE_DIR}/dynamol/fsize_nums
+    ${CMAKE_SOURCE_DIR}/dynamol/bigint
+    ${CMAKE_SOURCE_DIR}/dynamol/bigfloat
     ${CMAKE_SOURCE_DIR}/test_ui                 # Added so lowui.h is universally accessible
 )
 

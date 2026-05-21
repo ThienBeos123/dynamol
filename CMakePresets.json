@@ -1,0 +1,67 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 3,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default Release",
+      "description": "Configure a default release build.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_FLAGS": "-O2 -Wall -Wextra -pedantic"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug Build",
+      "description": "Configure a debug build with symbols.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build_dbg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_FLAGS": "-O0 -Wall -Wextra -pedantic -Werror"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "AddressSanitizer Build",
+      "description": "Configure a debug build with AddressSanitizer enabled.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build_asan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_FLAGS": "-g -O0 -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "displayName": "Build Default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "debug",
+      "displayName": "Build Debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "asan",
+      "displayName": "Build ASan",
+      "configurePreset": "asan"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "displayName": "Run Tests",
+      "configurePreset": "default"
+    }
+  ]
+}
