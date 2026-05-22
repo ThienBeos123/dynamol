@@ -20,15 +20,15 @@ size_t __CRINT_DIV_WS__(size_t dend_size, size_t div_size);
 
 
 /* CRYPTINT ALGORITHMS */
-drypto_stat __CRINT_SHORT_DIVISION__(const cryptInt *a, uint64_t b, cryptInt *quot, cryptInt *rem);
+drypto_stat __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *quot, cryptint *rem);
 drypto_stat __CRINT_NEWTON_RECP__(
-    const cryptInt *a, const cryptInt *b,
-     cryptInt *quot, cryptInt *rem, 
+    const cryptint *a, const cryptint *b,
+     cryptint *quot, cryptint *rem, 
      calc_ctx newton_ctx
 );
 drypto_stat __CRINT_DIVMOD_DISP__(
-    const cryptInt *a, const cryptInt *b,
-    cryptInt *quot, cryptInt *rem,
+    const cryptint *a, const cryptint *b,
+    cryptint *quot, cryptint *rem,
     calc_ctx dvmod_ctx
 );
 

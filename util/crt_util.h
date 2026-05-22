@@ -32,8 +32,8 @@ uint64_t __MAG_I64__(int64_t x);
 
 
 /* crt_bnum_util.c */
-drypto_stat __CRINT_TRIM_LZ__(cryptInt *x);
-cryptInt __CRINT_ERRVAL__(void);
+drypto_stat __CRINT_TRIM_LZ__(cryptint *x);
+cryptint __CRINT_ERRVAL__(void);
 
 
 

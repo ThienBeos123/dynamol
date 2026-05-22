@@ -19,9 +19,9 @@ size_t __CRINT_MUL_WS__(size_t a_size, size_t b_size);
 
 
 /* CRYPTINT ALGORITHMS */
-drypto_stat __CRINT_SCHOOLBOOK__(const cryptInt *a, const cryptInt *b, cryptInt *res);
-drypto_stat __CRINT_NTT__(const cryptInt *a, const cryptInt *b, cryptInt *res, calc_ctx *ntt_ctx);
-drypto_stat __CRINT_MUL_DISP__(const cryptInt *a, const cryptInt *b, cryptInt *res, calc_ctx *mul_ctx);
+drypto_stat __CRINT_SCHOOLBOOK__(const cryptint *a, const cryptint *b, cryptint *res);
+drypto_stat __CRINT_NTT__(const cryptint *a, const cryptint *b, cryptint *res, calc_ctx *ntt_ctx);
+drypto_stat __CRINT_MUL_DISP__(const cryptint *a, const cryptint *b, cryptint *res, calc_ctx *mul_ctx);
 
 
 

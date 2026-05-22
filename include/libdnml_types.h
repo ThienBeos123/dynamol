@@ -41,7 +41,7 @@ typedef struct {
         internal state, following CRYPT_NUM_CONTRACT.txt. This field is specifically
         reserved for special case in which it violates mathematical rule and is undefined
     */
-} cryptInt;
+} cryptint;
 
 
 

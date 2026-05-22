@@ -1232,7 +1232,6 @@ bigInt bigInt_ex_xnor  (const bigInt x, const bigInt y, size_t width) {
 //* =============================================== COMPARISONS ============================================== */
 static int8_t __BIGINT_MAGCOMP_UI64__(const bigInt *x, const uint64_t val) {
     if (x->n > 1) return 1;
-    if (x->sign == -1) return -1;
     if (x->limbs[0] > val) return 1;
     else if (x->limbs[0] < val) return -1;
     return 0;
@@ -1252,24 +1251,24 @@ bool bigInt_equal_i64(const bigInt x, const int64_t val) {
     if (x.n == 0) return (val) ? false : true;
     int8_t val_sign = (val < 0) ? -1 : 1;
     if (val_sign != x.sign) return false;
-    if (x.n      > 1)       return false;
+    if (x.n > 1) return false;
     return x.limbs[0] == __MAG_I64__(val);
 }
 bool bigInt_less_i64(const bigInt x, const int64_t val) { 
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val > 0) ? 1 : 0;
+    if (x.n == 0) return (val > 0) ? true : false;
     int8_t val_sign = (val < 0) ? -1 : 1;
     if (val_sign != x.sign) return (x.sign < val_sign);
-    if (x.n      > 1)       return (x.sign == -1);
+    if (x.n > 1) return (x.sign == -1);
     if (x.limbs[0] > __MAG_I64__(val)) return (x.sign == -1);
     return (x.limbs[0] < __MAG_I64__(val)) && (x.sign == 1);
 }
 bool bigInt_more_i64(const bigInt x, const int64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val < 0) ? 1 : 0;
+    if (x.n == 0) return (val < 0) ? true : false;
     int8_t val_sign = (val < 0) ? -1 : 1;
     if (val_sign != x.sign) return (x.sign > val_sign);
-    if (x.n      > 1)       return (x.sign == 1);
+    if (x.n > 1) return (x.sign >= val_sign);
     if (x.limbs[0] < __MAG_I64__(val)) return (x.sign == -1);
     return (x.limbs[0] > __MAG_I64__(val)) && (x.sign == 1);
 }
@@ -1278,7 +1277,7 @@ bool bigInt_lequal_i64(const bigInt x, const int64_t val) {
     if (x.n == 0) return (val >= 0) ? 1 : 0;
     int8_t val_sign = (val < 0) ? -1 : 1;
     if (x.sign != val_sign) return (x.sign < val_sign);
-    if (x.n    > 1)         return (x.sign == -1);
+    if (x.n > 1) return (x.sign == -1);
     // Case eg: 189 > 171  |  -189 < -171
     if (x.limbs[0] > __MAG_I64__(val)) return (x.sign == -1);
     return (x.sign == 1); // Case eg: 178 < 181  |   -178 > -181
@@ -1288,7 +1287,7 @@ bool bigInt_mequal_i64(const bigInt x, const int64_t val) {
     if (x.n == 0) return (val <= 0) ? 1 : 0;
     int8_t val_sign = (val < 0) ? -1 : 1;
     if (x.sign != val_sign) return (x.sign > val_sign);
-    if (x.n    > 1)         return (x.sign == 1);
+    if (x.n > 1) return (x.sign == 1);
     // Case eg: 189 > 171  |  -189 < -171
     if (x.limbs[0] > __MAG_I64__(val)) return (x.sign == 1);
     return (x.sign == -1); // Case eg: 178 < 181  |   -178 > -181

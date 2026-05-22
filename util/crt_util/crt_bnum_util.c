@@ -1,7 +1,7 @@
 #include "../crt_util.h"
 
 
-drypto_stat __CRINT_TRIM_LZ__(cryptInt *x) {
+drypto_stat __CRINT_TRIM_LZ__(cryptint *x) {
     cryptInt_poison(x);
     if (x->poisoned) return CRYPTINT_POISOINED;
     uint8_t found_msl = 0;
@@ -16,6 +16,6 @@ drypto_stat __CRINT_TRIM_LZ__(cryptInt *x) {
 }
 
 
-cryptInt __CRINT_ERRVAL__(void) {
-    return (cryptInt){ .limbs = NULL, .n = 1, .cap = 0, .sign = 0, .poisoned = true };
+cryptint __CRINT_ERRVAL__(void) {
+    return (cryptint){ .limbs = NULL, .n = 1, .cap = 0, .sign = 0, .poisoned = true };
 }

@@ -92,7 +92,7 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 
 
 //* =============== ADDITION + SUBTRACTION CONSTANT ENGINE =============== *//
-drypto_stat __CRINT_ADD_WC__(cryptInt *res, const cryptInt *a, const cryptInt *b) {
+drypto_stat __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
     // Static Analysis
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
@@ -113,7 +113,7 @@ drypto_stat __CRINT_ADD_WC__(cryptInt *res, const cryptInt *a, const cryptInt *b
     __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
     return CRYPTINT_SUCCESS;
 }
-drypto_stat __CRINT_SUB_WC__(cryptInt *res, const cryptInt *a, const cryptInt *b) {
+drypto_stat __CRINT_SUB_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),

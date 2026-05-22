@@ -9,7 +9,7 @@ size_t __CRINT_DIV_WS__(size_t dend_size, size_t div_size) {
 
 
 /* CRYPTINT ALGORITHMS */
-drypto_stat __CRINT_SHORT_DIVISION__(const cryptInt *a, uint64_t b, cryptInt *quot, cryptInt *rem) {
+drypto_stat __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *quot, cryptint *rem) {
     // Static Analysis
     cryptInt_poison(a); cryptInt_poison(quot); 
     cryptInt_poison(rem); DNML_TEST_ASSERT((b),
@@ -30,13 +30,13 @@ drypto_stat __CRINT_SHORT_DIVISION__(const cryptInt *a, uint64_t b, cryptInt *qu
     return CRYPTINT_SUCCESS;
 }
 drypto_stat __CRINT_NEWTON_RECP__(
-    const cryptInt *dend, const cryptInt *div,
-    cryptInt *quot, cryptInt *rem, 
+    const cryptint *dend, const cryptint *div,
+    cryptint *quot, cryptint *rem, 
     calc_ctx newton_ctx
 ) {}
 drypto_stat __CRINT_DIVMOD_DISP__(
-    const cryptInt *a, const cryptInt *b,
-    cryptInt *quot, cryptInt *rem,
+    const cryptint *a, const cryptint *b,
+    cryptint *quot, cryptint *rem,
     calc_ctx dvmod_ctx
 ) {
     if (b->n < BIGINT_SHORT) return __CRINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
