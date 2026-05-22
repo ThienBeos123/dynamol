@@ -14,3 +14,8 @@ drypto_stat __CRINT_TRIM_LZ__(cryptInt *x) {
         found_msl |= (behind_n & (~zero));
     } return CRYPTINT_SUCCESS;
 }
+
+
+cryptInt __CRINT_ERRVAL__(void) {
+    return (cryptInt){ .limbs = NULL, .n = 1, .cap = 0, .sign = 0, .poisoned = true };
+}

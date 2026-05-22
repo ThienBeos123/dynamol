@@ -267,21 +267,20 @@ void bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__);
 /* -------------  Mutative LARGE Copies ------------- */
 void bigInt_mut_copyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_dcopyf128(bigInt *dst__, long double source__) {}
-void bigInt_mut_ocopyf128(bigInt *dst__, long double source__) {}
+dnml_status bigInt_mut_ocopyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_tover_copyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_copy(bigInt *dst__, const bigInt source__);
 void bigInt_mut_dcopy(bigInt *dst__, const bigInt source__);
-void bigInt_mut_ocopy(bigInt *dst__, const bigInt source__);
+dnml_status bigInt_mut_ocopy(bigInt *dst__, const bigInt source__);
 void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__);
 /* -------------  Functional SMALL Copies ------------- */
 bigInt bigInt_copyu64(uint64_t source__);
 bigInt bigInt_copyi64(int64_t source__);
 /* -------------  Functional LARGE Copies ------------- */
 bigInt bigInt_copyf128(long double source__) {}
-bigInt bigInt_dcopyf128(long double source__, size_t output_cap) {}
+bigInt bigInt_ocopyf128(long double source__, size_t output_cap, dnml_status *err);
 bigInt bigInt_tover_copyf128(long double source__, size_t output_cap) {}
 bigInt bigInt_copy(const bigInt source__);
-bigInt bigInt_dcopy(const bigInt source__);
 bigInt bigInt_ocopy(const bigInt source__, size_t output_cap, dnml_status *err);
 bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap);
 

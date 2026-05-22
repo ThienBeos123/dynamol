@@ -24,7 +24,8 @@ drypto_stat __CRINT_SHORT_DIVISION__(const cryptInt *a, uint64_t b, cryptInt *qu
     if (a->poisoned || quot->poisoned || rem->poisoned) return CRYPTINT_POISOINED;
     uint64_t remainder = 0; for (size_t i = a->n; i > 0; --i) {
         quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder);
-    } __CRINT_TRIM_LZ__(rem); quot->sign = !!(quot->n);
+    } __CRINT_TRIM_LZ__(rem);
+    CHOOSE_OPTION((quot->sign), (!(quot->n)), (1), (quot->sign));
     rem->limbs[0] = remainder; rem->n = !!(rem); rem->sign = 1;
     return CRYPTINT_SUCCESS;
 }

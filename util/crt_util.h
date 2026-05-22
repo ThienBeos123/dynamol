@@ -17,6 +17,11 @@
     (a_copy) ^= ((a) ^ (b)) & -((int8_t)(cond)); \
     (dest) = (a_copy); \
 } while(0);
+#define RETURN_OPTION(cond, a, b) do { \
+    uint64_t a_copy = (a); \
+    (a_copy) ^= ((a) ^ (b)) & -((int8_t)(cond)); \
+    return (a_copy); \
+} while(0);
 
 
 /* crt_misc_util.c */
@@ -28,7 +33,7 @@ uint64_t __MAG_I64__(int64_t x);
 
 /* crt_bnum_util.c */
 drypto_stat __CRINT_TRIM_LZ__(cryptInt *x);
-void __CRINT_SET_ZERO_SIGN__(cryptInt *x);
+cryptInt __CRINT_ERRVAL__(void);
 
 
 

@@ -85,7 +85,11 @@ void bigInt_new_f128(bigInt *x, long double in) {}
 //* =============================================== ASSIGNMENTS ============================================== */
 void bigInt_set(const bigInt x, bigInt *receiver) {
     assert(bigInt_validate(x) && __BIGINT_INTERNAL_PVALID__(receiver));
-    assert(x.limbs != receiver->limbs);
+    if (receiver->limbs = x.limbs) {
+        receiver->n = x.n;
+        receiver->cap = x.cap;
+        receiver->sign = x.sign;
+    }
     size_t set_range = (receiver->cap < x.n) ? receiver->cap : x.n;
     memcpy(receiver->limbs, x.limbs, set_range * BYTES_IN_UINT64_T);
     receiver->n     = set_range;
@@ -93,7 +97,11 @@ void bigInt_set(const bigInt x, bigInt *receiver) {
 }
 dnml_status bigInt_set_safe(const bigInt x, bigInt *receiver) {
     assert(bigInt_validate(x) && bigInt_pvalidate(receiver));
-    assert(x.limbs != receiver->limbs);
+    if (receiver->limbs = x.limbs) {
+        receiver->n = x.n;
+        receiver->cap = x.cap;
+        receiver->sign = x.sign;
+    }
     if (receiver->cap < x.n) return BIGINT_ERR_RANGE;
     memcpy(receiver->limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
     receiver->n     = x.n;
@@ -133,13 +141,13 @@ dnml_status bigInt_seti64_safe(const bigInt x, int64_t* receiver) {
 dnml_status bigInt_setf128_safe(const bigInt x, long double* receiver) {}
 /* --------- Primitive Types --> BigInt --------- */
 void bigInt_getu64(const uint64_t val, bigInt *receiver) {
-    assert(__MUT_SUBJ_VAL__(receiver));
+    assert(__BIGINT_INTERNAL_SVALID__(receiver));
     receiver->limbs[0] = val;
     receiver->n        = (val) ? 1 : 0;
     receiver->sign     = 1;
 }
 void bigInt_geti64(const int64_t val, bigInt *receiver) {
-    assert(__MUT_SUBJ_VAL__(receiver));
+    assert(__BIGINT_INTERNAL_SVALID__(receiver));
     uint64_t abs_val = __MAG_I64__(val);
     receiver->limbs[0] = abs_val;
     receiver->n        = (val) ? 1 : 0;
@@ -170,14 +178,14 @@ int64_t bigInt_toi64(const bigInt x) {
 }
 long double bigInt_tof128(const bigInt x) {}
 uint64_t bigInt_tou64_safe(const bigInt x, dnml_status *err) {
-    assert(err);
+    assert(err != NULL);
     assert(bigInt_validate(x));
     if (x.sign == -1 || x.n > 1) { *err = BIGINT_ERR_RANGE; return -1; }
     uint64_t res = (x.n) ? x.limbs[0] : 0;
     *err = BIGINT_SUCCESS; return res;
 }
 int64_t bigInt_toi64_safe(const bigInt x, dnml_status *err) {
-    assert(err);
+    assert(err != NULL);
     assert(bigInt_validate(x));
     if (x.n > 1) { *err = BIGINT_ERR_RANGE; return INT64_MIN; }
     uint64_t raw_u64 = (x.n) ? x.limbs[0] : 0;
@@ -1324,44 +1332,44 @@ bool bigInt_mequal_u64(const bigInt x, const uint64_t val) {
 /* ------------------- BigInt ------------------ */
 bool bigInt_equal(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
-    assert(a.limbs != b.limbs);
-    if (!a.n) return (!b.n) ? 1 : 0;
-    if (a.sign != b.sign) return 0;
-    if (a.n    != b.n)    return 0;
-    return memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) == 0;
+    if (!a.n) return (!b.n) ? true : false;
+    if (a.sign != b.sign) return false;
+    if (a.n    != b.n)    return false;
+    if (a.limbs == b.limbs) return true;
+    return memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) == false;
 }
 bool bigInt_less(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
-    assert(a.limbs != b.limbs);
     if (a.sign != b.sign) return (a.sign < b.sign);
     if (a.n    != b.n)    return (a.sign == 1) ? (a.n < b.n) : (a.n > b.n);
+    if (a.limbs == b.limbs) return true;
     return (a.sign == 1) ? 
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) < 0 :
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) > 0;
 }
 bool bigInt_more(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
-    assert(a.limbs != b.limbs);
     if (a.sign != b.sign) return (a.sign > b.sign);
     if (a.n    != b.n)    return (a.sign == 1) ? (a.n > b.n) : (a.n < b.n);
+    if (a.limbs == b.limbs) return true;
     return (a.sign == 1) ? 
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) > 0 :
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) < 0;
 }
 bool bigInt_lequal(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
-    assert(a.limbs != b.limbs);
     if (a.sign != b.sign) return (a.sign < b.sign);
     if (a.n    != b.n)    return (a.sign == 1) ? (a.n < b.n) : (a.n > b.n);
+    if (a.limbs == b.limbs) return true;
     return (a.sign == 1) ? 
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) <= 0 :
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) >= 0;
 }
 bool bigInt_mequal(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
-    assert(a.limbs != b.limbs);
     if (a.sign != b.sign) return (a.sign > b.sign);
     if (a.n    != b.n)    return (a.sign == 1) ? (a.n > b.n) : (a.n < b.n);
+    if (a.limbs == b.limbs) return true;
     return (a.sign == 1) ? 
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) >= 0 :
                 memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) <= 0;
@@ -2479,7 +2487,7 @@ bigInt bigInt_nrt(const bigInt x, const uint64_t root, dnml_status *err) {
 //* ================================================= COPIES ================================================= */
 /* -------------  Mutative SMALL Copies ------------- */
 void bigInt_mut_copyu64(bigInt *dst__, const uint64_t source__) {
-    assert(__MUT_SUBJ_VAL__(dst__));
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
     bigInt_canonicalize(dst__);
     if (dst__->n == 0 && !source__) return;
     if (dst__->n == 1 && dst__->limbs[0] == source__) return;
@@ -2488,7 +2496,7 @@ void bigInt_mut_copyu64(bigInt *dst__, const uint64_t source__) {
     dst__->sign     = 1;
 }
 void bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__) {
-    assert(__MUT_SUBJ_VAL__(dst__));
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
     bigInt_canonicalize(dst__);
     // Always reallocate and resize if dst__->cap is more than 1
     if (dst__->cap > 1) {
@@ -2504,7 +2512,7 @@ void bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__) {
     dst__->sign     = 1;
 }
 void bigInt_mut_copyi64(bigInt *dst__, const int64_t source__) {
-    assert(__MUT_SUBJ_VAL__(dst__));
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
     bigInt_canonicalize(dst__);
     if (dst__->n == 0 && !source__) return;
     if (dst__->n == 1 && dst__->limbs[0] == __MAG_I64__(source__)) {
@@ -2516,7 +2524,7 @@ void bigInt_mut_copyi64(bigInt *dst__, const int64_t source__) {
     dst__->sign     = (source__< 0 ? -1 : 1);
 }
 void bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__) {
-    assert(__MUT_SUBJ_VAL__(dst__));
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
     bigInt_canonicalize(dst__);
     // Always reallocate and resize if dst__->cap is more than 1
     if (dst__->cap > 1) {
@@ -2537,13 +2545,16 @@ void bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__) {
 /* -------------  Mutative LARGE Copies ------------- */
 void bigInt_mut_copyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_dcopyf128(bigInt *dst__, long double source__) {}
-void bigInt_mut_ocopyf128(bigInt *dst__, long double source__) {}
+dnml_status bigInt_mut_ocopyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_tover_copyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_copy(bigInt *dst__, const bigInt source__) {
     assert(__STATE_VAL__(source__));
-    assert(__MUT_SUBJ_VAL__(dst__));
-    assert(dst__->limbs != source__.limbs);
-    bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
+    if (dst__->limbs = source__.limbs) {
+        dst__->n = source__.n;
+        dst__->cap = source__.n;
+        dst__->sign = source__.sign;
+    } bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
     /* Fast Paths */
     // Since they're equal, and due to Contract 3
     //  ------> They're not subjected to resizing if these cases are true
@@ -2561,15 +2572,13 @@ void bigInt_mut_copy(bigInt *dst__, const bigInt source__) {
 }
 void bigInt_mut_dcopy(bigInt *dst__, const bigInt source__) {
     assert(__STATE_VAL__(source__));
-    assert(__MUT_SUBJ_VAL__(dst__));
-    assert(dst__->limbs != source__.limbs);
-    bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
-    /* Reallocation and resize */
-    if (dst__->cap != source__.n) {
-        size_t size_to_change = source__.n;
-        if (source__.n == 0) size_to_change = 1;
-        bigInt_resize(dst__, size_to_change);
-    }
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
+    if (dst__->limbs = source__.limbs) {
+        dst__->n = source__.n;
+        dst__->cap = source__.n;
+        dst__->sign = source__.sign;
+    } bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
+    if (dst__->cap != source__.cap) bigInt_resize(dst__, source__.cap);
     /* Fast Paths */
     // The equal fast path (dst__ != 0 && source__ != 0) is not here since
     // Reallocation and Resizing may tamper with the size metadata,
@@ -2581,11 +2590,14 @@ void bigInt_mut_dcopy(bigInt *dst__, const bigInt source__) {
     dst__->n    = source__.n;
     dst__->sign = source__.sign;
 }
-void bigInt_mut_ocopy(bigInt *dst__, const bigInt source__) {
+dnml_status bigInt_mut_ocopy(bigInt *dst__, const bigInt source__) {
     assert(__STATE_VAL__(source__));
-    assert(__MUT_SUBJ_VAL__(dst__));
-    assert(dst__->limbs != source__.limbs);
-    bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
+    if (dst__->limbs = source__.limbs) {
+        dst__->n = source__.n;
+        dst__->cap = source__.n;
+        dst__->sign = source__.sign;
+    } bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
     /* Fast Paths */
     // Since they're equal, and due to Contract 3
     //  ------> They're not subjected to errors if these cases are true
@@ -2595,16 +2607,18 @@ void bigInt_mut_ocopy(bigInt *dst__, const bigInt source__) {
         return;
     }
     /* Standard Route */
-    assert(dst__->cap < source__.n);
+    if (dst__->cap < source__.n) return BIGINT_ERR_RANGE;
     memcpy(dst__->limbs, source__.limbs, source__.n * sizeof(uint64_t));
-    dst__->n    = source__.n;
-    dst__->sign = source__.sign;
+    dst__->n = source__.n; dst__->sign = source__.sign; return BIGINT_SUCCESS;
 }
 void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__) { 
     assert(__STATE_VAL__(source__));
-    assert(__MUT_SUBJ_VAL__(dst__));
-    assert(dst__->limbs != source__.limbs);
-    bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
+    assert(__BIGINT_INTERNAL_SVALID__(dst__));
+    if (dst__->limbs = source__.limbs) {
+        dst__->n = source__.n;
+        dst__->cap = source__.n;
+        dst__->sign = source__.sign;
+    } bigInt_canonicalize(dst__); // Enforce contracts, ESPECAILLY Contract 3
     /* Fast Paths */
     // Since they're equal, and due to Contract 3
     //  ------> They're not subjected to truncation if these cases are true
@@ -2614,11 +2628,9 @@ void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__) {
         return;
     }
     /* Standard Route */
-    size_t operation_range = source__.n;
-    if (dst__->cap < source__.n) operation_range = dst__->cap; // Truncation (reducing operation range)
+    size_t operation_range = (dst__->cap < source__.n) ? dst__->cap : source__.n;
     memcpy(dst__->limbs, source__.limbs, operation_range * sizeof(uint64_t));
-    dst__->n    = operation_range;
-    dst__->sign = source__.sign;
+    dst__->n = operation_range; dst__->sign = source__.sign;
 }
 /* -------------  Functional SMALL Copies ------------- */
 bigInt bigInt_copyu64(const uint64_t source__) {
@@ -2640,7 +2652,7 @@ bigInt bigInt_copyi64(const int64_t source__) {
 }
 /* -------------  Functional LARGE Copies ------------- */
 bigInt bigInt_copyf128(long double source__) {}
-bigInt bigInt_dcopyf128(long double source__, size_t output_cap) {}
+bigInt bigInt_ocopyf128(long double source__, size_t output_cap, dnml_status *err) {}
 bigInt bigInt_tover_copyf128(long double source__, size_t output_cap) {}
 bigInt bigInt_copy(const bigInt source__) {
     assert(bigInt_validate(source__));
@@ -2651,25 +2663,10 @@ bigInt bigInt_copy(const bigInt source__) {
     }
     bigInt_snew(&dst__, source__.n);
     memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
-    dst__.n     = source__.n;
-    dst__.sign  = source__.sign;
-    return dst__;
-}
-bigInt bigInt_dcopy(const bigInt source__) {
-    assert(__STATE_VAL__(source__));
-    bigInt dst__;
-    if (source__.n == 0) bigInt_new(&dst__);
-    else {
-        bigInt_snew(&dst__, source__.n);
-        memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
-        dst__.n = source__.n;
-    }
-    dst__.sign = source__.sign;
-    return dst__;
+    dst__.n = source__.n; dst__.sign  = source__.sign; return dst__;
 }
 bigInt bigInt_ocopy(const bigInt source__, size_t output_cap, dnml_status *err) {
-    assert(err);
-    assert(bigInt_validate(source__));
+    assert(err != NULL); assert(bigInt_validate(source__));
     if (output_cap < source__.n) {
         *err = BIGINT_ERR_RANGE;
         return __BIGINT_ERROR_VALUE__();
@@ -2677,10 +2674,8 @@ bigInt bigInt_ocopy(const bigInt source__, size_t output_cap, dnml_status *err) 
     bigInt dst__;  
     bigInt_snew(&dst__, output_cap);
     memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
-    dst__.n     = source__.n;
-    dst__.sign  = source__.sign;
-    *err = BIGINT_SUCCESS;
-    return dst__;
+    dst__.n = source__.n; dst__.sign = source__.sign;
+    *err = BIGINT_SUCCESS; return dst__;
 }
 bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap) {
     assert(bigInt_validate(source__));
@@ -2750,7 +2745,6 @@ void bigInt_reset(bigInt *x) {
     x->n    = 0;
     x->sign = 1;
 }
-static inline uint8_t __MUT_SUBJ_VAL__(bigInt *x) { return (x->limbs != NULL); }
 static inline uint8_t __STATE_VAL__(bigInt x) {
     if (x.limbs == NULL) return 0;
     if (x.cap < 1) return 0;

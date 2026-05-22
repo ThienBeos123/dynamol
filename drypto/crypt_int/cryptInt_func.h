@@ -21,6 +21,9 @@
     size_t mask = -(size_t)(cond);  /* All 1s if true, all 0s if false */ \
     (x) = ((x) & ~mask) | ((new_val) & mask); \
 } while(0);
+#define NORMALIZE_0_TO_1(dst, x) do { \
+    (dst) = (x) | (!(x)); \
+} while(0);
 
 
 
@@ -32,6 +35,36 @@ drypto_stat crint_cinew(cryptInt *x, cryptInt *y);
 drypto_stat crint_new_u64(cryptInt *x, const uint64_t in);
 drypto_stat crint_new_i64(cryptInt *x, const int64_t in);
 drypto_stat crint_new_f128(cryptInt *x, long double in);
+
+
+
+
+//* ================================================= COPIES ================================================= */
+/* -------------  Mutative SMALL Copies ------------- */
+drypto_stat crint_mut_copyu64(cryptInt *dst__, const uint64_t source__);
+drypto_stat crint_mut_dcopyu64(cryptInt *dst__, const uint64_t source__);
+drypto_stat crint_mut_copyi64(cryptInt *dst__, const int64_t source__);
+drypto_stat crint_mut_dcopyi64(cryptInt *dst__, const int64_t source__);
+/* -------------  Mutative LARGE Copies ------------- */
+drypto_stat crint_mut_copyf128(cryptInt *dst__, long double source__);
+drypto_stat crint_mut_dcopyf128(cryptInt *dst__, long double source__);
+drypto_stat crint_mut_ocopyf128(cryptInt *dst__, long double source__);
+drypto_stat crint_mut_tover_copyf128(cryptInt *dst__, long double source__);
+drypto_stat crint_mut_copy(cryptInt *dst__, const cryptInt source__);
+drypto_stat crint_mut_dcopy(cryptInt *dst__, const cryptInt source__);
+drypto_stat crint_mut_ocopy(cryptInt *dst__, const cryptInt source__);
+drypto_stat crint_mut_tover_copy(cryptInt *dst__, const cryptInt source__);
+/* -------------  Functional SMALL Copies ------------- */
+cryptInt crint_copyu64(const uint64_t source__);
+cryptInt crint_copyi64(const int64_t source__);
+/* -------------  Functional LARGE Copies ------------- */
+cryptInt crint_copyf128(long double source__, drypto_stat *__err__);
+cryptInt crint_ocopyf128(long double source__, size_t output_cap, drypto_stat *__err__);
+cryptInt crint_tover_copyf128(long double source__, size_t output_cap, drypto_stat *__err__);
+cryptInt crint_copy(const cryptInt source__, drypto_stat *__err__);
+cryptInt crint_ocopy(const cryptInt source__, size_t output_cap, drypto_stat *__err__);
+cryptInt crint_tover_copy(const cryptInt source__, size_t output_cap, drypto_stat *__err__);
+
 
 
 
