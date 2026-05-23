@@ -11,7 +11,7 @@ size_t __CRINT_MUL_WS__(size_t a_size, size_t b_size) {
 
 
 /* CRYPTINT ALGORITHMS */
-drypto_stat __CRINT_SCHOOLBOOK__(const cryptint *a, const cryptint *b, cryptint *res) {
+dnml_status __CRINT_SCHOOLBOOK__(const cryptint *a, const cryptint *b, cryptint *res) {
     // Static Analysis
     cryptInt_poison(a); cryptInt_poison(b); 
     cryptInt_poison(res); DNML_TEST_ASSERT(
@@ -19,7 +19,6 @@ drypto_stat __CRINT_SCHOOLBOOK__(const cryptint *a, const cryptint *b, cryptint 
         "Insufficient Product Capacity: Capacity insatisfactory for a * b"
         "(-Emul_insufficient_cap)"
     ); // Main Algorithms
-    if (a->poisoned || b->poisoned || res->poisoned) return CRYPTINT_POISOINED;
     __libdnml_memset_strict(res->limbs, 0, res->cap, (size_t)0, (size_t)res->cap);
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t carry = 0;
@@ -34,8 +33,8 @@ drypto_stat __CRINT_SCHOOLBOOK__(const cryptint *a, const cryptint *b, cryptint 
     __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
     return CRYPTINT_SUCCESS;
 }
-drypto_stat __CRINT_NTT__(const cryptint *a, const cryptint *b, cryptint *res, calc_ctx *ntt_ctx) {}
-drypto_stat __CRINT_MUL_DISP__(const cryptint *a, const cryptint *b, cryptint *res, calc_ctx *mul_ctx) {
+dnml_status __CRINT_NTT__(const cryptint *a, const cryptint *b, cryptint *res, calc_ctx *ntt_ctx) {}
+dnml_status __CRINT_MUL_DISP__(const cryptint *a, const cryptint *b, cryptint *res, calc_ctx *mul_ctx) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) 
         return __CRINT_SCHOOLBOOK__(a, b, res);
     else return __CRINT_NTT__(a, b, res, mul_ctx);

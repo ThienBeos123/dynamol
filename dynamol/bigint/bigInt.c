@@ -37,21 +37,21 @@ void bigInt_free(bigInt *x) {
     free(x->limbs); x->limbs = NULL;
     x->n = 0; x->cap = 0; x->sign = 0;
 }
-void bigInt_new(bigInt *x) {
+dnml_status bigInt_new(bigInt *x) {
     if (x->limbs) return; // The bigInt is already initialized
     limb_t *P_BUFFER__ = malloc(sizeof(limb_t));
-    assert(P_BUFFER__ == NULL);
+    if (P_BUFFER__) return DNML_ALLOC_OOM;
     x->limbs = P_BUFFER__;
     x->cap = 1; x->n = 0; x->sign = 1;
 }
-void bigInt_snew(bigInt *x, size_t n) {
+dnml_status bigInt_snew(bigInt *x, size_t n) {
     if (x->limbs != NULL) return; // already initialized
     limb_t *__BUFFER_P = malloc(n * sizeof(limb_t));
-    assert(__BUFFER_P == NULL); 
+    if (__BUFFER_P) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P;
     x->cap = n; x->n = 0; x->sign = 1;
 }
-void bigInt_binew(bigInt *x, const bigInt *y) {
+dnml_status bigInt_binew(bigInt *x, const bigInt *y) {
     if (x->limbs != NULL) return; // Already Initialized
     assert(__BIGINT_STATE_PVALIDATE__(y));
     if (x->limbs == y->limbs) {
@@ -59,25 +59,26 @@ void bigInt_binew(bigInt *x, const bigInt *y) {
         x->cap = y->cap; x->sign = y->sign;
     } size_t alloc_size = (y->n) ? y->n : 1;
     limb_t *__BUFFER_P = malloc(alloc_size * sizeof(limb_t));
-    assert(__BUFFER_P == NULL); x->limbs = __BUFFER_P;
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P;
     if (y->n) memcpy(x->limbs, y->limbs, y->n * sizeof(limb_t));
     x->n = y->n; x->cap = alloc_size; x->sign = (y->n) ? y->sign : 1;
 }
-void bigInt_new_u64(bigInt *x, const uint64_t in) {
+dnml_status bigInt_new_u64(bigInt *x, const uint64_t in) {
     if (x->limbs != NULL) return; // ALREADY INITIALIZED
     limb_t *__BUFFER_P = malloc(sizeof(limb_t));
-    if (__BUFFER_P == NULL) abort();
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->limbs[0] = in;
     x->n = !!(in); x->cap = 1; x->sign = 1;
 }
-void bigInt_new_i64(bigInt *x, const int64_t in) {
+dnml_status bigInt_new_i64(bigInt *x, const int64_t in) {
     if (x->limbs != NULL) return; // ALREADY INITIALIZED
     limb_t *__BUFFER_P = malloc(sizeof(limb_t));
-    assert(__BUFFER_P == NULL);
+    if (__BUFFER_P) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->limbs[0] = __MAG_I64__(in);
     x->n = !!(in); x->cap = 1; x->sign = (in < 0) ? -1 : 1;
 }
-void bigInt_new_f128(bigInt *x, long double in) {}
+dnml_status bigInt_new_f128(bigInt *x, long double in) { return FILE_ILLEGAL; /* Placeholder */  }
 
 
 
@@ -197,31 +198,31 @@ int64_t bigInt_toi64_safe(const bigInt x, dnml_status *err) {
 }
 long double bigInt_tof128_safe(const bigInt x, dnml_status *err) {}
 /* --------- Primitive Types --> BigInt --------- */
-bigInt bigInt_fromu64(const uint64_t x) {
-    bigInt res; bigInt_new(&res);
-    if (x) {
-        res.limbs[0] = x;
-        res.n        = 1;
-    }
-    return res;
+bigInt bigInt_fromu64(const uint64_t x, dnml_status *err) {
+    bigInt res; 
+    if (bigInt_new(&res) == DNML_ALLOC_OOM) { 
+        *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); 
+    }; 
+    res.limbs[0] = x; res.n = !!(x); 
+    *err = BIGINT_SUCCESS; return res;
 }
-bigInt bigInt_fromi64(const int64_t x) {
-    bigInt res; bigInt_new(&res);
-    if (x) {
-        res.limbs[0] = __MAG_I64__(x);
-        res.n        = 1;
-        res.sign     = (x < 0) ? -1 : 1;
+bigInt bigInt_fromi64(const int64_t x, dnml_status *err) {
+    bigInt res; 
+    if (bigInt_new(&res) == DNML_ALLOC_OOM) { 
+        *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); 
     }
-    return res;
+    res.limbs[0] = __MAG_I64__(x);
+    res.n = !!(x); res.sign = (x < 0) ? -1 : 1;
+    *err = BIGINT_SUCCESS; return res;
 }
-bigInt bigInt_fromf128(long double x) {}
-bigInt bigInt_fromf128_safe(long double x) {}
+bigInt bigInt_fromf128(long double x, dnml_status *err) { return (bigInt){0}; }
+bigInt bigInt_fromf128_safe(long double x, dnml_status *err) { return (bigInt){0}; }
 
 
 
 
 //* =========================================== BITWISE OPERATIONS =========================================== */
-bigInt bigInt_not(const bigInt x) {
+bigInt bigInt_not(const bigInt x, dnml_status *err) {
     assert(__STATE_VAL__(x));
     bigInt res; bigInt_snew(&res, x.n);
     for (size_t i = 0; i < x.n; ++i) {
@@ -232,7 +233,7 @@ bigInt bigInt_not(const bigInt x) {
     bigInt_normalize(&res);
     return res;
 }
-bigInt bigInt_rshift(const bigInt x, size_t k) {
+bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err) {
     assert(bigInt_validate(x));
     uint64_t discarded_bits = 0;
     bigInt res; bigInt_snew(&res, k);
@@ -243,7 +244,7 @@ bigInt bigInt_rshift(const bigInt x, size_t k) {
     }
     return res;
 }
-bigInt bigInt_lshift(const bigInt x, size_t k) {
+bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err) {
     assert(bigInt_validate(x));
     uint64_t discarded_bits = 0;
     bigInt res; bigInt_snew(&res, x.n);
@@ -723,7 +724,7 @@ void bigInt_mutex_xnor  (bigInt *x, const bigInt y, size_t range) {
     }
 }
 /* ------------- Functional, Fixed-width ------------- */
-bigInt bigInt_andu64  (const bigInt x, const uint64_t val) {
+bigInt bigInt_andu64  (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_new(&res);
     if (x.n) {
@@ -733,7 +734,7 @@ bigInt bigInt_andu64  (const bigInt x, const uint64_t val) {
     }
     return res;
 }
-bigInt bigInt_nandu64 (const bigInt x, const uint64_t val) {
+bigInt bigInt_nandu64 (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (x.n) ? x.n : 1);
     if (x.n == 0) {
@@ -745,7 +746,7 @@ bigInt bigInt_nandu64 (const bigInt x, const uint64_t val) {
         res.n = x.n;
     } return res;
 }
-bigInt bigInt_oru64   (const bigInt x, const uint64_t val) {
+bigInt bigInt_oru64   (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (!val) bigInt_binew(&res, &x);
@@ -765,7 +766,7 @@ bigInt bigInt_oru64   (const bigInt x, const uint64_t val) {
     } 
     return res;
 }
-bigInt bigInt_noru64  (const bigInt x, const uint64_t val) {
+bigInt bigInt_noru64  (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; 
     if (x.n == 0) {
@@ -785,7 +786,7 @@ bigInt bigInt_noru64  (const bigInt x, const uint64_t val) {
     }
     return res;
 }
-bigInt bigInt_xoru64  (const bigInt x, const uint64_t val) {
+bigInt bigInt_xoru64  (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (x.n == 0) {
@@ -805,7 +806,7 @@ bigInt bigInt_xoru64  (const bigInt x, const uint64_t val) {
     }
     return res;
 }
-bigInt bigInt_xnoru64 (const bigInt x, const uint64_t val) {
+bigInt bigInt_xnoru64 (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (x.n == 0) {
@@ -825,7 +826,7 @@ bigInt bigInt_xnoru64 (const bigInt x, const uint64_t val) {
     }
     return res;
 }
-bigInt bigInt_and   (const bigInt x, const bigInt y) {
+bigInt bigInt_and   (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
@@ -843,7 +844,7 @@ bigInt bigInt_and   (const bigInt x, const bigInt y) {
     }
     return res;
 }
-bigInt bigInt_nand  (const bigInt x, const bigInt y) {
+bigInt bigInt_nand  (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
@@ -866,7 +867,7 @@ bigInt bigInt_nand  (const bigInt x, const bigInt y) {
     }
     return res;
 }
-bigInt bigInt_or    (const bigInt x, const bigInt y) {
+bigInt bigInt_or    (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) || bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
@@ -885,7 +886,7 @@ bigInt bigInt_or    (const bigInt x, const bigInt y) {
     }
     return res;
 }
-bigInt bigInt_nor   (const bigInt x, const bigInt y) {
+bigInt bigInt_nor   (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
@@ -907,7 +908,7 @@ bigInt bigInt_nor   (const bigInt x, const bigInt y) {
     }
     return res;
 }
-bigInt bigInt_xor   (const bigInt x, const bigInt y) {
+bigInt bigInt_xor   (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
@@ -925,7 +926,7 @@ bigInt bigInt_xor   (const bigInt x, const bigInt y) {
     }
     return res;
 }
-bigInt bigInt_xnor  (const bigInt x, const bigInt y) {
+bigInt bigInt_xnor  (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
@@ -947,7 +948,7 @@ bigInt bigInt_xnor  (const bigInt x, const bigInt y) {
     return res;
 }
 /* ------------- Functional, Explicit-width ------------- */
-bigInt bigInt_ex_andu64  (const bigInt x, const uint64_t val, size_t width) {
+bigInt bigInt_ex_andu64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (x.n && width) {
@@ -957,7 +958,7 @@ bigInt bigInt_ex_andu64  (const bigInt x, const uint64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_nandu64 (const bigInt x, const uint64_t val, size_t width) {
+bigInt bigInt_ex_nandu64 (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -972,7 +973,7 @@ bigInt bigInt_ex_nandu64 (const bigInt x, const uint64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_oru64   (const bigInt x, const uint64_t val, size_t width) {
+bigInt bigInt_ex_oru64   (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -987,7 +988,7 @@ bigInt bigInt_ex_oru64   (const bigInt x, const uint64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_noru64  (const bigInt x, const uint64_t val, size_t width) {
+bigInt bigInt_ex_noru64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1002,7 +1003,7 @@ bigInt bigInt_ex_noru64  (const bigInt x, const uint64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_xoru64  (const bigInt x, const uint64_t val, size_t width) {
+bigInt bigInt_ex_xoru64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1017,7 +1018,7 @@ bigInt bigInt_ex_xoru64  (const bigInt x, const uint64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_xnoru64 (const bigInt x, const uint64_t val, size_t width) {
+bigInt bigInt_ex_xnoru64 (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1032,7 +1033,7 @@ bigInt bigInt_ex_xnoru64 (const bigInt x, const uint64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_andi64  (const bigInt x, const int64_t val, size_t width) {
+bigInt bigInt_ex_andi64  (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width && x.n) {
@@ -1048,7 +1049,7 @@ bigInt bigInt_ex_andi64  (const bigInt x, const int64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_nandi64 (const bigInt x, const int64_t val, size_t width) {
+bigInt bigInt_ex_nandi64 (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1064,7 +1065,7 @@ bigInt bigInt_ex_nandi64 (const bigInt x, const int64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_ori64   (const bigInt x, const int64_t val, size_t width) {
+bigInt bigInt_ex_ori64   (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1080,7 +1081,7 @@ bigInt bigInt_ex_ori64   (const bigInt x, const int64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_nori64  (const bigInt x, const int64_t val, size_t width) {
+bigInt bigInt_ex_nori64  (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1096,7 +1097,7 @@ bigInt bigInt_ex_nori64  (const bigInt x, const int64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_xori64  (const bigInt x, const int64_t val, size_t width) {
+bigInt bigInt_ex_xori64  (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1112,7 +1113,7 @@ bigInt bigInt_ex_xori64  (const bigInt x, const int64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_xnori64 (const bigInt x, const int64_t val, size_t width) {
+bigInt bigInt_ex_xnori64 (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
     if (width) {
@@ -1128,7 +1129,7 @@ bigInt bigInt_ex_xnori64 (const bigInt x, const int64_t val, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_and   (const bigInt x, const bigInt y, size_t width) {
+bigInt bigInt_ex_and   (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
@@ -1144,7 +1145,7 @@ bigInt bigInt_ex_and   (const bigInt x, const bigInt y, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_nand  (const bigInt x, const bigInt y, size_t width) {
+bigInt bigInt_ex_nand  (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
@@ -1160,7 +1161,7 @@ bigInt bigInt_ex_nand  (const bigInt x, const bigInt y, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_or    (const bigInt x, const bigInt y, size_t width) {
+bigInt bigInt_ex_or    (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
@@ -1176,7 +1177,7 @@ bigInt bigInt_ex_or    (const bigInt x, const bigInt y, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_nor   (const bigInt x, const bigInt y, size_t width) {
+bigInt bigInt_ex_nor   (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
@@ -1192,7 +1193,7 @@ bigInt bigInt_ex_nor   (const bigInt x, const bigInt y, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_xor   (const bigInt x, const bigInt y, size_t width) {
+bigInt bigInt_ex_xor   (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
@@ -1208,7 +1209,7 @@ bigInt bigInt_ex_xor   (const bigInt x, const bigInt y, size_t width) {
     }
     return res;
 }
-bigInt bigInt_ex_xnor  (const bigInt x, const bigInt y, size_t width) {
+bigInt bigInt_ex_xnor  (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res; bigInt_snew(&res, (width) ? width : 1);
@@ -1274,7 +1275,7 @@ bool bigInt_more_i64(const bigInt x, const int64_t val) {
 }
 bool bigInt_lequal_i64(const bigInt x, const int64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val >= 0) ? 1 : 0;
+    if (x.n == 0) return (val >= 0) ? true : false;
     int8_t val_sign = (val < 0) ? -1 : 1;
     if (x.sign != val_sign) return (x.sign < val_sign);
     if (x.n > 1) return (x.sign == -1);
@@ -1284,7 +1285,7 @@ bool bigInt_lequal_i64(const bigInt x, const int64_t val) {
 }
 bool bigInt_mequal_i64(const bigInt x, const int64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val <= 0) ? 1 : 0;
+    if (x.n == 0) return (val <= 0) ? true : false;
     int8_t val_sign = (val < 0) ? -1 : 1;
     if (x.sign != val_sign) return (x.sign > val_sign);
     if (x.n > 1) return (x.sign == 1);
@@ -1295,37 +1296,37 @@ bool bigInt_mequal_i64(const bigInt x, const int64_t val) {
 /* ---------- Unsigned Integer - UI64 ---------- */
 bool bigInt_equal_u64(const bigInt x, const uint64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val) ? 0 : 1;
-    if (x.sign == -1) return 0;
-    if (x.n    > 1) return 0;
+    if (x.n == 0) return (val) ? false : true;
+    if (x.sign == -1) return false;
+    if (x.n > 1) return false;
     return (x.limbs[0] == val);
 }
 bool bigInt_less_u64(const bigInt x, const uint64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val) ? 1 : 0;
-    if (x.sign == -1) return 1;
-    if (x.n    > 1) return 0;
+    if (x.n == 0) return (val) ? true : false;
+    if (x.sign == -1) return true;
+    if (x.n > 1) return false;
     return (x.limbs[0] < val);
 }
 bool bigInt_more_u64(const bigInt x, const uint64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val) ? 0 : 1;
-    if (x.sign == -1) return 0;
-    if (x.n    > 1) return 1;
+    if (x.n == 0) return (val) ? false : true;
+    if (x.sign == -1) return false;
+    if (x.n > 1) return true;
     return (x.limbs[0] > val);
 }
 bool bigInt_lequal_u64(const bigInt x, const uint64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return 1; // Always true, as every R+ numbers are always >= 0
-    if (x.sign == -1) return 1;
-    if (x.n    > 1) return 0;
+    if (x.n == 0) return true; // Always true, as every R+ numbers are always >= 0
+    if (x.sign == -1) return true;
+    if (x.n > 1) return false;
     return (x.limbs[0] <= val);
 }
 bool bigInt_mequal_u64(const bigInt x, const uint64_t val) {
     assert(bigInt_validate(x));
-    if (x.n == 0) return (val) ? 0 : 1;
-    if (x.sign == -1) return 0;
-    if (x.n    > 1) return 1;
+    if (x.n == 0) return (val) ? false : true;
+    if (x.sign == -1) return false;
+    if (x.n > 1) return true;
     return (x.limbs[0] >= val);
 }
 /* ------------------- BigInt ------------------ */
@@ -1333,45 +1334,37 @@ bool bigInt_equal(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
     if (!a.n) return (!b.n) ? true : false;
     if (a.sign != b.sign) return false;
-    if (a.n    != b.n)    return false;
+    if (a.n != b.n) return false;
     if (a.limbs == b.limbs) return true;
-    return memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) == false;
+    return __BIGINT_MAGCOMP__(&a, &b) == 0;
 }
 bool bigInt_less(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
     if (a.sign != b.sign) return (a.sign < b.sign);
-    if (a.n    != b.n)    return (a.sign == 1) ? (a.n < b.n) : (a.n > b.n);
-    if (a.limbs == b.limbs) return true;
-    return (a.sign == 1) ? 
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) < 0 :
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) > 0;
+    if (a.n != b.n) return (a.sign == 1) ? (a.n < b.n) : (a.n > b.n);
+    if (a.limbs == b.limbs) return false;
+    return (a.sign == 1) ? __BIGINT_MAGCOMP__(&a, &b) < 0 : __BIGINT_MAGCOMP__(&a, &b) > 0;
 }
 bool bigInt_more(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
     if (a.sign != b.sign) return (a.sign > b.sign);
     if (a.n    != b.n)    return (a.sign == 1) ? (a.n > b.n) : (a.n < b.n);
-    if (a.limbs == b.limbs) return true;
-    return (a.sign == 1) ? 
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) > 0 :
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) < 0;
+    if (a.limbs == b.limbs) return false;
+    return (a.sign == 1) ? __BIGINT_MAGCOMP__(&a, &b) > 0 : __BIGINT_MAGCOMP__(&a, &b) < 0;
 }
 bool bigInt_lequal(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
     if (a.sign != b.sign) return (a.sign < b.sign);
-    if (a.n    != b.n)    return (a.sign == 1) ? (a.n < b.n) : (a.n > b.n);
+    if (a.n != b.n) return (a.sign == 1) ? (a.n < b.n) : (a.n > b.n);
     if (a.limbs == b.limbs) return true;
-    return (a.sign == 1) ? 
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) <= 0 :
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) >= 0;
+    return (a.sign == 1) ? __BIGINT_MAGCOMP__(&a, &b) <= 0 : __BIGINT_MAGCOMP__(&a, &b) >= 0;
 }
 bool bigInt_mequal(const bigInt a, const bigInt b) {
     assert(bigInt_validate(a) && bigInt_validate(b));
     if (a.sign != b.sign) return (a.sign > b.sign);
-    if (a.n    != b.n)    return (a.sign == 1) ? (a.n > b.n) : (a.n < b.n);
+    if (a.n != b.n) return (a.sign == 1) ? (a.n > b.n) : (a.n < b.n);
     if (a.limbs == b.limbs) return true;
-    return (a.sign == 1) ? 
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) >= 0 :
-                memcmp(a.limbs, b.limbs, a.n * sizeof(uint64_t)) <= 0;
+    return (a.sign == 1) ? __BIGINT_MAGCOMP__(&a, &b) >= 0 : __BIGINT_MAGCOMP__(&a, &b) <= 0;
 }
 
 
@@ -1831,7 +1824,7 @@ dnml_status bigInt_mut_mod(bigInt *x, const bigInt y) {
     } return BIGINT_SUCCESS;
 }
 /* ------------------ FUNCTIONAL ARITHMETIC ------------------- */
-bigInt bigInt_mulu64(const bigInt x, const uint64_t val) {
+bigInt bigInt_mulu64(const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (!x.n || !val) bigInt_new(&res);
@@ -1891,7 +1884,7 @@ bigInt bigInt_modu64(const bigInt x, const uint64_t val, dnml_status *err) {
     } *err = BIGINT_SUCCESS;
     return rem;
 }
-bigInt bigInt_muli64(const bigInt x, const int64_t val) {
+bigInt bigInt_muli64(const bigInt x, const int64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (!x.n || !val) bigInt_new(&res);
@@ -1956,7 +1949,7 @@ bigInt bigInt_modi64(const bigInt x, const int64_t val, dnml_status *err) {
     *err = BIGINT_SUCCESS;
     return rem;
 }
-bigInt bigInt_add(const bigInt x, const bigInt y) {
+bigInt bigInt_add(const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt sum;
@@ -1973,7 +1966,7 @@ bigInt bigInt_add(const bigInt x, const bigInt y) {
         else if (comp_res < 0) { __BIGINT_MAGSUB__(&sum, &y, &x); sum.sign = y.sign; }
     } return sum;
 }
-bigInt bigInt_sub(const bigInt x, const bigInt y) {
+bigInt bigInt_sub(const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt diff;
@@ -1990,7 +1983,7 @@ bigInt bigInt_sub(const bigInt x, const bigInt y) {
         diff.sign = x.sign;
     } return diff;
 }
-bigInt bigInt_mul(const bigInt x, const bigInt y) {
+bigInt bigInt_mul(const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
@@ -2061,7 +2054,7 @@ bigInt bigInt_mod(const bigInt x, const bigInt y, dnml_status *err) {
 
 //* ======================================== SIGNED NUMBER THEORETIC ========================================= */
 /* -------------- Pure Number Theoretic -------------- */
-bigInt bigInt_gcdu64(const bigInt x, const uint64_t val) {
+bigInt bigInt_gcdu64(const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     if (!val) return x;
     bigInt res;
@@ -2083,7 +2076,7 @@ bigInt bigInt_gcdu64(const bigInt x, const uint64_t val) {
         tmp_limbs = NULL; _DASI_UI64_ARENA = NULL;
     } return res;
 }
-bigInt bigInt_gcdi64(const bigInt x, const int64_t val) {
+bigInt bigInt_gcdi64(const bigInt x, const int64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     if (!val) return x;
     bigInt res;
@@ -2105,7 +2098,7 @@ bigInt bigInt_gcdi64(const bigInt x, const int64_t val) {
         tmp_limbs = NULL; _DASI_UI64_ARENA = NULL;
     } return res;
 }
-bigInt bigInt_gcd(const bigInt x, const bigInt y) {
+bigInt bigInt_gcd(const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     if (x.n == 0) return y;
     else if (y.n == 0) return x;
@@ -2118,7 +2111,7 @@ bigInt bigInt_gcd(const bigInt x, const bigInt y) {
         __BIGINT_MAGGCD__(&res, &x, &y);
     } return res;
 }
-bigInt bigInt_lcmu64(const bigInt x, const uint64_t val) {
+bigInt bigInt_lcmu64(const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (!val || !x.n) bigInt_new(&res);
@@ -2141,7 +2134,7 @@ bigInt bigInt_lcmu64(const bigInt x, const uint64_t val) {
         _DASI_LCM_UI64_ARENA = NULL;
     } return res;
 }
-bigInt bigInt_lcmi64(const bigInt x, const int64_t val) {
+bigInt bigInt_lcmi64(const bigInt x, const int64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; uint64_t mag_val = __MAG_I64__(val);
     if (!mag_val || !x.n) bigInt_new(&res);
@@ -2164,7 +2157,7 @@ bigInt bigInt_lcmi64(const bigInt x, const int64_t val) {
         _DASI_LCM_UI64_ARENA = NULL;
     }
 }
-bigInt bigInt_lcm(const bigInt x, const bigInt y) {
+bigInt bigInt_lcm(const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     if (x.n == 1 && x.limbs[0] == 1) return y; // lcm(1, y) = y
     else if (y.n == 1 && y.limbs[0] == 1) return x; // lcm(x, 1) = x
@@ -2494,13 +2487,13 @@ void bigInt_mut_copyu64(bigInt *dst__, const uint64_t source__) {
     dst__->n        = source__ ? 1 : 0;
     dst__->sign     = 1;
 }
-void bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__) {
+dnml_status bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__) {
     assert(__BIGINT_INTERNAL_SVALID__(dst__));
     bigInt_canonicalize(dst__);
     // Always reallocate and resize if dst__->cap is more than 1
     if (dst__->cap > 1) {
         uint64_t* __BUFFER_P = realloc(dst__->limbs, sizeof(uint64_t));
-        if (__BUFFER_P == NULL) abort();
+        if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
         dst__->limbs = __BUFFER_P;
         dst__->cap     = 1;
     }
@@ -2522,13 +2515,13 @@ void bigInt_mut_copyi64(bigInt *dst__, const int64_t source__) {
     dst__->n        = source__ ? 1 : 0;
     dst__->sign     = (source__< 0 ? -1 : 1);
 }
-void bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__) {
+dnml_status bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__) {
     assert(__BIGINT_INTERNAL_SVALID__(dst__));
     bigInt_canonicalize(dst__);
     // Always reallocate and resize if dst__->cap is more than 1
     if (dst__->cap > 1) {
         uint64_t* __BUFFER_P = realloc(dst__->limbs, sizeof(uint64_t));
-        if (__BUFFER_P == NULL) abort();
+        if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
         dst__->limbs = __BUFFER_P;
         dst__->cap     = 1;
     }
@@ -2543,7 +2536,7 @@ void bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__) {
 }
 /* -------------  Mutative LARGE Copies ------------- */
 void bigInt_mut_copyf128(bigInt *dst__, long double source__) {}
-void bigInt_mut_dcopyf128(bigInt *dst__, long double source__) {}
+dnml_status bigInt_mut_dcopyf128(bigInt *dst__, long double source__) {}
 dnml_status bigInt_mut_ocopyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_tover_copyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_copy(bigInt *dst__, const bigInt source__) {
@@ -2569,7 +2562,7 @@ void bigInt_mut_copy(bigInt *dst__, const bigInt source__) {
     dst__->n    = source__.n;
     dst__->sign = source__.sign;
 }
-void bigInt_mut_dcopy(bigInt *dst__, const bigInt source__) {
+dnml_status bigInt_mut_dcopy(bigInt *dst__, const bigInt source__) {
     assert(__STATE_VAL__(source__));
     assert(__BIGINT_INTERNAL_SVALID__(dst__));
     if (dst__->limbs = source__.limbs) {
@@ -2632,7 +2625,7 @@ void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__) {
     dst__->n = operation_range; dst__->sign = source__.sign;
 }
 /* -------------  Functional SMALL Copies ------------- */
-bigInt bigInt_copyu64(const uint64_t source__) {
+bigInt bigInt_copyu64(const uint64_t source__, dnml_status *err) {
     bigInt dst__; bigInt_new(&dst__);
     if (source__) {
         dst__.limbs[0] = source__;
@@ -2640,7 +2633,7 @@ bigInt bigInt_copyu64(const uint64_t source__) {
     }
     return dst__;
 }
-bigInt bigInt_copyi64(const int64_t source__) {
+bigInt bigInt_copyi64(const int64_t source__, dnml_status *err) {
     bigInt dst__; bigInt_new(&dst__);
     if (source__) {
         dst__.limbs[0] = __MAG_I64__(source__);
@@ -2650,10 +2643,10 @@ bigInt bigInt_copyi64(const int64_t source__) {
     return dst__;
 }
 /* -------------  Functional LARGE Copies ------------- */
-bigInt bigInt_copyf128(long double source__) {}
+bigInt bigInt_copyf128(long double source__, dnml_status *err) {}
 bigInt bigInt_ocopyf128(long double source__, size_t output_cap, dnml_status *err) {}
-bigInt bigInt_tover_copyf128(long double source__, size_t output_cap) {}
-bigInt bigInt_copy(const bigInt source__) {
+bigInt bigInt_tover_copyf128(long double source__, size_t output_cap, dnml_status *err) {}
+bigInt bigInt_copy(const bigInt source__, dnml_status *err) {
     assert(bigInt_validate(source__));
     bigInt dst__;
     if (source__.n == 0) {
@@ -2676,7 +2669,7 @@ bigInt bigInt_ocopy(const bigInt source__, size_t output_cap, dnml_status *err) 
     dst__.n = source__.n; dst__.sign = source__.sign;
     *err = BIGINT_SUCCESS; return dst__;
 }
-bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap) {
+bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap, dnml_status *err) {
     assert(bigInt_validate(source__));
     bigInt dst__;
     if (output_cap == 0) bigInt_new(&dst__);
@@ -2709,15 +2702,15 @@ void bigInt_normalize(bigInt *x) {
     while (x->n > 0 && x->limbs[x->n - 1] == 0) --x->n; // Delete trailing/leading zeros
     if (x->n == 0) x->sign = 1; // Guarantees 0, not -0
 }
-void bigInt_resize(bigInt *x, size_t k) { //* Exact Capacity resize
+dnml_status bigInt_resize(bigInt *x, size_t k) { //* Exact Capacity resize
     assert(__BIGINT_INTERNAL_SVALID__(x) || k);
     limb_t *__BUFFER_P = realloc(x->limbs, k * sizeof(limb_t));
-    if (__BUFFER_P == NULL) abort();
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P;
     x->cap   = k;
     if (x->n > x->cap) x->n = x->cap;
 }
-void bigInt_reserve(bigInt *x, size_t k) { //* Minimum Capacity
+dnml_status bigInt_reserve(bigInt *x, size_t k) { //* Minimum Capacity
     assert(__BIGINT_INTERNAL_SVALID__(x));
     if (x->cap >= k) return;
     size_t new_cap = x->cap;
@@ -2725,15 +2718,15 @@ void bigInt_reserve(bigInt *x, size_t k) { //* Minimum Capacity
     // ---> Ensure less reallocation ---> Enhanced performance
     while (new_cap < k) new_cap *= 2;
     limb_t *__BUFFER_P = realloc(x->limbs, new_cap * sizeof(limb_t));
-    if (__BUFFER_P == NULL) abort();
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P;
     x->cap   = new_cap;
 }
-void bigInt_shrink(bigInt *x, size_t k) { //* Maximum Capacity
+dnml_status bigInt_shrink(bigInt *x, size_t k) { //* Maximum Capacity
     assert(__BIGINT_INTERNAL_PVALID__(x) && k);
     if (x->cap <= k) return;
     limb_t *__BUFFER_P = realloc(x->limbs, k * sizeof(limb_t));
-    if (__BUFFER_P == NULL) abort();
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P;
     x->cap   = k;
     if (x->n < x->cap) x->n = x->cap;

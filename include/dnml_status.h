@@ -22,9 +22,17 @@ typedef enum {
     STR_INVALID_BASE,           // 108
     STR_INVALID_DIGIT,          // 109
 
-    FILE_ERR_PARSE = 200,       // 200
-    FILE_INVAL,                 // 201
-    FILE_ILLEGAL                // 202
+    CRYPTINT_SUCCESS = 200,     // 200
+    CRYPTINT_POISOINED,         // 201
+    CRYPTINT_ERR_RANGE,         // 202
+
+    FILE_ERR_PARSE = 300,       // 300
+    FILE_INVAL,                 // 301
+    FILE_ILLEGAL,               // 302
+    DNML_ALLOC_OOM,             // 303
+    DNML_NULL_EPARAM,           // 304
+    DNML_INVAL_CAP_REQUEST,     // 305
+    DNML_ARENA_ALLOC_OVERFLOW,  // 306
 } dnml_status;
 
 static inline void _print_dnml_status(dnml_status a, FILE *f) {
@@ -47,20 +55,18 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case STR_INVALID_BASE:          fputs("STR_INVALID_BASE", f);       break;
         case STR_INVALID_DIGIT:         fputs("STR_INVALID_DIGIT", f);      break;
 
-        case FILE_ERR_PARSE:    fputs("FILE_ERR_PARSE", f); break;
-        case FILE_INVAL:        fputs("FILE_INVAL", f);     break;
-        case FILE_ILLEGAL:      fputs("FILE_ILLEGAL", f);   break;
+        case CRYPTINT_SUCCESS:      fputs("CRYPTINT_SUCCESS", f); break;
+        case CRYPTINT_POISOINED:    fputs("CRYPTINT_POISOINED", f); break;
+        case CRYPTINT_ERR_RANGE:    fputs("CRYPTINT_ERR_RANGE", f); break;
+
+        case FILE_ERR_PARSE:            fputs("FILE_ERR_PARSE", f); break;
+        case FILE_INVAL:                fputs("FILE_INVAL", f); break;
+        case FILE_ILLEGAL:              fputs("FILE_ILLEGAL", f); break;
+        case DNML_ALLOC_OOM:            fputs("DNML_ALLOC_OOM", f); break;
+        case DNML_NULL_EPARAM:          fputs("DNML_NULL_EPARAM", f); break;
+        case DNML_INVAL_CAP_REQUEST:    fputs("DNML_INVAL_CAP_REQUEST", f); break;
     }
 }
-
-
-typedef enum {
-    CRYPTINT_SUCCESS,           // 0
-    CRYPTINT_INVAL_CAP_REQUEST, // 1
-    CRYPTINT_POISOINED,         // 2
-    CRYPTINT_ERR_RANGE,         // 3
-    CRYPTINT_NUL_EPARAM,        // 4
-} drypto_stat;
 
 
 #endif

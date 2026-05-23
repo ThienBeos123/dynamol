@@ -4,6 +4,7 @@
 #include "../dnml_sys/sys.h" // In /include, relative path for easier pathfind
 #include "../libdnml_types.h" // In /include, relative path for easier pathfind
 #include "../include.h" // In /include, relative path for easier pathfind
+#include "../dnml_status.h" // In /include, relative path for easier pathfind
 #include <stdalign.h>
 
 typedef struct mont_ctx {
@@ -19,7 +20,7 @@ size_t (*mark)(void *state);
 void (*reset)(void *state, size_t mark);
 void *state;
 } calc_ctx;
-static inline void *scratch_alloc(calc_ctx *ctx, size_t n) {
+static inline void *scratch_alloc(calc_ctx *ctx, size_t n, dnml_status *err) {
     return ctx->alloc(ctx->state, n);
 }
 static inline size_t scratch_mark(calc_ctx *ctx) {

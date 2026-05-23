@@ -92,7 +92,7 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 
 
 //* =============== ADDITION + SUBTRACTION CONSTANT ENGINE =============== *//
-drypto_stat __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
+dnml_status __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
     // Static Analysis
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
@@ -100,7 +100,6 @@ drypto_stat __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b
         "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b"
         " (-Eadd_insufficient_cap)"
     ); // Main Algorithms
-    if (res->poisoned || a->poisoned || b->poisoned) return CRYPTINT_POISOINED;
     size_t max = max(a->n, b->n); uint64_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
         uint64_t a_curr = a->limbs[i], b_curr = b->limbs[i], x, y;
@@ -113,15 +112,14 @@ drypto_stat __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b
     __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
     return CRYPTINT_SUCCESS;
 }
-drypto_stat __CRINT_SUB_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
+dnml_status __CRINT_SUB_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),
         "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
         " (-Esub_underflow)"
     ); // Main Algorithms
-    if (res->poisoned || a->poisoned || b->poisoned) 
-    return CRYPTINT_POISOINED;  uint64_t borrow = 0;
+    uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t curr = b->limbs[i], y;
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;

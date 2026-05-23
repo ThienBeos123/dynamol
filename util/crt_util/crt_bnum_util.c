@@ -1,9 +1,8 @@
 #include "../crt_util.h"
 
 
-drypto_stat __CRINT_TRIM_LZ__(cryptint *x) {
+dnml_status __CRINT_TRIM_LZ__(cryptint *x) {
     cryptInt_poison(x);
-    if (x->poisoned) return CRYPTINT_POISOINED;
     uint8_t found_msl = 0;
     for (size_t i = x->cap - 1; i >= 0; --i) {
         uint8_t behind_n = (i < x->n);

@@ -9,7 +9,7 @@ size_t __CRINT_DIV_WS__(size_t dend_size, size_t div_size) {
 
 
 /* CRYPTINT ALGORITHMS */
-drypto_stat __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *quot, cryptint *rem) {
+dnml_status __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *quot, cryptint *rem) {
     // Static Analysis
     cryptInt_poison(a); cryptInt_poison(quot); 
     cryptInt_poison(rem); DNML_TEST_ASSERT((b),
@@ -21,7 +21,6 @@ drypto_stat __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *qu
         "(-Eshort_div_insufficient_cap)"
     );
     // Main Algorithms
-    if (a->poisoned || quot->poisoned || rem->poisoned) return CRYPTINT_POISOINED;
     uint64_t remainder = 0; for (size_t i = a->n; i > 0; --i) {
         quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder);
     } __CRINT_TRIM_LZ__(rem);
@@ -29,12 +28,12 @@ drypto_stat __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *qu
     rem->limbs[0] = remainder; rem->n = !!(rem); rem->sign = 1;
     return CRYPTINT_SUCCESS;
 }
-drypto_stat __CRINT_NEWTON_RECP__(
+dnml_status __CRINT_NEWTON_RECP__(
     const cryptint *dend, const cryptint *div,
     cryptint *quot, cryptint *rem, 
     calc_ctx newton_ctx
 ) {}
-drypto_stat __CRINT_DIVMOD_DISP__(
+dnml_status __CRINT_DIVMOD_DISP__(
     const cryptint *a, const cryptint *b,
     cryptint *quot, cryptint *rem,
     calc_ctx dvmod_ctx

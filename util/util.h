@@ -10,6 +10,7 @@ extern "C" {
 #include <dnml_sys/sys.h>
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/_ctx.h>
+#include <dnml_status.h>
 #include "../intrinsics/intrinsics.h"
 #include "aconv_macros.h"
 
@@ -57,10 +58,10 @@ uint64_t _dnml_ipower_u64(uint64_t base, uint8_t power);
 /* ---------------------- */
 /* bigNum_utils.c */
 /* ---------------------- */
-void __BIGINT_INTERNAL_EMPINIT__(bigInt *x);
-void __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k);
-void __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k);
-void __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_EMPINIT__(bigInt *x);
+dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k);
 void __BIGINT_INTERNAL_FREE__(bigInt *x);
 
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x);

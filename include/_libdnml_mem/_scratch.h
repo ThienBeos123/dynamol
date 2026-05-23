@@ -8,6 +8,7 @@
 #include <stdalign.h>
 #include <stdlib.h>
 
+/* THIS FILE IS ESSENTIALLY DEFECTED AS AN UNUSED UTILITY */
 #define MAX_ALIGN alignof(max_align_t)
 typedef struct {
     uint8_t *base;

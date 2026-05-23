@@ -3,40 +3,35 @@
 const uint64_t inv3 = 0xAAAAAAAAAAAAAAABULL; 
 
 /* Constructors and Destructors */
-void __BIGINT_INTERNAL_EMPINIT__(bigInt *x) {
-    x->limbs = malloc(sizeof(uint64_t));
-    if (!x->limbs) abort();
-    x->n     = 0;
-    x->cap   = 1;
-    x->sign  = 1;
+dnml_status __BIGINT_INTERNAL_EMPINIT__(bigInt *x) {
+    limb_t *__BUFFER_P = malloc(sizeof(uint64_t));
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P; x->n = 0;
+    x->cap = 1; x->sign = 1;
 }
-void __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k) {
-    x->limbs = malloc(k * sizeof(uint64_t));
-    if (!x->limbs) abort();
-    x->n     = 0;
-    x->cap   = k;
-    x->sign  = 1;
+dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k) {
+    limb_t *__BUFFER_P = malloc(k * sizeof(uint64_t));
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P; x->n = 0;
+    x->cap = k; x->sign = 1;
 }
-void __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k) {
+dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k) {
     if (x->cap > k) return;
     size_t new_cap = x->cap ? x->cap : 1;
     while (new_cap < k) new_cap *= 2;
     uint64_t *__BUFFER_P = realloc(x->limbs, new_cap * sizeof(uint64_t));
-    if (!__BUFFER_P) abort();
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P;
     x->cap   = new_cap;
 }
-void __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k) {
+dnml_status __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k) {
     uint64_t *__BUFFER_P = realloc(x->limbs, k * sizeof(uint64_t));
-    if (!__BUFFER_P) abort();
-    x->limbs = __BUFFER_P;
-    x->cap   = k;
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P; x->cap = k;
 }
 void __BIGINT_INTERNAL_FREE__(bigInt *x) {
     if (x->limbs != NULL) free(x->limbs);
-    x->n    = 1;
-    x->cap  = 0;
-    x->sign = 0;
+    x->n = 1; x->cap = 0; x->sign = 0;
 }
 
 /* Safety Utilities */
