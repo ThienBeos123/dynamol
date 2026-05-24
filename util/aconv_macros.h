@@ -11,6 +11,10 @@
 #include <_libdnml_mem/arena.h>
 #include <_libdnml_config/numeric_config.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define BIGINT_TEMP(name, limb_count, ctx, err_check, end_stat) \
     limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count), (&(err_check))); \
@@ -23,6 +27,9 @@
     bigInt name = {.limbs = name##_limbs, .sign = 1, .n = 0, .cap = (limb_count)};
 
 
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

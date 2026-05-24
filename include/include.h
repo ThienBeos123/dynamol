@@ -1,6 +1,10 @@
 #ifndef ___DNMLin_INCLUDE_H___
 #define ___DNMLin_INCLUDE_H___
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -15,5 +19,10 @@
 #include <string.h>
 
 typedef unsigned char uchar;
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

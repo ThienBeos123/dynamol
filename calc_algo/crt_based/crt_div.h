@@ -13,6 +13,9 @@
 #include "crt_mul.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* CRYPTINT WORKSPACE SIZE */
 /* CRYPTINT WORKSPACE SIZE */
 size_t __CRINT_NEWTON_WS__(size_t dend_size, size_t div_size);
@@ -31,6 +34,9 @@ dnml_status __CRINT_DIVMOD_DISP__(
     cryptint *quot, cryptint *rem,
     calc_ctx dvmod_ctx
 );
+#ifdef __cplusplus
+}
+#endif
 
 
 

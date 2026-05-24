@@ -14,6 +14,9 @@
 #include "crt_mul.h"
 #include "crt_div.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* CRYPTINT WORKSPACE SIZE */
 size_t __CRINT_BARETT_WS__(size_t dend_size, size_t mod_size);
 size_t __CRINT_MOD_WS__(size_t dend_size, size_t mod_size);
@@ -22,6 +25,9 @@ size_t __CRINT_MOD_WS__(size_t dend_size, size_t mod_size);
 dnml_status __CRINT_BARETT_REDC__(const cryptint *dend, const cryptint *mod, cryptint *rem, calc_ctx barett_ctx);
 dnml_status __CRINT_MONT_REDC__(cryptint *t, mont_ctx mredc_ctx, cryptint *rem, calc_ctx redc_ctx);
 dnml_status __CRINT_MOD_DISP__(const cryptint *dend, const cryptint *mod, cryptint *rem, calc_ctx redc_ctx);
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

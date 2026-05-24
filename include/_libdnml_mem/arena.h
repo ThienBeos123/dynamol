@@ -6,6 +6,12 @@
 #include "../dnml_status.h" // In /include, relative path for easier pathfind
 #include <stdalign.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 //* ============= Declarations =============
 typedef struct dnml_arena {
     uint64_t *base; size_t cap;
@@ -14,16 +20,12 @@ typedef struct dnml_arena {
 
 //* ============= FUNCTIONALITIES ============= *//
 static inline dnml_status init_arena(dnml_arena *a, size_t init_cap) {
-    if (a->base != NULL) return;
+    if (a->base != NULL) return DNML_ARENA_ALLOC_SUCCESS;
     uint64_t* __BUFFER_P = malloc(init_cap);
-    if (__BUFFER_P == NULL) {
-        a->poisoined = true;
-        return DNML_ALLOC_OOM;
-    }
-    a->base = __BUFFER_P;
-    a->cap = init_cap;
-    a->offset = 0;
-    a->poisoined = false;
+    if (__BUFFER_P == NULL) { a->poisoined = true; return DNML_ALLOC_OOM; }
+    a->base = __BUFFER_P; a->cap = init_cap;
+    a->offset = 0; a->poisoined = false;
+    return DNML_ARENA_ALLOC_SUCCESS;
 }
 static inline void arena_destruct(dnml_arena *a) {
     if (a->base != NULL) free(a->base);
@@ -31,14 +33,11 @@ static inline void arena_destruct(dnml_arena *a) {
     a->cap = 0; a->poisoined = 0;
 }
 static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
-    if (a->cap >= min_cap) return a->cap;
+    if (a->cap >= min_cap) return DNML_ARENA_ALLOC_SUCCESS;
     size_t new_cap = (a->cap) ? a->cap : 1;
     while (new_cap < min_cap) new_cap *= 2;
     uint64_t* __BUFFER_P = realloc(a->base, new_cap);
-    if (__BUFFER_P == NULL) { 
-        a->poisoined = true;
-        return DNML_ALLOC_OOM;
-    } 
+    if (__BUFFER_P == NULL) {  a->poisoined = true; return DNML_ALLOC_OOM; } 
     a->base = __BUFFER_P; a->cap = new_cap;
     return DNML_ARENA_ALLOC_SUCCESS;
 }
@@ -81,5 +80,10 @@ static inline void arena_clear_adapter(void *state) {
 static inline void arena_destruct_adapter(void *state) {
     arena_destruct((dnml_arena*)state);
 }
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

@@ -276,6 +276,9 @@ uint8_t __PCNT_UI64__(uint64_t x) {
 //* --------------------------------------------------------------------------------------- *//
 //*                                     FAST MEMORY UTILITIES                               *//
 //* --------------------------------------------------------------------------------------- *//
+// STRICT UTILITIES
+static void __MEMCPY_STRICT__(void *buf, const void *src,  size_t len) {}
+static void __MEMWIPE_STRICT__(void *buf, size_t len) {}
 // FAST MEMORY UTILITIES (UTILIZE SIMD EXTENSIVELY)
 void __libdnml_MEMSET_FAST__(void *buf, uint64_t val, size_t len) {}
 void __libdnml_MEMCPY_FAST__(void *buf, const void *src, size_t len) {}

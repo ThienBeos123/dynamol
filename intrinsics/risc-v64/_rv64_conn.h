@@ -15,6 +15,9 @@
 #if __ARCH_RVI64__
 
 #ifndef __ASSEMBLER__
+#ifdef __cplusplus
+extern "C" {
+#endif
 // _rv64_arith.S
 extern uint64_t _rv64_add64c(uint64_t a, uint64_t b, uint8_t *carry);
 extern uint64_t _rv64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow);
@@ -32,6 +35,9 @@ extern uint64_t _rv64_hw_trng(int *err);
 // _rv64_hw.S
 extern void _rv64_full_halt(void);
 extern void _rv64_shallow_halt(void);
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 #endif

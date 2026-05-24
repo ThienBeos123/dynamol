@@ -19,6 +19,9 @@
 #include "mul.h"
 #include "mod.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 size_t __BIGINT_CMODMUL_WS__(size_t a_size, size_t b_size, size_t mod_size);
 size_t __BIGINT_MONTMUL_WS__(size_t a_size, size_t b_size, mont_ctx ctx);
 size_t __BIGINT_BIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
@@ -51,7 +54,9 @@ void __BIGINT_MODEXP_DISPATCH__(
     const bigInt *base, const bigInt *power, 
     const bigInt *modulus, bigInt *res, calc_ctx binexp_ctx
 );
-
+#ifdef __cplusplus
+}
+#endif
 
 
 

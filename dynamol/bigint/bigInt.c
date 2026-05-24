@@ -39,25 +39,25 @@ void bigInt_free(bigInt *x) {
     x->n = 0; x->cap = 0; x->sign = 0;
 }
 dnml_status bigInt_new(bigInt *x) {
-    if (x->limbs) return; // The bigInt is already initialized
+    if (x->limbs) return BIGINT_SUCCESS; // The bigInt is already initialized
     limb_t *P_BUFFER__ = malloc(sizeof(limb_t));
     if (P_BUFFER__) return DNML_ALLOC_OOM;
     x->limbs = P_BUFFER__;
     x->cap = 1; x->n = 0; x->sign = 1;
 }
 dnml_status bigInt_snew(bigInt *x, size_t n) {
-    if (x->limbs != NULL) return; // already initialized
+    if (x->limbs != NULL) return BIGINT_SUCCESS; // already initialized
     limb_t *__BUFFER_P = malloc(n * sizeof(limb_t));
     if (__BUFFER_P) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P;
     x->cap = n; x->n = 0; x->sign = 1;
 }
 dnml_status bigInt_binew(bigInt *x, const bigInt *y) {
-    if (x->limbs != NULL) return; // Already Initialized
-    assert(__BIGINT_STATE_PVALIDATE__(y));
+    if (x->limbs != NULL) return BIGINT_SUCCESS; // Already Initialized
+    assert(bigInt_pvalidate(y));
     if (x->limbs == y->limbs) {
-        if (x == y) return; x->n = y->n;
-        x->cap = y->cap; x->sign = y->sign;
+        if (x == y) return BIGINT_SUCCESS; 
+        x->n = y->n; x->cap = y->cap; x->sign = y->sign;
     } size_t alloc_size = (y->n) ? y->n : 1;
     limb_t *__BUFFER_P = malloc(alloc_size * sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
@@ -66,14 +66,14 @@ dnml_status bigInt_binew(bigInt *x, const bigInt *y) {
     x->n = y->n; x->cap = alloc_size; x->sign = (y->n) ? y->sign : 1;
 }
 dnml_status bigInt_new_u64(bigInt *x, const uint64_t in) {
-    if (x->limbs != NULL) return; // ALREADY INITIALIZED
+    if (x->limbs != NULL) return BIGINT_SUCCESS; // ALREADY INITIALIZED
     limb_t *__BUFFER_P = malloc(sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->limbs[0] = in;
     x->n = !!(in); x->cap = 1; x->sign = 1;
 }
 dnml_status bigInt_new_i64(bigInt *x, const int64_t in) {
-    if (x->limbs != NULL) return; // ALREADY INITIALIZED
+    if (x->limbs != NULL) return BIGINT_SUCCESS; // ALREADY INITIALIZED
     limb_t *__BUFFER_P = malloc(sizeof(limb_t));
     if (__BUFFER_P) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->limbs[0] = __MAG_I64__(in);
@@ -271,34 +271,33 @@ void bigInt_mut_lshift(bigInt *x, size_t k) {
     }
 }
 /* ------------- Mutative, Fixed-width ------------- */
-void bigInt_mut_andu64  (bigInt *x, const uint64_t val) {
+dnml_status bigInt_mut_andu64  (bigInt *x, const uint64_t val) {
     assert(bigInt_pvalidate(x));
-    if (x->n == 0) return;
+    if (x->n == 0) return BIGINT_SUCCESS;
     x->limbs[0] = x->limbs[0] & val;
     x->n        = (x->limbs[0]) ? 1 : 0;
     x->sign     = (x->limbs[0]) ? x->sign : 1;
+    return BIGINT_SUCCESS;
 }
-void bigInt_mut_nandu64 (bigInt *x, const uint64_t val) {
+dnml_status bigInt_mut_nandu64 (bigInt *x, const uint64_t val) {
     assert(bigInt_pvalidate(x));
-    if (x->n == 0) {
-        x->limbs[0] = UINT64_MAX;
-        x->n        = 1;
-    } else {
+    if (x->n == 0) { x->limbs[0] = UINT64_MAX; x->n = 1; } 
+    else {
         x->limbs[0] = ~(x->limbs[0] & val);
         if (x->n > 1) memset(&x->limbs[1], UINT64_MAX, x->n - 1);
-    }
+    } return BIGINT_SUCCESS;
 }
-void bigInt_mut_oru64   (bigInt *x, const uint64_t val) {
+dnml_status bigInt_mut_oru64   (bigInt *x, const uint64_t val) {
     assert(bigInt_pvalidate(x));
-    if (!val);
-    else if (!x->n) {
-        uint64_t res = 0 | val;
-        x->limbs[0] = res;
-        x->n        = (res) ? 1 : 0;
-        x->sign     = (res) ? x->sign : 1;
-    } else x->limbs[0] |= val; // All the other limbs stay the same due to |= 0
+    if (!x->n) {
+        uint64_t res = 0 | val; x->limbs[0] = res;
+        x->n = !!(res); x->sign = (res) ? x->sign : 1;
+    } else if (val){ 
+        x->limbs[0] |= val; // All the other limbs stay the same due to |= 0
+    }
+    return BIGINT_SUCCESS;
 }
-void bigInt_mut_noru64  (bigInt *x, const uint64_t val) {
+dnml_status bigInt_mut_noru64  (bigInt *x, const uint64_t val) {
     assert(bigInt_pvalidate(x));
     if (x->n == 0) {
         uint64_t res = ~(0 | val);
@@ -310,9 +309,9 @@ void bigInt_mut_noru64  (bigInt *x, const uint64_t val) {
             uint64_t b = (i == 0) ? val : 0;
             x->limbs[i] = ~(x->limbs[i] | b);
         } bigInt_normalize(x);
-    }
+    } return BIGINT_SUCCESS;
 }
-void bigInt_mut_xoru64  (bigInt *x, const uint64_t val) {
+dnml_status bigInt_mut_xoru64  (bigInt *x, const uint64_t val) {
     assert(bigInt_pvalidate(x));
     if (x->n == 0) {
         uint64_t res = 0 ^ val;
@@ -324,9 +323,9 @@ void bigInt_mut_xoru64  (bigInt *x, const uint64_t val) {
             uint64_t b = (i == 0) ? val : 0;
             x->limbs[i] = x->limbs[i] ^ b;
         } bigInt_normalize(x);
-    }
+    } return BIGINT_SUCCESS;
 }
-void bigInt_mut_xnoru64 (bigInt *x, const uint64_t val) {
+dnml_status bigInt_mut_xnoru64 (bigInt *x, const uint64_t val) {
     assert(bigInt_pvalidate(x));
     if (x->n == 0) {
         uint64_t res = ~(0 ^ val);
@@ -338,14 +337,13 @@ void bigInt_mut_xnoru64 (bigInt *x, const uint64_t val) {
             uint64_t b = (i == 0) ? val : 0;
             x->limbs[i] = ~(x->limbs[i] ^ b);
         } bigInt_normalize(x);
-    }
+    } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_and  (bigInt *x, const bigInt y) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!x->n);
-    else if (!y.n) bigInt_reset(x);
-    else {
+    if (!y.n) bigInt_reset(x);
+    else if (x->n) {
         size_t operation_range = max(x->n, y.n);
         dnml_status err_check = bigInt_reserve(x, operation_range);
         heap_alloc_oom(err_check)
@@ -454,9 +452,9 @@ dnml_status bigInt_mut_xnor (bigInt *x, const bigInt y) {
 /* ------------- Mutative, Explicit-width ------------- */
 dnml_status bigInt_mutex_andu64  (bigInt *x, const uint64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    if (!x->n) return;
+    if (!x->n) return BIGINT_SUCCESS;
     x->limbs[0] = x->limbs[0] & val;
     x->n        = (x->limbs[0]) ? 1 : 0;
     x->sign     = (x->limbs[0]) ? x->sign : 1;
@@ -464,7 +462,7 @@ dnml_status bigInt_mutex_andu64  (bigInt *x, const uint64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_nandu64 (bigInt *x, const uint64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     for (size_t i = 0; i < range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i] : 0;
@@ -476,9 +474,9 @@ dnml_status bigInt_mutex_nandu64 (bigInt *x, const uint64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    if (!val) return;
+    if (!val) return BIGINT_SUCCESS;
     else if (!x->n) {
         uint64_t res = 0 | val;
         x->limbs[0] = res;
@@ -489,7 +487,7 @@ dnml_status bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t range) {
 }
 dnml_status bigint_mutex_noru64  (bigInt *x, const uint64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     for (size_t i = 0; i < range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i] : 0;
@@ -501,7 +499,7 @@ dnml_status bigint_mutex_noru64  (bigInt *x, const uint64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_xoru64  (bigInt *x, const uint64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     bigInt_reserve(x, range);
     if (x->n == 0) {
         uint64_t res = 0 ^ val;
@@ -519,7 +517,7 @@ dnml_status bigInt_mutex_xoru64  (bigInt *x, const uint64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_xnoru64 (bigInt *x, const uint64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     for (size_t i = 0; i < range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i] : 0;
@@ -531,9 +529,9 @@ dnml_status bigInt_mutex_xnoru64 (bigInt *x, const uint64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_andi64  (bigInt *x, const int64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    if (!x->n) return;
+    if (!x->n) return BIGINT_SUCCESS;
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
     for (size_t i = 0; i < range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i]       : 0;
@@ -545,7 +543,7 @@ dnml_status bigInt_mutex_andi64  (bigInt *x, const int64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_nandi64 (bigInt *x, const int64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
     for (size_t i = 0; i < range; ++i) {
@@ -558,7 +556,7 @@ dnml_status bigInt_mutex_nandi64 (bigInt *x, const int64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_ori64   (bigInt *x, const int64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
     for (size_t i = 0; i < range; ++i) {
@@ -571,7 +569,7 @@ dnml_status bigInt_mutex_ori64   (bigInt *x, const int64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_nori64  (bigInt *x, const int64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
     for (size_t i = 0; i < range; ++i) {
@@ -584,7 +582,7 @@ dnml_status bigInt_mutex_nori64  (bigInt *x, const int64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_xori64  (bigInt *x, const int64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
     for (size_t i = 0; i < range; ++i) {
@@ -597,7 +595,7 @@ dnml_status bigInt_mutex_xori64  (bigInt *x, const int64_t val, size_t range) {
 }
 dnml_status bigInt_mutex_xnori64 (bigInt *x, const int64_t val, size_t range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
     for (size_t i = 0; i < range; ++i) {
@@ -611,9 +609,9 @@ dnml_status bigInt_mutex_xnori64 (bigInt *x, const int64_t val, size_t range) {
 dnml_status bigInt_mutex_and   (bigInt *x, const bigInt y, size_t range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    if (!x->n) return;
+    if (!x->n) return BIGINT_SUCCESS;
     else if (!y.n) bigInt_reset(x);
     else {
         for (size_t i = 0; i < range; ++i) {
@@ -626,7 +624,7 @@ dnml_status bigInt_mutex_and   (bigInt *x, const bigInt y, size_t range) {
 dnml_status bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     if (!x->n || !y.n) memset(x->limbs, UINT64_MAX, range);
     else {
@@ -640,7 +638,7 @@ dnml_status bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t range) {
 dnml_status bigInt_mutex_or    (bigInt *x, const bigInt y, size_t range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     if (!x->n) {
         size_t copy_range = (y.n < range) ? y.n : range;
@@ -658,7 +656,7 @@ dnml_status bigInt_mutex_or    (bigInt *x, const bigInt y, size_t range) {
 dnml_status bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     if (!x->n && !y.n) {
         memset(x->limbs, UINT64_MAX, range * U64_BYTES);
@@ -674,7 +672,7 @@ dnml_status bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t range) {
 dnml_status bigInt_mutex_xor   (bigInt *x, const bigInt y, size_t range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return;
+    if (!range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
     if (!x->n && !y.n);
     else {
@@ -1271,7 +1269,7 @@ static void __BIGINT_MAGADD__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     size_t max = max(a->n, b->n);
     // Set the minimum capacity of res to be 1 bigger
     // than the largest capacity between a & b ----> res->cap = max + 1
-    dnml_status err_check = bigInt_reserve(res, max + 1); heap_alloc_oom_mut(err_check, err);
+    dnml_status err_check = bigInt_reserve(res, max + 1); heap_alloc_oom_void(err_check, err);
     uint64_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
         uint64_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
@@ -1282,7 +1280,7 @@ static void __BIGINT_MAGADD__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     res->n = max + (carry != 0); *err = BIGINT_SUCCESS;
 }
 static void __BIGINT_MAGSUB__(bigInt *res, const bigInt *a, const bigInt *b, dnml_status *err) {
-    dnml_status err_check = bigInt_reserve(res, a->n); heap_alloc_oom_mut(err_check, err);
+    dnml_status err_check = bigInt_reserve(res, a->n); heap_alloc_oom_void(err_check, err);
     uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t y = (i < b->n) ? b->limbs[i] : 0;
@@ -1311,11 +1309,11 @@ static void __BIGINT_MAGMUL__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     )
     }
     calc_ctx magmul_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state = _DASI_MAGMUL_ARENA
     }; __BIGINT_MUL_DISPATCH__(a, b, res, magmul_ctx);
 }
@@ -1340,17 +1338,17 @@ static void __BIGINT_MAGDIVMOD__(bigInt *quot, bigInt *rem, const bigInt *a, con
         )
     }
     calc_ctx magdivmod_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state = _DASI_MAGDIVMOD_ARENA
     }; __BIGINT_DIVMOD_DISPATCH__(a, b, quot, rem, magdivmod_ctx);
 }
 static void __BIGINT_MAGMUL_U64__(bigInt *res, const bigInt *x, const uint64_t val, dnml_status *err) {
     // Since the divisor size is small (n <= 1), we implement schoolbook multiplication
-    dnml_status err_check = bigInt_reserve(res, x->n + 1); heap_alloc_oom_mut(err_check, err);
+    dnml_status err_check = bigInt_reserve(res, x->n + 1); heap_alloc_oom_void(err_check, err);
     uint64_t carry = 0;
     for (size_t i = 0; i < x->n; ++i) {
         uint64_t low, high;
@@ -1368,7 +1366,7 @@ static void __BIGINT_MAGDIVMOD_U64__(
 ) {
     // Since the divisior size is small (n <= 1), we implement normal/long division
     assert(val); // Checks for invalid operation ( x / 0 )
-    dnml_status err_check = bigInt_reserve(&quot, x->n+1); heap_alloc_oom_mut(err_check, err);
+    dnml_status err_check = bigInt_reserve(&quot, x->n+1); heap_alloc_oom_void(err_check, err);
     quot->n = x->n; uint64_t remainder = 0;
     for (size_t i = x->n - 1; i >= 0; --i) {
         quot->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder);
@@ -1399,11 +1397,11 @@ static void __BIGINT_MAGGCD__(bigInt *res, const bigInt *a, const bigInt *b, dnm
         )
     }
     calc_ctx _maggcd_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state = _DASI_MAGGCD_ARENA
     }; __BIGINT_GCD_DISPATCH__(res, a, b, _maggcd_ctx);
 }
@@ -1433,11 +1431,11 @@ static void __BIGINT_MAGLCM__(bigInt *res, const bigInt *a, const bigInt *b, dnm
         )
     }
     calc_ctx _maglcm_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state = _DASI_MAGLCM_ARENA
     }; 
     size_t maglcm_mark = arena_mark(_DASI_MAGLCM_ARENA); dnml_status tmp_check;
@@ -1483,11 +1481,11 @@ static void __BIGINT_MAGEMOD__(bigInt *res, const bigInt *a, const bigInt *modul
         )
     }
     calc_ctx magemod_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state = _DASI_MAGEMOD_ARENA
     }; dnml_status tmp_check;
     size_t tmp_mark = arena_mark(_DASI_MAGEMOD_ARENA);
@@ -1526,11 +1524,11 @@ static void __BIGINT_MAGSQR__(bigInt *res, const bigInt *base, dnml_status *err)
         )
     }
     calc_ctx magsqr_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state  = _DASI_MAGSQR_ARENA
     }; __BIGINT_MUL_DISPATCH__(base, base, res, magsqr_ctx);
 }
@@ -1555,11 +1553,11 @@ static void __BIGINT_MAGPOW__(bigInt *res, const bigInt *base, const uint64_t po
         )
     }
     calc_ctx magpow_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state  = _DASI_MAGPOW_ARENA
     }; __BIGINT_EXP_DISPATCH__(res, base, pow, magpow_ctx);
 }
@@ -1584,11 +1582,11 @@ static void __BIGINT_MAGSQRT__(bigInt *res, const bigInt *a, dnml_status *err) {
         )
     }
     calc_ctx magsqrt_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state  = _DASI_MAGSQRT_ARENA
     }; __BIGINT_SQRT_DISPATCH__(res, a, magsqrt_ctx);
 }
@@ -1613,11 +1611,11 @@ static void __BIGINT_MAGCBRT__(bigInt *res, const bigInt *a, dnml_status *err) {
         )
     }
     calc_ctx magcbrt_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state  = _DASI_MAGCBRT_ARENA
     }; __BIGINT_CBRT_DISPATCH__(res, a, magcbrt_ctx);
 }
@@ -1642,11 +1640,11 @@ static void __BIGINT_MAGNRT__(bigInt *res, const bigInt *a, const uint64_t root,
         )
     }
     calc_ctx mag_nroot_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state  = _DASI_MAG_NROOT_ARENA
     }; __BIGINT_NROOT_DISPATCH__(res, a, root, mag_nroot_ctx);
 }
@@ -1719,7 +1717,7 @@ dnml_status bigInt_mut_modu64(bigInt *x, const uint64_t val) {
 }
 dnml_status bigInt_mut_muli64(bigInt *x, const int64_t val) {
     assert(bigInt_pvalidate(x));
-    if (x->n == 0) return;
+    if (x->n == 0) return BIGINT_SUCCESS;
     if (!val) bigInt_reset(x);
     else if (val == 1 || val == -1);
     else if (x->n == 1 && x->limbs[0] == 1) bigInt_mut_copyi64(x, val);
@@ -1823,7 +1821,7 @@ dnml_status bigInt_mut_sub(bigInt *x, const bigInt y) {
         else {
             dnml_status err_check = bigInt_reserve(x, max(x->n, y.n) + 1); heap_alloc_oom(err_check);
             dnml_arena *_DASI_SUB_ARENA = _USE_ARENA(); arena_poisoined(_DASI_SUB_ARENA);
-            size_t tmp_mark = arena_mark(_DASI_SUB_ARENA); dnml_status err_check;
+            size_t tmp_mark = arena_mark(_DASI_SUB_ARENA);
             limb_t *tmp_limbs = arena_galloc(_DASI_SUB_ARENA,  x->n, &err_check);
             arena_alloc_oom(err_check, _DASI_SUB_ARENA);
 
@@ -1853,8 +1851,8 @@ dnml_status bigInt_mut_mul(bigInt *x, const bigInt y) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
 
-    if (x->n == 0) return;
-    else if (y.n == 1 && y.limbs[0] == 1) return;
+    if (x->n == 0) return BIGINT_SUCCESS;
+    else if (y.n == 1 && y.limbs[0] == 1) return BIGINT_SUCCESS;
     else if (!y.n) bigInt_reset(x);
     else if (x->n == 1 && x->limbs[0] == 1) {
         if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1879,7 +1877,7 @@ dnml_status bigInt_mut_div(bigInt *x, const bigInt y) {
     else if (y.n == 1 && y.limbs[0] == 1) x->sign *= y.sign;
     else if (x->n == 1 && x->limbs[0] == 1) bigInt_reset(x);
     else { dnml_arena *_DASI_DIV_ARENA = _USE_ARENA(); arena_poisoined(_DASI_DIV_ARENA);
-        dnml_status err_check = arena_grow(_DASI_DIV_ARENA, x->n + y.n); arena_alloc_ooom(_DASI_DIV_ARENA);
+        dnml_status err_check = arena_grow(_DASI_DIV_ARENA, x->n + y.n); arena_alloc_oom(err_check, _DASI_DIV_ARENA);
 
         size_t mutdiv_mark = arena_mark(_DASI_DIV_ARENA);
         limb_t *quot_limbs = arena_alloc(_DASI_DIV_ARENA, x->n, &err_check);
@@ -1906,7 +1904,7 @@ dnml_status bigInt_mut_mod(bigInt *x, const bigInt y) {
         else { 
             /* It can be proven that x's capacity can sufficiently store temp_rem due to x->n > y->n */
             dnml_arena *_DASI_MOD_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MOD_ARENA);
-            dnml_status err_check = arena_grow(_DASI_MOD_ARENA, x->n + y.n); arena_alloc_ooom(_DASI_MOD_ARENA);
+            dnml_status err_check = arena_grow(_DASI_MOD_ARENA, x->n + y.n); arena_alloc_oom(err_check, _DASI_MOD_ARENA);
 
             size_t mutmod_mark = arena_mark(_DASI_MOD_ARENA);
             limb_t *quot_limbs = arena_alloc(_DASI_MOD_ARENA, x->n, &err_check);
@@ -1939,12 +1937,12 @@ bigInt bigInt_divu64(const bigInt x, const uint64_t val, dnml_status *err) {
     if (!val) { *err = BIGINT_ERR_DOMAIN; return __BIGINT_ERROR_VALUE__(); }
 
     bigInt quot;
-    if (x.n == 0) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
+    if (x.n == 0) if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
     else if (val == 1) { if (bigInt_binew(&quot, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else if (x.n == 1 && x.limbs[0]) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
+    else if (x.n == 1 && x.limbs[0]) if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         /* Main Case */
-        uint64_t temp_rem; if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
+        uint64_t temp_rem; if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
         dnml_status err_check; __BIGINT_MAGDIVMOD_U64__(&quot, &temp_rem, &x, val, &err_check);
         arena_alloc_oom_mut(err_check, &___DASI_NUMERIC_ARENA_, err); quot.sign = x.sign; bigInt_normalize(&quot);
     }  *err = BIGINT_SUCCESS; return quot;
@@ -1996,16 +1994,16 @@ bigInt bigInt_divi64(const bigInt x, const int64_t val, dnml_status *err) {
     if (!val) { *err = BIGINT_ERR_DOMAIN; return __BIGINT_ERROR_VALUE__(); }
 
     bigInt quot; // We do C-style Integer Division
-    if (x.n == 0) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
+    if (x.n == 0) if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
     else if (val == 1 || val == -1) { 
         if (bigInt_binew(&quot, &x) == DNML_ALLOC_OOM) func_ret_oom(err);
         quot.sign = x.sign * val;
     }
-    else if (x.n == 1 && x.limbs[0]) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
+    else if (x.n == 1 && x.limbs[0]) if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         /* Main Case */
         dnml_status err_check; uint64_t temp_rem, mag_val = __MAG_I64__(val);
-        if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
+        if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
         __BIGINT_MAGDIVMOD_U64__(&quot, &temp_rem, &x, mag_val, &err_check);
         arena_alloc_oom_mut(err_check, &___DASI_NUMERIC_ARENA_, err);
         quot.sign = x.sign * ((val < 0) ? -1 : 1); bigInt_normalize(&quot);
@@ -2068,7 +2066,7 @@ bigInt bigInt_sub(const bigInt x, const bigInt y, dnml_status *err) {
     else if (x.sign == y.sign) {
         dnml_status err_check;
         int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
-        if (bigInt_new(&diff == DNML_ALLOC_OOM)) func_ret_oom(err)
+        if (bigInt_new(&diff) == DNML_ALLOC_OOM) func_ret_oom(err)
         if (comp_res > 0) { 
             __BIGINT_MAGSUB__(&diff, &x, &y, &err_check);
             arena_alloc_oom_mut(err_check, &___DASI_NUMERIC_ARENA_, err); diff.sign =  x.sign; 
@@ -2077,7 +2075,7 @@ bigInt bigInt_sub(const bigInt x, const bigInt y, dnml_status *err) {
             arena_alloc_oom_mut(err_check, &___DASI_NUMERIC_ARENA_, err); diff.sign = -x.sign;
         }
     } else {
-        if (bigInt_new(&diff == DNML_ALLOC_OOM)) func_ret_oom(err)
+        if (bigInt_new(&diff) == DNML_ALLOC_OOM) func_ret_oom(err)
         dnml_status err_check; __BIGINT_MAGADD__(&diff, &x, &y, &err_check);
         arena_alloc_oom_mut(err_check, &___DASI_NUMERIC_ARENA_, err); diff.sign = x.sign;
     } return diff;
@@ -2273,11 +2271,11 @@ bool bigInt_is_prime(const bigInt x) {
     dnml_arena *_DASI_LPRIME_ARENA = _USE_LOW_ARENA();
     arena_grow(_DASI_LPRIME_ARENA, __BIGINT_PTEST_WS__(x.n));
     calc_ctx _isprime_ctx = {
-        .alloc = arena_alloc_adapter,
-        .mark = arena_mark_adapter,
-        .reset = arena_reset_adapter,
-        .clear = arena_clear_adapter,
-        .destruct = arena_destruct_adapter,
+        .alloc = &arena_alloc_adapter,
+        .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter,
+        .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter,
         .state  = _DASI_LPRIME_ARENA
     }; return (bool)(__BIGINT_PTEST_DISPATCH__(&x, _isprime_ctx));
 }
@@ -2437,7 +2435,7 @@ dnml_status bigInt_mut_pow(bigInt *x, const uint64_t exp) {
     if (!exp) { bigInt_reset(x); 
         x->limbs[0] = 1; 
         x->n = 1; x->sign = 1;
-    } if (!x->n || exp == 1) return;
+    } if (!x->n || exp == 1) return BIGINT_SUCCESS;
     if (exp == 2) return bigInt_mut_sqr(x);
 
     /* More standard cases (computationally) */
@@ -2614,8 +2612,8 @@ dnml_status bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__) {
         dst__->limbs = __BUFFER_P;
         dst__->cap     = 1;
     }
-    if (dst__->n == 0 && !source__) return;
-    if (dst__->n == 1 && dst__->limbs[0] == source__) return;
+    if (dst__->n == 0 && !source__) return BIGINT_SUCCESS;
+    if (dst__->n == 1 && dst__->limbs[0] == source__) return BIGINT_SUCCESS;
     dst__->limbs[0] = source__;
     dst__->n        = source__ ? 1 : 0;
     dst__->sign     = 1;
@@ -2625,8 +2623,7 @@ void bigInt_mut_copyi64(bigInt *dst__, const int64_t source__) {
     bigInt_canonicalize(dst__);
     if (dst__->n == 0 && !source__) return;
     if (dst__->n == 1 && dst__->limbs[0] == __MAG_I64__(source__)) {
-        dst__->sign = (source__ < 0) ? -1 : 1;
-        return;
+        dst__->sign = (source__ < 0) ? -1 : 1; return;
     }
     dst__->limbs[0] = __MAG_I64__(source__);
     dst__->n        = source__ ? 1 : 0;
@@ -2642,10 +2639,10 @@ dnml_status bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__) {
         dst__->limbs = __BUFFER_P;
         dst__->cap     = 1;
     }
-    if (dst__->n == 0 && !source__) return;
+    if (dst__->n == 0 && !source__) return BIGINT_SUCCESS;
     if (dst__->n == 1 && dst__->limbs[0] == __MAG_I64__(source__)) {
         dst__->sign = (source__ < 0) ? -1 : 1;
-        return;
+        return BIGINT_SUCCESS;
     }
     dst__->limbs[0] = __MAG_I64__(source__);
     dst__->n        = source__ ? 1 : 0;
@@ -2667,10 +2664,10 @@ dnml_status bigInt_mut_copy(bigInt *dst__, const bigInt source__) {
     /* Fast Paths */
     // Since they're equal, and due to Contract 3
     //  ------> They're not subjected to resizing if these cases are true
-    if (dst__->n == 0 && source__.n == 0) return ;
+    if (dst__->n == 0 && source__.n == 0) return BIGINT_SUCCESS;
     if (dst__->n == source__.n && !memcmp(dst__->limbs, source__.limbs, source__.n)) {
         dst__->sign = source__.sign;
-        return;
+        return BIGINT_SUCCESS;
     }
 
     /* Standard Route */
@@ -2692,7 +2689,7 @@ dnml_status bigInt_mut_dcopy(bigInt *dst__, const bigInt source__) {
     // The equal fast path (dst__ != 0 && source__ != 0) is not here since
     // Reallocation and Resizing may tamper with the size metadata,
     //  -----> Tampering with the validity of memcmp()
-    if (dst__->n == 0 && source__.n == 0) return;
+    if (dst__->n == 0 && source__.n == 0) return BIGINT_SUCCESS;
 
     /* Standard Path */
     memcpy(dst__->limbs, source__.limbs, source__.n * sizeof(uint64_t));
@@ -2710,10 +2707,10 @@ dnml_status bigInt_mut_ocopy(bigInt *dst__, const bigInt source__) {
     /* Fast Paths */
     // Since they're equal, and due to Contract 3
     //  ------> They're not subjected to errors if these cases are true
-    if (dst__->n == 0 && source__.n == 0) return;
+    if (dst__->n == 0 && source__.n == 0) return BIGINT_SUCCESS;
     if (dst__->n == source__.n && !memcmp(dst__->limbs, source__.limbs, source__.n * sizeof(uint64_t))) {
         dst__->sign = source__.sign;
-        return;
+        return BIGINT_SUCCESS;
     }
     /* Standard Route */
     if (dst__->cap < source__.n) return BIGINT_ERR_RANGE;
@@ -2743,7 +2740,7 @@ void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__) {
 }
 /* -------------  Functional SMALL Copies ------------- */
 bigInt bigInt_copyu64(const uint64_t source__, dnml_status *err) {
-    bigInt dst__; if (bigInt_new(&dst__ == DNML_ALLOC_OOM)) func_ret_oom(err)
+    bigInt dst__; if (bigInt_new(&dst__) == DNML_ALLOC_OOM) func_ret_oom(err)
     if (source__) {
         dst__.limbs[0] = source__;
         dst__.n        = 1;
@@ -2751,7 +2748,7 @@ bigInt bigInt_copyu64(const uint64_t source__, dnml_status *err) {
     return dst__;
 }
 bigInt bigInt_copyi64(const int64_t source__, dnml_status *err) {
-    bigInt dst__; if (bigInt_new(&dst__ == DNML_ALLOC_OOM)) func_ret_oom(err)
+    bigInt dst__; if (bigInt_new(&dst__) == DNML_ALLOC_OOM) func_ret_oom(err)
     if (source__) {
         dst__.limbs[0] = __MAG_I64__(source__);
         dst__.n        = 1;
@@ -2767,7 +2764,7 @@ bigInt bigInt_copy(const bigInt source__, dnml_status *err) {
     assert(bigInt_validate(source__));
     bigInt dst__;
     if (source__.n == 0) {
-        if (bigInt_new(&dst__ == DNML_ALLOC_OOM)) func_ret_oom(err)
+        if (bigInt_new(&dst__) == DNML_ALLOC_OOM) func_ret_oom(err)
         return dst__;
     }
     if (bigInt_snew(&dst__, source__.n) == DNML_ALLOC_OOM) func_ret_oom(err);
@@ -2789,7 +2786,7 @@ bigInt bigInt_ocopy(const bigInt source__, size_t output_cap, dnml_status *err) 
 bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap, dnml_status *err) {
     assert(bigInt_validate(source__));
     bigInt dst__;
-    if (output_cap == 0) if (bigInt_new(&dst__ == DNML_ALLOC_OOM)) func_ret_oom(err)
+    if (output_cap == 0) if (bigInt_new(&dst__) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         if (bigInt_snew(&dst__, output_cap) == DNML_ALLOC_OOM) func_ret_oom(err);
         size_t operation_range = (output_cap < source__.n) ? output_cap : source__.n;
@@ -2829,7 +2826,7 @@ dnml_status bigInt_resize(bigInt *x, size_t k) { //* Exact Capacity resize
 }
 dnml_status bigInt_reserve(bigInt *x, size_t k) { //* Minimum Capacity
     assert(__BIGINT_INTERNAL_SVALID__(x));
-    if (x->cap >= k) return;
+    if (x->cap >= k) return BIGINT_SUCCESS;
     size_t new_cap = x->cap;
     // Capacity doubles instead of incrementation, 
     // ---> Ensure less reallocation ---> Enhanced performance
@@ -2841,7 +2838,7 @@ dnml_status bigInt_reserve(bigInt *x, size_t k) { //* Minimum Capacity
 }
 dnml_status bigInt_shrink(bigInt *x, size_t k) { //* Maximum Capacity
     assert(__BIGINT_INTERNAL_PVALID__(x) && k);
-    if (x->cap <= k) return;
+    if (x->cap <= k) return BIGINT_SUCCESS;
     limb_t *__BUFFER_P = realloc(x->limbs, k * sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P;
@@ -2853,13 +2850,6 @@ void bigInt_reset(bigInt *x) {
     if (x->n >= 1) x->limbs[0] = 0;
     x->n    = 0;
     x->sign = 1;
-}
-static inline uint8_t __STATE_VAL__(bigInt x) {
-    if (x.limbs == NULL) return 0;
-    if (x.cap < 1) return 0;
-    if (x.n > x.cap) return 0;
-    if (x.sign != 1 && x.sign != -1) return 0;
-    return 1;
 }
 bool bigInt_validate(bigInt x) {
     /* State Validation */

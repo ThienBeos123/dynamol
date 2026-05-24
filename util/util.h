@@ -1,10 +1,6 @@
 #ifndef DNML_UTIL_H
 #define DNML_UTIL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <libdnml_types.h>
 #include <include.h>
 #include <dnml_sys/sys.h>
@@ -14,9 +10,13 @@ extern "C" {
 #include "../intrinsics/intrinsics.h"
 #include "aconv_macros.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* ---------------------- */
-/* sec_util.c */
+/* rng_util.c */
 /* ---------------------- */
 typedef struct { uint64_t s[4]; } xoshiro256_state;
 uint64_t splitmix64(uint64_t x);
@@ -64,6 +64,7 @@ dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k);
 dnml_status __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k);
 void __BIGINT_INTERNAL_FREE__(bigInt *x);
 
+uint8_t __STATE_VAL__(bigInt x);
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x);
 uint8_t __BIGINT_INTERNAL_SVALID__(const bigInt *x);
 uint8_t __BIGINT_INTERNAL_PVALID__(const bigInt *x);

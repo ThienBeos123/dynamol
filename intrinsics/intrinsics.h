@@ -37,6 +37,10 @@
 #endif
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define min(x, y) ( ((x) < (y)) ? (x) : (y) )
 #define max(x, y) ( ((x) > (y)) ? (x) : (y) )
 
@@ -138,5 +142,9 @@ void __GET_ENTROPY_FAST(void* buf, size_t len);
 void __GET_ENTROPY_STD(void *buf, size_t len);
 int __GET_ENTROPY_PQC(void *buf, size_t len);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

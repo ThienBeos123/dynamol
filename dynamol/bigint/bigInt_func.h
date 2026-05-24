@@ -15,6 +15,9 @@
 #include "../../calc_algo/perf_calc.h"
 #include "../../util/util.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define io_cleanup { arena_clear(&___DASI_IO_ARENA_); arena_destruct(&___DASI_IO_ARENA_); }
 
@@ -59,11 +62,18 @@
 
 
 /* Mutative Macros */
+#define heap_alloc_oom_void(err_check, err) do { \
+    test_assert_mut(((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+            arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
+            arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+        }, err, DNML_ALLOC_OOM, ; \
+    ); \
+} while(0);
 #define heap_alloc_oom_mut(err_check, err) do { \
     test_assert_mut(((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
             arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, err, DNML_ALLOC_OOM, __BIGINT_ERORR_VALUE__() \
+        }, err, DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() \
     ); \
 } while(0);
 #define arena_poison_mut(arena_name, err) do { \
@@ -150,12 +160,12 @@ bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err);
 void bigInt_mut_rshift(bigInt *x, size_t k);
 void bigInt_mut_lshift(bigInt *x, size_t k);
 /* ------------- Mutative, Fixed-width ------------- */
-void bigInt_mut_andu64  (bigInt *x, const uint64_t y);
-void bigInt_mut_nandu64 (bigInt *x, const uint64_t y);
-void bigInt_mut_oru64   (bigInt *x, const uint64_t y);
-void bigInt_mut_noru64  (bigInt *x, const uint64_t y);
-void bigInt_mut_xoru64  (bigInt *x, const uint64_t y);
-void bigInt_mut_xnoru64 (bigInt *x, const uint64_t y);
+dnml_status bigInt_mut_andu64  (bigInt *x, const uint64_t y);
+dnml_status bigInt_mut_nandu64 (bigInt *x, const uint64_t y);
+dnml_status bigInt_mut_oru64   (bigInt *x, const uint64_t y);
+dnml_status bigInt_mut_noru64  (bigInt *x, const uint64_t y);
+dnml_status bigInt_mut_xoru64  (bigInt *x, const uint64_t y);
+dnml_status bigInt_mut_xnoru64 (bigInt *x, const uint64_t y);
 dnml_status bigInt_mut_and  (bigInt *x, const bigInt y);
 dnml_status bigInt_mut_nand (bigInt *x, const bigInt y);
 dnml_status bigInt_mut_or   (bigInt *x, const bigInt y);
@@ -293,36 +303,36 @@ uint64_t bigInt_emodu64(const bigInt x, const uint64_t modulus, dnml_status *err
 uint64_t bigInt_emodi64(const bigInt x, const int64_t modulus, dnml_status *err);
 bigInt bigInt_emod(const bigInt x, const bigInt modulus, dnml_status *err);
 /* ---------------- SMALL Modular Arithmetic --------------- */
-dnml_status bigInt_mut_modadd_u64(bigInt *x, const bigInt y, const uint64_t modulus) {}
-dnml_status bigInt_mut_modsub_u64(bigInt *x, const bigInt y, const uint64_t modulus) {}
-dnml_status bigInt_mut_modadd(bigInt *x, const bigInt y, const bigInt modulus) {}
-dnml_status bigInt_mut_modsub(bigInt *x, const bigInt y, const bigInt modulus) {}
-uint64_t bigInt_modadd_u64(const bigInt x, const bigInt y, const uint64_t modulus) {}
-uint64_t bigInt_modsub_u64(const bigInt x, const bigInt y, const uint64_t modulus) {}
-bigInt bigInt_modadd(const bigInt x, const bigInt y, const bigInt modulus) {}
-bigInt bigInt_modsub(const bigInt x, const bigInt y, const bigInt modulus) {}
+dnml_status bigInt_mut_modadd_u64(bigInt *x, const bigInt y, const uint64_t modulus);
+dnml_status bigInt_mut_modsub_u64(bigInt *x, const bigInt y, const uint64_t modulus);
+dnml_status bigInt_mut_modadd(bigInt *x, const bigInt y, const bigInt modulus);
+dnml_status bigInt_mut_modsub(bigInt *x, const bigInt y, const bigInt modulus);
+uint64_t bigInt_modadd_u64(const bigInt x, const bigInt y, const uint64_t modulus);
+uint64_t bigInt_modsub_u64(const bigInt x, const bigInt y, const uint64_t modulus);
+bigInt bigInt_modadd(const bigInt x, const bigInt y, const bigInt modulus);
+bigInt bigInt_modsub(const bigInt x, const bigInt y, const bigInt modulus);
 /* ---------------- LARGE Modular Arithmetic --------------- */
-dnml_status bigInt_mut_modmul_u64(bigInt *x, const bigInt y, const uint64_t modulus) {}
-dnml_status bigInt_mut_moddiv_u64(bigInt *x, const bigInt y, const uint64_t modulus) {}
-dnml_status bigInt_mut_modmul(bigInt *x, const bigInt y, const bigInt modulus) {}
-dnml_status bigInt_mut_moddiv(bigInt *x, const bigInt y, const bigInt modulus) {}
-uint64_t bigInt_modmul_u64(const bigInt x, const bigInt y, const uint64_t modulus) {}
-uint64_t bigInt_moddiv_u64(const bigInt x, const bigInt y, const uint64_t modulus) {}
-bigInt bigInt_modmul(const bigInt x, const bigInt y, const bigInt modulus) {}
-bigInt bigInt_moddiv(const bigInt x, const bigInt y, const bigInt modulus) {}
+dnml_status bigInt_mut_modmul_u64(bigInt *x, const bigInt y, const uint64_t modulus);
+dnml_status bigInt_mut_moddiv_u64(bigInt *x, const bigInt y, const uint64_t modulus);
+dnml_status bigInt_mut_modmul(bigInt *x, const bigInt y, const bigInt modulus);
+dnml_status bigInt_mut_moddiv(bigInt *x, const bigInt y, const bigInt modulus);
+uint64_t bigInt_modmul_u64(const bigInt x, const bigInt y, const uint64_t modulus);
+uint64_t bigInt_moddiv_u64(const bigInt x, const bigInt y, const uint64_t modulus);
+bigInt bigInt_modmul(const bigInt x, const bigInt y, const bigInt modulus);
+bigInt bigInt_moddiv(const bigInt x, const bigInt y, const bigInt modulus);
 /* ---------------------- Modular Algebraic ------------------ */
-dnml_status bigInt_mut_modexp_u64(bigInt *x, const bigInt y, const uint64_t modulus) {}
-dnml_status bigInt_mut_modsqr_u64(bigInt *x, const uint64_t modulus) {}
-dnml_status bigInt_mut_modinv_u64(bigInt *x, const uint64_t modulus) {}
-dnml_status bigInt_mut_modexp(bigInt *x, const bigInt y, const bigInt modulus) {}
-dnml_status bigInt_mut_modsqr(bigInt *x, const bigInt modulus) {}
-dnml_status bigInt_mut_modinv(bigInt *x, const bigInt modulus) {}
-uint64_t bigInt_modexp_u64(const bigInt x, const bigInt y, const uint64_t modulus) {}
-uint64_t bigInt_modsqr_u64(const bigInt x, const uint64_t modulus) {}
-uint64_t bigInt_modinv_u64(const bigInt x, const uint64_t modulus) {}
-bigInt bigInt_modexp(const bigInt x, const bigInt y, const bigInt modulus) {}
-bigInt bigInt_modsqr(const bigInt x, const bigInt modulus) {}
-bigInt bigInt_modinv(const bigInt x, const bigInt modulus) {}
+dnml_status bigInt_mut_modexp_u64(bigInt *x, const bigInt y, const uint64_t modulus);
+dnml_status bigInt_mut_modsqr_u64(bigInt *x, const uint64_t modulus);
+dnml_status bigInt_mut_modinv_u64(bigInt *x, const uint64_t modulus);
+dnml_status bigInt_mut_modexp(bigInt *x, const bigInt y, const bigInt modulus);
+dnml_status bigInt_mut_modsqr(bigInt *x, const bigInt modulus);
+dnml_status bigInt_mut_modinv(bigInt *x, const bigInt modulus);
+uint64_t bigInt_modexp_u64(const bigInt x, const bigInt y, const uint64_t modulus);
+uint64_t bigInt_modsqr_u64(const bigInt x, const uint64_t modulus);
+uint64_t bigInt_modinv_u64(const bigInt x, const uint64_t modulus);
+bigInt bigInt_modexp(const bigInt x, const bigInt y, const bigInt modulus);
+bigInt bigInt_modsqr(const bigInt x, const bigInt modulus);
+bigInt bigInt_modinv(const bigInt x, const bigInt modulus);
 
 
 
@@ -348,10 +358,10 @@ dnml_status bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__);
 void bigInt_mut_copyi64(bigInt *dst__, const int64_t source__);
 dnml_status bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__);
 /* -------------  Mutative LARGE Copies ------------- */
-dnml_status bigInt_mut_copyf128(bigInt *dst__, long double source__) {}
-dnml_status bigInt_mut_dcopyf128(bigInt *dst__, long double source__) {}
-dnml_status bigInt_mut_ocopyf128(bigInt *dst__, long double source__) {}
-void bigInt_mut_tover_copyf128(bigInt *dst__, long double source__) {}
+dnml_status bigInt_mut_copyf128(bigInt *dst__, long double source__);
+dnml_status bigInt_mut_dcopyf128(bigInt *dst__, long double source__);
+dnml_status bigInt_mut_ocopyf128(bigInt *dst__, long double source__);
+void bigInt_mut_tover_copyf128(bigInt *dst__, long double source__);
 dnml_status bigInt_mut_copy(bigInt *dst__, const bigInt source__);
 dnml_status bigInt_mut_dcopy(bigInt *dst__, const bigInt source__);
 dnml_status bigInt_mut_ocopy(bigInt *dst__, const bigInt source__);
@@ -360,9 +370,9 @@ void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__);
 bigInt bigInt_copyu64(const uint64_t source__, dnml_status *err);
 bigInt bigInt_copyi64(const int64_t source__, dnml_status *err);
 /* -------------  Functional LARGE Copies ------------- */
-bigInt bigInt_copyf128(long double source_, dnml_status *err) {}
+bigInt bigInt_copyf128(long double source_, dnml_status *err);
 bigInt bigInt_ocopyf128(long double source__, size_t output_cap, dnml_status *err);
-bigInt bigInt_tover_copyf128(long double source__, size_t output_cap, dnml_status *err) {}
+bigInt bigInt_tover_copyf128(long double source__, size_t output_cap, dnml_status *err);
 bigInt bigInt_copy(const bigInt source__, dnml_status *err);
 bigInt bigInt_ocopy(const bigInt source__, size_t output_cap, dnml_status *err);
 bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap, dnml_status *err);
@@ -509,6 +519,10 @@ void bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase);
 void bigInt_bindump(FILE *stream, const bigInt x); 
 void bigInt_info(FILE *stream, const bigInt x);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

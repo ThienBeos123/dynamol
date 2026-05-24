@@ -2,11 +2,6 @@
 #define DNML_MUL_H
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <debug_util.h>
 #include <dnml_status.h>
 #include <libdnml_types.h>
@@ -18,6 +13,10 @@ extern "C" {
 #include "../../util/util.h"
 #include "../algo_base/add_sub.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* BIGINT WORKSPACE SIZE */
 size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size);
 size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size);
@@ -40,8 +39,6 @@ void __BIGINT_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx
 void __BIGINT_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx);
 void __BIGINT_NTT__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx);
 void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx mul_ctx);
-
-
 #ifdef __cplusplus
 }
 #endif

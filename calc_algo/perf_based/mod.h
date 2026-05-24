@@ -2,11 +2,6 @@
 #define DNML_MOD_H
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <debug_util.h>
 #include <dnml_status.h>
 #include <libdnml_types.h>
@@ -21,7 +16,9 @@ extern "C" {
 #include "div.h"
 #include "mul.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size);
 size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size);
 void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx barett_ctx);
@@ -30,8 +27,6 @@ void __BIGINT_MOD_DISPATCH__(
     const bigInt *a, const bigInt *n, 
     bigInt *rem, bigInt *tmp_quot, calc_ctx mod_ctx
 );
-
-
 #ifdef __cplusplus
 }
 #endif

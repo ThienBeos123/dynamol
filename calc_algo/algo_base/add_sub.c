@@ -125,7 +125,7 @@ dnml_status __CRINT_SUB_WC__(cryptint *res, const cryptint *a, const cryptint *b
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
         CHOOSE_OPTION(y, (i < b->n), curr, 0);
         res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
-    } res->n = a->n; __BICRT_TRIM_LZ__(res);
+    } res->n = a->n; __CRINT_TRIM_LZ__(res);
     __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
     return CRYPTINT_SUCCESS;
 }

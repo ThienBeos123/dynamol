@@ -16,7 +16,7 @@ dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k) {
     x->cap = k; x->sign = 1;
 }
 dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k) {
-    if (x->cap > k) return;
+    if (x->cap > k) return BIGINT_SUCCESS;
     size_t new_cap = x->cap ? x->cap : 1;
     while (new_cap < k) new_cap *= 2;
     uint64_t *__BUFFER_P = realloc(x->limbs, new_cap * sizeof(uint64_t));
@@ -35,6 +35,13 @@ void __BIGINT_INTERNAL_FREE__(bigInt *x) {
 }
 
 /* Safety Utilities */
+uint8_t __STATE_VAL__(bigInt x) {
+    if (x.limbs == NULL) return 0;
+    if (x.cap < 1) return 0;
+    if (x.n > x.cap) return 0;
+    if (x.sign != 1 && x.sign != -1) return 0;
+    return 1;
+}
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity */
     if (x == NULL) return 0;
     /* State Validation */

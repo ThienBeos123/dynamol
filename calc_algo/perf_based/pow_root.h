@@ -1,12 +1,6 @@
 #ifndef DNML_POW_ROOT_H
 #define DNML_POW_ROOT_H
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #include <dnml_status.h>
 #include <debug_util.h>
 #include <libdnml_types.h>
@@ -22,6 +16,9 @@ extern "C" {
 #include "mul.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* ----------------- WORKSPACE ----------------- */
 size_t __BIGINT_BINEXP_WS__(size_t base_size, uint64_t pow);
 size_t __BIGINT_2K_ARY_WS__(size_t base_size, uint64_t pow, uint8_t ksize);
@@ -54,9 +51,6 @@ void __BIGINT_EXP_DISPATCH__(bigInt *res, const bigInt *base, uint64_t power, ca
 void __BIGINT_SQRT_DISPATCH__(bigInt *res, const bigInt *a, calc_ctx sqrt_ctx);
 void __BIGINT_CBRT_DISPATCH__(bigInt *res, const bigInt *a, calc_ctx cbrt_ctx);
 void __BIGINT_NROOT_DISPATCH__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx nroot_ctx);
-
-
-
 #ifdef __cplusplus
 }
 #endif

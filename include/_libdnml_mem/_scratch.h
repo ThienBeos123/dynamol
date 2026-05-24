@@ -8,6 +8,10 @@
 #include <stdalign.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* THIS FILE IS ESSENTIALLY DEFECTED AS AN UNUSED UTILITY */
 #define MAX_ALIGN alignof(max_align_t)
 typedef struct {
@@ -54,6 +58,9 @@ static inline void *dratch_alloc(dnml_dratch *s, size_t size) {
 static inline size_t dratch_mark(dnml_dratch *a) { return a->offset; }
 static inline void dratch_reset(dnml_dratch *a, size_t mark) { if (mark <= a->offset) a->offset = mark; }
 
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

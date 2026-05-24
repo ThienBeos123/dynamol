@@ -4,6 +4,9 @@
 
 #include "_libdnml_config/settings.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 // CUSTOM DNML_ASSERT
@@ -76,6 +79,10 @@ cryptographically-ready cleanup code insertions
     DNML_TEST_ASSERT((!x->poisoned), "cryptInt x is invalid/poisoined (-Ecryptin_poisoined)", {}); \
 } while(0);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

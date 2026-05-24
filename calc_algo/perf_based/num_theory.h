@@ -2,11 +2,6 @@
 #define DNML_NUM_THEORY_H
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <debug_util.h>
 #include <dnml_status.h>
 #include <libdnml_types.h>
@@ -22,8 +17,11 @@ extern "C" {
 #include "mod.h"
 #include "mod_op.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 //* ======== GCD - WORKSPACE RETURNER ======== */
-size_t __BIGINT_STEIN_WS__(size_t u_size, size_t v_size) { return u_size + v_size; }
+size_t __BIGINT_STEIN_WS__(size_t u_size, size_t v_size);
 size_t __BIGINT_LEHMER_WS__(size_t u_size, size_t v_size);
 size_t __BIGINT_HALF_WS__(size_t u_size, size_t v_size);
 size_t __BIGINT_GCD_WS__(size_t u_size, size_t v_size);
@@ -47,8 +45,6 @@ uint8_t __BIGINT_MILLER_RABIN__(const bigInt *n, const bigInt* base, calc_ctx mr
 uint8_t __BIGINT_BPSW__(const bigInt *n, calc_ctx mrabin_ctx);
 uint8_t __BIGINT_ECPP__(const bigInt *n, calc_ctx mrabin_ctx);
 uint8_t __BIGINT_PTEST_DISPATCH__(const bigInt *x, calc_ctx ptest_ctx);
-
-
 #ifdef __cplusplus
 }
 #endif

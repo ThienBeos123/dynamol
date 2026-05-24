@@ -11,6 +11,10 @@
 #include <_libdnml_mem/_ctx.h>
 #include "../intrinsics/intrinsics.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define CHOOSE_OPTION(dest, cond, a, b) do { \
     uint64_t a_copy = (a); \
@@ -37,7 +41,9 @@ cryptint __CRINT_ERRVAL__(void);
 
 
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

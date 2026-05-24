@@ -47,12 +47,12 @@ include_directories(
 # =====================================================
 add_library(dnml_core STATIC
     # 1a. Main Module Files - BigNum
-    dynamol/big_numbers/bigInt.c
-    dynamol/big_numbers/bigInt_io.c
+    dynamol/bigint/bigInt.c
+    dynamol/bigint/bigInt_io.c
 
     # 2. System Assembly files
-    include/system/__hwcaps.c
-    include/system/asm/_dnml_cpuid.S
+    include/dnml_sys/__hwcaps.c
+    include/dnml_sys/asm/_dnml_cpuid.S
     # Character tables (lookup arrays)
     include/char_table.c
 
@@ -88,7 +88,7 @@ add_library(dnml_core STATIC
     intrinsics/risc-v64/_rv64_hw.S
 
     # 4. Calculational Algorithms Files - calc_algo
-    calc_algo/perf_based/add_sub.c
+    calc_algo/algo_base/add_sub.c
     calc_algo/perf_based/mul.c
     calc_algo/perf_based/div.c
     calc_algo/perf_based/mod.c

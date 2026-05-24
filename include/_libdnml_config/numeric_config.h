@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <limits.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define U64_BYTES sizeof(uint64_t)
 #define U64_BITS ((sizeof(uint64_t)) * CHAR_BIT)
 #define SIZE_T_BITS ((sizeof(size_t)) * CHAR_BIT)
@@ -85,12 +91,12 @@ typedef enum {
 #define MRROUNDS_DBEDDED            5 // dBedded - Embedded Development
 #define MRROUNDS_DRYPTO             20 // Drypto - Cryptography
 
-#define __bienable_mont__       1   
-#define __bienable_newton__     1
-#define __bienable_fft__        1
 #define __bienable_ecpp__       1
 
-#define __bicrypto_offset__     0
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

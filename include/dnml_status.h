@@ -1,7 +1,12 @@
 #ifndef __DNML_STAT_H__
 #define __DNML_STAT_H__
 
+
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
     BIGINT_SUCCESS,             // 0
@@ -70,6 +75,11 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case DNML_ARENA_ALLOC_SUCCESS:  fputs("DNML_ARENA_ALLOC_SUCCESS", f); break;
     }
 }
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

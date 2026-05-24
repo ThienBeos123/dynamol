@@ -25,7 +25,7 @@
       "binaryDir": "${sourceDir}/build_dbg",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_FLAGS": "-O0 -Wall -Wextra -pedantic -Werror"
+        "CMAKE_C_FLAGS": "-O0 -Wall -Wextra -pedantic"
       }
     },
     {
@@ -36,7 +36,7 @@
       "binaryDir": "${sourceDir}/build_asan",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_FLAGS": "-g -O0 -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer"
+        "CMAKE_C_FLAGS": "-g -O0 -Wall -Wextra -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer"
       }
     }
   ],

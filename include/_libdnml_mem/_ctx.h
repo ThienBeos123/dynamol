@@ -7,6 +7,11 @@
 #include "../dnml_status.h" // In /include, relative path for easier pathfind
 #include <stdalign.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct mont_ctx {
 const bigInt *n;
     limb_t nprime;
@@ -18,7 +23,7 @@ const bigInt *n;
 #define mod_endstat(end_stat, err_check) end_stat = (end_stat) ? end_stat : err_check;
 
 typedef struct calc_ctx {
-    void *(*alloc)(void *state, size_t size);
+    void *(*alloc)(void *state, size_t size, dnml_status *err);
     size_t (*mark)(void *state);
     void (*reset)(void *state, size_t mark);
     void (*clear)(void *state); /* Mostly for debugging */ 
@@ -26,7 +31,7 @@ typedef struct calc_ctx {
     void *state;
 } calc_ctx;
 static inline void *scratch_alloc(calc_ctx *ctx, size_t n, dnml_status *err) {
-    return ctx->alloc(ctx->state, n);
+    return ctx->alloc(ctx->state, n, err);
 }
 static inline size_t scratch_mark(calc_ctx *ctx) {
     return ctx->mark(ctx->state);
@@ -42,5 +47,10 @@ static inline void scratch_clear(calc_ctx *ctx) {
 static inline void scratch_destruct(calc_ctx *ctx) {
     ctx->destruct(ctx->state);
 }
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

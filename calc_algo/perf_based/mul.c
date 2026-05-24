@@ -185,6 +185,6 @@ void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc
     else if (a->n <= BIGINT_TOOM_5 && b->n <= BIGINT_TOOM_5) __BIGINT_TOOM_5__(a, b, res, mul_ctx);
     else if (a->n <= BIGINT_TOOM_6p5 && b->n <= BIGINT_TOOM_6p5) __BIGINT_TOOM_6p5__(a, b, res, mul_ctx);
     else if (a->n <= BIGINT_TOOM_7p5 && b->n <= BIGINT_TOOM_7p5) __BIGINT_TOOM_7p5__(a, b, res, mul_ctx);
-    else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) _BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
+    else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) __BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
     else __BIGINT_NTT__(a, b, res, mul_ctx);
 }

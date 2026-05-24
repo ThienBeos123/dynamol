@@ -51,6 +51,41 @@ dnml_status crint_new_f128(cryptint *x, long double in);
 
 
 
+//* =============================================== ASSIGNMENTS ============================================== */
+dnml_status crint_set(const cryptint x, cryptint *receiver);
+dnml_status crint_set_safe(const cryptint x, cryptint *receiver);
+/* --------- CryptInt --> Primitive Types --------- */
+dnml_status crint_setu64(uint64_t* receiver, const cryptint x);
+dnml_status crint_seti64(int64_t* receiver, const cryptint x);
+dnml_status crint_setf128(long double* receiver, const cryptint x);
+dnml_status crint_setu64_safe(uint64_t* receiver, const cryptint x);
+dnml_status crint_seti64_safe(int64_t* receiver, const cryptint x);
+dnml_status crint_setf128_safe(long double* receiver, const cryptint x);
+/* --------- Primitive Types --> CryptInt --------- */
+dnml_status crint_getu64(cryptint *receiver, const uint64_t val);
+dnml_status crint_geti64(cryptint *receiver, const int64_t val);
+dnml_status crint_getf128(cryptint *receiver, const long double val);
+dnml_status crint_getf128_safe(cryptint *receiver, const long double val);
+
+
+
+//* =============================================== CONVERSIONS ============================================== */
+/* --------- CryptInt --> Primitive Types --------- */
+uint64_t crint_tou64(const cryptint x, dnml_status *err);
+int64_t crint_toi64(const cryptint x, dnml_status *err);
+long double crint_tof128(const cryptint x, dnml_status *err);
+uint64_t crint_tou64_safe(const cryptint x, dnml_status *err);
+int64_t crint_toi64_safe(const cryptint x, dnml_status *err);
+long double crint_tof128_safe(const cryptint x, dnml_status *err);
+/* --------- Primitive Types --> CryptInt --------- */
+cryptint crint_fromu64(const uint64_t x, dnml_status *err);
+cryptint crint_fromi64(const int64_t x, dnml_status *err);
+cryptint crint_fromf128(const long double x, dnml_status *err);
+cryptint crint_fromf128_safe(const long double x, dnml_status *err);
+
+
+
+
 
 //* =============================================== COMPARISONS ============================================== */
 /* ---------------- Integer - I64 ---------------- */
@@ -71,7 +106,6 @@ bool crint_less(const cryptint x, cryptint y, dnml_status *err);
 bool crint_more(const cryptint x, cryptint y, dnml_status *err);
 bool crint_lequal(const cryptint x, cryptint y, dnml_status *err);
 bool crint_mequal(const cryptint x, cryptint y, dnml_status *err);
-
 
 
 

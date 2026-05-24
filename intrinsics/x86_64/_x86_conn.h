@@ -17,6 +17,9 @@
 //* -------- SYSTEM-V ABI ---------- *//
 #if __ABI_X64_SYSV__
 #ifndef __ASSEMBLER__
+#ifdef __cplusplus
+extern "C" {
+#endif
 // _x86_sysv_arith.S
 extern uint64_t _x86sv_add64c(uint64_t a, uint64_t b, uint8_t *carry);
 extern uint64_t _x86sv_sub64b(uint64_t a, uint64_t b, uint8_t *borrow);
@@ -55,12 +58,18 @@ extern void _x86sv_full_halt(void)
 extern void _x86sv_shallow_halt(void)
 #define _x86_full_halt  _x86sv_full_halt
 #define _x86_shallow_halt _x86sv_shallow_halt
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 
 //* -------- WINDOW-64 ABI ---------- *//
 #elif __ABI_X64_WIN64__
 #ifndef __ASSEMBLER__
+#ifdef __cplusplus
+extern "C" {
+#endif
 // _x86_win64_arith.S
 extern uint64_t _x86w64_add64c(uint64_t a, uint64_t b, uint8_t *carry);
 extern uint64_t _x86w64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow);
@@ -100,12 +109,18 @@ extern void _x86w64_full_halt(void)
 extern void _x86w64_shallow_halt(void)
 #define _x86_full_halt  _x86w64_full_halt
 #define _x86_shallow_halt _x86w64_shallow_halt
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 
 //* -------- UNKNOWN ABI ---------- *//
 #else
 #include "../zvanillc/_vanillc_conn.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Arithmetic
 #define _x86_add64c     _cintrin_add64c
 #define _x86_sub64b     _cintrin_sub64b
@@ -125,6 +140,9 @@ extern void _x86w64_shallow_halt(void)
 #define _x86_hw_trng        _cintrin_shallow_rng // Meaningless for Cryptography
 #define _x86_full_halt      _cintrin_nop_halt // Meaningless halt
 #define _x86_shallow_halt   _cintrin_nop_halt // Meaningless halt
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif
