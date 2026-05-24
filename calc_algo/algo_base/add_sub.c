@@ -6,7 +6,7 @@ void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     DNML_TEST_ASSERT(
         (res->cap >= max(a->n, b->n) + 1),
         "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b"
-        " (-Eadd_insufficient_cap)"
+        " (-Eadd_insufficient_cap)", {}
     ); size_t max = max(a->n, b->n); uint64_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
         uint64_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
@@ -29,7 +29,7 @@ void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
         " (-Eadd_saw_insufficient_cap)" :
         "Insufficient Sum Buffer:"
         " Capacity Unsatisfactory for (-a) + (-b)"
-        " (-Eadd_saw_insufficient_cap)"
+        " (-Eadd_saw_insufficient_cap)", {}
     );
     // Main operation
     if (!y->n) return;
@@ -52,7 +52,7 @@ void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b) {
     DNML_TEST_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),
         "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
-        " (-Esub_underflow)"
+        " (-Esub_underflow)", {}
     ); uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t y = (i < b->n) ? b->limbs[i] : 0;
@@ -72,7 +72,7 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
         " (-Esub_saw_insufficient_cap)" :
         "Insufficient Difference Buffer:"
         " Capacity Unsatisfactory for (-a) - b"
-        " (-Esub_saw_insufficient_cap)"
+        " (-Esub_saw_insufficient_cap)", {}
     );
     // Main Operation
     if (!y->n) return;
@@ -98,7 +98,7 @@ dnml_status __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b
     crint_poison(res); DNML_TEST_ASSERT(
         (res->cap >= max(a->n, b->n) + 1),
         "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b"
-        " (-Eadd_insufficient_cap)"
+        " (-Eadd_insufficient_cap)", {}
     ); // Main Algorithms
     size_t max = max(a->n, b->n); uint64_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
@@ -117,7 +117,7 @@ dnml_status __CRINT_SUB_WC__(cryptint *res, const cryptint *a, const cryptint *b
     crint_poison(res); DNML_TEST_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),
         "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
-        " (-Esub_underflow)"
+        " (-Esub_underflow)", {}
     ); // Main Algorithms
     uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {

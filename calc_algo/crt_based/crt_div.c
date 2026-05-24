@@ -11,14 +11,14 @@ size_t __CRINT_DIV_WS__(size_t dend_size, size_t div_size) {
 /* CRYPTINT ALGORITHMS */
 dnml_status __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *quot, cryptint *rem) {
     // Static Analysis
-    cryptInt_poison(a); cryptInt_poison(quot); 
-    cryptInt_poison(rem); DNML_TEST_ASSERT((b),
+    crint_poison(a); crint_poison(quot); 
+    crint_poison(rem); DNML_TEST_ASSERT((b),
         "Mathematical Undefinindness: Division by 0 "
-        "(-Ediv_by_zero)"
+        "(-Ediv_by_zero)", {}
     );
     DNML_TEST_ASSERT((quot->cap >= a->n),
         "Insufficient Quotient Capacity: Capacity unsatisfactory for a / b "
-        "(-Eshort_div_insufficient_cap)"
+        "(-Eshort_div_insufficient_cap)", {}
     );
     // Main Algorithms
     uint64_t remainder = 0; for (size_t i = a->n; i > 0; --i) {

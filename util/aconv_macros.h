@@ -13,7 +13,7 @@
 
 
 #define BIGINT_TEMP(name, limb_count, ctx, err_check, end_stat) \
-    limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count) * U64_BYTES, (&(err_check))); \
+    limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count), (&(err_check))); \
     mod_endstat((end_stat), (err_check)); \
     DNML_TEST_ASSERT( \
         !((end_stat) == DNML_ARENA_ALLOC_OVERFLOW),  \

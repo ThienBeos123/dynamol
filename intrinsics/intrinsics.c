@@ -150,7 +150,7 @@ uint64_t __SUB_UI64__(uint64_t a, uint64_t b, uint8_t *borrow) {
 uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #if __HAS_int128__ // GCC / Clang --> ALWAYS USED
         uint128 res = ((uint128)a) * ((uint128)b);
-        *hi = (uint64_t)(res >> BITS_IN_UINT64_T);
+        *hi = (uint64_t)(res >> U64_BITS);
         return (uint64_t)res;
     #elif __compiler_msvc // MSVC - Only on x86/ARM64
         return _umul128(a, b, hi);
@@ -169,7 +169,7 @@ uint64_t __DIV_HELPER_UI64__(
         } else { *rhat = 0; return 0; }
     } 
     #if __HAS_int128__ // GCC / Clang
-        uint128 dividend = ((uint128)(hi) << BITS_IN_UINT64_T) | lo; 
+        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo; 
         *rhat = (uint64_t)(dividend % div);
         return (uint64_t)(dividend / div);
     #elif __compiler_msvc // MSVC
@@ -225,11 +225,11 @@ uint8_t __SAFE_EXP__(uint64_t base, uint64_t exp) {
     if (exp == 0) return 1;
     if (exp == 1) return 1;
     if (exp == 2) return (base <= (1ULL << 32) - 1);
-    return (double)exp * log2((double)base) < (double)(BITS_IN_UINT64_T);
+    return (double)exp * log2((double)base) < (double)(U64_BITS);
 }
 uint8_t __IS_2POW__(uint64_t x) { return (x) && !(x & (x - 1));  }
 uint8_t __CLZ_UI64__(uint64_t x) {
-    if (!x) return BITS_IN_UINT64_T;
+    if (!x) return U64_BITS;
     // The actual code
     #if (__compiler_gcc || __compiler_clang)
         return __builtin_clzll(x);
@@ -240,7 +240,7 @@ uint8_t __CLZ_UI64__(uint64_t x) {
     #endif
 }
 uint8_t __CTZ_UI64__(uint64_t x) {
-    if (!x) return BITS_IN_UINT64_T;
+    if (!x) return U64_BITS;
     // The actual code
     #if (__compiler_gcc || __compiler_clang) 
         return __builtin_ctzll(x);
@@ -262,7 +262,7 @@ uint64_t __BSWAP_UI64__(uint64_t x) {
 }
 uint8_t __PCNT_UI64__(uint64_t x) { 
     if (!x) return 0; 
-    else if (x== UINT64_MAX) return BITS_IN_UINT64_T;
+    else if (x== UINT64_MAX) return U64_BITS;
     #if (__compiler_gcc || __compiler_clang)
         return __builtin_popcountll(x);
     #elif __compiler_msvc

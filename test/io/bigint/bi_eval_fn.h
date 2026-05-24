@@ -5,7 +5,7 @@
 #include <include.h>
 #include <libdnml_types.h>
 #include "../../../test_ui/_strui.h"
-#include "../../../dynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/bigint/bigInt_func.h"
 #include "../_ioconv.h"
 #include "bi_indef.h"
 

@@ -68,7 +68,7 @@ bigInt __BIGINT_ERROR_VALUE__(void) {
 /* General Utilities */
 void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source) {
     if (source->n == 0) { __BIGINT_INTERNAL_ZSET__(dst); return; }
-    memcpy(dst->limbs, source->limbs, source->n * BYTES_IN_UINT64_T);
+    memcpy(dst->limbs, source->limbs, source->n * U64_BYTES);
     dst->n = source->n;
     dst->sign = source->sign;
 }
@@ -108,7 +108,7 @@ size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
     } return total_digits;
 }
 size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) {
-    return (size_t)(BITS_IN_UINT64_T * lcnt * (log10(2) / log10(base))) + 1;
+    return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1;
 }
 size_t __BIGINT_LIMBS_NEEDED__(size_t bits) { 
     return (size_t)(bits / BIGINT_LIMBS_BITS) + 1; 
@@ -118,8 +118,8 @@ uint8_t __BIGINT_WILL_OVERFLOW__(const bigInt *x, uint64_t threshold) {
 }
 size_t __BIGINT_CTZ__(const bigInt *x) {
     size_t total_tz = 0, i = 0;
-    uint8_t current_tz = BITS_IN_UINT64_T;
-    while (current_tz == BITS_IN_UINT64_T) {
+    uint8_t current_tz = U64_BITS;
+    while (current_tz == U64_BITS) {
         current_tz = __CTZ_UI64__(x->limbs[i]);
         total_tz += current_tz; ++i;
     } return total_tz;
@@ -190,7 +190,7 @@ void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) {
     if (!k) return;
     uint64_t discarded_bits = 0;
     for (size_t i = 0; i < x->n; ++i) {
-        uint64_t positioned_bits = discarded_bits << (BITS_IN_UINT64_T - k);
+        uint64_t positioned_bits = discarded_bits << (U64_BITS - k);
         discarded_bits = x->limbs[i] & ((1U << k) - 1);
         x->limbs[i] = (x->limbs[i] >> k) | positioned_bits;
     } __BIGINT_INTERNAL_TRIM_LZ__(x);
@@ -201,7 +201,7 @@ void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k) {
     for (size_t i = 0; i < x->n; ++i) {
         uint64_t previous_dbits = discarded_bits;
         uint64_t iso_mask = (1U << k) - 1;
-        discarded_bits = x->limbs[i] & (iso_mask << BITS_IN_UINT64_T - k);
+        discarded_bits = x->limbs[i] & (iso_mask << U64_BITS - k);
         x->limbs[i] = (x->limbs[i] << k) | previous_dbits;
     } __BIGINT_INTERNAL_TRIM_LZ__(x);
 }

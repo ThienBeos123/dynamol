@@ -1,17 +1,91 @@
 #ifndef dnml_bi_func
 #define dnml_bi_func
 
+
+#include <dnml_status.h>
+#include <debug_util.h>
 #include <libdnml_types.h>
 #include <include.h>
 #include <char_tables.h>
 #include <dnml_sys/sys.h>
 #include <_libdnml_config/settings.h>
 #include <_libdnml_mem/arena.h>
-#include <dnml_status.h>
 
 #include "../../intrinsics/intrinsics.h"
 #include "../../calc_algo/perf_calc.h"
 #include "../../util/util.h"
+
+
+
+//? ========================== COMMON ASSERT ERRORS CATALOG ========================== ?//
+
+
+
+
+//? ======================= COMMON !TEST! ASSERT ERRORS CATALOG ====================== ?//
+#define alloc_oom "CRITICAL ERROR: Heap-Allocation Failure - OOM (-Ealloc_oom)"
+
+
+
+
+
+//? ======================= OUT-OF-MEMORY HANDLING MACROS ====================== ?//
+/* Functional Macros */
+#define heap_alloc_oom(err_check) do { \
+    test_assert(((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+            arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
+            arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+        }, DNML_ALLOC_OOM \
+    ); \
+} while(0);
+#define arena_poisoined(arena_name) do { \
+    test_assert( \
+        /* Static Analysis - Assert Parameters */ \
+        (!(arena_name->poisoined)), alloc_oom, { \
+            arena_clear(arena_name); arena_destruct(arena_name); \
+            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+        }, DNML_ALLOC_OOM /* Error Returns Parameters */ \
+    ) \
+} while(0);
+#define arena_alloc_oom(err_check, arena_name) do { \
+    test_assert( \
+        /* Static Analysis - Assert Parameters */ \
+        ((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+            arena_clear(arena_name); arena_destruct(arena_name); \
+            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+        }, DNML_ALLOC_OOM /* Error Returns Parameters */ \
+    ); \
+} while(0);
+
+
+/* Mutative Macros */
+#define heap_alloc_oom_mut(err_check, err) do { \
+    test_assert_mut(((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+            arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
+            arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+        }, err, DNML_ALLOC_OOM, __BIGINT_ERORR_VALUE__() \
+    ); \
+} while(0);
+#define arena_poison_mut(arena_name, err) do { \
+    test_assert_mut( \
+        /* Static Analysis - Assert Parameters */ \
+        (!(arena_name->poisoined)), alloc_oom, { \
+            arena_clear(arena_name); arena_destruct(arena_name); \
+            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+        }, err, DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+    ) \
+} while(0);
+#define arena_alloc_oom_mut(err_check, arena_name, err) do { \
+    test_assert_mut( \
+        /* Static Analysis - Assert Parameters */ \
+        ((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+            arena_clear(arena_name); arena_destruct(arena_name); \
+            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+        }, err, DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+    ); \
+} while(0);
+#define func_ret_oom(err) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+
 
 
 //todo ===================================== NUMERIC FUNCTIONALITIES ===================================== todo//
@@ -73,31 +147,31 @@ void bigInt_mut_oru64   (bigInt *x, const uint64_t y);
 void bigInt_mut_noru64  (bigInt *x, const uint64_t y);
 void bigInt_mut_xoru64  (bigInt *x, const uint64_t y);
 void bigInt_mut_xnoru64 (bigInt *x, const uint64_t y);
-void bigInt_mut_and  (bigInt *x, const bigInt y);
-void bigInt_mut_nand (bigInt *x, const bigInt y);
-void bigInt_mut_or   (bigInt *x, const bigInt y);
-void bigInt_mut_nor  (bigInt *x, const bigInt y);
-void bigInt_mut_xor  (bigInt *x, const bigInt y);
-void bigInt_mut_xnor (bigInt *x, const bigInt y);
+dnml_status bigInt_mut_and  (bigInt *x, const bigInt y);
+dnml_status bigInt_mut_nand (bigInt *x, const bigInt y);
+dnml_status bigInt_mut_or   (bigInt *x, const bigInt y);
+dnml_status bigInt_mut_nor  (bigInt *x, const bigInt y);
+dnml_status bigInt_mut_xor  (bigInt *x, const bigInt y);
+dnml_status bigInt_mut_xnor (bigInt *x, const bigInt y);
 /* ------------- Mutative, Explicit-width ------------- */
-void bigInt_mutex_andu64  (bigInt *x, const uint64_t val, size_t range);
-void bigInt_mutex_nandu64 (bigInt *x, const uint64_t val, size_t range);
-void bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t range);
-void bigint_mutex_noru64  (bigInt *x, const uint64_t val, size_t range);
-void bigInt_mutex_xoru64  (bigInt *x, const uint64_t val, size_t range);
-void bigInt_mutex_xnoru64 (bigInt *x, const uint64_t val, size_t range);
-void bigInt_mutex_andi64  (bigInt *x, const int64_t val, size_t range);
-void bigInt_mutex_nandi64 (bigInt *x, const int64_t val, size_t range);
-void bigInt_mutex_ori64   (bigInt *x, const int64_t val, size_t range);
-void bigInt_mutex_nori64  (bigInt *x, const int64_t val, size_t range);
-void bigInt_mutex_xori64  (bigInt *x, const int64_t val, size_t range);
-void bigInt_mutex_xnori64 (bigInt *x, const int64_t val, size_t range);
-void bigInt_mutex_and   (bigInt *x, const bigInt y, size_t range);
-void bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t range);
-void bigInt_mutex_or    (bigInt *x, const bigInt y, size_t range);
-void bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t range);
-void bigInt_mutex_xor   (bigInt *x, const bigInt y, size_t range);
-void bigInt_mutex_xnor  (bigInt *x, const bigInt y, size_t range);
+dnml_status bigInt_mutex_andu64  (bigInt *x, const uint64_t val, size_t range);
+dnml_status bigInt_mutex_nandu64 (bigInt *x, const uint64_t val, size_t range);
+dnml_status bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t range);
+dnml_status bigint_mutex_noru64  (bigInt *x, const uint64_t val, size_t range);
+dnml_status bigInt_mutex_xoru64  (bigInt *x, const uint64_t val, size_t range);
+dnml_status bigInt_mutex_xnoru64 (bigInt *x, const uint64_t val, size_t range);
+dnml_status bigInt_mutex_andi64  (bigInt *x, const int64_t val, size_t range);
+dnml_status bigInt_mutex_nandi64 (bigInt *x, const int64_t val, size_t range);
+dnml_status bigInt_mutex_ori64   (bigInt *x, const int64_t val, size_t range);
+dnml_status bigInt_mutex_nori64  (bigInt *x, const int64_t val, size_t range);
+dnml_status bigInt_mutex_xori64  (bigInt *x, const int64_t val, size_t range);
+dnml_status bigInt_mutex_xnori64 (bigInt *x, const int64_t val, size_t range);
+dnml_status bigInt_mutex_and   (bigInt *x, const bigInt y, size_t range);
+dnml_status bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t range);
+dnml_status bigInt_mutex_or    (bigInt *x, const bigInt y, size_t range);
+dnml_status bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t range);
+dnml_status bigInt_mutex_xor   (bigInt *x, const bigInt y, size_t range);
+dnml_status bigInt_mutex_xnor  (bigInt *x, const bigInt y, size_t range);
 /* ------------- Functional, Fixed-width ------------- */
 bigInt bigInt_andu64  (const bigInt x, const uint64_t val, dnml_status *err);
 bigInt bigInt_nandu64 (const bigInt x, const uint64_t val, dnml_status *err);
@@ -167,15 +241,15 @@ bool bigInt_mequal(const bigInt a, const bigInt b);
 *       +) FUNCTIONAL ARITHMETIC    ---> Return a new copy of a value to be asigned     (Eg: x  = 1 + 2;)
 */
 /* ------------------- Mutative Arithmetic -------------------- */
-void bigInt_mut_mulu64(bigInt *x, const uint64_t val);
+dnml_status bigInt_mut_mulu64(bigInt *x, const uint64_t val);
 dnml_status bigInt_mut_divu64(bigInt *x, const uint64_t val);
 dnml_status bigInt_mut_modu64(bigInt *x, const uint64_t val);
-void bigInt_mut_muli64(bigInt *x, const int64_t val);
+dnml_status bigInt_mut_muli64(bigInt *x, const int64_t val);
 dnml_status bigInt_mut_divi64(bigInt *x, const int64_t val);
 dnml_status bigInt_mut_modi64(bigInt *x, const int64_t val);
-void bigInt_mut_add(bigInt *x, const bigInt y);
-void bigInt_mut_sub(bigInt *x, const bigInt y);
-void bigInt_mut_mul(bigInt *x, const bigInt y);
+dnml_status bigInt_mut_add(bigInt *x, const bigInt y);
+dnml_status bigInt_mut_sub(bigInt *x, const bigInt y);
+dnml_status bigInt_mut_mul(bigInt *x, const bigInt y);
 dnml_status bigInt_mut_div(bigInt *x, const bigInt y);
 dnml_status bigInt_mut_mod(bigInt *x, const bigInt y);
 /* ------------------ Functional Arithmetic ------------------- */
@@ -245,16 +319,16 @@ bigInt bigInt_modinv(const bigInt x, const bigInt modulus) {}
 
 //* -------------------- SIGNED NUMBER-THEORETIC --------------------- */
 /* -------------- MUTATIVE ALGEBRAIC -------------- */
-void bigInt_mut_sqr(bigInt *x);
-void bigInt_mut_pow(bigInt *x, const uint64_t exp);
+dnml_status bigInt_mut_sqr(bigInt *x);
+dnml_status bigInt_mut_pow(bigInt *x, const uint64_t exp);
 dnml_status bigInt_mut_sqrt(bigInt *x);
-void bigInt_mut_cbrt(bigInt *x);
+dnml_status bigInt_mut_cbrt(bigInt *x);
 dnml_status bigInt_mut_nrt(bigInt *x, const uint64_t root);
 /* -------------- FUNCTIONAL ALGEBRAIC -------------- */
-bigInt bigInt_sqr(const bigInt x);
-bigInt bigInt_pow(const bigInt x, const uint64_t exp);
+bigInt bigInt_sqr(const bigInt x, dnml_status *err);
+bigInt bigInt_pow(const bigInt x, const uint64_t exp, dnml_status *err);
 bigInt bigInt_sqrt(const bigInt x, dnml_status *err);
-bigInt bigInt_cbrt(const bigInt x);
+bigInt bigInt_cbrt(const bigInt x, dnml_status *err);
 bigInt bigInt_nrt(const bigInt x, const uint64_t root, dnml_status *err);
 
 
@@ -265,11 +339,11 @@ dnml_status bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__);
 void bigInt_mut_copyi64(bigInt *dst__, const int64_t source__);
 dnml_status bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__);
 /* -------------  Mutative LARGE Copies ------------- */
-void bigInt_mut_copyf128(bigInt *dst__, long double source__) {}
+dnml_status bigInt_mut_copyf128(bigInt *dst__, long double source__) {}
 dnml_status bigInt_mut_dcopyf128(bigInt *dst__, long double source__) {}
 dnml_status bigInt_mut_ocopyf128(bigInt *dst__, long double source__) {}
 void bigInt_mut_tover_copyf128(bigInt *dst__, long double source__) {}
-void bigInt_mut_copy(bigInt *dst__, const bigInt source__);
+dnml_status bigInt_mut_copy(bigInt *dst__, const bigInt source__);
 dnml_status bigInt_mut_dcopy(bigInt *dst__, const bigInt source__);
 dnml_status bigInt_mut_ocopy(bigInt *dst__, const bigInt source__);
 void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__);
@@ -277,7 +351,7 @@ void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__);
 bigInt bigInt_copyu64(const uint64_t source__, dnml_status *err);
 bigInt bigInt_copyi64(const int64_t source__, dnml_status *err);
 /* -------------  Functional LARGE Copies ------------- */
-bigInt bigInt_copyf128(long double source_, dnml_status *err_) {}
+bigInt bigInt_copyf128(long double source_, dnml_status *err) {}
 bigInt bigInt_ocopyf128(long double source__, size_t output_cap, dnml_status *err);
 bigInt bigInt_tover_copyf128(long double source__, size_t output_cap, dnml_status *err) {}
 bigInt bigInt_copy(const bigInt source__, dnml_status *err);

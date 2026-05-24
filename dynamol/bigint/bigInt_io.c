@@ -92,7 +92,7 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
     if (prefix_op_res == 3) return STR_INCOMPLETE;
     else if (prefix_op_res == 0) {
         if (sign == -1) return STR_INVALID_SIGN;
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) return DNML_ALLOC_OOM;
         x->limbs = tmp; x->cap   = 1;
         x->n     = 0;   x->sign  = 1;
@@ -105,7 +105,7 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
     // String full of zeros
     if (str[curr_pos] == '\0') {
         if (sign = -1) return STR_INVALID_SIGN; // -0 is INVALID// Empty initialization
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) return DNML_ALLOC_OOM;
         x->limbs = tmp; x->cap = 1;
         x->n = 0; x->sign = 1;
@@ -117,7 +117,7 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
     size_t bits = __BITCOUNT___(d, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     size_t tmp_mark = arena_mark(_DASI_STR_INIT_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_STR_INIT_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_STR_INIT_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt __TEMPHOLDER__ = { .limbs = tmp_limbs, .cap = cap, .n = 0, .sign = sign };
 
@@ -136,9 +136,9 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
     }
 
     //* =========== 6. FULLY Initializing and Copy-over ============== *//
-    x->limbs = malloc(cap * BYTES_IN_UINT64_T);
+    x->limbs = malloc(cap * U64_BYTES);
     if (!x->limbs) { arena_reset(_DASI_STR_INIT_ARENA, tmp_mark); abort(); }
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = __TEMPHOLDER__.n;
     x->sign = sign;
@@ -177,7 +177,7 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
     size_t bits = __BITCOUNT___(d, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     size_t tmp_mark = arena_mark(_DASI_BASE_INIT_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_BASE_INIT_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_BASE_INIT_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt __TEMPHOLDER__ = { .limbs = tmp_limbs, .cap = cap, .n = 0, .sign = sign };
 
@@ -197,10 +197,10 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
 
 
     //* =========== 5. FULLY Initializing and Copy-over ============== *//
-    limb_t *tmp = malloc(cap * BYTES_IN_UINT64_T);
+    limb_t *tmp = malloc(cap * U64_BYTES);
     if (!tmp) { arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark); abort(); }
     x->limbs = tmp;
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = cap;
     x->sign = sign;
@@ -227,7 +227,7 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
     if (prefix_op_res == 3) return STR_INCOMPLETE; 
     else if (prefix_op_res == 0) {
         if (sign == -1) return STR_INVALID_SIGN;
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) return DNML_ALLOC_OOM;
         x->limbs = tmp; x->cap = 1;
         x->n = 0; x->sign = 1;
@@ -242,7 +242,7 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
     // String full of zeros
     if (curr_pos == len || str[curr_pos] == '\0') {
         if (sign = -1) return STR_INVALID_SIGN; // -0 is INVALID// Empty initialization
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) return DNML_ALLOC_OOM;
         x->limbs = tmp; x->cap = 1;
         x->n = 0; x->sign = 1;
@@ -253,7 +253,7 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
     dnml_status err_check; size_t bits = __BITCOUNT___(len - curr_pos + 1, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     size_t tmp_mark = arena_mark(_DASI_STRNLEN_INIT_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_STRNLEN_INIT_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_STRNLEN_INIT_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt __TEMPHOLDER__ = { .limbs = tmp_limbs, .cap = cap, .n = 0, .sign = sign };
 
@@ -272,9 +272,9 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
     }
 
     //* =========== 6. FULLY Initializing and Copy-over ============== *//
-    x->limbs = malloc(cap * BYTES_IN_UINT64_T);
+    x->limbs = malloc(cap * U64_BYTES);
     if (!x->limbs) { arena_reset(_DASI_STRNLEN_INIT_ARENA, tmp_mark); abort(); }
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = __TEMPHOLDER__.n;
     x->sign = sign;
@@ -313,7 +313,7 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
     dnml_status err_check; size_t bits = __BITCOUNT___(len - curr_pos + 1, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     size_t tmp_mark = arena_mark(_DASI_BASENLEN_INIT_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_BASENLEN_INIT_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_BASENLEN_INIT_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt __TEMPHOLDER__ = { .limbs = tmp_limbs, .cap = cap, .n = 0, .sign = sign };
 
@@ -333,9 +333,9 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
 
 
     //* =========== 5. FULLY Initializing and Copy-over ============== *//
-    x->limbs = malloc(cap * BYTES_IN_UINT64_T);
+    x->limbs = malloc(cap * U64_BYTES);
     if (!x->limbs) { arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark); abort(); }
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap = cap; x->n = __TEMPHOLDER__.n; x->sign = sign;
     arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
@@ -368,9 +368,9 @@ dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
     size_t digit_needed = __BIGINT_COUNTDB__(&x, 10) + sign_space;
     size_t end = (digit_needed < str_length) ? digit_needed : str_length;
     size_t tmp_mark = arena_mark(_DASI_TSET_STRING_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_STRING_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_STRING_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n, };
 
     /* Numerical Accumulation Loop */
@@ -407,9 +407,9 @@ dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *wri
     size_t digit_needed = __BIGINT_COUNTDB__(&x, base) + sign_space;
     size_t end = (digit_needed < str_length) ? digit_needed : str_length;
     size_t tmp_mark = arena_mark(_DASI_TSET_BASE_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASE_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASE_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n, };
 
     /* Numerical Accumulation Loop */
@@ -442,9 +442,9 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
     size_t digit_needed = __BIGINT_COUNTDB__(&x, 10) + sign_space;
     size_t end = (digit_needed < len) ? digit_needed : len;
     size_t tmp_mark = arena_mark(_DASI_TSET_STRNLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_STRNLEN_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_STRNLEN_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n };
 
     /* Main Accumulation Loop */
@@ -478,9 +478,9 @@ dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base
     size_t digit_needed = __BIGINT_COUNTDB__(&x, base) + sign_space;
     size_t end = (digit_needed < len) ? digit_needed : len;
     size_t tmp_mark = arena_mark(_DASI_TSET_BASENLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASENLEN_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASENLEN_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = {
         .limbs = tmp_limbs, .sign = x.sign,
         .cap   = x.n,       .n    = x.n,
@@ -534,9 +534,9 @@ dnml_status bigInt_tto_strf(
     size_t digit_needed = __BIGINT_COUNTDB__(&x, base) + sign_space + prefix_space;
     size_t end = (digit_needed < len) ? digit_needed : len;
     size_t tmp_mark = arena_mark(_DASI_TSET_BASENLEN_ARENA); dnml_status err_check;
-    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASENLEN_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TSET_BASENLEN_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n };
 
     /* Main Accumulation Loop */
@@ -574,9 +574,9 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
     if (str_length < total_needed) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; (*written)++; }
     size_t tmp_mark = arena_mark(&_DASI_SET_STRING_ARENA);
-    limb_t *tmp_limbs = arena_galloc(&_DASI_SET_STRING_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(&_DASI_SET_STRING_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n };
 
     /* Numerical Accumulation Loop */
@@ -609,9 +609,9 @@ dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *writ
     if (str_length < total_needed) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; (*written)++; }
     size_t tmp_mark = arena_mark(_DASI_SET_BASE_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_SET_BASE_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SET_BASE_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n, };
 
     /* Numerical Accumulation Loop */
@@ -643,9 +643,9 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
     if (len < total_needed) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; (*written)++; }
     size_t tmp_mark = arena_mark(_DASI_SET_STRNLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_SET_STRNLEN_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SET_STRNLEN_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n, };
 
     /* Numerical Accumulation Loop */
@@ -679,8 +679,8 @@ dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base,
     if (len < total_needed) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; (*written)++; }
     size_t tmp_mark = arena_mark(_DASI_SET_BASENLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_SET_BASENLEN_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SET_BASENLEN_ARENA, x.n * U64_BYTES, &err_check);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n, };
 
     /* Numerical Accumulation Loop */
@@ -728,8 +728,8 @@ dnml_status bigInt_to_strf(
         }
     } (*written) += sign_space + prefix_space;
     size_t tmp_mark = arena_mark(_DASI_SET_BASENLEN_ARENA); dnml_status err_check;
-    limb_t *tmp_limbs = arena_galloc(_DASI_SET_BASENLEN_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
-    memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SET_BASENLEN_ARENA, x.n * U64_BYTES, &err_check);
+    memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n};
     
     /* Numerical Accumulation Loop */
@@ -760,7 +760,7 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     if (prefix_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
     else if (prefix_op_res == 0) {
         if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap  = 1; 
         res.n = 0; res.sign = 1;
@@ -775,7 +775,7 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     if (str[curr_pos] == '\0') {
         // -0 is INVALID
         if (sign = -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); };
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1; 
         res.n = 0; res.sign  = 1;
@@ -786,7 +786,7 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     size_t d = strlen(&str[curr_pos]);
     size_t bits = __BITCOUNT___(d, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    limb_t *tmp = malloc(BYTES_IN_UINT64_T * cap);
+    limb_t *tmp = malloc(U64_BYTES * cap);
     if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap   = cap; res.n = cap;
@@ -825,7 +825,7 @@ bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
     if (str[curr_pos] == '\0') {
         // -0 is INVALID
         if (sign = -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); };
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
@@ -836,7 +836,7 @@ bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
     size_t d = strlen(&str[curr_pos]);
     size_t bits = __BITCOUNT___(d, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    limb_t *tmp = malloc(BYTES_IN_UINT64_T * cap);
+    limb_t *tmp = malloc(U64_BYTES * cap);
     if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap = cap; res.n = cap;
@@ -875,7 +875,7 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     if (prefix_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
     else if (prefix_op_res == 0) {
         if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
@@ -892,7 +892,7 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
         // -0 is INVALID
         if (sign = -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
         // Empty initialization
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
@@ -903,7 +903,7 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     size_t true_len = 0; _actual_len(str, len, &true_len);
     size_t bits = __BITCOUNT___(true_len, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    limb_t *tmp = malloc(BYTES_IN_UINT64_T * cap);
+    limb_t *tmp = malloc(U64_BYTES * cap);
     if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap = cap; res.n = cap;
@@ -949,7 +949,7 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
         // -0 is INVALID
         if (sign = -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
         // Empty initialization
-        limb_t *tmp = malloc(BYTES_IN_UINT64_T);
+        limb_t *tmp = malloc(U64_BYTES);
         if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
@@ -960,7 +960,7 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
     size_t true_len = 0; _actual_len(str, len, &true_len);
     size_t bits = __BITCOUNT___(true_len, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    limb_t *tmp = malloc(BYTES_IN_UINT64_T * cap);
+    limb_t *tmp = malloc(U64_BYTES * cap);
     if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap   = cap; res.n = cap;
@@ -1192,7 +1192,7 @@ dnml_status bigInt_get_str(bigInt *x, const char *str) {
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_STRING_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_GET_STRING_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_GET_STRING_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = 0 };
 
@@ -1243,7 +1243,7 @@ dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_BASE_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_GET_BASE_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_GET_BASE_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = 0 };
 
@@ -1307,7 +1307,7 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_STRNLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_GET_STRNLEN_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_GET_STRNLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = 0 };
 
@@ -1360,7 +1360,7 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_BASENLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_GET_BASENLEN_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_GET_BASENLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = 0 };
 
@@ -1424,7 +1424,7 @@ dnml_status bigInt_tget_str(bigInt *x, const char *str) {
     size_t ranged_cap = (cap > x->cap) ? x->cap : cap;
     // Initializing BigInt buffer
     size_t tmp_mark = arena_mark(_DASI_TGET_STRING_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_STRING_ARENA, ranged_cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_STRING_ARENA, ranged_cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = ranged_cap, .n = 0 };
 
@@ -1478,7 +1478,7 @@ dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
     size_t ranged_cap = (cap > x->cap) ? x->cap : cap;
     // Initializing BigInt buffer
     size_t tmp_mark = arena_mark(_DASI_TGET_BASE_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_BASE_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_BASE_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = ranged_cap, .n = 0 };
 
@@ -1544,7 +1544,7 @@ dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
     size_t ranged_cap = (cap > x->cap) ? x->cap : cap;
     // Initializing BigInt buffer
     size_t tmp_mark = arena_mark(_DASI_TGET_STRNLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_STRNLEN_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_STRNLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = ranged_cap, .n = 0 };
 
@@ -1601,7 +1601,7 @@ dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
     size_t ranged_cap = (cap > x->cap) ? x->cap : cap;
     // Initializing BigInt buffer
     size_t tmp_mark = arena_mark(_DASI_TGET_BASENLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_BASENLEN_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_TGET_BASENLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = ranged_cap, .n = 0 };
 
@@ -1664,7 +1664,7 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (x->cap < cap) return BIGINT_ERR_RANGE;
     size_t tmp_mark = arena_mark(_DASI_SGET_STRING_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_STRING_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_STRING_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = cap };
 
@@ -1681,7 +1681,7 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
     arena_reset(_DASI_SGET_STRING_ARENA, tmp_mark);
     return STR_SUCCESS;
@@ -1716,7 +1716,7 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (x->cap < cap) return BIGINT_ERR_RANGE;
     size_t tmp_mark = arena_mark(_DASI_SGET_BASE_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_BASE_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_BASE_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = cap };
 
@@ -1734,7 +1734,7 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
     arena_reset(_DASI_SGET_BASE_ARENA, tmp_mark);
     return STR_SUCCESS;
@@ -1781,7 +1781,7 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (x->cap < cap) return BIGINT_ERR_RANGE;
     size_t tmp_mark = arena_mark(_DASI_SGET_STRNLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_STRNLEN_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_STRNLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = cap };
 
@@ -1798,7 +1798,7 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
     arena_reset(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
@@ -1835,7 +1835,7 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (x->cap < cap) return BIGINT_ERR_RANGE;
     size_t tmp_mark = arena_mark(_DASI_SGET_BASENLEN_ARENA);
-    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_BASENLEN_ARENA, cap * BYTES_IN_UINT64_T, &err_check);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SGET_BASENLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = sign, .cap = cap, .n = cap };
 
@@ -1852,7 +1852,7 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
-    memcpy(x->limbs, tmp_limbs, cap * BYTES_IN_UINT64_T);
+    memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
     arena_reset(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
@@ -2154,11 +2154,11 @@ dnml_status bigInt_put(const bigInt x) {
         dnml_arena *_DASI_PUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_PUT_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n > 0) {
             uint8_t numeric_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             putchar((char)('0' + numeric_val));
@@ -2193,11 +2193,11 @@ dnml_status bigInt_putb(const bigInt x, uint8_t base) {
         dnml_arena *_DASI_PUTB_ARENA = _USE_ARENA();
         test_assert(!(_DASI_PUTB_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_PUTB_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_PUTB_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_PUTB_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n > 0) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] : 
@@ -2245,11 +2245,11 @@ dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
         dnml_arena *_DASI_PUTF_ARENA = _USE_ARENA();
         test_assert(!(_DASI_PUTF_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_PUTF_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_PUTF_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_PUTF_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n > 0) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] : 
@@ -2269,11 +2269,11 @@ dnml_status bigInt_fput(FILE *stream, const bigInt x) {
         dnml_arena *_DASI_FPUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_FPUT_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_FPUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_FPUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_FPUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n > 0) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             fputc((char)('0' + numerical_val), stream);
@@ -2308,11 +2308,11 @@ dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
         dnml_arena *_DASI_FPUTB_ARENA = _USE_ARENA();
         test_assert(!(_DASI_FPUTB_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_FPUTB_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_FPUTB_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_FPUTB_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n > 0) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] : 
@@ -2362,11 +2362,11 @@ dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool upperc
         dnml_arena *_DASI_FPUTF_ARENA = _USE_ARENA();
         test_assert(!(_DASI_FPUTF_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_FPUTF_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_FPUTF_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_FPUTF_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM); return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n > 0) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] : 
@@ -2387,11 +2387,11 @@ dnml_status bigInt_sput(const bigInt x) {
         dnml_arena *_DASI_SPUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_SPUT_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_SPUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n };
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n) {
             size_t begin = (first_iter) ? sign_space : 0,
             curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
@@ -2440,11 +2440,11 @@ dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
         dnml_arena *_DASI_PUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_PUT_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n) {
             size_t begin = (first_iter) ? sign_space : 0,
             curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
@@ -2516,9 +2516,9 @@ dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
         } dnml_arena *_DASI_PUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_PUT_ARENA), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
 
         bpsub = 1; // bpsub is re-used to track if the outer while-loop is n its first iteration or not
         while (tmp_buf.n) {
@@ -2549,11 +2549,11 @@ dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
         dnml_arena *_DASI_SPUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_SPUT_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_SPUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n) {
             size_t begin = (first_iter) ? sign_space : 0,
             curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
@@ -2601,11 +2601,11 @@ dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
         dnml_arena *_DASI_PUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_PUT_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
         
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T);
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
         while (tmp_buf.n) {
             size_t begin = (first_iter) ? sign_space : 0,
             curr_size = (str_len <= ___DASI_IO_BUFSIZE) ? str_len : ___DASI_IO_BUFSIZE;
@@ -2673,11 +2673,11 @@ dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool upper
         } dnml_arena *_DASI_PUT_ARENA = _USE_ARENA();
         test_assert(!(_DASI_PUT_ARENA->poisoined), DNML_ALLOC_OOM);
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * BYTES_IN_UINT64_T, &err_check);
+        limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n }; 
-        memcpy(tmp_limbs, x.limbs, x.n * BYTES_IN_UINT64_T); 
+        memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES); 
         psub = 1; // Psub is re-used to track if the outer while-loop is on its first iteration or not
         while (tmp_buf.n) {
             size_t begin = (psub) ? sign_space + prefix_space : 0,

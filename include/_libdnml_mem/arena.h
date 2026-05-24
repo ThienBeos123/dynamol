@@ -30,18 +30,17 @@ static inline void arena_destruct(dnml_arena *a) {
     a->offset = 0; a->base = NULL;
     a->cap = 0; a->poisoined = 0;
 }
-static inline size_t arena_grow(dnml_arena *a, size_t min_cap, dnml_status *err) {
+static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
     if (a->cap >= min_cap) return a->cap;
     size_t new_cap = (a->cap) ? a->cap : 1;
     while (new_cap < min_cap) new_cap *= 2;
     uint64_t* __BUFFER_P = realloc(a->base, new_cap);
     if (__BUFFER_P == NULL) { 
-        *err = DNML_ALLOC_OOM; 
-        a->poisoined = true; 
-        return 0;
-    }
+        a->poisoined = true;
+        return DNML_ALLOC_OOM;
+    } 
     a->base = __BUFFER_P; a->cap = new_cap;
-    return new_cap;
+    return DNML_ARENA_ALLOC_SUCCESS;
 }
 static inline void* arena_alloc(dnml_arena *a, size_t space, dnml_status *err) {
     size_t new_offset = a->offset + space;
@@ -52,9 +51,11 @@ static inline void* arena_alloc(dnml_arena *a, size_t space, dnml_status *err) {
 }
 static inline void* arena_galloc(dnml_arena *a, size_t space, dnml_status *err) {
     size_t new_offset = a->offset + space;
-    if (new_offset > a->cap) arena_grow(a, new_offset, err);
-    if (*err == DNML_ALLOC_OOM) { *err = DNML_ALLOC_OOM; return NULL; }
-    void *ptr = a->base + new_offset;
+    if (new_offset > a->cap) {
+        if (arena_grow(a, new_offset) == DNML_ALLOC_OOM) {
+            *err = DNML_ALLOC_OOM; return NULL;
+        }
+    } void *ptr = a->base + new_offset;
     a->offset = new_offset;
     *err = DNML_ARENA_ALLOC_SUCCESS; return ptr;
 }

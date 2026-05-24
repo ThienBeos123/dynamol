@@ -13,11 +13,11 @@ size_t __CRINT_MUL_WS__(size_t a_size, size_t b_size) {
 /* CRYPTINT ALGORITHMS */
 dnml_status __CRINT_SCHOOLBOOK__(const cryptint *a, const cryptint *b, cryptint *res) {
     // Static Analysis
-    cryptInt_poison(a); cryptInt_poison(b); 
+    cryptInt_poison(a); crint_poison(b); 
     cryptInt_poison(res); DNML_TEST_ASSERT(
         (res->cap >= a->n + b->n),
         "Insufficient Product Capacity: Capacity insatisfactory for a * b"
-        "(-Emul_insufficient_cap)"
+        "(-Emul_insufficient_cap)", {}
     ); // Main Algorithms
     __libdnml_memset_strict(res->limbs, 0, res->cap, (size_t)0, (size_t)res->cap);
     for (size_t i = 0; i < a->n; ++i) {

@@ -59,7 +59,7 @@ void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx b
     //* ---- 3. FINAL CALCULATION ---- *//
     remlimbs = anumer.n - (n->n + 1); // This value can be shortened to a->n + 1
     memcpy(anumer.limbs, &anumer.limbs[n->n - 1], remlimbs * U64_BYTES);
-    limb_t *acopy_limbs = scratch_alloc(&barett_ctx, a->n * U64_BYTES, &end_stat); mod_endstat(end_stat, err_check);
+    limb_t *acopy_limbs = scratch_alloc(&barett_ctx, a->n, &end_stat); mod_endstat(end_stat, err_check);
     DNML_TEST_ASSERT(
         !(end_stat == DNML_ARENA_ALLOC_OVERFLOW), 
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",

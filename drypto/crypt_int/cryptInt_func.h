@@ -26,6 +26,19 @@
 } while(0);
 
 
+//* ========================== COMMON ASSERT ERRORS CATALOG ========================== *//
+#define calloc_null "Allocation Failure: calloc() returned NULL (-Ealloc_calloc_fail)" /* CALLOC returns NULL */
+#define realloc_null "Allocation Failure: realloc() returned NULL (-Ealloc_realloc_fail)" /* REALLOC returns NULL */
+#define full_contract "Contract Violation: Invalid CryptInt (-Ecrypt_int_invalid)" /* FULL Contract Violation */
+#define store_inval "\
+Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)" /* Partial Contract Violation - Storage */
+
+
+//* ========================== COMMON !TEST! ASSERT ERRORS CATALOG ========================== *//
+#define poisoined "Mathematical Error: CryptInt Poisoned (-Ecrypt_int_invalid)" /* CryptInt Poisoined - Testing */
+#define null_err "Parameter Error: Status/Error parameter-based returns is null (-Enull_err_param)" /* err == NULL - testing */
+
+
 
 //* ===================================== TYPE SETUP FUNCTION ===================================== *//
 void crint_free(cryptint *x);

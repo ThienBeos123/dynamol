@@ -70,14 +70,14 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
     size_t m = a->n, n = b->n, knuth_mark = scratch_mark(&knuth_ctx);
     dnml_status err_check, end_stat = 0;
-    limb_t *a_limbs = scratch_alloc(&knuth_ctx, U64_BYTES * (m + 1), &err_check); mod_endstat(end_stat, err_check);
+    limb_t *a_limbs = scratch_alloc(&knuth_ctx, m + 1, &err_check); mod_endstat(end_stat, err_check);
     DNML_TEST_ASSERT(
         !(end_stat == DNML_ARENA_ALLOC_OVERFLOW), 
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
         { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
     ); bigInt a_copy = {.limbs = a_limbs, .sign  = 1, .cap = m + 1, .n = 0};
 
-    limb_t *b_limbs = scratch_alloc(&knuth_ctx, U64_BYTES * (n), &err_check); mod_endstat(end_stat, err_check);
+    limb_t *b_limbs = scratch_alloc(&knuth_ctx, n, &err_check); mod_endstat(end_stat, err_check);
     DNML_TEST_ASSERT(
         !(end_stat == DNML_ARENA_ALLOC_OVERFLOW), 
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
@@ -268,8 +268,12 @@ void __BIGINT_DIVMOD_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, 
     else if (b->n < BIGINT_BURNIKEL) {
         size_t k = (size_t)(b->n >> 1) + 1;
         bigInt AL = {.limbs = a->limbs, .sign = a->sign, .n = max(a->n, 2*k), .cap = max(a->n, 2*k)};
-        bigInt AH = {.limbs = a->limbs + max(a->n, 2*k), .sign = a->sign, 
-                     .n = (a->n < 2*k) ? 0 : 2*k - a->n, .cap = (a->n < 2*k) ? 0 : 2*k - a->n};
+        bigInt AH = {
+            .limbs = a->limbs + max(a->n, 2*k), 
+            .sign = a->sign, 
+            .n = (a->n < 2*k) ? 0 : 2*k - a->n, 
+            .cap = (a->n < 2*k) ? 0 : 2*k - a->n
+        };
         __BIGINT_BURNIKEL__(&AH, &AL, b, quot, rem, div_ctx);
     } else __BIGINT_NEWTON__(a, b, quot, rem, div_ctx);
 }

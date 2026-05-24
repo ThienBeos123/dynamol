@@ -43,23 +43,23 @@ cryptographically-ready cleanup code insertions
 
 
 // Pre-opreration evaluation asserts
-#define test_assert(cond, err_code) do { \
+#define test_assert(cond, err_msg, cleanup, err_code) do { \
     if (_DNML_DEBUG_MODE) { \
-        assert(!(cond)); \
+        DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
         if (cond) return err_code; \
     } \
 } while (0);
-#define test_assert_mut(cond, err, err_code, retval) do { \
+#define test_assert_mut(cond, err_msg, cleanup, err, err_code, retval) do { \
     if (_DNML_DEBUG_MODE) { \
-        assert(!(cond)); \
+        DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
         if (cond) { (*err) = (err_code); return retval; } \
     } \
 } while (0);
-#define test_assert_pre(cond, err, err_code, baseout, base, retsize ) do { \
+#define test_assert_pre(cond, err_msg, cleanup, err, err_code, baseout, base, retsize ) do { \
     if (_DNML_DEBUG_MODE) { \
-        assert(!(cond)); \
+        DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
         if (cond) { (*err) = (err_code); (*baseout) = (base); return retsize; } \
     } \
@@ -73,7 +73,7 @@ cryptographically-ready cleanup code insertions
     } \
 } while (0);
 #define crint_poison(x) do { \
-    DNML_TEST_ASSERT((!x->poisoned), "cryptInt x is invalid/poisoined (-Ecryptin_poisoined)"); \
+    DNML_TEST_ASSERT((!x->poisoned), "cryptInt x is invalid/poisoined (-Ecryptin_poisoined)", {}); \
 } while(0);
 
 
