@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <limits.h>
-#define BYTES_IN_UINT64_T sizeof(uint64_t)
-#define BITS_IN_UINT64_T ((sizeof(uint64_t)) * CHAR_BIT)
-#define BITS_IN_SIZE_T ((sizeof(size_t)) * CHAR_BIT)
+#define U64_BYTES sizeof(uint64_t)
+#define U64_BITS ((sizeof(uint64_t)) * CHAR_BIT)
+#define SIZE_T_BITS ((sizeof(size_t)) * CHAR_BIT)
 #define I64_MAX_BIT_MASK 0x7FFFFFFFFFFFFFFFULL
 #define I64_MIN_BIT_MASK 0x8000000000000000ULL
 
@@ -67,8 +67,8 @@ typedef enum {
 /* Modular Arithmetic */
 typedef enum {
     /* Modular Multiplication */
-    BIGINT_CLASSICAL    = 8,
-    BIGINT_MONTGOMERY   = 8,
+    BIGINT_CLASSICAL    = 64,
+    BIGINT_MONTGOMERY,
     /* Modular Exponentiation */
     BIGINT_MOD_BINARY   = 8,
     BIGINT_MONT_BINARY  = 512,

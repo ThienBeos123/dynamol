@@ -67,21 +67,16 @@ void __BIGINT_KARATSUBA__(const bigInt *x, const bigInt *y, bigInt *res, calc_ct
     bigInt y0 = {.limbs = y->limbs,             .n = y0_range, .cap = y0_range};
     bigInt y1 = {.limbs = y->limbs + y0_range,  .n = y1_range, .cap = y1_range};
 
+    dnml_status err_check, end_stat = 0;
     size_t karat_mark = scratch_mark(&karat_ctx);
     size_t z1_size = max(x1_range + y0_range, x0_range + y1_range) + m + 1;
     size_t z2_size = max(max(z1_size, x1_range + y1_range + 2*m), x0_range + y0_range) + 1;
+    BIGINT_TEMP(tmp1, max(x0_range, x1_range) + 1, karat_ctx, err_check, end_stat);
+    BIGINT_TEMP(tmp2, max(y0_range, y1_range) + 1, karat_ctx, err_check, end_stat);
+    BIGINT_TEMP(z0, x0_range + y0_range, karat_ctx, err_check, end_stat);
+    BIGINT_TEMP(z1, z1_size, karat_ctx, err_check, end_stat);
+    BIGINT_TEMP(z2, z2_size, karat_ctx, err_check, end_stat);
 
-    limb_t *tmp1_limbs = scratch_alloc(&karat_ctx, (max(x0_range, x1_range) + 1) * BYTES_IN_UINT64_T);
-    limb_t *tmp2_limbs = scratch_alloc(&karat_ctx, (max(y0_range, y1_range) + 1) * BYTES_IN_UINT64_T);
-    limb_t *z0_limbs = scratch_alloc(&karat_ctx, (x0_range + y0_range) * BYTES_IN_UINT64_T);
-    limb_t *z1_limbs = scratch_alloc(&karat_ctx, z1_size * BYTES_IN_UINT64_T);
-    limb_t *z2_limbs = scratch_alloc(&karat_ctx, z2_size * BYTES_IN_UINT64_T);
-
-    bigInt tmp1 = {.limbs = tmp1_limbs, .n = 0, .cap = max(x0_range, x1_range) + 1};
-    bigInt tmp2 = {.limbs = tmp2_limbs, .n = 0, .cap = max(y0_range, y1_range) + 1};
-    bigInt z0 = {.limbs = z0_limbs, .n = 0, .cap = x0_range + y0_range};
-    bigInt z1 = {.limbs = z1_limbs, .n = 0, .cap = z1_size};
-    bigInt z2 = {.limbs = z2_limbs, .n = 0, .cap = z2_size};
 
     //* ------- 2. QUADRATIC COMPONENTS CALCULATION -------- *//
     // The procedure basically gpes:
@@ -117,38 +112,40 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
 
 
     //* -------- 2. EVALUATION & POINT-WISE MULTIPLICATION -------- *//
+    dnml_status err_check, end_stat = 0;
     size_t toom_mark = scratch_mark(&toom_ctx);
-    /*  ----------------- EVALUATION ---------------------
-    *   +) pOuter = m0 + m2                          | +) qOuter = n0 + n2
-    *   +) p(0)   = m0          (NO FULL TEMPORARY)  | +) q(0)   = n0          (NO FULL TEMPORARY)
-    *   +) p(1)   = pOuter + m1                      | +) q(1)   = qOuter + n1
-    *   +) p(-1)  = pOuter - m1                      | +) q(-1)  = qOuter - n1   
-    *   +) p(-2)  = 2*(p(-1) + m2) - m0              | +) q(-2)  = 2*(q(-1) + n2) - n0
-    *   +) p(inf) = m2          (NO FULL TEMPORARY)  | +) q(inf) = n2          (NO FULL TEMPORARY) */
-    // p(x) TEMPORARIES                                  // q(x) TEMPORARIES
-    BIGINT_TEMP(p_outer, k + 1, toom_ctx);     BIGINT_TEMP(q_outer, k + 1, toom_ctx);
-    BIGINT_TEMP(p1,      k + 2, toom_ctx);     BIGINT_TEMP(q1,      k + 2, toom_ctx);
-    BIGINT_TEMP(p_neg1,  k + 1, toom_ctx);     BIGINT_TEMP(q_neg1,  k + 1, toom_ctx);
-    BIGINT_TEMP(p_neg2,  k + 2, toom_ctx);     BIGINT_TEMP(q_neg2,  k + 2, toom_ctx);
-    // p(x) CALCULATIONS                                // q(x) CALCULATIONS
-    __BIGINT_ADD_WC__(&p_outer, &m0, &m2);              __BIGINT_ADD_WC__(&q_outer, &m0, &n2);
-    __BIGINT_ADD_WC__(&p1, &p_outer, &m1);              __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
-    __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);         __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
-    __BIGINT_ADD_SAW__(&p_neg2, &p_neg1, &m2);          __BIGINT_ADD_SAW__(&q_neg2, &q_neg1, &n2);
-    __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);             __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
-    __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);          __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
+    /*  ---------------------------------- EVALUATION ------------------------------
+    *   +) pOuter = m0 + m2                                     | +) qOuter = n0 + n2
+    *   +) p(0)   = m0          (NO FULL TEMPORARY)             | +) q(0)   = n0          (NO FULL TEMPORARY)
+    *   +) p(1)   = pOuter + m1                                 | +) q(1)   = qOuter + n1
+    *   +) p(-1)  = pOuter - m1                                 | +) q(-1)  = qOuter - n1   
+    *   +) p(-2)  = 2*(p(-1) + m2) - m0                         | +) q(-2)  = 2*(q(-1) + n2) - n0
+    *   +) p(inf) = m2          (NO FULL TEMPORARY)             | +) q(inf) = n2          (NO FULL TEMPORARY) */
+    // p(x) TEMPORARIES                                         // q(x) TEMPORARIES
+    BIGINT_TEMP(p_outer, k + 1, toom_ctx, err_check, end_stat); BIGINT_TEMP(q_outer, k + 1, toom_ctx, err_check, end_stat);
+    BIGINT_TEMP(p1,      k + 2, toom_ctx, err_check, end_stat); BIGINT_TEMP(q1,      k + 2, toom_ctx, err_check, end_stat);
+    BIGINT_TEMP(p_neg1,  k + 1, toom_ctx, err_check, end_stat); BIGINT_TEMP(q_neg1,  k + 1, toom_ctx, err_check, end_stat);
+    BIGINT_TEMP(p_neg2,  k + 2, toom_ctx, err_check, end_stat); BIGINT_TEMP(q_neg2,  k + 2, toom_ctx, err_check, end_stat);
+    // p(x) CALCULATIONS                                        // q(x) CALCULATIONS
+    __BIGINT_ADD_WC__(&p_outer, &m0, &m2);                      __BIGINT_ADD_WC__(&q_outer, &m0, &n2);
+    __BIGINT_ADD_WC__(&p1, &p_outer, &m1);                      __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
+    __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);                 __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
+    __BIGINT_ADD_SAW__(&p_neg2, &p_neg1, &m2);                  __BIGINT_ADD_SAW__(&q_neg2, &q_neg1, &n2);
+    __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);                     __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
+    __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);                  __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
     /* ------------ POINT-WISE MULTIPLICATION ------------
     *   +) r(0)   = p(0)   * q(0)     
     *   +) r(1)   = p(1)   * q(1)
     *   +) r(-1)  = p(-1)  * q(-1)    
     *   +) r(-2)  = p(-2)  * q(-2)
     *   +) r(inf) = p(inf) * q(inf)                    */ 
-    BIGINT_TEMP(r0,     (k << 1),               toom_ctx); // 2k
-    BIGINT_TEMP(r1,     (k << 1) + 9,           toom_ctx); // 2k + 4 (original) --> 2k + 8 (interpolation - r1)
-    BIGINT_TEMP(r_neg1, (k << 1) + 9,           toom_ctx); // 2k + 2 (original) --> 2k + 7 (interpolation - r2)
-    BIGINT_TEMP(r_neg2, (k << 1) + 10,          toom_ctx); // 2k + 4 (original) --> 2k + 7 (interpolation - r3)
-    BIGINT_TEMP(rinf,    m2size + n2size + 4,   toom_ctx); // 2k (original) ---> 2k + 4 (bit-shifts accounted)
-    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx); __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx);
+    BIGINT_TEMP(r0,     (k << 1),               toom_ctx, err_check, end_stat); // 2k
+    BIGINT_TEMP(r1,     (k << 1) + 9,           toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+    BIGINT_TEMP(r_neg1, (k << 1) + 9,           toom_ctx, err_check, end_stat); // 2k + 2 (original) --> 2k + 7 (interpolation - r2)
+    BIGINT_TEMP(r_neg2, (k << 1) + 10,          toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+    BIGINT_TEMP(rinf,    m2size + n2size + 4,   toom_ctx, err_check, end_stat); // 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx); 
+    __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx);
     __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx);
     __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx);
     __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx);
@@ -166,7 +163,7 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     // ------------------ RECOMPOSITION ------------------ //
-    BIGINT_TEMP(final_res, (k << 1) + 14, toom_ctx);
+    BIGINT_TEMP(final_res, (k << 1) + 14, toom_ctx, err_check, end_stat);
     __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
     __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
     __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
@@ -188,6 +185,6 @@ void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc
     else if (a->n <= BIGINT_TOOM_5 && b->n <= BIGINT_TOOM_5) __BIGINT_TOOM_5__(a, b, res, mul_ctx);
     else if (a->n <= BIGINT_TOOM_6p5 && b->n <= BIGINT_TOOM_6p5) __BIGINT_TOOM_6p5__(a, b, res, mul_ctx);
     else if (a->n <= BIGINT_TOOM_7p5 && b->n <= BIGINT_TOOM_7p5) __BIGINT_TOOM_7p5__(a, b, res, mul_ctx);
-    else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) __BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
+    else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) _BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
     else __BIGINT_NTT__(a, b, res, mul_ctx);
 }

@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#include <debug_util.h>
+#include <dnml_status.h>
 #include <libdnml_types.h>
 #include <include.h>
 #include <dnml_sys/sys.h>
@@ -20,9 +22,10 @@ extern "C" {
 #include "mul.h"
 
 
-
+size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size);
 size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size);
-void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem, calc_ctx redc_ctx);
+void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx barett_ctx);
+void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem);
 void __BIGINT_MOD_DISPATCH__(
     const bigInt *a, const bigInt *n, 
     bigInt *rem, bigInt *tmp_quot, calc_ctx mod_ctx

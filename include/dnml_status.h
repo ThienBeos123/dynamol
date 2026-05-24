@@ -33,6 +33,7 @@ typedef enum {
     DNML_NULL_EPARAM,           // 304
     DNML_INVAL_CAP_REQUEST,     // 305
     DNML_ARENA_ALLOC_OVERFLOW,  // 306
+    DNML_ARENA_ALLOC_SUCCESS,   // 307
 } dnml_status;
 
 static inline void _print_dnml_status(dnml_status a, FILE *f) {
@@ -65,6 +66,8 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case DNML_ALLOC_OOM:            fputs("DNML_ALLOC_OOM", f); break;
         case DNML_NULL_EPARAM:          fputs("DNML_NULL_EPARAM", f); break;
         case DNML_INVAL_CAP_REQUEST:    fputs("DNML_INVAL_CAP_REQUEST", f); break;
+        case DNML_ARENA_ALLOC_OVERFLOW: fputs("DNML_ARENA_ALLOC_OVERFLOW", f); break;
+        case DNML_ARENA_ALLOC_SUCCESS:  fputs("DNML_ARENA_ALLOC_SUCCESS", f); break;
     }
 }
 

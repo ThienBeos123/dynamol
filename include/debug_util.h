@@ -10,8 +10,9 @@
 #if _DNML_DEBUG_MODE 
 /* This version is design for quick debugging, 
 and is generally unsafe for production-use for the user */
-#define DNML_TEST_ASSERT(condition, message) do { \
+#define DNML_TEST_ASSERT(condition, message, cleanup_code) do { \
     if (!(condition)) { \
+        cleanup_code; \
         fprintf(stderr, "  - [FATAL] Assertion Failed: (%s)", #condition); \
         fprintf(stderr, "    Function %s(): %s\n", __func__, message); \
         fprintf(stderr, "     File: %s | Line: %d\n", __FILE__, __LINE__); \

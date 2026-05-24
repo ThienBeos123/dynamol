@@ -14,11 +14,16 @@ const bigInt *n;
     size_t k;
 } mont_ctx;
 
+// Debugging Macro
+#define mod_endstat(end_stat, err_check) end_stat = (end_stat) ? end_stat : err_check;
+
 typedef struct calc_ctx {
-void *(*alloc)(void *state, size_t size);
-size_t (*mark)(void *state);
-void (*reset)(void *state, size_t mark);
-void *state;
+    void *(*alloc)(void *state, size_t size);
+    size_t (*mark)(void *state);
+    void (*reset)(void *state, size_t mark);
+    void (*clear)(void *state); /* Mostly for debugging */ 
+    void (*destruct)(void *state); /* Mostly for debugging */
+    void *state;
 } calc_ctx;
 static inline void *scratch_alloc(calc_ctx *ctx, size_t n, dnml_status *err) {
     return ctx->alloc(ctx->state, n);
@@ -28,6 +33,14 @@ static inline size_t scratch_mark(calc_ctx *ctx) {
 }
 static inline void scratch_reset(calc_ctx *ctx, size_t mark) {
     ctx->reset(ctx->state, mark);
+}
+
+static inline void scratch_clear(calc_ctx *ctx) {
+    ctx->clear(ctx->state);
+}
+
+static inline void scratch_destruct(calc_ctx *ctx) {
+    ctx->destruct(ctx->state);
 }
 
 #endif

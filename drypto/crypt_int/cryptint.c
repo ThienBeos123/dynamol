@@ -60,7 +60,7 @@ dnml_status crint_cinew(cryptint *x, cryptint *y) {
             crint_free(y); x->limbs = 0; x->n = 0;
             x->cap = 0; x->sign = 0; x->poisoned = 0;
         }
-    ); DNML_TEST_ASSERT((!(y->poisoned)), poisoined);
+    ); DNML_TEST_ASSERT((y->poisoned), poisoined);
     if (y->poisoned) { x->n = 0; x->sign = 0; x->cap = 0; x->limbs = 0; return CRYPTINT_POISOINED; }
     /* Main Operations */
     size_t alloc_size; CHOOSE_OPTION((alloc_size), (y->n), (y->n), (1));
@@ -115,7 +115,7 @@ dnml_status crint_new_f128(cryptint *x, long double in) {}
 static int8_t __CRINT_MAGCMP64__(cryptint *x, const uint64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract);
-    DNML_TEST_ASSERT((!(x->poisoned)), poisoined);
+    DNML_TEST_ASSERT((x->poisoned), poisoined);
     /* Main Operation - Comparison */
     // We set ret to 2 as a safety mask to check if ret is previously set or not
     int8_t ret = 2, curr = 0;
@@ -134,7 +134,7 @@ static int8_t __CRINT_MAGCMP64__(cryptint *x, const uint64_t val, dnml_status *e
 static int8_t __CRINT_MAGCMP__(cryptint *x, cryptint *y) {
     /* Pre-operation Validation & Static Analysis */
     DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract);
-    DNML_TEST_ASSERT((!(x->poisoned)), poisoined);
+    DNML_TEST_ASSERT((x->poisoned), poisoined);
     /* Main Operation - Comparison */
     // We set ret to 2 as a safety mask to check if ret is previously set or not
     int8_t ret = 2, curr = 0;
@@ -182,7 +182,7 @@ bool crint_equal_i64(cryptint x, const int64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -219,7 +219,7 @@ bool crint_less_i64(cryptint x, const int64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -275,7 +275,7 @@ bool crint_more_i64(cryptint x, const int64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -331,7 +331,7 @@ bool crint_lequal_i64(cryptint x, const int64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -387,7 +387,7 @@ bool crint_mequal_i64(cryptint x, const int64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -444,7 +444,7 @@ bool crint_equal_u64(cryptint x, const uint64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -479,7 +479,7 @@ bool crint_less_u64(cryptint x, const uint64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -514,7 +514,7 @@ bool crint_more_u64(cryptint x, const uint64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -549,7 +549,7 @@ bool crint_lequal_u64(cryptint x, const uint64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -579,7 +579,7 @@ bool crint_mequal_u64(cryptint x, const uint64_t val, dnml_status *err) {
         x.n = 0; x.poisoned = 0; x.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -619,7 +619,7 @@ bool crint_equal(cryptint x, cryptint y, dnml_status *err) {
         y.poisoned = 0; y.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -663,7 +663,7 @@ bool crint_less(cryptint x, cryptint y, dnml_status *err) {
         y.poisoned = 0; y.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -725,7 +725,7 @@ bool crint_more(cryptint x, cryptint y, dnml_status *err) {
         y.poisoned = 0; y.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -787,7 +787,7 @@ bool crint_lequal(cryptint x, cryptint y, dnml_status *err) {
         y.poisoned = 0; y.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -847,7 +847,7 @@ bool crint_mequal(cryptint x, cryptint y, dnml_status *err) {
         y.poisoned = 0; y.sign = 0; err = 0;
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(x.poisoned)), poisoined);
+    DNML_TEST_ASSERT((x.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (x.poisoned & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
@@ -908,7 +908,7 @@ dnml_status crint_mut_copyu64(cryptint *dst, const uint64_t src) {
         dst->limbs = 0; dst->cap = 0; dst->n = 0; 
         dst->poisoned = 0; dst->sign = 0;
     });
-    DNML_TEST_ASSERT((!(dst->poisoned)), poisoined);
+    DNML_TEST_ASSERT((dst->poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (dst->poisoned), (CRYPTINT_POISOINED), (ret_stat));
     /* Main Operation - Copy */
@@ -927,7 +927,7 @@ dnml_status crint_mut_dcopyu64(cryptint *dst, const uint64_t src) {
         dst->limbs = 0; dst->cap = 0; dst->n = 0; 
         dst->poisoned = 0; dst->sign = 0;
     });
-    DNML_TEST_ASSERT((!(dst->poisoned)), poisoined);
+    DNML_TEST_ASSERT((dst->poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (dst->poisoned), (CRYPTINT_POISOINED), (ret_stat));
 
@@ -958,7 +958,7 @@ dnml_status crint_mut_copyi64(cryptint *dst, const int64_t src) {
         dst->limbs = 0; dst->cap = 0; dst->n = 0; 
         dst->poisoned = 0; dst->sign = 0;
     });
-    DNML_TEST_ASSERT((!(dst->poisoned)), poisoined);
+    DNML_TEST_ASSERT((dst->poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (dst->poisoned), (CRYPTINT_POISOINED), (ret_stat))
     /* Main Operation - Copy */
@@ -977,7 +977,7 @@ dnml_status crint_mut_dcopyi64(cryptint *dst, const int64_t src) {
         dst->limbs = 0; dst->cap = 0; dst->n = 0; 
         dst->poisoned = 0; dst->sign = 0;
     });
-    DNML_TEST_ASSERT((!(dst->poisoned)), poisoined);
+    DNML_TEST_ASSERT((dst->poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (dst->poisoned), (CRYPTINT_POISOINED), (ret_stat));
 
@@ -1018,7 +1018,7 @@ dnml_status crint_mut_copy(cryptint *dst, cryptint src) {
         __libdnml_memwipe_strict(src.limbs, src.cap * BYTES_IN_UINT64_T);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
-    }); DNML_TEST_ASSERT((!(dst->poisoned)) && (!(src.poisoned)), poisoined);
+    }); DNML_TEST_ASSERT((dst->poisoned) && ((src.poisoned)), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (dst->poisoned), (CRYPTINT_POISOINED), (ret_stat));
 
@@ -1070,7 +1070,7 @@ dnml_status crint_mut_dcopy(cryptint *dst, cryptint src) {
         __libdnml_memwipe_strict(src.limbs, src.cap * BYTES_IN_UINT64_T);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
-    }); DNML_TEST_ASSERT((!(dst->poisoned)) && (!(src.poisoned)), poisoined);
+    }); DNML_TEST_ASSERT(((dst->poisoned) && (src.poisoned)), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS; CHOOSE_OPTION(
         (ret_stat), (dst->poisoned | src.poisoned), 
         (CRYPTINT_POISOINED), (ret_stat)
@@ -1114,7 +1114,7 @@ dnml_status crint_mut_ocopy(cryptint *dst, cryptint src) {
         __libdnml_memwipe_strict(src.limbs, src.cap * BYTES_IN_UINT64_T);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
-    }); DNML_TEST_ASSERT((!(dst->poisoned)) && (!(src.poisoned)), poisoined);
+    }); DNML_TEST_ASSERT(((dst->poisoned) && ((src.poisoned))), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS; CHOOSE_OPTION(
         (ret_stat), (dst->poisoned | src.poisoned), 
         (CRYPTINT_POISOINED), (ret_stat)
@@ -1157,7 +1157,7 @@ dnml_status crint_mut_tover_copy(cryptint *dst, cryptint src) {
         __libdnml_memwipe_strict(src.limbs, src.cap * BYTES_IN_UINT64_T);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
-    }); DNML_TEST_ASSERT((!(dst->poisoned)) && (!(src.poisoned)), poisoined);
+    }); DNML_TEST_ASSERT(((dst->poisoned) && (!(src.poisoned))), poisoined);
     dnml_status ret_status = CRYPTINT_SUCCESS; CHOOSE_OPTION(
         (ret_status), (dst->poisoned | src.poisoned), 
         (CRYPTINT_POISOINED), (ret_status)
@@ -1217,7 +1217,7 @@ cryptint crint_copy(cryptint src, dnml_status *err) {
         crint_free(&src);
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(src.poisoned)), poisoined);
+    DNML_TEST_ASSERT((src.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (src.poisoned & ret_stat == CRYPTINT_SUCCESS), (CRYPTINT_POISOINED), (ret_stat));
@@ -1254,7 +1254,7 @@ cryptint crint_ocopy(cryptint src, size_t output_cap, dnml_status *err) {
         crint_free(&src);
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(src.poisoned)), poisoined);
+    DNML_TEST_ASSERT((src.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (src.poisoned & ret_stat == CRYPTINT_SUCCESS), (CRYPTINT_POISOINED), (ret_stat));
@@ -1292,7 +1292,7 @@ cryptint crint_tover_copy(cryptint src, size_t output_cap, dnml_status *err) {
         crint_free(&src);
     });
     DNML_TEST_ASSERT((err != NULL), null_err);
-    DNML_TEST_ASSERT((!(src.poisoned)), poisoined);
+    DNML_TEST_ASSERT((src.poisoned), poisoined);
     dnml_status ret_stat = CRYPTINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (err == NULL & ret_stat == CRYPTINT_SUCCESS), (DNML_NULL_EPARAM), (ret_stat));
     CHOOSE_OPTION((ret_stat), (src.poisoned & ret_stat == CRYPTINT_SUCCESS), (CRYPTINT_POISOINED), (ret_stat));
@@ -1352,7 +1352,7 @@ dnml_status crint_resize(cryptint *x, size_t k) {
         x->limbs = 0; x->cap = 0; x->n = 0; 
         x->poisoned = 0; x->sign = 0;
     }); 
-    DNML_TEST_ASSERT((!(x->poisoned)), poisoined);
+    DNML_TEST_ASSERT((x->poisoned), poisoined);
     DNML_TEST_ASSERT((k), "Invalid Capacity Request (-Einval_cap_request)");
     if (x->poisoned) return CRYPTINT_POISOINED;
     if (!k) return DNML_INVAL_CAP_REQUEST;
@@ -1376,7 +1376,7 @@ dnml_status crint_reserve(cryptint *x, size_t k) {
         x->limbs = 0; x->cap = 0; x->n = 0;
         x->poisoned = 0; x->sign = 0;
     });
-    DNML_TEST_ASSERT((!(x->poisoned)), poisoined);
+    DNML_TEST_ASSERT((x->poisoned), poisoined);
     if (x->poisoned) return CRYPTINT_POISOINED;
 
     // Main Resizing
@@ -1397,7 +1397,7 @@ dnml_status crint_shrink(cryptint *x, size_t k) {
         x->limbs = 0; x->cap = 0; x->n = 0; 
         x->poisoned = 0; x->sign = 0;
     });
-    DNML_TEST_ASSERT((!(x->poisoned)), poisoined);
+    DNML_TEST_ASSERT((x->poisoned), poisoined);
     DNML_TEST_ASSERT((k), "Invalid Capacity Request (-Einval_cap_request)");
     if (x->poisoned) return CRYPTINT_POISOINED;
     if (!k) return DNML_INVAL_CAP_REQUEST;
@@ -1421,7 +1421,7 @@ dnml_status crint_reset(cryptint *x) {
         x->limbs = 0; x->cap = 0; x->n = 0;
         x->poisoned = 0; x->sign = 0;
     });
-    DNML_TEST_ASSERT((!(x->poisoned)), poisoined);
+    DNML_TEST_ASSERT((x->poisoned), poisoined);
     if (x->poisoned) return CRYPTINT_POISOINED;
     __libdnml_memwipe_strict(x->limbs, x->cap * BYTES_IN_UINT64_T);
     x->n = 0; x->sign = 1;

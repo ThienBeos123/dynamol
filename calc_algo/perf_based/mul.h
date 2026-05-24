@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#include <debug_util.h>
+#include <dnml_status.h>
 #include <libdnml_types.h>
 #include <include.h>
 #include <dnml_sys/sys.h>
