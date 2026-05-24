@@ -16,16 +16,16 @@
 #include "../../util/util.h"
 
 
-
-//? ========================== COMMON ASSERT ERRORS CATALOG ========================== ?//
-
-
-
+#define io_cleanup { arena_clear(&___DASI_IO_ARENA_); arena_destruct(&___DASI_IO_ARENA_); }
 
 //? ======================= COMMON !TEST! ASSERT ERRORS CATALOG ====================== ?//
 #define alloc_oom "CRITICAL ERROR: Heap-Allocation Failure - OOM (-Ealloc_oom)"
-
-
+#define inval_cap "Reserve Capacity Calculation/Assumptions incorrect (-Ereserve_incorrect)"
+#define arena_poison_oom "Arena Poisoned: Arena Re-allocation witnessed an OOM error (-Earena_poison)"
+#define str_null "String Format Error: Input string pointer is null (-Estr_null)"
+#define str_empty "String Format Error: Input string is empty (-Estr_empty)"
+#define str_inval_base "String Format Error: Input base-parameter is invalid (-Estr_inval_base)"
+#define stream_err "File Error: Input stream witnessed an inexplicable error (-Efile_ferror)"
 
 
 
@@ -85,6 +85,15 @@
     ); \
 } while(0);
 #define func_ret_oom(err) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+#define ocopy_check(err_check, arena_name) do { \
+    DNML_TEST_ASSERT( \
+        /* Static Analysis - Assert Parameters */ \
+        ((err_check != BIGINT_ERR_RANGE)), inval_cap, { \
+            arena_clear(arena_name); arena_destruct(arena_name); \
+            arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_); \
+        } \
+    ); \
+} while(0); 
 
 
 

@@ -220,11 +220,8 @@ bigInt bigInt_fromf128_safe(long double x, dnml_status *err) { return (bigInt){0
 
 //* =========================================== BITWISE OPERATIONS =========================================== */
 bigInt bigInt_not(const bigInt x, dnml_status *err) {
-    assert(__STATE_VAL__(x));
-    bigInt res; 
-    if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) { 
-        *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__();
-    }
+    assert(__STATE_VAL__(x)); bigInt res; 
+    if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err)
     for (size_t i = 0; i < x.n; ++i) {
         res.limbs[0] = ~x.limbs[0];
     } res.n = x.n;
@@ -234,11 +231,8 @@ bigInt bigInt_not(const bigInt x, dnml_status *err) {
 }
 bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err) {
     assert(bigInt_validate(x));
-    uint64_t discarded_bits = 0;
-    bigInt res;
-    if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) { 
-        *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__();
-    }
+    uint64_t discarded_bits = 0; bigInt res;
+    if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
     for (size_t i = 0; i < x.n; ++i) {
         uint64_t positioned_bits = discarded_bits << (U64_BITS - k);
         res.limbs[i] = (x.limbs[i] >> k) | positioned_bits;
@@ -248,11 +242,8 @@ bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err) {
 }
 bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err) {
     assert(bigInt_validate(x));
-    uint64_t discarded_bits = 0;
-    bigInt res;
-    if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) { 
-        *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__();
-    }
+    uint64_t discarded_bits = 0; bigInt res;
+    if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
     for (size_t i = 0; i < x.n; ++i) {
         res.limbs[i] = (x.limbs[i] << k) | discarded_bits;
         uint64_t iso_mask = (1U << k) - 1;
@@ -392,9 +383,8 @@ dnml_status bigInt_mut_or   (bigInt *x, const bigInt y) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
     if (!y.n);
-    else if (!x->n) bigInt_mut_copy(x, y);
-    else {
-        size_t operation_range = max(x->n, y.n);
+    else if (!x->n) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; }
+    else { size_t operation_range = max(x->n, y.n);
         dnml_status err_check = bigInt_reserve(x, operation_range);
         heap_alloc_oom(err_check);
         for (size_t i = 0; i < operation_range; ++i) {
@@ -723,11 +713,10 @@ bigInt bigInt_andu64  (const bigInt x, const uint64_t val, dnml_status *err) {
 }
 bigInt bigInt_nandu64 (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (x.n) ? x.n : 1);
-    if (x.n == 0) {
-        res.limbs[0] = UINT64_MAX;
-        res.n        = 1;
-    } else {
+    bigInt res; 
+    if (bigInt_snew(&res, (x.n) ? x.n : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
+    if (x.n == 0) { res.limbs[0] = UINT64_MAX; res.n = 1; } 
+    else {
         res.limbs[0] = ~(x.limbs[0] & val);
         if (x.n > 1) memset(&res.limbs[1], UINT64_MAX, x.n - 1);
         res.n = x.n;
@@ -736,22 +725,19 @@ bigInt bigInt_nandu64 (const bigInt x, const uint64_t val, dnml_status *err) {
 bigInt bigInt_oru64   (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
-    if (!val) bigInt_binew(&res, &x);
+    if (!val) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else if (x.n == 0) {
         if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err);
         res.limbs[0] = 0 | val;
         res.n        = res.limbs[0] ? 1 : 0;
         res.sign     = res.limbs[0] ? x.sign : 1;
     } else {
-        bigInt_snew(&res, x.n);
+        if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = x.limbs[i] | b;
-        }
-        res.n = x.n; 
-        bigInt_normalize(&res);
-    } 
-    return res;
+        } bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_noru64  (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
@@ -763,15 +749,12 @@ bigInt bigInt_noru64  (const bigInt x, const uint64_t val, dnml_status *err) {
         res.n        = (op_res) ? 1 : 0;
         res.sign     = (op_res) ? x.sign : 1; 
     } else {
-        bigInt_snew(&res, x.n);
+        if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = ~(x.limbs[i] | b);
-        }
-        res.n = x.n; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = x.n; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_xoru64  (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
@@ -783,15 +766,12 @@ bigInt bigInt_xoru64  (const bigInt x, const uint64_t val, dnml_status *err) {
         res.n           = (op_res) ? 1 : 0;
         res.sign        = (op_res) ? x.sign : 1;
     } else {
-        bigInt_snew(&res, x.n);
+        if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = x.limbs[i] ^ b;
-        }
-        res.n = x.n; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = x.n; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_xnoru64 (const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
@@ -803,15 +783,12 @@ bigInt bigInt_xnoru64 (const bigInt x, const uint64_t val, dnml_status *err) {
         res.n        = (op_res) ? 1 : 0;
         res.sign     = (op_res) ? x.sign : 1;
     } else {
-        bigInt_snew(&res, x.n);
+        if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < x.n; ++i) {
             uint64_t b = (i == 0) ? val : 0;
             res.limbs[i] = ~(x.limbs[i] ^ b);
-        }
-        res.n = x.n; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = x.n; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_and   (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
@@ -820,16 +797,13 @@ bigInt bigInt_and   (const bigInt x, const bigInt y, dnml_status *err) {
     if (!x.n || !y.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         size_t operation_range = max(x.n, y.n);
-        bigInt_snew(&res, operation_range);
+        if (bigInt_snew(&res, operation_range) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = a & b;
-        }
-        res.n = operation_range; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = operation_range; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_nand  (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
@@ -838,40 +812,34 @@ bigInt bigInt_nand  (const bigInt x, const bigInt y, dnml_status *err) {
     if (!x.n || !y.n) {
         size_t max = max(x.n, y.n);
         size_t expanded_cap = max ? max : 1;
-        bigInt_snew(&res, expanded_cap);
+        if (bigInt_snew(&res, expanded_cap) == DNML_ALLOC_OOM) func_ret_oom(err);
         memset(res.limbs, UINT64_MAX, expanded_cap);
         res.n = expanded_cap;
     } else {
         size_t operation_range = max(x.n, y.n);
-        bigInt_snew(&res, operation_range);
+        if (bigInt_snew(&res, operation_range) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = ~(a & b);
-        }
-        res.n = operation_range;
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = operation_range; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_or    (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) || bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt res;
-    if (!y.n) bigInt_binew(&res, &x);
-    else if (!x.n) bigInt_binew(&res, &y);
+    if (!y.n) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (!x.n) { if (bigInt_binew(&res, &y) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else {
         size_t operation_range = max(x.n, y.n);
-        bigInt_snew(&res, operation_range);
+        if (bigInt_snew(&res, operation_range) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = a | b;
-        }
-        res.n = operation_range; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = operation_range; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_nor   (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
@@ -884,16 +852,13 @@ bigInt bigInt_nor   (const bigInt x, const bigInt y, dnml_status *err) {
         res.sign     = x.sign;
     } else {
         size_t operation_range = max(x.n, y.n);
-        bigInt_snew(&res, operation_range);
+        if (bigInt_snew(&res, operation_range) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = ~(a | b);
-        }
-        res.n = operation_range; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = operation_range; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_xor   (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
@@ -902,16 +867,13 @@ bigInt bigInt_xor   (const bigInt x, const bigInt y, dnml_status *err) {
     if (!x.n && !y.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         size_t operation_range = max(x.n, y.n);
-        bigInt_snew(&res, operation_range);
+        if (bigInt_snew(&res, operation_range) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = a ^ b;
-        }
-        res.n = operation_range; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = operation_range; bigInt_normalize(&res);
+    } return res;
 }
 bigInt bigInt_xnor  (const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
@@ -923,294 +885,239 @@ bigInt bigInt_xnor  (const bigInt x, const bigInt y, dnml_status *err) {
         res.n        = 1;
     } else {
         size_t operation_range = max(x.n, y.n);
-        bigInt_snew(&res, operation_range);
+        if (bigInt_snew(&res, operation_range) == DNML_ALLOC_OOM) func_ret_oom(err);
         for (size_t i = 0; i < operation_range; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = ~(a ^ b);
-        }
-        res.n = operation_range; 
-        bigInt_normalize(&res);
-    }
-    return res;
+        } res.n = operation_range;  bigInt_normalize(&res);
+    } return res;
 }
 /* ------------- Functional, Explicit-width ------------- */
 bigInt bigInt_ex_andu64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res; 
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (x.n && width) {
         res.limbs[0] = x.limbs[0] & val;
-        res.n        = res.limbs[0] ? 1 : 0;
+        res.n        = !!(res.limbs[0]);
         res.sign     = res.limbs[0] ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_nandu64 (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res; 
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i == 0) ? val : 0;
             uint64_t b = (i < x.n) ? x.limbs[i] : 0;
             res.limbs[i] = ~(a & b);
-        }
-        res.n = width; 
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 0;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_oru64   (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
             uint64_t b = (i == 0)   ? val : 0;
             res.limbs[i] = a | b;
-        }
-        res.n = width; 
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 0;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_noru64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
             uint64_t b = (i == 0)   ? val : 0;
             res.limbs[i] = ~(a | b);
-        }
-        res.n = width; 
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_xoru64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
             uint64_t b = (i == 0)   ? val : 0;
             res.limbs[i] = a ^ b;
-        }
-        res.n = width; 
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_xnoru64 (const bigInt x, const uint64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n)  ? x.limbs[i] : 0;
             uint64_t b = (i == 0)   ? val : 0;
             res.limbs[i] = ~(a ^ b);
-        }
-        res.n = width; 
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_andi64  (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width && x.n) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i]       : 0;
             uint64_t b = (i == 0)  ? __MAG_I64__(val) : extension_bits;
             res.limbs[i] = a & b;
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_nandi64 (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i]       : 0;
             uint64_t b = (i == 0)  ? __MAG_I64__(val) : extension_bits;
             res.limbs[i] = ~(a & b);
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_ori64   (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i]       : 0;
             uint64_t b = (i == 0)  ? __MAG_I64__(val) : extension_bits;
             res.limbs[i] = a | b;
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_nori64  (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i]       : 0;
             uint64_t b = (i == 0)  ? __MAG_I64__(val) : extension_bits;
             res.limbs[i] = ~(a | b);
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_xori64  (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i]       : 0;
             uint64_t b = (i == 0)  ? __MAG_I64__(val) : extension_bits;
             res.limbs[i] = a ^ b;
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_xnori64 (const bigInt x, const int64_t val, size_t width, dnml_status *err) {
-    assert(bigInt_validate(x));
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(bigInt_validate(x)); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         uint8_t extension_bits = (val < 0) ? UINT64_MAX : 0;
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i]       : 0;
             uint64_t b = (i == 0)  ? __MAG_I64__(val) : extension_bits;
             res.limbs[i] = ~(a ^ b);
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_and   (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
-    assert(x.limbs != y.limbs);
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(x.limbs != y.limbs); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = a & b;
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_nand  (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
-    assert(x.limbs != y.limbs);
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(x.limbs != y.limbs); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = ~(a & b);
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_or    (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
-    assert(x.limbs != y.limbs);
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(x.limbs != y.limbs); bigInt res; 
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = a | b;
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_nor   (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
-    assert(x.limbs != y.limbs);
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(x.limbs != y.limbs); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = ~(a | b);
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_xor   (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
-    assert(x.limbs != y.limbs);
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(x.limbs != y.limbs); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1) == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = a ^ b;
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 bigInt bigInt_ex_xnor  (const bigInt x, const bigInt y, size_t width, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
-    assert(x.limbs != y.limbs);
-    bigInt res; bigInt_snew(&res, (width) ? width : 1);
+    assert(x.limbs != y.limbs); bigInt res;
+    if (bigInt_snew(&res, (width) ? width : 1)  == DNML_ALLOC_OOM) func_ret_oom(err);
     if (width) {
         for (size_t i = 0; i < width; ++i) {
             uint64_t a = (i < x.n) ? x.limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             res.limbs[i] = ~(a ^ b);
-        }
-        res.n = width;
-        bigInt_normalize(&res);
+        } res.n = width; bigInt_normalize(&res);
         res.sign = (res.n) ? x.sign : 1;
-    }
-    return res;
+    } return res;
 }
 
 
@@ -1543,7 +1450,7 @@ static void __BIGINT_MAGLCM__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     __BIGINT_GCD_DISPATCH__(&gcd_res, a, b, _maglcm_ctx);
     __BIGINT_DIVMOD_DISPATCH__(a, &gcd_res, &temp_quot, &temp_rem, _maglcm_ctx);
     __BIGINT_MUL_DISPATCH__(&temp_quot, b, &gcd_res, _maglcm_ctx);
-    bigInt_mut_ocopy(res, gcd_res);
+    tmp_check = bigInt_mut_ocopy(res, gcd_res); ocopy_check(tmp_check, _DASI_MAGLCM_ARENA);
     arena_reset(_DASI_MAGLCM_ARENA, maglcm_mark);
 }
 static void __BIGINT_MAGEMOD_U64__(uint64_t* res, const bigInt *a, const uint64_t modulus) {
@@ -1763,8 +1670,8 @@ dnml_status bigInt_mut_mulu64(bigInt *x, const uint64_t val) {
         arena_alloc_oom(err_check, _DASI_MUL_UI64_ARENA);
         
         bigInt tmp_prod = { .limbs = tmp_limbs, .cap = x->n + 1, .n = 0, .sign = 1 }; 
-        __BIGINT_MAGMUL_U64__(&tmp_prod, x, val, &err_check); 
-        arena_alloc_oom(err_check, _DASI_MUL_UI64_ARENA); bigInt_mut_ocopy(x, tmp_prod);
+        __BIGINT_MAGMUL_U64__(&tmp_prod, x, val, &err_check); arena_alloc_oom(err_check, _DASI_MUL_UI64_ARENA);
+        err_check = bigInt_mut_ocopy(x, tmp_prod); ocopy_check(err_check, _DASI_MUL_UI64_ARENA);
         arena_reset(_DASI_MUL_UI64_ARENA, tmp_mark); _DASI_MUL_UI64_ARENA = NULL;
     }
     return BIGINT_SUCCESS;
@@ -1782,8 +1689,8 @@ dnml_status bigInt_mut_divu64(bigInt *x, const uint64_t val) {
         bigInt temp_quot = { .limbs = tmp_limbs, .cap = x->n,  .n = 0, .sign = 1 }; 
         uint64_t temp_rem; __BIGINT_MAGDIVMOD_U64__(&temp_quot, &temp_rem, x, val, &err_check);
         arena_alloc_oom(err_check, _DASI_DIV_UI64_ARENA); temp_quot.sign = x->sign; bigInt_normalize(&temp_quot);
-        bigInt_mut_ocopy(x, temp_quot); arena_reset(_DASI_DIV_UI64_ARENA, tmp_mark); 
-        _DASI_DIV_UI64_ARENA = NULL;
+        err_check = bigInt_mut_ocopy(x, temp_quot); ocopy_check(err_check, _DASI_DIV_UI64_ARENA);
+        arena_reset(_DASI_DIV_UI64_ARENA, tmp_mark); _DASI_DIV_UI64_ARENA = NULL;
     } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_modu64(bigInt *x, const uint64_t val) {
@@ -1823,7 +1730,8 @@ dnml_status bigInt_mut_muli64(bigInt *x, const int64_t val) {
         limb_t *tmp_limbs = arena_galloc(_DASI_MUL_I64_ARENA,  x->n + 1, &err_check); arena_alloc_oom(err_check, _DASI_MUL_I64_ARENA);
         bigInt tmp_prod = { .limbs = tmp_limbs, .cap = x->n + 1, .n = 0, .sign = 1 }; uint64_t mag_val = __MAG_I64__(val);
         __BIGINT_MAGMUL_U64__(&tmp_prod, x, mag_val, &err_check); arena_alloc_oom(err_check, _DASI_MUL_I64_ARENA);
-        bigInt_mut_copy(x, tmp_prod); arena_reset(_DASI_MUL_I64_ARENA, tmp_mark); _DASI_MUL_I64_ARENA = NULL;
+        err_check = bigInt_mut_ocopy(x, tmp_prod); ocopy_check(err_check, _DASI_MUL_I64_ARENA);
+        arena_reset(_DASI_MUL_I64_ARENA, tmp_mark); _DASI_MUL_I64_ARENA = NULL;
     } x->sign *= (val < 0) ? -1 : 1;
 }
 dnml_status bigInt_mut_divi64(bigInt *x, const int64_t val) {
@@ -1834,13 +1742,15 @@ dnml_status bigInt_mut_divi64(bigInt *x, const int64_t val) {
     else if (x->n) { 
         dnml_arena *_DASI_DIV_I64_ARENA = _USE_ARENA(); arena_poisoined(_DASI_DIV_I64_ARENA);
         size_t tmp_mark = arena_mark(_DASI_DIV_I64_ARENA); dnml_status err_check;
-        limb_t *tmp_limbs = arena_galloc(_DASI_DIV_I64_ARENA, x->n, &err_check); arena_alloc_oom(err_check, _DASI_DIV_I64_ARENA);
+        limb_t *tmp_limbs = arena_galloc(_DASI_DIV_I64_ARENA, x->n, &err_check); 
+        arena_alloc_oom(err_check, _DASI_DIV_I64_ARENA);
 
-        bigInt temp_quot = { .limbs = tmp_limbs, .cap = x->n, .n = 0, .sign = 1 };
         uint64_t temp_rem, mag_val = __MAG_I64__(val); 
-        __BIGINT_MAGDIVMOD_U64__(&temp_quot, &temp_rem, x, mag_val, &err_check);
-        arena_alloc_oom(err_check, _DASI_DIV_I64_ARENA); temp_quot.sign = x->sign * ((val < 0) ? -1 : 1);
-        bigInt_normalize(&temp_quot); bigInt_mut_copy(x, temp_quot);
+        bigInt temp_quot = { .limbs = tmp_limbs, .cap = x->n, .n = 0, .sign = 1 };
+        __BIGINT_MAGDIVMOD_U64__(&temp_quot, &temp_rem, x, mag_val, &err_check); 
+        arena_alloc_oom(err_check, _DASI_DIV_I64_ARENA);
+        temp_quot.sign = x->sign * ((val < 0) ? -1 : 1); bigInt_normalize(&temp_quot); 
+        err_check = bigInt_mut_ocopy(x, temp_quot); ocopy_check(err_check, _DASI_DIV_I64_ARENA);
         arena_reset(_DASI_DIV_I64_ARENA, tmp_mark); _DASI_DIV_I64_ARENA = NULL;
     } return BIGINT_SUCCESS;
 }
@@ -1870,7 +1780,7 @@ dnml_status bigInt_mut_add(bigInt *x, const bigInt y) {
     assert(x->limbs != y.limbs);
 
     if (!y.n);
-    else if (!x->n) bigInt_mut_copy(x, y);
+    else if (!x->n) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; }
     else if (x->sign == y.sign) {
         dnml_status err_check = bigInt_reserve(x, max(x->n, y.n) + 1); heap_alloc_oom(err_check);
         dnml_arena *_DASI_ADD_ARENA = _USE_ARENA(); arena_poisoined(_DASI_ADD_ARENA);
@@ -1880,7 +1790,7 @@ dnml_status bigInt_mut_add(bigInt *x, const bigInt y) {
 
         bigInt temp_sum = { .limbs = tmp_limbs, .cap = max(x->n, y.n) + 1, .n = 0, .sign = 1 };
         __BIGINT_MAGADD__(&temp_sum, x, &y, &err_check); arena_alloc_oom(err_check, _DASI_ADD_ARENA); 
-        temp_sum.sign = x->sign; bigInt_mut_ocopy(x, temp_sum);
+        temp_sum.sign = x->sign; err_check = bigInt_mut_ocopy(x, temp_sum); ocopy_check(err_check, _DASI_ADD_ARENA);
         arena_reset(_DASI_ADD_ARENA, tmp_mark); _DASI_ADD_ARENA = NULL;
     } else {
         int8_t comp_res = __BIGINT_MAGCOMP__(x, &y);
@@ -1897,8 +1807,8 @@ dnml_status bigInt_mut_add(bigInt *x, const bigInt y) {
             } else {
                 __BIGINT_MAGSUB__(&temp_sum, x, &y, &err_check); 
                 arena_alloc_oom(err_check, _DASI_ADD_ARENA); temp_sum.sign = y.sign;
-            }
-            bigInt_mut_ocopy(x, temp_sum); arena_reset(_DASI_ADD_ARENA, tmp_mark); _DASI_ADD_ARENA = NULL;
+            } err_check = bigInt_mut_ocopy(x, temp_sum); ocopy_check(err_check, _DASI_ADD_ARENA);
+            arena_reset(_DASI_ADD_ARENA, tmp_mark); _DASI_ADD_ARENA = NULL;
         }
     }
 }
@@ -1906,7 +1816,7 @@ dnml_status bigInt_mut_sub(bigInt *x, const bigInt y) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
     if (!y.n) return BIGINT_SUCCESS;
-    else if (!x->n) { bigInt_mut_copy(x, y);  x->sign = -y.sign; }
+    else if (!x->n) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; x->sign = -y.sign; }
     else if (x->sign == y.sign) {
         int8_t comp_res = __BIGINT_MAGCOMP__(x, &y);
         if (!comp_res) bigInt_reset(x);
@@ -1924,8 +1834,8 @@ dnml_status bigInt_mut_sub(bigInt *x, const bigInt y) {
             } else {
                 __BIGINT_MAGSUB__(&temp_diff, x, &y, &err_check);
                 arena_alloc_oom(err_check, _DASI_SUB_ARENA); temp_diff.sign = -x->sign; 
-            }
-            bigInt_mut_ocopy(x, temp_diff); arena_reset(_DASI_SUB_ARENA, tmp_mark); _DASI_SUB_ARENA = NULL;
+            } err_check = bigInt_mut_ocopy(x, temp_diff); ocopy_check(err_check, _DASI_SUB_ARENA);
+            arena_reset(_DASI_SUB_ARENA, tmp_mark); _DASI_SUB_ARENA = NULL;
         }
     } else { 
         dnml_arena *_DASI_SUB_ARENA = _USE_ARENA(); arena_poisoined(_DASI_SUB_ARENA);
@@ -1935,7 +1845,7 @@ dnml_status bigInt_mut_sub(bigInt *x, const bigInt y) {
 
         bigInt temp_diff = { .limbs = tmp_limbs, .cap = max(x->n, y.n) + 1, .n = 0, .sign = 1 };
         __BIGINT_MAGADD__(&temp_diff, x, &y, &err_check); arena_alloc_oom(err_check, _DASI_SUB_ARENA);
-        temp_diff.sign = x->sign; bigInt_mut_ocopy(x, temp_diff);
+        temp_diff.sign = x->sign; err_check = bigInt_mut_ocopy(x, temp_diff); ocopy_check(err_check, _DASI_SUB_ARENA);
         arena_reset(_DASI_SUB_ARENA, tmp_mark); _DASI_SUB_ARENA = NULL;
     } return BIGINT_SUCCESS;
 }
@@ -1956,7 +1866,8 @@ dnml_status bigInt_mut_mul(bigInt *x, const bigInt y) {
         limb_t *tmp_limbs = arena_galloc(_DASI_MUL_ARENA, x->n + y.n, &err_check); arena_alloc_oom(err_check, _DASI_MUL_ARENA);
         bigInt tmp_prod = { .limbs = tmp_limbs, .cap = x->n + y.n, .n = 0, .sign = 1 };
         __BIGINT_MAGMUL__(&tmp_prod, x, &y, &err_check); arena_alloc_oom(err_check, _DASI_MUL_ARENA);
-        bigInt_mut_ocopy(x, tmp_prod); arena_reset(_DASI_MUL_ARENA, tmp_mark); _DASI_MUL_ARENA = NULL;
+        err_check = bigInt_mut_ocopy(x, tmp_prod); ocopy_check(err_check, _DASI_MUL_ARENA);
+        arena_reset(_DASI_MUL_ARENA, tmp_mark); _DASI_MUL_ARENA = NULL;
     } x->sign *= y.sign;
 }
 dnml_status bigInt_mut_div(bigInt *x, const bigInt y) {
@@ -1975,9 +1886,9 @@ dnml_status bigInt_mut_div(bigInt *x, const bigInt y) {
         limb_t *rem_limbs = arena_alloc(_DASI_DIV_ARENA, y.n, &err_check);
         bigInt temp_quot = {.limbs = quot_limbs, .sign = 1,     /**/    .cap = x->n, .n = 0}; 
         bigInt temp_rem = {.limbs = rem_limbs, .sign = 1,       /**/    .cap = y.n,  .n = 0};
-        __BIGINT_MAGDIVMOD__(&temp_quot, &temp_rem, x, &y, &err_check); 
-        arena_alloc_oom(err_check, _DASI_DIV_ARENA); temp_quot.sign = x->sign * y.sign;
-        bigInt_normalize(&temp_quot); bigInt_mut_ocopy(x, temp_quot);
+        __BIGINT_MAGDIVMOD__(&temp_quot, &temp_rem, x, &y, &err_check); arena_alloc_oom(err_check, _DASI_DIV_ARENA);
+        temp_quot.sign = x->sign * y.sign; bigInt_normalize(&temp_quot);
+        err_check = bigInt_mut_ocopy(x, temp_quot); ocopy_check(err_check, _DASI_DIV_ARENA);
         arena_reset(_DASI_DIV_ARENA, mutdiv_mark); _DASI_DIV_ARENA = NULL;
     } return BIGINT_SUCCESS;
 }
@@ -1992,9 +1903,10 @@ dnml_status bigInt_mut_mod(bigInt *x, const bigInt y) {
         int8_t comp_res = __BIGINT_MAGCOMP__(x, &y);
         if (comp_res < 0);
         else if (!comp_res) bigInt_reset(x);
-        else { dnml_arena *_DASI_MOD_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MOD_ARENA);
-        dnml_status err_check = arena_grow(_DASI_MOD_ARENA, x->n + y.n); arena_alloc_ooom(_DASI_MOD_ARENA);
-            
+        else { 
+            /* It can be proven that x's capacity can sufficiently store temp_rem due to x->n > y->n */
+            dnml_arena *_DASI_MOD_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MOD_ARENA);
+            dnml_status err_check = arena_grow(_DASI_MOD_ARENA, x->n + y.n); arena_alloc_ooom(_DASI_MOD_ARENA);
 
             size_t mutmod_mark = arena_mark(_DASI_MOD_ARENA);
             limb_t *quot_limbs = arena_alloc(_DASI_MOD_ARENA, x->n, &err_check);
@@ -2002,7 +1914,8 @@ dnml_status bigInt_mut_mod(bigInt *x, const bigInt y) {
             bigInt temp_quot = {.limbs = quot_limbs, .sign = 1,     /**/    .cap = x->n, .n = 0}; 
             bigInt temp_rem = {.limbs = rem_limbs, .sign = 1,       /**/    .cap = y.n,  .n = 0};
             __BIGINT_MAGDIVMOD__(&temp_quot, &temp_rem, x, &y, &err_check);
-            arena_alloc_oom(err_check, _DASI_MOD_ARENA); temp_rem.sign = x->sign; bigInt_mut_copy(x, temp_rem);
+            arena_alloc_oom(err_check, _DASI_MOD_ARENA); temp_rem.sign = x->sign; 
+            err_check = bigInt_mut_ocopy(x, temp_rem); ocopy_check(err_check, _DASI_MOD_ARENA);
             arena_reset(_DASI_MOD_ARENA, mutmod_mark); _DASI_MOD_ARENA = NULL;
         }
     } return BIGINT_SUCCESS;
@@ -2012,8 +1925,8 @@ bigInt bigInt_mulu64(const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (!x.n || !val) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) bigInt_new_u64(&res, val);
-    else if (val == 1) bigInt_binew(&res, &x);
+    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_new_u64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (val == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else { 
         /* Standard Case */
         if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err);
@@ -2027,7 +1940,7 @@ bigInt bigInt_divu64(const bigInt x, const uint64_t val, dnml_status *err) {
 
     bigInt quot;
     if (x.n == 0) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
-    else if (val == 1) bigInt_binew(&quot, &x);
+    else if (val == 1) { if (bigInt_binew(&quot, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else if (x.n == 1 && x.limbs[0]) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
     else {
         /* Main Case */
@@ -2044,7 +1957,7 @@ bigInt bigInt_modu64(const bigInt x, const uint64_t val, dnml_status *err) {
     if (x.n == 0 || val == 1) if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         int8_t comp_res = __BIGINT_MAGCOMP_UI64__(&x, val);
-        if (comp_res < 0) bigInt_binew(&rem, &x);
+        if (comp_res < 0) { if (bigInt_binew(&rem, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
         else if (!comp_res) if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err)
         else {
             if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err);
@@ -2066,8 +1979,11 @@ bigInt bigInt_muli64(const bigInt x, const int64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (!x.n || !val) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) bigInt_new_i64(&res, val);
-    else if (val == 1 || val == -1) { bigInt_binew(&res, &x); res.sign = x.sign * val; }
+    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_new_i64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (val == 1 || val == -1) { 
+        if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); 
+        res.sign = x.sign * val;
+    }
     else {
         uint64_t mag_val = __MAG_I64__(val);
         if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err);
@@ -2081,7 +1997,10 @@ bigInt bigInt_divi64(const bigInt x, const int64_t val, dnml_status *err) {
 
     bigInt quot; // We do C-style Integer Division
     if (x.n == 0) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
-    else if (val == 1 || val == -1) { bigInt_binew(&quot, &x); quot.sign = x.sign * val; }
+    else if (val == 1 || val == -1) { 
+        if (bigInt_binew(&quot, &x) == DNML_ALLOC_OOM) func_ret_oom(err);
+        quot.sign = x.sign * val;
+    }
     else if (x.n == 1 && x.limbs[0]) if (bigInt_new(&quot == DNML_ALLOC_OOM)) func_ret_oom(err)
     else {
         /* Main Case */
@@ -2100,7 +2019,7 @@ bigInt bigInt_modi64(const bigInt x, const int64_t val, dnml_status *err) {
     if (x.n == 0 || val == 1 || val == -1) if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err)
     else { uint64_t mag_val = __MAG_I64__(val);
         int8_t comp_res = __BIGINT_MAGCOMP_UI64__(&x, mag_val);
-        if (comp_res < 0) bigInt_binew(&rem, &x);
+        if (comp_res < 0) { if (bigInt_binew(&rem, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
         else if (!comp_res) if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err)
         else {
             if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err)
@@ -2121,8 +2040,8 @@ bigInt bigInt_add(const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt sum;
-    if (!y.n) bigInt_binew(&sum, &x);
-    else if (!x.n) bigInt_binew(&sum, &y);
+    if (!y.n) { if (bigInt_binew(&sum, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (!x.n) { if (bigInt_binew(&sum, &y) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else if (x.sign == y.sign) {
         if (bigInt_new(&sum) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_status err_check; __BIGINT_MAGADD__(&sum, &x, &y, &err_check);
@@ -2144,8 +2063,8 @@ bigInt bigInt_sub(const bigInt x, const bigInt y, dnml_status *err) {
     assert(bigInt_validate(x) && bigInt_validate(y));
     assert(x.limbs != y.limbs);
     bigInt diff;
-    if (!y.n) bigInt_binew(&diff, &x);
-    else if (!x.n) { bigInt_binew(&diff, &y); diff.sign = -y.sign; }
+    if (!y.n) { if (bigInt_binew(&diff, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (!x.n) { if (bigInt_binew(&diff, &y) == DNML_ALLOC_OOM) func_ret_oom(err); diff.sign = -y.sign; }
     else if (x.sign == y.sign) {
         dnml_status err_check;
         int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
@@ -2168,8 +2087,8 @@ bigInt bigInt_mul(const bigInt x, const bigInt y, dnml_status *err) {
     assert(x.limbs != y.limbs);
     bigInt res;
     if (!x.n || !y.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) bigInt_binew(&res, &y);
-    else if (y.n == 1 && y.limbs[0] == 1) bigInt_binew(&res, &x);
+    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_binew(&res, &y) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (y.n == 1 && y.limbs[0] == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else {
         if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
         dnml_status err_check; __BIGINT_MAGMUL__(&res, &x, &y, &err_check);
@@ -2184,8 +2103,9 @@ bigInt bigInt_div(const bigInt x, const bigInt y, dnml_status *err) {
 
     bigInt quot;
     if (x.n == 0) if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (y.n == 1 && y.limbs[0] == 1) { bigInt_binew(&quot, &x); quot.sign *= y.sign; }
-    else if (x.n == 1 && x.limbs[0] == 1) if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
+    else if (y.n == 1 && y.limbs[0] == 1) { 
+        if (bigInt_binew(&quot, &x) == DNML_ALLOC_OOM) func_ret_oom(err);  quot.sign *= y.sign; 
+    } else if (x.n == 1 && x.limbs[0] == 1) if (bigInt_new(&quot) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         if (bigInt_snew(&quot, x.n) == DNML_ALLOC_OOM) func_ret_oom(err)
         dnml_arena *_DASI_FDIV_ARENA = _USE_ARENA(); arena_poison_mut(_DASI_FDIV_ARENA, err);
@@ -2211,7 +2131,7 @@ bigInt bigInt_mod(const bigInt x, const bigInt y, dnml_status *err) {
     else if (y.n == 1 && y.limbs[0] == 1) if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err)
     else {
         int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
-        if (comp_res < 0) bigInt_binew(&rem, &x);
+        if (comp_res < 0) { if (bigInt_binew(&rem, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
         else if (!comp_res) if (bigInt_new(&rem) == DNML_ALLOC_OOM) func_ret_oom(err)
         else {
             if (bigInt_snew(&rem, y.n) == DNML_ALLOC_OOM) func_ret_oom(err);
@@ -2239,8 +2159,8 @@ bigInt bigInt_gcdu64(const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     if (!val) return x;
     bigInt res;
-    if (x.n == 0) bigInt_new_u64(&res, val);
-    else if (x.n == 1) bigInt_new_u64(&res, ___GCD_UI64___(x.limbs[0], val));
+    if (x.n == 0) { if (bigInt_new_u64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (x.n == 1) { if (bigInt_new_u64(&res, ___GCD_UI64___(x.limbs[0], val)) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else {
         if (bigInt_snew(&res, min(x.n, 1)) == DNML_ALLOC_OOM) func_ret_oom(err)
         dnml_arena *_DASI_UI64_ARENA = _USE_ARENA(); arena_poison_mut(_DASI_UI64_ARENA, err);
@@ -2258,9 +2178,11 @@ bigInt bigInt_gcdi64(const bigInt x, const int64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     if (!val) return x;
     bigInt res;
-    if (x.n == 0) bigInt_new_u64(&res, __MAG_I64__(val));
-    else if (x.n == 1) bigInt_new_u64(&res, ___GCD_UI64___(x.limbs[0], __MAG_I64__(val)));
-    else {
+    if (x.n == 0) { if (bigInt_new_u64(&res, __MAG_I64__(val)) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (x.n == 1) {
+        dnml_status err_check = bigInt_new_u64(&res, ___GCD_UI64___(x.limbs[0], __MAG_I64__(val)));
+        if (err_check == DNML_ALLOC_OOM) func_ret_oom(err);
+    } else {
         if (bigInt_snew(&res, min(x.n, 1)) == DNML_ALLOC_OOM) func_ret_oom(err)
         dnml_arena *_DASI_UI64_ARENA = _USE_ARENA(); arena_poison_mut(_DASI_UI64_ARENA, err);
         size_t tmp_mark = arena_mark(_DASI_UI64_ARENA); dnml_status err_check;
@@ -2278,8 +2200,10 @@ bigInt bigInt_gcd(const bigInt x, const bigInt y, dnml_status *err) {
     if (x.n == 0) return y;
     else if (y.n == 0) return x;
     bigInt res;
-    if (x.n == 1 && y.n == 1) bigInt_new_u64(&res, ___GCD_UI64___(x.limbs[0], y.limbs[0])); 
-    else {
+    if (x.n == 1 && y.n == 1) {
+        dnml_status err_check = bigInt_new_u64(&res, ___GCD_UI64___(x.limbs[0], y.limbs[0]));
+        if (err_check == DNML_ALLOC_OOM) func_ret_oom(err);
+    } else {
         if (bigInt_snew(&res, min(x.n, y.n)) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_status err_check; __BIGINT_MAGGCD__(&res, &x, &y, &err_check);
         arena_alloc_oom_mut(err_check, &___DASI_NUMERIC_ARENA_, err);
@@ -2289,9 +2213,9 @@ bigInt bigInt_lcmu64(const bigInt x, const uint64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res;
     if (!val || !x.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) bigInt_new_u64(&res, val);
-    else if (x.n == 1 && x.limbs[0] == val) bigInt_new_u64(&res, val);
-    else if (val == 1) bigInt_binew(&res, &x);
+    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_new_u64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (x.n == 1 && x.limbs[0] == val) { if (bigInt_new_u64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (val == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else {
         if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_arena *_DASI_LCM_UI64_ARENA = _USE_ARENA(); arena_poison_mut(_DASI_LCM_UI64_ARENA, err);
@@ -2309,9 +2233,9 @@ bigInt bigInt_lcmi64(const bigInt x, const int64_t val, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; uint64_t mag_val = __MAG_I64__(val);
     if (!mag_val || !x.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) bigInt_new_u64(&res, mag_val);
-    else if (x.n == 1 && x.limbs[0] == val) bigInt_new_u64(&res, mag_val);
-    else if (mag_val == 1) bigInt_binew(&res, &x);
+    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_new_u64(&res, mag_val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (x.n == 1 && x.limbs[0] == val) { if (bigInt_new_u64(&res, mag_val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (mag_val == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else {
         if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_arena *_DASI_LCM_UI64_ARENA = _USE_ARENA(); arena_poison_mut(_DASI_LCM_UI64_ARENA, err);
@@ -2435,8 +2359,9 @@ bigInt bigInt_emod(const bigInt x, const bigInt modulus, dnml_status *err) {
     if (!modulus.n) { *err = BIGINT_ERR_INVAL; return __BIGINT_ERROR_VALUE__(); }
     bigInt res; if (!x.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
     else if (modulus.n == 1 && modulus.limbs[0] == 1) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (__BIGINT_MAGCOMP__(&x, &modulus) == -1  && x.sign == 1) bigInt_binew(&res, &x);
-    else {
+    else if (__BIGINT_MAGCOMP__(&x, &modulus) == -1  && x.sign == 1) { 
+        if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); 
+    } else {
         if (bigInt_snew(&res, modulus.n) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_status err_check; __BIGINT_MAGEMOD__(&res, &x, &modulus, &err_check);
         arena_alloc_oom_mut(err_check, &___DASI_NUMERIC_ARENA_, err);
@@ -2494,15 +2419,17 @@ dnml_status bigInt_mut_sqr(bigInt *x) {
         } 
         x->sign = 1;
     } else if (x->n) {
+        dnml_status err_check = bigInt_reserve(x, x->n << 1); heap_alloc_oom(err_check);
         dnml_arena *_DASI_MUTSQR_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUTSQR_ARENA);
-        size_t mutsqr_mark = arena_mark(_DASI_MUTSQR_ARENA); dnml_status err_check;
+        size_t mutsqr_mark = arena_mark(_DASI_MUTSQR_ARENA);
         limb_t *tmp_limb = arena_galloc(_DASI_MUTSQR_ARENA, x->n * 2, &err_check);
         arena_alloc_oom(err_check, _DASI_MUTSQR_ARENA);
 
         bigInt tmp_res = {.limbs = tmp_limb, .sign = 1, .n = 0, .cap = x->n * 2};
-        __BIGINT_MAGSQR__(&tmp_res, x, &err_check); 
+        __BIGINT_MAGSQR__(&tmp_res, x, &err_check);
         arena_alloc_oom(err_check, _DASI_MUTSQR_ARENA); tmp_res.sign = 1;
-        bigInt_mut_copy(x, tmp_res); arena_reset(_DASI_MUTSQR_ARENA, mutsqr_mark);
+        err_check = bigInt_mut_ocopy(x, tmp_res); ocopy_check(err_check, _DASI_MUTSQR_ARENA);
+        arena_reset(_DASI_MUTSQR_ARENA, mutsqr_mark);
     } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_pow(bigInt *x, const uint64_t exp) {
@@ -2510,45 +2437,51 @@ dnml_status bigInt_mut_pow(bigInt *x, const uint64_t exp) {
     if (!exp) { bigInt_reset(x); 
         x->limbs[0] = 1; 
         x->n = 1; x->sign = 1;
-    } else if (x->n == 0);
-    else if (exp == 1);
-    else if (exp == 2) __BIGINT_MUT_SQR__(x);
-    else if (x->n == 1 && x->limbs[0] == 1) x->sign = (!(exp & 1)) ? 1 : x->sign; 
+    } if (!x->n || exp == 1) return;
+    if (exp == 2) return bigInt_mut_sqr(x);
+
+    /* More standard cases (computationally) */
+    if (x->n == 1 && x->limbs[0] == 1) x->sign = (!(exp & 1)) ? 1 : x->sign; 
     else if (x->n == 1 && __SAFE_EXP__(x->limbs[0], exp)) {
         x->limbs[0] = (uint64_t)(pow((double)x->limbs[0], (double)exp));
         x->sign = (!(exp & 1)) ? 1 : x->sign;
-    } else { 
+    } else {
+         dnml_status err_check = bigInt_reserve(x, x->n * exp); heap_alloc_oom(err_check);
         dnml_arena *_DASI_MUTPOW_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUTPOW_ARENA);
-        size_t mutpow_mark = arena_mark(_DASI_MUTPOW_ARENA); dnml_status err_check;
+        size_t mutpow_mark = arena_mark(_DASI_MUTPOW_ARENA);
         limb_t *tmp_limbs = arena_galloc(_DASI_MUTPOW_ARENA, x->n * exp, &err_check);
         arena_alloc_oom(err_check, _DASI_MUTPOW_ARENA);
         
         bigInt tmp_res = {.limbs = tmp_limbs, .sign = 1, .n = 0, .cap = x->n * exp};
         __BIGINT_MAGPOW__(&tmp_res, x, exp, &err_check); 
         arena_alloc_oom(err_check, _DASI_MUTPOW_ARENA); tmp_res.sign = (!(exp & 1)) ? 1 : x->sign;
-        bigInt_mut_copy(x, tmp_res); arena_reset(_DASI_MUTPOW_ARENA, mutpow_mark);
-    } BIGINT_SUCCESS;
+        err_check = bigInt_mut_ocopy(x, tmp_res); ocopy_check(err_check, _DASI_MUTPOW_ARENA);
+        arena_reset(_DASI_MUTPOW_ARENA, mutpow_mark);
+    } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_sqrt(bigInt *x) {
     assert(bigInt_pvalidate(x));
     if (x->sign == -1) return BIGINT_ERR_DOMAIN;
     if (x->n == 1 && x->limbs[0] == 1);
-    else if (x->n) { 
+    else if (x->n) {
+        /* The square root of any integer x will ALWAYS be <= x */
         dnml_arena *_DASI_MUTSQRT_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUTSQRT_ARENA);
         size_t mutsqrt_mark = arena_mark(_DASI_MUTSQRT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_MUTSQRT_ARENA, (x->n >> 1), &err_check);
         arena_alloc_oom(err_check, _DASI_MUTSQRT_ARENA);
 
         bigInt tmp_res = {.limbs = tmp_limbs, .sign = 1, .n = 0, .cap = (x->n >> 1)};
-        __BIGINT_MAGSQRT__(&tmp_res, x, &err_check); 
-        arena_alloc_oom(err_check, _DASI_MUTSQRT_ARENA); tmp_res.sign = 1; 
-        bigInt_mut_copy(x, tmp_res); arena_reset(_DASI_MUTSQRT_ARENA, mutsqrt_mark);
+        __BIGINT_MAGSQRT__(&tmp_res, x, &err_check);
+        arena_alloc_oom(err_check, _DASI_MUTSQRT_ARENA); tmp_res.sign = 1;
+        err_check = bigInt_mut_ocopy(x, tmp_res); ocopy_check(err_check, _DASI_MUTSQRT_ARENA);
+        arena_reset(_DASI_MUTSQRT_ARENA, mutsqrt_mark);
     } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_cbrt(bigInt *x) {
     assert(bigInt_pvalidate(x));
     if (x->n == 1 && x->limbs[0] == 1);
-    else if (x->n) { 
+    else if (x->n) {
+        /* The square root of any integer x will ALWAYS be <= x */
         dnml_arena *_DASI_MUTCBRT_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUTCBRT_ARENA);
         size_t mutcbrt_mark = arena_mark(_DASI_MUTCBRT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_MUTCBRT_ARENA, (x->n >> 1), &err_check);
@@ -2557,7 +2490,8 @@ dnml_status bigInt_mut_cbrt(bigInt *x) {
         bigInt tmp_res = {.limbs = tmp_limbs, .sign = 1, .n = 0, .cap = (x->n / 3)};
         __BIGINT_MAGCBRT__(&tmp_res, x, &err_check);
         arena_alloc_oom(err_check, _DASI_MUTCBRT_ARENA); tmp_res.sign = x->sign;
-        bigInt_mut_copy(x, tmp_res); arena_reset(_DASI_MUTCBRT_ARENA, mutcbrt_mark);
+        err_check = bigInt_mut_ocopy(x, tmp_res); ocopy_check(err_check, _DASI_MUTCBRT_ARENA);
+        arena_reset(_DASI_MUTCBRT_ARENA, mutcbrt_mark);
     } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_nrt(bigInt *x, const uint64_t root) {
@@ -2575,7 +2509,8 @@ dnml_status bigInt_mut_nrt(bigInt *x, const uint64_t root) {
         bigInt tmp_res = {.limbs = tmp_limbs, .sign = 1, .n = 0, .cap = alloc_size};
         __BIGINT_MAGNRT__(&tmp_res, x, root, &err_check);
         arena_alloc_oom(err_check, _DASI_MUTNRT_ARENA); tmp_res.sign = (!(root & 1)) ? 1 : x->sign;
-        bigInt_mut_copy(x, tmp_res); arena_reset(_DASI_MUTNRT_ARENA, mutnrt_mark);
+        err_check = bigInt_mut_ocopy(x, tmp_res); ocopy_check(err_check, _DASI_MUTNRT_ARENA);
+        arena_reset(_DASI_MUTNRT_ARENA, mutnrt_mark);
     }
 }
 /* -------------- FUNCTIONAL ALGEBRAIC -------------- */
@@ -2583,14 +2518,14 @@ bigInt bigInt_sqr(const bigInt x, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; if (x.n == 0) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
     else if (x.n == 1) {
-        if (x.limbs[0] == 1) bigInt_new_u64(&res, 1);
-        else if (x.limbs[0] < UINT32_MAX) { bigInt_new_u64(&res, x.limbs[0] * x.limbs[0]); } 
+        limb_t val = x.limbs[0];
+        if (val == 1) { if (bigInt_new_u64(&res, 1) == DNML_ALLOC_OOM) func_ret_oom(err); }
+        else if (val < UINT32_MAX) { if (bigInt_new_u64(&res, val * val) == DNML_ALLOC_OOM) func_ret_oom(err); } 
         else { 
-            bigInt_snew(&res, 2);
+            if (bigInt_snew(&res, 2) == DNML_ALLOC_OOM) func_ret_oom(err);
             res.limbs[0] = __MUL_UI64__(x.limbs[0], x.limbs[0],&res.limbs[1]); 
             res.n = 2;
-        } 
-        res.sign = 1;
+        } res.sign = 1;
     } else { 
         if (bigInt_snew(&res, x.n * 2) == DNML_ALLOC_OOM) func_ret_oom(err)
         dnml_status err_check; __BIGINT_MAGSQR__(&res, &x, &err_check); 
@@ -2600,17 +2535,18 @@ bigInt bigInt_sqr(const bigInt x, dnml_status *err) {
 bigInt bigInt_pow(const bigInt x, const uint64_t exp, dnml_status *err) {
     assert(bigInt_validate(x));
     if (exp == 2) return bigInt_sqr(x, err);
-    bigInt res; if (!exp) bigInt_new_u64(&res, 1);
+    bigInt res; if (!exp) { if (bigInt_new_u64(&res, 1) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else if (!x.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) { bigInt_new_i64 (&res, 1 * (!(exp & 1) ? 1 : x.sign)); }
+    else if (x.n == 1 && x.limbs[0] == 1) { 
+        dnml_status err_check = bigInt_new_i64 (&res, 1 * (!(exp & 1) ? 1 : x.sign));
+        if (err_check == DNML_ALLOC_OOM) func_ret_oom(err); 
+    }
     else if (x.n == 1 && __SAFE_EXP__(x.limbs[0], exp)) {
-        uint64_t exp_res = (uint64_t)(pow(
-            (double)x.limbs[0], 
-            (double)exp
-        )); bigInt_new_u64(&res, exp_res);
+        uint64_t exp_res = (uint64_t)(pow((double)x.limbs[0], (double)exp));
+        if (bigInt_new_u64(&res, exp_res) == DNML_ALLOC_OOM) func_ret_oom(err);
         res.sign = (!(exp & 1)) ? 1 : x.sign;
     } 
-    else if (exp == 1) bigInt_binew(&res, &x);
+    else if (exp == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else { 
         if (bigInt_snew(&res, x.n * exp) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_status err_check; __BIGINT_MAGPOW__(&res, &x, exp, &err_check);
@@ -2621,7 +2557,7 @@ bigInt bigInt_sqrt(const bigInt x, dnml_status *err) {
     assert(bigInt_validate(x) && err);
     if (x.sign == -1) { *err = BIGINT_ERR_DOMAIN; return __BIGINT_ERROR_VALUE__(); }
     bigInt res; if (!x.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) bigInt_new_u64(&res, 1);
+    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_new_u64(&res, 1) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else { 
         if (bigInt_snew(&res, (x.n >> 1)) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_status err_check; __BIGINT_MAGSQR__(&res, &x, &err_check);
@@ -2631,7 +2567,7 @@ bigInt bigInt_sqrt(const bigInt x, dnml_status *err) {
 bigInt bigInt_cbrt(const bigInt x, dnml_status *err) {
     assert(bigInt_validate(x));
     bigInt res; if (!x.n) if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    else if (x.n == 1 && x.limbs[0] == 1) bigInt_new_i64(&res, (1 * x.sign));
+    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_new_i64(&res, (1 * x.sign)) == DNML_ALLOC_OOM) func_ret_oom(err); }
     else {
         if (bigInt_snew(&res, x.n / 3) == DNML_ALLOC_OOM) func_ret_oom(err);
         dnml_status err_check; __BIGINT_MAGCBRT__(&res, &x, &err_check);
@@ -2834,7 +2770,7 @@ bigInt bigInt_copy(const bigInt source__, dnml_status *err) {
         if (bigInt_new(&dst__ == DNML_ALLOC_OOM)) func_ret_oom(err)
         return dst__;
     }
-    bigInt_snew(&dst__, source__.n);
+    if (bigInt_snew(&dst__, source__.n) == DNML_ALLOC_OOM) func_ret_oom(err);
     memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
     dst__.n = source__.n; dst__.sign  = source__.sign; return dst__;
 }
@@ -2845,7 +2781,7 @@ bigInt bigInt_ocopy(const bigInt source__, size_t output_cap, dnml_status *err) 
         return __BIGINT_ERROR_VALUE__();
     }
     bigInt dst__;  
-    bigInt_snew(&dst__, output_cap);
+    if (bigInt_snew(&dst__, output_cap) == DNML_ALLOC_OOM) func_ret_oom(err);
     memcpy(dst__.limbs, source__.limbs, source__.n * sizeof(uint64_t));
     dst__.n = source__.n; dst__.sign = source__.sign;
     *err = BIGINT_SUCCESS; return dst__;
@@ -2855,7 +2791,7 @@ bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap, dnml_status *
     bigInt dst__;
     if (output_cap == 0) if (bigInt_new(&dst__ == DNML_ALLOC_OOM)) func_ret_oom(err)
     else {
-        bigInt_snew(&dst__, output_cap);
+        if (bigInt_snew(&dst__, output_cap) == DNML_ALLOC_OOM) func_ret_oom(err);
         size_t operation_range = (output_cap < source__.n) ? output_cap : source__.n;
         memcpy(dst__.limbs, source__.limbs, operation_range * sizeof(uint64_t));
         dst__.n     = operation_range;
