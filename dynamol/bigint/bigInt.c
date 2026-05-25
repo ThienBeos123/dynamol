@@ -144,9 +144,7 @@ dnml_status bigInt_setf128_safe(const bigInt x, long double* receiver) {}
 /* --------- Primitive Types --> BigInt --------- */
 void bigInt_getu64(const uint64_t val, bigInt *receiver) {
     assert(__BIGINT_INTERNAL_SVALID__(receiver));
-    receiver->limbs[0] = val;
-    receiver->n        = (val) ? 1 : 0;
-    receiver->sign     = 1;
+    receiver->limbs[0] = val; receiver->n = !!(val); receiver->sign = 1;
 }
 void bigInt_geti64(const int64_t val, bigInt *receiver) {
     assert(__BIGINT_INTERNAL_SVALID__(receiver));
@@ -200,10 +198,8 @@ int64_t bigInt_toi64_safe(const bigInt x, dnml_status *err) {
 long double bigInt_tof128_safe(const bigInt x, dnml_status *err) {}
 /* --------- Primitive Types --> BigInt --------- */
 bigInt bigInt_fromu64(const uint64_t x, dnml_status *err) {
-    bigInt res; 
-    if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
-    res.limbs[0] = x; res.n = !!(x); 
-    *err = BIGINT_SUCCESS; return res;
+    bigInt res; if (bigInt_new(&res) == DNML_ALLOC_OOM) func_ret_oom(err)
+    res.limbs[0] = x; res.n = !!(x); *err = BIGINT_SUCCESS; return res;
 }
 bigInt bigInt_fromi64(const int64_t x, dnml_status *err) {
     bigInt res; 

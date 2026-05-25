@@ -27,9 +27,9 @@ typedef enum {
     STR_INVALID_BASE,           // 108
     STR_INVALID_DIGIT,          // 109
 
-    CRYPTINT_SUCCESS = 200,     // 200
-    CRYPTINT_POISOINED,         // 201
-    CRYPTINT_ERR_RANGE,         // 202
+    CRINT_SUCCESS = 200,     // 200
+    CRINT_POISON,         // 201
+    CRINT_ERR_RANGE,         // 202
 
     FILE_ERR_PARSE = 300,       // 300
     FILE_INVAL,                 // 301
@@ -61,9 +61,9 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case STR_INVALID_BASE:          fputs("STR_INVALID_BASE", f);       break;
         case STR_INVALID_DIGIT:         fputs("STR_INVALID_DIGIT", f);      break;
 
-        case CRYPTINT_SUCCESS:      fputs("CRYPTINT_SUCCESS", f); break;
-        case CRYPTINT_POISOINED:    fputs("CRYPTINT_POISOINED", f); break;
-        case CRYPTINT_ERR_RANGE:    fputs("CRYPTINT_ERR_RANGE", f); break;
+        case CRINT_SUCCESS:     fputs("CRINT_SUCCESS", f); break;
+        case CRINT_POISON:      fputs("CRINT_POISON", f); break;
+        case CRINT_ERR_RANGE:   fputs("CRINT_ERR_RANGE", f); break;
 
         case FILE_ERR_PARSE:            fputs("FILE_ERR_PARSE", f); break;
         case FILE_INVAL:                fputs("FILE_INVAL", f); break;
