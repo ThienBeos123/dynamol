@@ -19,19 +19,23 @@ extern "C" {
 #define CHOOSE_OPTION(dest, cond, a, b) do { \
     uint64_t a_copy = (a); \
     (a_copy) ^= ((a) ^ (b)) & -((int8_t)(cond)); \
-    (dest) = (a_copy); \
+    (dest) = (a_copy); a_copy = 0; \
 } while(0);
 #define RETURN_OPTION(cond, a, b) do { \
     uint64_t a_copy = (a); \
     (a_copy) ^= ((a) ^ (b)) & -((int8_t)(cond)); \
-    return (a_copy); \
+    return (a_copy); a_copy = 0; \
 } while(0);
 
 
 /* crt_misc_util.c */
-void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t start, size_t end);
-void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, size_t end);
-void __libdnml_memwipe_strict(void *buf, size_t len);
+void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop);
+void __libdnml_memwipe_strict(void *buf, size_t len, bool noop);
+void __libdnml_memcpy_strict(
+    void *buf, const void* src, 
+    size_t len, size_t srclen,
+    size_t start, size_t end, bool noop
+);
 uint64_t __MAG_I64__(int64_t x);
 
 
