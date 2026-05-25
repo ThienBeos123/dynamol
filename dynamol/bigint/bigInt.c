@@ -112,7 +112,7 @@ dnml_status bigInt_set_safe(const bigInt x, bigInt *receiver) {
 }
 /* --------- BigInt --> Primitive Types --------- */
 void bigInt_setu64(const bigInt x, uint64_t* receiver) {
-    assert(__STATE_VAL__(x));
+    assert(bigInt_validate(x));
     *receiver = (x.n) ? x.limbs[0] : 0;
 }
 void bigInt_seti64(const bigInt x, int64_t* receiver) {

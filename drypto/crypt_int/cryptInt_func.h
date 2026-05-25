@@ -9,6 +9,7 @@
 #include <char_tables.h>
 #include <dnml_sys/sys.h>
 #include <_libdnml_config/settings.h>
+#include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/_ctx.h>
 #include <dnml_status.h>
 
