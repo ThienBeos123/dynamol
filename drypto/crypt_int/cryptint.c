@@ -73,8 +73,8 @@ dnml_status crint_cinew(crint *x, crint *y) {
     )));
     uint8_t uninit = (x->limbs == NULL); limb_t* dst_limbs;
     CHOOSE_OPTION((dst_limbs), (uninit), ((uintptr_t)__BUFFER_P), ((uintptr_t)y->limbs));
-    size_t end; CHOOSE_OPTION((end), (!y->n), (0), ((y->n - 1) * U64_BYTES + (U64_BYTES - 1)))
-    __libdnml_memcpy_strict(dst_limbs, y->limbs, alloc_size * U64_BYTES, end, y->n * U64_BYTES, 0, false);
+    size_t end; CHOOSE_OPTION((end), (!y->n), (0), (y->n));
+    __libdnml_smemcpy_u64(dst_limbs, y->limbs, alloc_size, y->n, 0, end, false);
     CHOOSE_OPTION((x->limbs), (uninit), ((uintptr_t)(__BUFFER_P) & mask), ((uintptr_t)x->limbs));
     CHOOSE_OPTION((x->cap), (uninit), (alloc_size & mask), (x->cap));
     CHOOSE_OPTION((x->sign), (uninit), (y->sign & mask), (x->sign));
@@ -136,19 +136,13 @@ dnml_status crint_set(crint x, crint *receiver) {
     }); DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), ((x.poisoned) & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
     size_t set_range; CHOOSE_OPTION((set_range), (receiver->cap < x.n), receiver->cap, x.n)
-    size_t end; CHOOSE_OPTION((end), (set_range), (set_range * U64_BYTES - (U64_BYTES - 1)), (0));
-    __libdnml_memcpy_strict(
-        receiver->limbs, x.limbs, receiver->cap * U64_BYTES,
-        x.n * U64_BYTES, 0, end * U64_BYTES, (x.poisoned)
-    );
+    size_t end; CHOOSE_OPTION((end), (set_range), (set_range), (0));
+    __libdnml_smemcpy_u64(receiver->limbs, x.limbs, receiver->cap, x.n, 0, end, (x.poisoned));
     int8_t rec_sign; CHOOSE_OPTION((rec_sign), (set_range), (x.sign), (1));
     CHOOSE_OPTION((receiver->sign), (x.poisoned), (receiver->sign), (rec_sign));
     CHOOSE_OPTION((receiver->n), (x.poisoned), (receiver->n), (set_range));
-    __libdnml_memset_strict(
-        receiver->limbs, 0, receiver->cap * U64_BYTES, set_range * U64_BYTES,
-        (receiver->cap - 1) * U64_BYTES + (U64_BYTES - 1), (x.poisoned)
-    ); /* Aggressive Post-operation Cleanup */
-    set_range = 0; end = 0; rec_sign = 0; return ret_stat;
+    __libdnml_smemwipe_u64(receiver->limbs, receiver->cap, set_range, receiver->cap - 1, (x.poisoned));
+    /* Aggressive Post-operation Cleanup */ set_range = 0; end = 0; rec_sign = 0; return ret_stat;
 }
 dnml_status crint_set_safe(crint x, crint *receiver) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
@@ -158,20 +152,13 @@ dnml_status crint_set_safe(crint x, crint *receiver) {
     CHOOSE_OPTION((ret_stat), ((x.poisoned) & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
     CHOOSE_OPTION((ret_stat), ((receiver->cap < x.n) & (ret_stat == CRINT_SUCCESS)), (CRINT_ERR_RANGE), (ret_stat));
 
-    size_t end; CHOOSE_OPTION((end), (x.n), (x.n * U64_BYTES - (U64_BYTES - 1)), (0));
-    __libdnml_memcpy_strict(
-        receiver->limbs, x.limbs, receiver->cap * U64_BYTES,
-        x.n * U64_BYTES, 0, (x.n - 1) * U64_BYTES + (U64_BYTES - 1),
-        (x.poisoned | (receiver->cap < x.n))
-    ); 
+    size_t end; CHOOSE_OPTION((end), (x.n), (x.n), (0));
+    __libdnml_smemcpy_u64(receiver->limbs, x.limbs, receiver->cap, x.n, 0, end, (x.poisoned | (receiver->cap < x.n)));
     int8_t rec_sign; CHOOSE_OPTION((rec_sign), (x.n), (x.sign), (1));
     CHOOSE_OPTION((receiver->sign), (x.poisoned), (receiver->sign), (rec_sign));
     CHOOSE_OPTION((receiver->n), (x.poisoned), (receiver->n), (x.n));
-    __libdnml_memset_strict(
-        receiver->limbs, 0, receiver->cap * U64_BYTES, x.n * U64_BYTES,
-        (receiver->cap - 1) * U64_BYTES + (U64_BYTES - 1), (x.poisoned | (receiver->cap < x.n))
-    ); /* Aggressive Post-operation Cleanup */
-    end = 0; rec_sign = 0; return ret_stat;
+    __libdnml_smemwipe_u64(receiver->limbs, receiver->cap, x.n, receiver->cap - 1, (x.poisoned | receiver->cap < x.n));
+    /* Aggressive Post-operation Cleanup */ end = 0; rec_sign = 0; return ret_stat;
 }
 /* --------- CryptInt --> Primitive Types --------- */
 dnml_status crint_setu64(uint64_t* receiver, crint x) {
@@ -240,11 +227,8 @@ dnml_status crint_getu64(crint *receiver, const uint64_t val) {
     CHOOSE_OPTION((receiver->limbs[0]), (receiver->poisoned), (receiver->limbs[0]), (first_limb));
     CHOOSE_OPTION((receiver->n), (receiver->poisoned), (receiver->n), (lcount));
     CHOOSE_OPTION((receiver->sign), (receiver->poisoned), (receiver->sign), (new_sign));
-    __libdnml_memset_strict(
-        receiver->limbs, 0, receiver->cap * U64_BYTES, lcount * U64_BYTES,
-        (receiver->cap - 1) * U64_BYTES + (U64_BYTES - 1), (receiver->poisoned)
-    ); /* Aggressive Post-operation Cleanup */
-    first_limb = 0; lcount = 0; new_sign = 0; return ret_stat;
+    __libdnml_smemwipe_u64(receiver->limbs, receiver->cap, lcount, receiver->cap - 1, (receiver->poisoned));
+    /* Aggressive Post-operation Cleanup */ first_limb = 0; lcount = 0; new_sign = 0; return ret_stat;
 }
 dnml_status crint_geti64(crint *receiver, const int64_t val) {
     DNML_ASSERT((__STORAGE_VAL__(receiver)), full_contract, { crint_free(receiver); });
@@ -255,11 +239,8 @@ dnml_status crint_geti64(crint *receiver, const int64_t val) {
     CHOOSE_OPTION((receiver->limbs[0]), (receiver->poisoned), (receiver->limbs[0]), (first_limb));
     CHOOSE_OPTION((receiver->n), (receiver->poisoned), (receiver->n), (lcount));
     CHOOSE_OPTION((receiver->sign), (receiver->poisoned), (receiver->sign), (new_sign));
-    __libdnml_memset_strict(
-        receiver->limbs, 0, receiver->cap * U64_BYTES, lcount * U64_BYTES,
-        (receiver->cap - 1) * U64_BYTES + (U64_BYTES - 1), (receiver->poisoned)
-    ); /* Aggressive Post-operation Cleanup */
-    first_limb = 0; lcount = 0; new_sign = 0; return ret_stat;
+    __libdnml_smemwipe_u64(receiver->limbs, receiver->cap, lcount, receiver->cap - 1, (receiver->poisoned));
+    /* Aggressive Post-operation Cleanup */ first_limb = 0; lcount = 0; new_sign = 0; return ret_stat;
 }
 dnml_status crint_getf128(crint *receiver, const long double val) {}
 dnml_status crint_getf128_safe(crint *receiver, const long double val) {}
@@ -386,8 +367,8 @@ crint crint_rshift(crint x, size_t k, dnml_status *err) {
 
     limb_t fake_dst; limb_t *dst; uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS)), discarded_bits = 0;
     CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(res.limbs)), ((uintptr_t)(x.limbs)));
-    size_t end; CHOOSE_OPTION((end), (x.n), ((x.n - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
-    __libdnml_memcpy_strict(dst, x.limbs, x.n * U64_BYTES, x.n * U64_BYTES, 0, end, (!(ret_stat == CRINT_SUCCESS)));
+    size_t end; CHOOSE_OPTION((end), (x.n), (x.n - 1), (0));
+    __libdnml_smemcpy_u64(dst, x.limbs, x.n, x.n, 0, end, (!(ret_stat == CRINT_SUCCESS)));
     __CRINT_INTERNAL_RLSHIFT__(&res, x.n, limb_shift & mask); res.n = x.n - limb_shift;
     for (size_t i = res.n - 1; i >= 0; --i) { /* Individual Bit Shift Loops */
         CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&res.limbs[i])), ((uintptr_t)(&fake_dst)));
@@ -412,8 +393,8 @@ crint crint_lshift(crint x, size_t k, dnml_status *err) {
 
     limb_t fake_dst; limb_t *dst; uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS)), discarded_bits = 0;
     CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(res.limbs)), ((uintptr_t)(x.limbs)));
-    size_t end; CHOOSE_OPTION((end), (x.n), ((x.n - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
-    __libdnml_memcpy_strict(dst, x.limbs, x.n * U64_BYTES, x.n * U64_BYTES, 0, end, (!(ret_stat == CRINT_SUCCESS)));
+    size_t end; CHOOSE_OPTION((end), (x.n), (x.n - 1), (0));
+    __libdnml_smemcpy_u64(dst, x.limbs, x.n, x.n, 0, end, (!(ret_stat == CRINT_SUCCESS)));
     __CRINT_INTERNAL_LLSHIFT__(&res, x.n, limb_shift & mask); res.n = x.n;
     for (size_t i = 0; i < x.n; ++i) { /* Individual Bit Shift Loops */
         CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&res.limbs[i])), ((uintptr_t)(&fake_dst)));
@@ -459,8 +440,8 @@ crint crint_lshiftg(crint x, size_t k, dnml_status *err) {
 }
 dnml_status crint_mut_not(crint *x) {
     DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
-    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); 
-    dnml_status ret_stat = CRINT_SUCCESS; CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
     for (size_t i = 0; i < x->n; ++i) CHOOSE_OPTION((x->limbs[i]), (x->poisoned), (x->limbs[i]), (~(x->limbs[i])));
     if (ret_stat == CRINT_SUCCESS) crint_normalize(x); return ret_stat;
 }
@@ -546,18 +527,126 @@ dnml_status crint_mut_lshiftg(crint *x, size_t k) {
     if (ret_stat == CRINT_SUCCESS) crint_normalize(x);
     /* Aggrestive, Post-operation Cleanup */ 
     limb_shift = 0; bshift = 0; alloc_cap = 0; reserve_stat = 0; mask = 0;
-    __libdnml_memwipe_strict(fake_buf, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_smemwipe_u64(fake_buf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     llshift_operated = 0; llshift_size = 0; fake_operated.poisoned = 0;
     fake_operated.limbs = 0; fake_operated.n = 0; fake_operated.cap = 0;
     fake_operated.sign = 0; fake_dst = 0; dst = 0; discarded_bits = 0; return ret_stat;
 }
 /* ----------------------- Mutative, Fixed Width ----------------------- */
-dnml_status crint_mut_andu64(crint *x, const uint64_val) {}
-dnml_status crint_mut_nandu64(crint *x, const uint64_val) {}
-dnml_status crint_mut_oru64(crint *x, const uint64_val) {}
-dnml_status crint_mut_noru64(crint *x, const uint64_val) {}
-dnml_status crint_mut_xoru64(crint *x, const uint64_val) {}
-dnml_status crint_mut_xnoru64(crint *x, const uint64_val) {}
+dnml_status crint_mut_andu64(crint *x, const uint64_t val) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
+    first_limb = first_limb & val; int8_t ret_sign; uint64_t origin_val = x->limbs[0];
+    /* Re-assignment */
+    CHOOSE_OPTION((x->limbs[0]), (x->poisoned), (origin_val), (first_limb));
+    CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (!!(first_limb)));
+    CHOOSE_OPTION((ret_sign), (first_limb), (x->sign), (1));
+    CHOOSE_OPTION((x->sign), (x->poisoned), (x->sign), (ret_sign));
+    __libdnml_smemwipe_u64(x->limbs, x->cap, 1, x->cap - 1, (x->poisoned));
+    first_limb = 0; ret_sign = 0; origin_val = 0; return ret_stat; /* Aggressive Cleanup */ 
+}
+dnml_status crint_mut_nandu64(crint *x, const uint64_t val) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
+    first_limb = ~(first_limb & val); uint64_t origin_val = x->limbs[0]; size_t ret_size;
+    /* Reassignment */
+    CHOOSE_OPTION((x->limbs[0]), (x->poisoned), (origin_val), (first_limb));
+    CHOOSE_OPTION((ret_size), (x->n > 1), (x->n), (!!(first_limb)));
+    CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (ret_size));
+    CHOOSE_OPTION((x->sign), (x->poisoned | x->n), (x->sign), (1));
+    size_t end; CHOOSE_OPTION((end), (!x->n), (0), (x->n - 1));
+    __libdnml_smemset_u64(x->limbs, UINT8_MAX, x->cap, 1, end, (x->poisoned));
+    __libdnml_smemwipe_u64(x->limbs, x->cap, end + 1, x->cap - 1, (x->poisoned));
+    first_limb = 0; origin_val = 0; ret_size = 0; end = 0; return ret_stat;
+}
+dnml_status crint_mut_oru64(crint *x, const uint64_t val) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
+    first_limb = first_limb | val; uint64_t origin_val = x->limbs[0]; size_t ret_size;
+    /* Reassignment */
+    CHOOSE_OPTION((x->limbs[0]), (x->poisoned), (origin_val), (first_limb));
+    CHOOSE_OPTION((ret_size), (x->n > 1), (x->n), (!!(first_limb)));
+    CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (ret_size));
+    CHOOSE_OPTION((x->sign), (x->poisoned | x->n), (x->sign), (1));
+    /* We do NOT modify the later limbs, in which BITWISE ORing by 0 makes them the same */
+    __libdnml_smemwipe_u64(x->limbs, x->cap, x->n, x->cap - 1, (x->poisoned));
+    first_limb = 0; origin_val = 0; ret_size = 0; return ret_stat;
+}
+dnml_status crint_mut_noru64(crint *x, const uint64_t val) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
+    first_limb = ~(first_limb | val); uint64_t origin_val = x->limbs[0]; size_t ret_size;
+    /* Re-assignment - Pre-Loop to handle the potentially case of size of 1 limb */
+    CHOOSE_OPTION((x->limbs[0]), (x->poisoned), (origin_val), (first_limb));
+    CHOOSE_OPTION((ret_size), (x->n > 1), (x->n), (!!(first_limb)));
+    CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (ret_size));
+    CHOOSE_OPTION((x->sign), (x->poisoned | x->n), (x->sign), (1));
+    /* Main Bitwise Operation For Loop */
+    limb_t fake_dst; limb_t *dst; limb_t rand_val = 1337, curr_val;
+    for (size_t i = 1; i < x->cap; ++i) {
+        limb_t curr_limb = x->limbs[i]; // Always valid to access, but not to be used
+        CHOOSE_OPTION((dst), (i < x->n & !(x->poisoned)), ((uintptr_t)(&x->limbs[i])), ((uintptr_t)(&fake_dst)));
+        CHOOSE_OPTION((curr_val), (i < x->n & !(x->poisoned)), (curr_limb), (rand_val));
+        *dst = ~(curr_limb | 0); curr_limb = 0; // Current Iteration Clearance
+    } if (ret_stat == CRINT_SUCCESS) crint_normalize(x);
+    __libdnml_smemwipe_u64(x->limbs, x->cap, x->n, x->cap - 1, (x->poisoned));
+    first_limb = 0; origin_val = 0; ret_size = 0; fake_dst = 0;
+    dst = 0; rand_val = 0; curr_val = 0; return ret_stat;
+}
+dnml_status crint_mut_xoru64(crint *x, const uint64_t val) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
+    first_limb = first_limb ^ val; uint64_t origin_val = x->limbs[0]; size_t ret_size;
+    /* Re-assignment - Pre-Loop to handle the potentially case of size of 1 limb */
+    CHOOSE_OPTION((x->limbs[0]), (x->poisoned), (origin_val), (first_limb));
+    CHOOSE_OPTION((ret_size), (x->n > 1), (x->n), (!!(first_limb)));
+    CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (ret_size));
+    CHOOSE_OPTION((x->sign), (x->poisoned | x->n), (x->sign), (1));
+    /* Main Bitwise Operation For Loop */
+    limb_t fake_dst; limb_t *dst; limb_t rand_val = 1337, curr_val;
+    for (size_t i = 1; i < x->cap; ++i) {
+        limb_t curr_limb = x->limbs[i]; // Always valid to access, but not to be used
+        CHOOSE_OPTION((dst), (i < x->n & !(x->poisoned)), ((uintptr_t)(&x->limbs[i])), ((uintptr_t)(&fake_dst)));
+        CHOOSE_OPTION((curr_val), (i < x->n & !(x->poisoned)), (curr_limb), (rand_val));
+        *dst = curr_limb ^ 0; curr_limb = 0; // Current Iteration Clearance
+    } if (ret_stat == CRINT_SUCCESS) crint_normalize(x);
+    __libdnml_smemwipe_u64(x->limbs, x->cap, x->n, x->cap - 1, (x->poisoned));
+    first_limb = 0; origin_val = 0; ret_size = 0; fake_dst = 0;
+    dst = 0; rand_val = 0; curr_val = 0; return ret_stat;
+}
+dnml_status crint_mut_xnoru64(crint *x, const uint64_t val) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
+    first_limb = ~(first_limb ^ val); uint64_t origin_val = x->limbs[0]; size_t ret_size;
+    /* Re-assignment - Pre-Loop to handle the potentially case of size of 1 limb */
+    CHOOSE_OPTION((x->limbs[0]), (x->poisoned), (origin_val), (first_limb));
+    CHOOSE_OPTION((ret_size), (x->n > 1), (x->n), (!!(first_limb)));
+    CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (ret_size));
+    CHOOSE_OPTION((x->sign), (x->poisoned | x->n), (x->sign), (1));
+    /* Main Bitwise Operation For Loop */
+    limb_t fake_dst; limb_t *dst; limb_t rand_val = 1337, curr_val;
+    for (size_t i = 1; i < x->cap; ++i) {
+        limb_t curr_limb = x->limbs[i]; // Always valid to access, but not to be used
+        CHOOSE_OPTION((dst), (i < x->n & !(x->poisoned)), ((uintptr_t)(&x->limbs[i])), ((uintptr_t)(&fake_dst)));
+        CHOOSE_OPTION((curr_val), (i < x->n & !(x->poisoned)), (curr_limb), (rand_val));
+        *dst = ~(curr_limb ^ 0); curr_limb = 0; // Current Iteration Clearance
+    } if (ret_stat == CRINT_SUCCESS) crint_normalize(x);
+    __libdnml_smemwipe_u64(x->limbs, x->cap, x->n, x->cap - 1, (x->poisoned));
+    first_limb = 0; origin_val = 0; ret_size = 0; fake_dst = 0;
+    dst = 0; rand_val = 0; curr_val = 0; return ret_stat;
+}
 dnml_status crint_mut_and(crint *x, crint y) {}
 dnml_status crint_mut_nand(crint *x, crint y) {}
 dnml_status crint_mut_or(crint *x, crint y) {}
@@ -584,12 +673,12 @@ dnml_status crint_mutex_nor(crint *x, crint val, size_t range) {}
 dnml_status crint_mutex_xor(crint *x, crint val, size_t range) {}
 dnml_status crint_mutex_xnor(crint *x, crint val, size_t range) {}
 /* ----------------------- Functional, Fixed Width ----------------------- */
-crint crint_andu64(crint x, const uint64_val, dnml_status *err) {}
-crint crint_nandu64(crint x, const uint64_val, dnml_status *err) {}
-crint crint_oru64(crint x, const uint64_val, dnml_status *err) {}
-crint crint_noru64(crint x, const uint64_val, dnml_status *err) {}
-crint crint_xoru64(crint x, const uint64_val, dnml_status *err) {}
-crint crint_xnoru64(crint x, const uint64_val, dnml_status *err) {}
+crint crint_andu64(crint x, const uint64_t val, dnml_status *err) {}
+crint crint_nandu64(crint x, const uint64_t val, dnml_status *err) {}
+crint crint_oru64(crint x, const uint64_t val, dnml_status *err) {}
+crint crint_noru64(crint x, const uint64_t val, dnml_status *err) {}
+crint crint_xoru64(crint x, const uint64_t val, dnml_status *err) {}
+crint crint_xnoru64(crint x, const uint64_t val, dnml_status *err) {}
 crint crint_and(crint x, crint y, dnml_status *err) {}
 crint crint_nand(crint x, crint y, dnml_status *err) {}
 crint crint_or(crint x, crint y, dnml_status *err) {}
@@ -1440,11 +1529,8 @@ dnml_status crint_mut_copyu64(crint *dst, const uint64_t src) {
     CHOOSE_OPTION((dst->limbs[0]), (noop_toggle), (val), (0));
     CHOOSE_OPTION((dst->n), (noop_toggle), (dst->n), (!!(src)));
     CHOOSE_OPTION((dst->sign), (noop_toggle), (dst->sign), (1));
-    __libdnml_memset_strict(
-        dst->limbs, 0, dst->cap * U64_BYTES, 1, 
-        (dst->cap - 1) * U64_BYTES + (U64_BYTES - 1),
-        noop_toggle
-    ); val = 0; return ret_stat;
+    __libdnml_smemwipe_u64(dst->limbs, dst->cap, 1, dst->cap - 1, noop_toggle);
+    val = 0; return ret_stat;
 }
 dnml_status crint_mut_dcopyu64(crint *dst, const uint64_t src) {
     // Pre-operation Validation & Static Analysis
@@ -1493,10 +1579,8 @@ dnml_status crint_mut_copyi64(crint *dst, const int64_t src) {
     CHOOSE_OPTION((dst->limbs[0]), (noop_toggle), (val), (0));
     CHOOSE_OPTION((dst->n), (noop_toggle), (dst->n), (!!(src)));
     CHOOSE_OPTION((dst->sign), (noop_toggle), (dst->sign), (vsign));
-    __libdnml_memset_strict(
-        dst->limbs, 0, dst->cap * U64_BYTES, 1, 
-        (dst->cap - 1) * U64_BYTES + (U64_BYTES - 1), noop_toggle
-    ); return ret_stat;
+    __libdnml_smemwipe_u64(dst->limbs, dst->cap, 1, dst->cap - 1, noop_toggle);
+    val = 0; return ret_stat;
 }
 dnml_status crint_mut_dcopyi64(crint *dst, const int64_t src) {
     // Pre-operation Validation & Static Analysis
@@ -1542,7 +1626,7 @@ dnml_status crint_mut_copy(crint *dst, crint src) {
     });
     DNML_ASSERT((__STORAGE_VAL__(dst)), store_inval,
     { /* Set everything to 0 to completely wipe out memory */
-        __libdnml_memwipe_strict(src.limbs, src.cap * U64_BYTES, false);
+        __libdnml_smemwipe_u64(src.limbs, src.cap, 0, src.cap - 1, false);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
     }); DNML_TEST_ASSERT((dst->poisoned) && ((src.poisoned)), poisoined, {});
@@ -1561,31 +1645,27 @@ dnml_status crint_mut_copy(crint *dst, crint src) {
         );
     }
     CHOOSE_OPTION((correctly_set), (ret_stat != DNML_ALLOC_OOM), (UINT64_MAX), (0));
-    limb_t dst_buf[FAKE_BUF_CAP] = {0}, src_buf[FAKE_BUF_CAP] = {0}; size_t end; limb_t *dst_limbs, src_limbs;
+    limb_t dst_buf[FAKE_BUF_CAP] = {0}, src_buf[FAKE_BUF_CAP] = {0};
+    size_t end, src_size; limb_t *dst_limbs, src_limbs;
     CHOOSE_OPTION((dst_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(dst->limbs)), ((uintptr_t)dst_buf));
     CHOOSE_OPTION((src_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(src.limbs)), ((uintptr_t)src_buf));
     CHOOSE_OPTION((dst->cap), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (FAKE_BUF_CAP));
+    CHOOSE_OPTION((src_size), (ret_stat != DNML_ALLOC_OOM), (src.n), (FAKE_BUF_CAP));
     CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (src.n), (FAKE_BUF_CAP));
+    CHOOSE_OPTION((end), (!end), (0), (end - 1));
     dst->n = src.n; dst->sign = src.sign;
-    __libdnml_memcpy_strict(
-        dst_limbs, src_limbs, dst->cap * U64_BYTES, src.n * U64_BYTES,
-        0, ((end - 1) * U64_BYTES + (U64_BYTES - 1)), (noop_toggle & rcap_stat)
-    );
+    __libdnml_smemcpy_u64(dst_limbs, src_limbs, dst->cap, src_size, 0, end, (noop_toggle & rcap_stat));
     size_t clear_start, clear_end;
     CHOOSE_OPTION((clear_start), (ret_stat != DNML_ALLOC_OOM), (dst->n), (0));
     CHOOSE_OPTION((clear_end), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (FAKE_BUF_CAP));
-    __libdnml_memset_strict(
-        dst_limbs, 0, dst->cap * U64_BYTES, clear_start * U64_BYTES,
-        (clear_end - 1) * U64_BYTES + (U64_BYTES - 1), 
-        (noop_toggle & rcap_stat != DNML_ALLOC_OOM)
-    ); 
+    __libdnml_smemwipe_u64(dst_limbs, dst->cap, clear_start, clear_end - 1, (noop_toggle & rcap_stat != DNML_ALLOC_OOM));
     
     /* Invalid Metadata Wiping & Aggressive  */
     dst->poisoned &= correctly_set; dst->sign &= correctly_set;
     dst->n &= correctly_set; dst->cap &= correctly_set;
     rcap_stat = 0; correctly_set = 0;
-    __libdnml_memwipe_strict(dst_buf, FAKE_BUF_CAP * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_buf, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_smemwipe_u64(dst_buf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
+    __libdnml_smemwipe_u64(src_buf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     end = 0; dst_limbs = 0; src_limbs = 0;
     clear_start = 0; clear_end = 0; return ret_stat;
 }
@@ -1599,7 +1679,7 @@ dnml_status crint_mut_dcopy(crint *dst, crint src) {
     });
     DNML_ASSERT((__STORAGE_VAL__(dst)), store_inval,
     { /* Set everything to 0 to completely wipe out memory */
-        __libdnml_memwipe_strict(src.limbs, src.cap * U64_BYTES, false);
+        __libdnml_smemwipe_u64(src.limbs, src.cap, 0, src.cap - 1, false);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
     }); DNML_TEST_ASSERT(((dst->poisoned) && (src.poisoned)), poisoined, {});
@@ -1615,25 +1695,21 @@ dnml_status crint_mut_dcopy(crint *dst, crint src) {
         (ret_stat == CRINT_SUCCESS)), 
         (resize_stat), (ret_stat)
     );
-    uint64_t oom_filter = UINT64_MAX;
-    limb_t dst_buf[FAKE_BUF_CAP] = {0}, src_buf[FAKE_BUF_CAP] = {0}; size_t end; limb_t *dst_limbs, src_limbs;
+    uint64_t oom_filter = (uint64_t)(-(int64_t)(ret_stat != DNML_ALLOC_OOM));
+    limb_t dst_buf[FAKE_BUF_CAP] = {0}, src_buf[FAKE_BUF_CAP] = {0}; size_t end, src_size; limb_t *dst_limbs, src_limbs;
     CHOOSE_OPTION((dst_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(dst->limbs)), ((uintptr_t)dst_buf));
     CHOOSE_OPTION((src_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(src.limbs)), ((uintptr_t)src_buf));
     CHOOSE_OPTION((dst->cap), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (FAKE_BUF_CAP));
+    CHOOSE_OPTION((src_size), (ret_stat != DNML_ALLOC_OOM), (src.n), (FAKE_BUF_CAP));
     CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (src.n), (FAKE_BUF_CAP));
-    CHOOSE_OPTION((oom_filter), (ret_stat != DNML_ALLOC_OOM), (oom_filter), (0));
-    dst->n = src.n; dst->sign = src.sign;
-    __libdnml_memcpy_strict(
-        dst_limbs, src_limbs, dst->cap * U64_BYTES, src.n * U64_BYTES,
-        0, ((end - 1) * U64_BYTES + (U64_BYTES - 1)), 
-        (noop_toggle & resize_stat != DNML_ALLOC_OOM)
-    ); 
+    CHOOSE_OPTION((end), (!end), (0), (end - 1)); dst->n = src.n; dst->sign = src.sign;
+    __libdnml_smemcpy_u64(dst_limbs, src_limbs, dst->cap, src_size, 0, end, (noop_toggle & resize_stat != DNML_ALLOC_OOM));
     /* Clearing Out Values to Invalidity & Aggresive Cleanup */
     dst->n &= oom_filter; dst->cap &= oom_filter;
     dst->poisoned &= oom_filter; dst->sign &= oom_filter;
     resize_stat = 0; oom_filter = 0; end = 0;
-    __libdnml_memwipe_strict(dst_buf, FAKE_BUF_CAP * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_buf, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_smemwipe_u64(dst_buf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
+    __libdnml_smemwipe_u64(src_buf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     dst_limbs = 0; src_limbs = 0; return ret_stat;
 }
 dnml_status crint_mut_ocopy(crint *dst, crint src) {
@@ -1646,7 +1722,7 @@ dnml_status crint_mut_ocopy(crint *dst, crint src) {
     });
     DNML_ASSERT((__STORAGE_VAL__(dst)), store_inval,
     { /* Set everything to 0 to completely wipe out memory */
-        __libdnml_memwipe_strict(src.limbs, src.cap * U64_BYTES, false);
+        __libdnml_smemwipe_u64(src.limbs, src.cap, 0, src.cap - 1, false);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
     }); DNML_TEST_ASSERT(((dst->poisoned) && ((src.poisoned))), poisoined, {});
@@ -1657,16 +1733,11 @@ dnml_status crint_mut_ocopy(crint *dst, crint src) {
     /* Main Operation - Copy */
     CHOOSE_OPTION((ret_stat), ((dst->cap < src.n) & (ret_stat == CRINT_SUCCESS)), (CRINT_ERR_RANGE), (ret_stat));
     CHOOSE_OPTION((noop_toggle), ((dst->cap < src.n) & (!noop_toggle)), (true), (noop_toggle));
-    __libdnml_memcpy_strict(
-        dst->limbs, src.limbs, dst->cap * U64_BYTES, src.n * U64_BYTES,
-        0, (src.n - 1) * U64_BYTES + (U64_BYTES - 1), noop_toggle
-    ); dst->n = src.n; dst->sign = src.sign;
-    __libdnml_memset_strict(
-        dst->limbs, 0, dst->cap * U64_BYTES, dst->n * U64_BYTES,
-        (dst->cap - 1) * U64_BYTES + (U64_BYTES - 1), noop_toggle
-    );
-    /* Aggresive Post-Operation Clean-up */
-    noop_toggle = 0; noop_toggle = 0; return ret_stat;
+    size_t end; CHOOSE_OPTION((end), (!src.n), (0), (src.n - 1));
+    __libdnml_smemcpy_u64(dst->limbs, src.limbs, dst->cap, src.n, 0, end, noop_toggle);
+    dst->n = src.n; dst->sign = src.sign;
+    __libdnml_smemwipe_u64(dst->limbs, dst->cap, dst->n, dst->cap - 1, noop_toggle);
+    /* Aggresive Post-Operation Clean-up */ noop_toggle = 0; noop_toggle = 0; return ret_stat;
 }
 dnml_status crint_mut_tover_copy(crint *dst, crint src) {
     /* Pre-operation Validation & Static Analysis */
@@ -1678,7 +1749,7 @@ dnml_status crint_mut_tover_copy(crint *dst, crint src) {
     });
     DNML_ASSERT((__STORAGE_VAL__(dst)), store_inval,
     { /* Set everything to 0 to completely wipe out memory */
-        __libdnml_memwipe_strict(src.limbs, src.cap * U64_BYTES, false);
+        __libdnml_smemwipe_u64(src.limbs, src.cap, 0, src.cap - 1, false);
         crint_free(&src); dst->limbs = 0; dst->n = 0;
         dst->cap = 0; dst->sign = 0; dst->poisoned = 0;
     }); DNML_TEST_ASSERT(((dst->poisoned) && (!(src.poisoned))), poisoined, {});
@@ -1688,16 +1759,11 @@ dnml_status crint_mut_tover_copy(crint *dst, crint src) {
 
     /* Main Operation - Copy */
     size_t op_range; CHOOSE_OPTION((op_range), (dst->cap < src.n), (dst->cap), (src.n));
-    __libdnml_memcpy_strict(
-        dst->limbs, src.limbs, dst->cap * U64_BYTES, src.n * U64_BYTES,
-        0, (op_range - 1) * U64_BYTES + (U64_BYTES - 1), noop_toggle
-    ); dst->n = op_range; dst->sign = src.sign;
-    __libdnml_memset_strict(
-        dst->limbs, 0, (dst->cap) * U64_BYTES, dst->n * U64_BYTES, 
-        (dst->cap - 1) * U64_BYTES + (U64_BYTES - 1), noop_toggle
-    );
-    /* Aggrestive Post-Operation Clean-up */
-    op_range = 0; noop_toggle = 0; return ret_status;
+    size_t end; CHOOSE_OPTION((end), (!op_range), (0), (op_range - 1));
+    __libdnml_smemcpy_u64(dst->limbs, src.limbs, dst->cap, src.n, 0, op_range, noop_toggle);
+    dst->n = op_range; dst->sign = src.sign;
+    __libdnml_smemwipe_u64(dst->limbs, dst->cap, dst->n, dst->cap - 1, noop_toggle);
+    /* Aggrestive Post-Operation Clean-up */ op_range = 0; noop_toggle = 0; return ret_status;
 }
 /* -------------  Functional SMALL Copies ------------- */
 crint crint_copyu64(const uint64_t src, dnml_status *err) {
@@ -1757,14 +1823,12 @@ crint crint_copy(crint src, dnml_status *err) {
 
     /* Setting Up correctly - Standard Case */
     size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1);
-    size_t end; CHOOSE_OPTION(
-        (end), (!(src.n)), 0, /* 2nd option: Aligns to the last byte */
-        ((src.n - 1) * U64_BYTES + (U64_BYTES - 1))
-    ); CHOOSE_OPTION((end), (new_stat != DNML_ALLOC_OOM), (end), (511));
+    size_t end; CHOOSE_OPTION( (end), (!(src.n)), 0, (src.n - 1));
+    CHOOSE_OPTION((end), (new_stat != DNML_ALLOC_OOM), (end), (511));
     CHOOSE_OPTION((dst.cap), (new_stat != DNML_ALLOC_OOM), (dst.cap), (FAKE_BUF_CAP));
-    while (iter_cnt--) __libdnml_memcpy_strict(
-        dst.limbs, src.limbs, dst.cap, src.n, 0, end,
-        (noop_toggle & new_stat != DNML_ALLOC_OOM)
+    while (iter_cnt--) __libdnml_smemcpy_u64(
+        dst.limbs, src.limbs, dst.cap, src.n, 
+        0, end, (noop_toggle & new_stat != DNML_ALLOC_OOM)
     ); dst.n = src.n; dst.sign = src.sign; *err = CRINT_SUCCESS;
 
     /* Setting Up invalid metadata + Agressive Stack Cleanup */
@@ -1773,8 +1837,8 @@ crint crint_copy(crint src, dnml_status *err) {
     CHOOSE_OPTION((ret_stat), (new_stat != DNML_ALLOC_OOM & (ret_stat == CRINT_SUCCESS)), (new_stat), (ret_stat));
     if (err != NULL) *err = ret_stat; // Conditional Branching here is acceptable
     new_stat = 0; correctly_set = 0; noop_toggle = 0;
-    __libdnml_memwipe_strict(dst_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_smemwipe_u64(dst_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
+    __libdnml_smemwipe_u64(src_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     src_limbs = 0; iter_cnt = 0; end = 0; ret_stat = 0; return dst;
 }
 crint crint_ocopy(crint src, size_t output_cap, dnml_status *err) {
@@ -1802,14 +1866,12 @@ crint crint_ocopy(crint src, size_t output_cap, dnml_status *err) {
 
     /* Setting Up correctly - Standard Case */
     size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1);
-    size_t end; CHOOSE_OPTION(
-        (end), (!(src.n)), 0, /* 2nd option: Aligns to the last byte */
-        ((src.n - 1) * U64_BYTES + (U64_BYTES - 1))
-    ); CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (end), (511));
+    size_t end; CHOOSE_OPTION( (end), (!(src.n)), 0, (src.n - 1));
+    CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (end), (511));
     CHOOSE_OPTION((dst.cap), (ret_stat != DNML_ALLOC_OOM), (dst.cap), (FAKE_BUF_CAP));
-    while (iter_cnt--) __libdnml_memcpy_strict(
-        dst_limbs, src_limbs, dst.cap, src.n, 0, end,
-        (noop_toggle & (new_stat != DNML_ALLOC_OOM))
+    while (iter_cnt--) __libdnml_smemcpy_u64(
+        dst_limbs, src_limbs, dst.cap, src.n, 
+        0, end, (noop_toggle & (new_stat != DNML_ALLOC_OOM))
     ); dst.n = src.n; dst.sign = src.sign;
 
     /* Setting Up invalid metadata + Agressive Stack Cleanup */
@@ -1817,8 +1879,8 @@ crint crint_ocopy(crint src, size_t output_cap, dnml_status *err) {
     dst.cap &= correctly_set; dst.sign &= correctly_set;
     if (err != NULL) *err = ret_stat; // Conditional Branching here is acceptable
     ret_stat = 0; correctly_set = 0; new_stat = 0; noop_toggle = 0;
-    __libdnml_memwipe_strict(dst_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_smemwipe_u64(dst_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
+    __libdnml_smemwipe_u64(src_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     dst_limbs = 0; src_limbs = 0; iter_cnt = 0; end = 0;
     return dst;
 }
@@ -1845,12 +1907,12 @@ crint crint_tover_copy(crint src, size_t output_cap, dnml_status *err) {
 
     /* Setting Up correctly - Standard Case */
     size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1); size_t end;
-    CHOOSE_OPTION((end), (!(op_range)), 0, ((op_range - 1) * U64_BYTES + (U64_BYTES - 1)));
+    CHOOSE_OPTION((end), (!(op_range)), 0, (op_range - 1));
     CHOOSE_OPTION((end), (new_stat != DNML_ALLOC_OOM), (end), (511));
     CHOOSE_OPTION((dst.cap), (new_stat != DNML_ALLOC_OOM), (dst.cap), (FAKE_BUF_CAP));
-    while (iter_cnt--) __libdnml_memcpy_strict(
-        dst.limbs, src.limbs, dst.cap, src.n, 0, end,
-        (noop_toggle & (new_stat != DNML_ALLOC_OOM))
+    while (iter_cnt--) __libdnml_smemcpy_u64(
+        dst.limbs, src.limbs, dst.cap, src.n,
+        0, end, (noop_toggle & (new_stat != DNML_ALLOC_OOM))
     ); dst.n = src.n; dst.sign = src.sign;
 
     /* Setting Up invalid metadata - DNML_ALLOC_OOM */
@@ -1859,8 +1921,8 @@ crint crint_tover_copy(crint src, size_t output_cap, dnml_status *err) {
     CHOOSE_OPTION((ret_stat), (new_stat != CRINT_SUCCESS & ret_stat == CRINT_SUCCESS), (new_stat), (ret_stat));
     if (err != NULL) *err = ret_stat; // Conditional Branching here is acceptable
     ret_stat = 0; new_stat = 0; correctly_set = 0; op_range = 0;
-    __libdnml_memwipe_strict(dst_tmp_p, FAKE_BUF_CAP * U64_BYTES, false); dst_limbs = 0;
-    __libdnml_memwipe_strict(src_tmp_p, FAKE_BUF_CAP * U64_BYTES, false); src_limbs = 0;
+    __libdnml_smemwipe_u64(dst_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false); dst_limbs = 0;
+    __libdnml_smemwipe_u64(src_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false); src_limbs = 0;
     iter_cnt = 0; end = 0; noop_toggle = 0; return dst;
 }
 
@@ -1899,13 +1961,11 @@ dnml_status crint_resize(crint *x, size_t k) {
 
 
     /* Memory Clearance on Resizing to a smaller size */
-    size_t start, end, op_cap;
+    size_t start, end, op_cap, dist;
+    CHOOSE_OPTION((dist), (k < x->cap), (x->cap - k), (k - x->cap))
     CHOOSE_OPTION((start), (k < x->cap), (k - 1), (0));
-    CHOOSE_OPTION((end), (k < x->cap), (x->cap - 1), (0));
-    __libdnml_memset_strict(
-        x->limbs, 0, x->cap * U64_BITS, start * U64_BYTES, 
-        end * U64_BYTES + (U64_BYTES - 1), (x->poisoned)
-    );
+    CHOOSE_OPTION((end), (k < x->cap), (x->cap - 1), (__clamp_size(x->cap, dist - 1)));
+    __libdnml_smemwipe_u64(x->limbs, x->cap, start, end, (x->poisoned | (!(k < x->cap))));
 
     /* Main Resizing */ limb_t* operated;
     CHOOSE_OPTION((operated), (ret_stat == CRINT_POISON), ((uintptr_t)(malloc(1))), ((uintptr_t)x->limbs));
@@ -1963,10 +2023,7 @@ dnml_status crint_shrink(crint *x, size_t k) { /* Maximum capacity */
     size_t start, end, op_cap, new_cap = x->cap; while (new_cap > k) --new_cap;
     CHOOSE_OPTION((start), (new_cap < x->cap), (new_cap - 1), (0));
     CHOOSE_OPTION((end), (new_cap < x->cap), (x->cap - 1), (0));
-    __libdnml_memset_strict(
-        x->limbs, 0, x->cap * U64_BITS, start * U64_BYTES, 
-        end * U64_BYTES + (U64_BYTES - 1), (x->poisoned)
-    );
+    __libdnml_smemwipe_u64(x->limbs, x->cap, start, end, (x->poisoned));
 
     /* Main Resizing */ limb_t* operated;
     CHOOSE_OPTION((operated), (ret_stat == CRINT_POISON), ((uintptr_t)(malloc(1))), ((uintptr_t)x->limbs));
@@ -1995,7 +2052,7 @@ dnml_status crint_reset(crint *x) {
     DNML_TEST_ASSERT((x->poisoned), poisoined, {});
     dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
-    __libdnml_memwipe_strict(x->limbs, x->cap * U64_BYTES, (x->poisoned));
+    __libdnml_smemwipe_u64(x->limbs, x->cap, 0, x->cap - 1, (x->poisoned));
     x->n = 0; x->sign = 1;
 }
 static inline uint8_t __STORAGE_VAL__(crint *x) {

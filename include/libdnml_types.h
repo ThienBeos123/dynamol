@@ -19,7 +19,7 @@ typedef struct {
     limb_t *limbs; int8_t sign;
 } bigInt;
 
-typedef struct __424947666C6F6174__ {
+typedef struct {
   bigInt mantissa;
   uint32_t exponent;
   // RAM Space needed to calculate the maxmimum exponent value as a power of 2
