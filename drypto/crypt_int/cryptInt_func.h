@@ -17,7 +17,7 @@
 #include "../../calc_algo/crt_calc.h"
 #include "../../util/crt_util.h"
 
-
+#define FAKE_BUF_CAP 2048
 #define CT_COND_ASSIGN(x, cond, new_val) do { \
     size_t mask = -(size_t)(cond);  /* All 1s if true, all 0s if false */ \
     (x) = ((x) & ~mask) | ((new_val) & mask); \
@@ -42,114 +42,191 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
 
 
 //* ===================================== TYPE SETUP FUNCTION ===================================== *//
-void crint_free(cryptint *x);
-dnml_status crint_new(cryptint *x);
-dnml_status crint_snew(cryptint *x, const size_t n);
-dnml_status crint_cinew(cryptint *x, cryptint *y);
-dnml_status crint_new_u64(cryptint *x, const uint64_t in);
-dnml_status crint_new_i64(cryptint *x, const int64_t in);
-dnml_status crint_new_f128(cryptint *x, long double in);
+void crint_free(crint *x);
+dnml_status crint_new(crint *x);
+dnml_status crint_snew(crint *x, const size_t n);
+dnml_status crint_cinew(crint *x, crint *y);
+dnml_status crint_new_u64(crint *x, const uint64_t in);
+dnml_status crint_new_i64(crint *x, const int64_t in);
+dnml_status crint_new_f128(crint *x, long double in);
+
 
 
 
 //* =============================================== ASSIGNMENTS ============================================== */
-dnml_status crint_set(const cryptint x, cryptint *receiver);
-dnml_status crint_set_safe(const cryptint x, cryptint *receiver);
+dnml_status crint_set(const crint x, crint *receiver);
+dnml_status crint_set_safe(const crint x, crint *receiver);
 /* --------- CryptInt --> Primitive Types --------- */
-dnml_status crint_setu64(uint64_t* receiver, const cryptint x);
-dnml_status crint_seti64(int64_t* receiver, const cryptint x);
-dnml_status crint_setf128(long double* receiver, const cryptint x);
-dnml_status crint_setu64_safe(uint64_t* receiver, const cryptint x);
-dnml_status crint_seti64_safe(int64_t* receiver, const cryptint x);
-dnml_status crint_setf128_safe(long double* receiver, const cryptint x);
+dnml_status crint_setu64(uint64_t* receiver, const crint x);
+dnml_status crint_seti64(int64_t* receiver, const crint x);
+dnml_status crint_setf128(long double* receiver, const crint x);
+dnml_status crint_setu64_safe(uint64_t* receiver, const crint x);
+dnml_status crint_seti64_safe(int64_t* receiver, const crint x);
+dnml_status crint_setf128_safe(long double* receiver, const crint x);
 /* --------- Primitive Types --> CryptInt --------- */
-dnml_status crint_getu64(cryptint *receiver, const uint64_t val);
-dnml_status crint_geti64(cryptint *receiver, const int64_t val);
-dnml_status crint_getf128(cryptint *receiver, const long double val);
-dnml_status crint_getf128_safe(cryptint *receiver, const long double val);
+dnml_status crint_getu64(crint *receiver, const uint64_t val);
+dnml_status crint_geti64(crint *receiver, const int64_t val);
+dnml_status crint_getf128(crint *receiver, const long double val);
+dnml_status crint_getf128_safe(crint *receiver, const long double val);
+
 
 
 
 //* =============================================== CONVERSIONS ============================================== */
 /* --------- CryptInt --> Primitive Types --------- */
-uint64_t crint_tou64(const cryptint x, dnml_status *err);
-int64_t crint_toi64(const cryptint x, dnml_status *err);
-long double crint_tof128(const cryptint x, dnml_status *err);
-uint64_t crint_tou64_safe(const cryptint x, dnml_status *err);
-int64_t crint_toi64_safe(const cryptint x, dnml_status *err);
-long double crint_tof128_safe(const cryptint x, dnml_status *err);
+uint64_t crint_tou64(const crint x, dnml_status *err);
+int64_t crint_toi64(const crint x, dnml_status *err);
+long double crint_tof128(const crint x, dnml_status *err);
+uint64_t crint_tou64_safe(const crint x, dnml_status *err);
+int64_t crint_toi64_safe(const crint x, dnml_status *err);
+long double crint_tof128_safe(const crint x, dnml_status *err);
 /* --------- Primitive Types --> CryptInt --------- */
-cryptint crint_fromu64(const uint64_t x, dnml_status *err);
-cryptint crint_fromi64(const int64_t x, dnml_status *err);
-cryptint crint_fromf128(const long double x, dnml_status *err);
-cryptint crint_fromf128_safe(const long double x, dnml_status *err);
+crint crint_fromu64(const uint64_t x, dnml_status *err);
+crint crint_fromi64(const int64_t x, dnml_status *err);
+crint crint_fromf128(const long double x, dnml_status *err);
+crint crint_fromf128_safe(const long double x, dnml_status *err);
 
+
+
+
+//* =========================================== BITWISE OPERATIONS =========================================== */
+crint crint_not(const crint x, dnml_status *err);
+crint crint_rshift(crint x, size_t k, dnml_status *err);
+crint crint_lshift(crint x, size_t k, dnml_status *err);
+crint crint_lsfhitg(crint x, size_t k, dnml_status *err);
+dnml_status crint_mut_not(crint *x);
+dnml_status crint_mut_rshift(crint *x, size_t k);
+dnml_status crint_mut_lshift(crint *x, size_t k);
+dnml_status crint_mut_lshiftg(crint *x, size_t k);
+/* ----------------------- Mutative, Fixed Width ----------------------- */
+dnml_status crint_mut_andu64(crint *x, const uint64_val);
+dnml_status crint_mut_nandu64(crint *x, const uint64_val);
+dnml_status crint_mut_oru64(crint *x, const uint64_val);
+dnml_status crint_mut_noru64(crint *x, const uint64_val);
+dnml_status crint_mut_xoru64(crint *x, const uint64_val);
+dnml_status crint_mut_xnoru64(crint *x, const uint64_val);
+dnml_status crint_mut_and(crint *x, crint y);
+dnml_status crint_mut_nand(crint *x, crint y);
+dnml_status crint_mut_or(crint *x, crint y);
+dnml_status crint_mut_nor(crint *x, crint y);
+dnml_status crint_mut_xor(crint *x, crint y);
+dnml_status crint_mut_xnor(crint *x, crint y);
+/* ----------------------- Mutative, Explicit Width ----------------------- */
+dnml_status crint_mutex_andu64(crint *x, const uint64_t val, size_t range);
+dnml_status crint_mutex_nandu64(crint *x, const uint64_t val, size_t range);
+dnml_status crint_mutex_oru64(crint *x, const uint64_t val, size_t range);
+dnml_status crint_mutex_noru64(crint *x, const uint64_t val, size_t range);
+dnml_status crint_mutex_xoru64(crint *x, const uint64_t val, size_t range);
+dnml_status crint_mutex_xnoru64(crint *x, const uint64_t val, size_t range);
+dnml_status crint_mutex_andi64(crint *x, const int64_t val, size_t range);
+dnml_status crint_mutex_nandi64(crint *x, const int64_t val, size_t range);
+dnml_status crint_mutex_ori64(crint *x, const int64_t val, size_t range);
+dnml_status crint_mutex_nori64(crint *x, const int64_t val, size_t range);
+dnml_status crint_mutex_xori64(crint *x, const int64_t val, size_t range);
+dnml_status crint_mutex_xnori64(crint *x, const int64_t val, size_t range);
+dnml_status crint_mutex_and(crint *x, crint val, size_t range);
+dnml_status crint_mutex_nand(crint *x, crint val, size_t range);
+dnml_status crint_mutex_or(crint *x, crint val, size_t range);
+dnml_status crint_mutex_nor(crint *x, crint val, size_t range);
+dnml_status crint_mutex_xor(crint *x, crint val, size_t range);
+dnml_status crint_mutex_xnor(crint *x, crint val, size_t range);
+/* ----------------------- Functional, Fixed Width ----------------------- */
+crint crint_andu64(crint x, const uint64_val, dnml_status *err);
+crint crint_nandu64(crint x, const uint64_val, dnml_status *err);
+crint crint_oru64(crint x, const uint64_val, dnml_status *err);
+crint crint_noru64(crint x, const uint64_val, dnml_status *err);
+crint crint_xoru64(crint x, const uint64_val, dnml_status *err);
+crint crint_xnoru64(crint x, const uint64_val, dnml_status *err);
+crint crint_and(crint x, crint y, dnml_status *err);
+crint crint_nand(crint x, crint y, dnml_status *err);
+crint crint_or(crint x, crint y, dnml_status *err);
+crint crint_nor(crint x, crint y, dnml_status *err);
+crint crint_xor(crint x, crint y, dnml_status *err);
+crint crint_xnor(crint x, crint y, dnml_status *err);
+/* ----------------------- Functional, Explicit Width ----------------------- */
+crint crint_ex_andu64(crint x, const uint64_t val, size_t range, dnml_status *err);
+crint crint_ex_nandu64(crint x, const uint64_t val, size_t range, dnml_status *err);
+crint crint_ex_oru64(crint x, const uint64_t val, size_t range, dnml_status *err);
+crint crint_ex_noru64(crint x, const uint64_t val, size_t range, dnml_status *err);
+crint crint_ex_xoru64(crint x, const uint64_t val, size_t range, dnml_status *err);
+crint crint_ex_xnoru64(crint x, const uint64_t val, size_t range, dnml_status *err);
+crint crint_ex_andi64(crint x, const int64_t val, size_t range, dnml_status *err);
+crint crint_ex_nandi64(crint x, const int64_t val, size_t range, dnml_status *err);
+crint crint_ex_ori64(crint x, const int64_t val, size_t range, dnml_status *err);
+crint crint_ex_nori64(crint x, const int64_t val, size_t range, dnml_status *err);
+crint crint_ex_xori64(crint x, const int64_t val, size_t range, dnml_status *err);
+crint crint_ex_xnori64(crint x, const int64_t val, size_t range, dnml_status *err);
+crint crint_ex_and(crint x, crint val, size_t range, dnml_status *err);
+crint crint_ex_nand(crint x, crint val, size_t range, dnml_status *err);
+crint crint_ex_or(crint x, crint val, size_t range, dnml_status *err);
+crint crint_ex_nor(crint x, crint val, size_t range, dnml_status *err);
+crint crint_ex_xor(crint x, crint val, size_t range, dnml_status *err);
+crint crint_ex_xnor(crint x, crint val, size_t range, dnml_status *err);
 
 
 
 
 //* =============================================== COMPARISONS ============================================== */
 /* ---------------- Integer - I64 ---------------- */
-bool crint_equal_i64(const cryptint x, const int64_t val, dnml_status *err);
-bool crint_less_i64(const cryptint x, const int64_t val, dnml_status *err);
-bool crint_more_i64(const cryptint x, const int64_t val, dnml_status *err);
-bool crint_lequal_i64(const cryptint x, const int64_t val, dnml_status *err);
-bool crint_mequal_i64(const cryptint x, const int64_t val, dnml_status *err);
+bool crint_equal_i64(const crint x, const int64_t val, dnml_status *err);
+bool crint_less_i64(const crint x, const int64_t val, dnml_status *err);
+bool crint_more_i64(const crint x, const int64_t val, dnml_status *err);
+bool crint_lequal_i64(const crint x, const int64_t val, dnml_status *err);
+bool crint_mequal_i64(const crint x, const int64_t val, dnml_status *err);
 /* ----------- Unsigned Integer - UI64 ----------- */
-bool crint_equal_u64(const cryptint x, const uint64_t val, dnml_status *err);
-bool crint_less_u64(const cryptint x, const uint64_t val, dnml_status *err);
-bool crint_more_u64(const cryptint x, const uint64_t val, dnml_status *err);
-bool crint_lequal_u64(const cryptint x, const uint64_t val, dnml_status *err);
-bool crint_mequal_u64(const cryptint x, const uint64_t val, dnml_status *err);
+bool crint_equal_u64(const crint x, const uint64_t val, dnml_status *err);
+bool crint_less_u64(const crint x, const uint64_t val, dnml_status *err);
+bool crint_more_u64(const crint x, const uint64_t val, dnml_status *err);
+bool crint_lequal_u64(const crint x, const uint64_t val, dnml_status *err);
+bool crint_mequal_u64(const crint x, const uint64_t val, dnml_status *err);
 /* ------------------- Cryptint ------------------ */
-bool crint_equal(const cryptint x, cryptint y, dnml_status *err);
-bool crint_less(const cryptint x, cryptint y, dnml_status *err);
-bool crint_more(const cryptint x, cryptint y, dnml_status *err);
-bool crint_lequal(const cryptint x, cryptint y, dnml_status *err);
-bool crint_mequal(const cryptint x, cryptint y, dnml_status *err);
+bool crint_equal(const crint x, crint y, dnml_status *err);
+bool crint_less(const crint x, crint y, dnml_status *err);
+bool crint_more(const crint x, crint y, dnml_status *err);
+bool crint_lequal(const crint x, crint y, dnml_status *err);
+bool crint_mequal(const crint x, crint y, dnml_status *err);
 
 
 
 
 //* ================================================= COPIES ================================================= */
 /* -------------  Mutative SMALL Copies ------------- */
-dnml_status crint_mut_copyu64(cryptint *dst__, const uint64_t source__);
-dnml_status crint_mut_dcopyu64(cryptint *dst__, const uint64_t source__);
-dnml_status crint_mut_copyi64(cryptint *dst__, const int64_t source__);
-dnml_status crint_mut_dcopyi64(cryptint *dst__, const int64_t source__);
+dnml_status crint_mut_copyu64(crint *dst__, const uint64_t source__);
+dnml_status crint_mut_dcopyu64(crint *dst__, const uint64_t source__);
+dnml_status crint_mut_copyi64(crint *dst__, const int64_t source__);
+dnml_status crint_mut_dcopyi64(crint *dst__, const int64_t source__);
 /* -------------  Mutative LARGE Copies ------------- */
-dnml_status crint_mut_copyf128(cryptint *dst__, long double source__);
-dnml_status crint_mut_dcopyf128(cryptint *dst__, long double source__);
-dnml_status crint_mut_ocopyf128(cryptint *dst__, long double source__);
-dnml_status crint_mut_tover_copyf128(cryptint *dst__, long double source__);
-dnml_status crint_mut_copy(cryptint *dst__, const cryptint source__);
-dnml_status crint_mut_dcopy(cryptint *dst__, const cryptint source__);
-dnml_status crint_mut_ocopy(cryptint *dst__, const cryptint source__);
-dnml_status crint_mut_tover_copy(cryptint *dst__, const cryptint source__);
+dnml_status crint_mut_copyf128(crint *dst__, long double source__);
+dnml_status crint_mut_dcopyf128(crint *dst__, long double source__);
+dnml_status crint_mut_ocopyf128(crint *dst__, long double source__);
+dnml_status crint_mut_tover_copyf128(crint *dst__, long double source__);
+dnml_status crint_mut_copy(crint *dst__, const crint source__);
+dnml_status crint_mut_dcopy(crint *dst__, const crint source__);
+dnml_status crint_mut_ocopy(crint *dst__, const crint source__);
+dnml_status crint_mut_tover_copy(crint *dst__, const crint source__);
 /* -------------  Functional SMALL Copies ------------- */
-cryptint crint_copyu64(const uint64_t source__, dnml_status *__err__);
-cryptint crint_copyi64(const int64_t source__, dnml_status *__err__);
+crint crint_copyu64(const uint64_t source__, dnml_status *__err__);
+crint crint_copyi64(const int64_t source__, dnml_status *__err__);
 /* -------------  Functional LARGE Copies ------------- */
-cryptint crint_copyf128(long double source__, dnml_status *__err__);
-cryptint crint_ocopyf128(long double source__, size_t output_cap, dnml_status *__err__);
-cryptint crint_tover_copyf128(long double source__, size_t output_cap, dnml_status *__err__);
-cryptint crint_copy(const cryptint source__, dnml_status *__err__);
-cryptint crint_ocopy(const cryptint source__, size_t output_cap, dnml_status *__err__);
-cryptint crint_tover_copy(const cryptint source__, size_t output_cap, dnml_status *__err__);
-
+crint crint_copyf128(long double source__, dnml_status *__err__);
+crint crint_ocopyf128(long double source__, size_t output_cap, dnml_status *__err__);
+crint crint_tover_copyf128(long double source__, size_t output_cap, dnml_status *__err__);
+crint crint_copy(const crint source__, dnml_status *__err__);
+crint crint_ocopy(const crint source__, size_t output_cap, dnml_status *__err__);
+crint crint_tover_copy(const crint source__, size_t output_cap, dnml_status *__err__);
 
 
 
 
 //* ===================================== STATE ALTERATION FUNCTIONS ===================================== *//
-void crint_canonicalize(cryptint *x);
-void crint_normalize(cryptint *X);
-dnml_status crint_resize(cryptint *x, size_t k);
-dnml_status crint_reserve(cryptint *x, size_t k);
-dnml_status crint_shrink(cryptint *x, size_t k);
-dnml_status crint_reset(cryptint *x);
-bool crint_validate(cryptint x);
-bool crint_pvalidate(cryptint *x);
+void crint_canonicalize(crint *x);
+void crint_normalize(crint *X);
+dnml_status crint_resize(crint *x, size_t k);
+dnml_status crint_reserve(crint *x, size_t k);
+dnml_status crint_shrink(crint *x, size_t k);
+dnml_status crint_reset(crint *x);
+bool crint_validate(crint x);
+bool crint_pvalidate(crint *x);
 
 
 

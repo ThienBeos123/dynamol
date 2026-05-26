@@ -45,3 +45,4 @@ uint64_t __MAG_I64__(int64_t val) {
     uint64_t i64_norm_ret = (uint64_t)(llabs(val));
     RETURN_OPTION((val == INT64_MIN), (i64_min_ret), (i64_norm_ret));
 }
+size_t __clamp_size(size_t cap, size_t insize) { RETURN_OPTION((insize > cap), (cap), (insize)); }

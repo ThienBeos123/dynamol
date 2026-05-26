@@ -5,12 +5,12 @@
 
 
 //* ========================================= CONSTRUCTORS & DESTRUCTORS ===================================== *//
-void crint_free(cryptint *x) {
+void crint_free(crint *x) {
     if (x->limbs != NULL) free(x->limbs);
     x->limbs = 0; x->cap = 0; x->n = 0;
     x->poisoned = 0; x->sign = 0;
 }
-dnml_status crint_new(cryptint *x) {
+dnml_status crint_new(crint *x) {
     uint64_t oom_mask = UINT64_MAX; 
     dnml_status ret_stat = CRINT_SUCCESS;
     limb_t *__BUFFER_P = calloc(1, U64_BYTES);
@@ -27,7 +27,7 @@ dnml_status crint_new(cryptint *x) {
     /* Post operation Aggrestive Clearance */
     oom_mask = 0; __BUFFER_P = 0; uninit = 0; return ret_stat;
 }
-dnml_status crint_snew(cryptint *x, const size_t n) {
+dnml_status crint_snew(crint *x, const size_t n) {
     uint64_t oom_mask = UINT64_MAX;
     dnml_status ret_stat = CRINT_SUCCESS;
     size_t salloc; NORMALIZE_0_TO_1(salloc, n);
@@ -45,7 +45,7 @@ dnml_status crint_snew(cryptint *x, const size_t n) {
     /* Post-operation Aggrestive Clearance */
     oom_mask = 0; salloc = 0; __BUFFER_P = 0; uninit = 0; return ret_stat;
 }
-dnml_status crint_cinew(cryptint *x, cryptint *y) {
+dnml_status crint_cinew(crint *x, crint *y) {
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT((crint_pvalidate(y)), full_contract,
         { /* Set everything to 0 to completely wipe out memory */
@@ -56,7 +56,7 @@ dnml_status crint_cinew(cryptint *x, cryptint *y) {
         }
     ); DNML_TEST_ASSERT((y->poisoned), poisoined, { crint_free(y); });
     dnml_status ret_stat = CRINT_SUCCESS; uint64_t mask = UINT64_MAX; bool noop_toggle = false;
-    CHOOSE_OPTION((ret_stat), ((y->poisoned) & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (mask));
+    CHOOSE_OPTION((ret_stat), ((y->poisoned) & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
     CHOOSE_OPTION((noop_toggle), (y->poisoned), (true), (noop_toggle));
 
     /* Main Operations */
@@ -67,11 +67,11 @@ dnml_status crint_cinew(cryptint *x, cryptint *y) {
         (__BUFFER_P == NULL) & (x->limbs == NULL) & (ret_stat == CRINT_SUCCESS)), 
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    CHOOSE_OPTION((mask), (
-        (__BUFFER_P == NULL) & (x->limbs == NULL) & 
-        (mask == UINT64_MAX) & (ret_stat != CRINT_POISON)), 
-        (0), (mask)
-    ); uint8_t uninit = (x->limbs == NULL); limb_t* dst_limbs;
+    mask = (uint64_t)(-(int64_t)(!(
+        (__BUFFER_P == NULL) & (x->limbs == NULL) &
+        (mask == UINT64_MAX) & (ret_stat != CRINT_POISON)
+    )));
+    uint8_t uninit = (x->limbs == NULL); limb_t* dst_limbs;
     CHOOSE_OPTION((dst_limbs), (uninit), ((uintptr_t)__BUFFER_P), ((uintptr_t)y->limbs));
     size_t end; CHOOSE_OPTION((end), (!y->n), (0), ((y->n - 1) * U64_BYTES + (U64_BYTES - 1)))
     __libdnml_memcpy_strict(dst_limbs, y->limbs, alloc_size * U64_BYTES, end, y->n * U64_BYTES, 0, false);
@@ -84,7 +84,7 @@ dnml_status crint_cinew(cryptint *x, cryptint *y) {
     mask = 0; alloc_size = 0; __BUFFER_P = 0; uninit = 0; 
     dst_limbs = 0; return ret_stat;
 }
-dnml_status crint_new_u64(cryptint *x, const uint64_t in) {
+dnml_status crint_new_u64(crint *x, const uint64_t in) {
     uint64_t oom_mask = UINT64_MAX;
     dnml_status ret_stat = CRINT_SUCCESS;
     limb_t *__BUFFER_P = calloc(1, U64_BYTES);
@@ -103,7 +103,7 @@ dnml_status crint_new_u64(cryptint *x, const uint64_t in) {
     oom_mask = 0; __BUFFER_P = 0; uninit = 0; first_val = 0;
     return ret_stat;
 }
-dnml_status crint_new_i64(cryptint *x, const int64_t in) {
+dnml_status crint_new_i64(crint *x, const int64_t in) {
     uint64_t oom_mask = UINT64_MAX;
     dnml_status ret_stat = CRINT_SUCCESS;
     limb_t *__BUFFER_P = calloc(1, U64_BYTES);
@@ -123,12 +123,13 @@ dnml_status crint_new_i64(cryptint *x, const int64_t in) {
     oom_mask = 0; __BUFFER_P = 0; uninit = 0;
     first_val = 0; new_sign = 0; return ret_stat;
 }
-dnml_status crint_new_f128(cryptint *x, long double in) {}
+dnml_status crint_new_f128(crint *x, long double in) {}
+
 
 
 
 //* =============================================== ASSIGNMENTS ============================================== */
-dnml_status crint_set(cryptint x, cryptint *receiver) {
+dnml_status crint_set(crint x, crint *receiver) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_ASSERT((__STORAGE_VAL__(receiver)), store_inval, {
         if (receiver->limbs != NULL) *(receiver->limbs) = 0; crint_free(&x);
@@ -149,7 +150,7 @@ dnml_status crint_set(cryptint x, cryptint *receiver) {
     ); /* Aggressive Post-operation Cleanup */
     set_range = 0; end = 0; rec_sign = 0; return ret_stat;
 }
-dnml_status crint_set_safe(cryptint x, cryptint *receiver) {
+dnml_status crint_set_safe(crint x, crint *receiver) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_ASSERT((__STORAGE_VAL__(receiver)), store_inval, {
         if (receiver->limbs != NULL) *(receiver->limbs) = 0; crint_free(&x);
@@ -173,7 +174,7 @@ dnml_status crint_set_safe(cryptint x, cryptint *receiver) {
     end = 0; rec_sign = 0; return ret_stat;
 }
 /* --------- CryptInt --> Primitive Types --------- */
-dnml_status crint_setu64(uint64_t* receiver, cryptint x) {
+dnml_status crint_setu64(uint64_t* receiver, crint x) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
     CHOOSE_OPTION((ret_stat), (x.poisoned), (CRINT_POISON), (ret_stat));
@@ -181,7 +182,7 @@ dnml_status crint_setu64(uint64_t* receiver, cryptint x) {
     CHOOSE_OPTION((*receiver), (x.poisoned), (*receiver), (first_limb));
     first_limb = 0; return ret_stat;
 }
-dnml_status crint_seti64(int64_t* receiver, cryptint x) {
+dnml_status crint_seti64(int64_t* receiver, crint x) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
     CHOOSE_OPTION((ret_stat), (x.poisoned), (CRINT_POISON), (ret_stat));
@@ -193,8 +194,8 @@ dnml_status crint_seti64(int64_t* receiver, cryptint x) {
     CHOOSE_OPTION((*receiver), (x.poisoned), (*receiver), ((int64_t)(first_limb) * x.sign));
     first_limb = 0; abs_int64_min = 0; return ret_stat;
 }
-dnml_status crint_setf128(long double* receiver, cryptint x) {}
-dnml_status crint_setu64_safe(uint64_t* receiver, cryptint x) {
+dnml_status crint_setf128(long double* receiver, crint x) {}
+dnml_status crint_setu64_safe(uint64_t* receiver, crint x) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); });
     dnml_status ret_stat = CRINT_SUCCESS; bool noop = false;
@@ -207,7 +208,7 @@ dnml_status crint_setu64_safe(uint64_t* receiver, cryptint x) {
     CHOOSE_OPTION((*receiver), (!(noop)), (first_limb), (*receiver));
     noop = 0; first_limb = 0; return ret_stat;
 }
-dnml_status crint_seti64_safe(int64_t* receiver, cryptint x) {
+dnml_status crint_seti64_safe(int64_t* receiver, crint x) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); 
     dnml_status ret_stat = CRINT_SUCCESS; bool noop = false;
@@ -229,9 +230,9 @@ dnml_status crint_seti64_safe(int64_t* receiver, cryptint x) {
     CHOOSE_OPTION((*receiver), (!(noop)), ((int64_t)(first_limb) * x.sign), (*receiver));
     noop = 0; first_limb = 0; abs_int64_min = 0; return ret_stat;
 }
-dnml_status crint_setf128_safe(long double* receiver, cryptint x) {}
+dnml_status crint_setf128_safe(long double* receiver, crint x) {}
 /* --------- Primitive Types --> CryptInt --------- */
-dnml_status crint_getu64(cryptint *receiver, const uint64_t val) {
+dnml_status crint_getu64(crint *receiver, const uint64_t val) {
     DNML_ASSERT((__STORAGE_VAL__(receiver)), full_contract, { crint_free(receiver); });
     DNML_TEST_ASSERT((receiver->poisoned), poisoined, { crint_free(receiver); }); dnml_status ret_stat = CRINT_SUCCESS; 
     CHOOSE_OPTION((ret_stat), (receiver->poisoned), (CRINT_POISON), (ret_stat));
@@ -245,7 +246,7 @@ dnml_status crint_getu64(cryptint *receiver, const uint64_t val) {
     ); /* Aggressive Post-operation Cleanup */
     first_limb = 0; lcount = 0; new_sign = 0; return ret_stat;
 }
-dnml_status crint_geti64(cryptint *receiver, const int64_t val) {
+dnml_status crint_geti64(crint *receiver, const int64_t val) {
     DNML_ASSERT((__STORAGE_VAL__(receiver)), full_contract, { crint_free(receiver); });
     DNML_TEST_ASSERT((receiver->poisoned), poisoined, { crint_free(receiver); }); dnml_status ret_stat = CRINT_SUCCESS; 
     CHOOSE_OPTION((ret_stat), (receiver->poisoned), (CRINT_POISON), (ret_stat));
@@ -260,14 +261,15 @@ dnml_status crint_geti64(cryptint *receiver, const int64_t val) {
     ); /* Aggressive Post-operation Cleanup */
     first_limb = 0; lcount = 0; new_sign = 0; return ret_stat;
 }
-dnml_status crint_getf128(cryptint *receiver, const long double val) {}
-dnml_status crint_getf128_safe(cryptint *receiver, const long double val) {}
+dnml_status crint_getf128(crint *receiver, const long double val) {}
+dnml_status crint_getf128_safe(crint *receiver, const long double val) {}
+
 
 
 
 //* =============================================== CONVERSIONS ============================================== */
 /* --------- CryptInt --> Primitive Types --------- */
-uint64_t crint_tou64(cryptint x, dnml_status *err) {
+uint64_t crint_tou64(crint x, dnml_status *err) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
     CHOOSE_OPTION((ret_stat), (x.poisoned), (CRINT_POISON), (ret_stat));
@@ -275,7 +277,7 @@ uint64_t crint_tou64(cryptint x, dnml_status *err) {
     CHOOSE_OPTION((first_limb), (x.poisoned), (0), (first_limb));
     if (err != NULL) *err = ret_stat; ret_stat = 0; return first_limb;
 }
-int64_t crint_toi64(cryptint x, dnml_status *err) {
+int64_t crint_toi64(crint x, dnml_status *err) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
     CHOOSE_OPTION((ret_stat), (x.poisoned), (CRINT_POISON), (ret_stat));
@@ -288,8 +290,8 @@ int64_t crint_toi64(cryptint x, dnml_status *err) {
     if (err != NULL) *err = ret_stat; ret_stat = 0;
     first_limb = 0;  abs_int64_min = 0; mask = 0; return ret;
 }
-long double crint_tof128(cryptint x, dnml_status *err) {}
-uint64_t crint_tou64_safe(cryptint x, dnml_status *err) {
+long double crint_tof128(crint x, dnml_status *err) {}
+uint64_t crint_tou64_safe(crint x, dnml_status *err) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); });
     dnml_status ret_stat = CRINT_SUCCESS; bool noop = false;
@@ -303,7 +305,7 @@ uint64_t crint_tou64_safe(cryptint x, dnml_status *err) {
     if (err != NULL) *err = ret_stat; 
     ret_stat = 0; return first_limb;
 }
-int64_t crint_toi64_safe(cryptint x, dnml_status *err) {
+int64_t crint_toi64_safe(crint x, dnml_status *err) {
     DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
     DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); 
     dnml_status ret_stat = CRINT_SUCCESS; bool noop = false;
@@ -326,22 +328,22 @@ int64_t crint_toi64_safe(cryptint x, dnml_status *err) {
     if (err != NULL) *err = ret_stat; ret_stat = 0;
     noop = 0; abs_int64_min = 0; return first_limb;
 }
-long double crint_tof128_safe(cryptint x, dnml_status *err) {}
+long double crint_tof128_safe(crint x, dnml_status *err) {}
 /* --------- Primitive Types --> CryptInt --------- */
-cryptint crint_fromu64(const uint64_t x, dnml_status *err) {
-    cryptint ret; dnml_status new_stat; limb_t tmp[1] = {0}; new_stat = crint_new(&ret); uint64_t mask;
+crint crint_fromu64(const uint64_t x, dnml_status *err) {
+    crint ret; dnml_status new_stat; limb_t tmp[1] = {0}; new_stat = crint_new(&ret);
     CHOOSE_OPTION((ret.limbs), (new_stat == DNML_ALLOC_OOM), ((uintptr_t)tmp), ((uintptr_t)ret.limbs));
-    CHOOSE_OPTION((mask), (new_stat == DNML_ALLOC_OOM), (0), UINT64_MAX);
+    uint64_t mask = (uint64_t)(-(int64_t)(new_stat != DNML_ALLOC_OOM));
     ret.limbs[0] = x; ret.n = !!(x); ret.sign = 1; /* Correctly Setting Up - Standard Case */
     ret.limbs[0] &= mask; ret.n &= mask; ret.sign &= mask; /* Selectively masking into invalidity */
     CHOOSE_OPTION((ret.limbs), (new_stat == DNML_ALLOC_OOM), ((uintptr_t)0), ((uintptr_t)ret.limbs));
     if (err != NULL) CHOOSE_OPTION((*err), (new_stat == DNML_ALLOC_OOM), (DNML_ALLOC_OOM), (CRINT_SUCCESS));
     tmp[0] = 0; return ret;
 }
-cryptint crint_fromi64(const int64_t x, dnml_status *err) {
-    cryptint ret; dnml_status new_stat; limb_t tmp[1] = {0}; new_stat = crint_new(&ret); uint64_t mask;
+crint crint_fromi64(const int64_t x, dnml_status *err) {
+    crint ret; dnml_status new_stat; limb_t tmp[1] = {0}; new_stat = crint_new(&ret);
     CHOOSE_OPTION((ret.limbs), (new_stat == DNML_ALLOC_OOM), ((uintptr_t)tmp), ((uintptr_t)ret.limbs));
-    CHOOSE_OPTION((mask), (new_stat == DNML_ALLOC_OOM), (0), UINT64_MAX);
+    uint64_t mask = (uint64_t)(-(int64_t)(new_stat != DNML_ALLOC_OOM));
     ret.limbs[0] = __MAG_I64__(x); ret.n = !!(x); /* Correctly Setting Up - Standard Case */
     CHOOSE_OPTION((ret.sign), (x < 0), (-1), (1)); /* Correctly Setting Up - Standard Case */
     ret.limbs[0] &= mask; ret.n &= mask; ret.sign &= mask; /* Selectively masking into invalidity */
@@ -349,14 +351,276 @@ cryptint crint_fromi64(const int64_t x, dnml_status *err) {
     if (err != NULL) CHOOSE_OPTION((*err), (new_stat == DNML_ALLOC_OOM), (DNML_ALLOC_OOM), (CRINT_SUCCESS));
     tmp[0] = 0; return ret;
 }
-cryptint crint_fromf128(const long double x, dnml_status *err) {}
-cryptint crint_fromf128_safe(const long double x, dnml_status *err) {}
+crint crint_fromf128(const long double x, dnml_status *err) {}
+crint crint_fromf128_safe(const long double x, dnml_status *err) {}
+
+
+
+
+//* =========================================== BITWISE OPERATIONS =========================================== */
+crint crint_not(crint x, dnml_status *err) {
+    DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
+    DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x.poisoned & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
+    crint res; dnml_status new_stat = crint_snew(&res, x.n); limb_t fake_dst; limb_t *dst;
+    CHOOSE_OPTION((ret_stat), (new_stat == DNML_ALLOC_OOM & (ret_stat == CRINT_SUCCESS)), (DNML_ALLOC_OOM), (ret_stat));
+    uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS));
+    for (size_t i = 0; i < x.n; ++i) {
+        CHOOSE_OPTION(
+            (dst), (ret_stat == CRINT_SUCCESS), 
+            ((uintptr_t)(&res.limbs[i])), 
+            ((uintptr_t)(&fake_dst))
+        ); *dst = ~(x.limbs[i]);
+    } res.n = x.n & mask; res.sign = x.sign & mask; res.poisoned = (ret_stat != CRINT_SUCCESS);
+    // Non-constant-branching here is fine, as it is based on operation status, not secret data
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(&res); /**/ if (err != NULL) *err = ret_stat;
+    /* Aggresive, Post-oepration Cleanup */ dst = 0; mask = 0;
+    ret_stat = 0; new_stat = 0; fake_dst = 0; return res;
+}
+crint crint_rshift(crint x, size_t k, dnml_status *err) {
+    DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
+    DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x.poisoned & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
+    size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; crint res; dnml_status new_stat = crint_snew(&res, x.n);
+    CHOOSE_OPTION((ret_stat), (new_stat == DNML_ALLOC_OOM & (ret_stat == CRINT_SUCCESS)), (DNML_ALLOC_OOM), (ret_stat));
+
+    limb_t fake_dst; limb_t *dst; uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS)), discarded_bits = 0;
+    CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(res.limbs)), ((uintptr_t)(x.limbs)));
+    size_t end; CHOOSE_OPTION((end), (x.n), ((x.n - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
+    __libdnml_memcpy_strict(dst, x.limbs, x.n * U64_BYTES, x.n * U64_BYTES, 0, end, (!(ret_stat == CRINT_SUCCESS)));
+    __CRINT_INTERNAL_RLSHIFT__(&res, x.n, limb_shift & mask); res.n = x.n - limb_shift;
+    for (size_t i = res.n - 1; i >= 0; --i) { /* Individual Bit Shift Loops */
+        CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&res.limbs[i])), ((uintptr_t)(&fake_dst)));
+        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift); 
+        *dst = (x.limbs[i] >> bshift) | positioned_bits; positioned_bits = 0; // Clearance
+        discarded_bits = x.limbs[i] & ((UINT64_C(1) << bshift) - 1);
+    }
+    CHOOSE_OPTION((res.limbs), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(res.limbs)), (0));
+    res.n &= mask; res.sign = x.sign & mask; res.poisoned = (ret_stat != CRINT_SUCCESS);
+    // Non-constant-branching here is fine, as it is based on operation status, not secret data
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(&res); /**/ if (err != NULL) *err = ret_stat;
+    /* Aggressive, Post-operation Cleanup */ 
+    ret_stat = 0; new_stat = 0; limb_shift = 0; bshift = 0; end = 0;
+    fake_dst = 0; dst = 0; mask = 0; discarded_bits = 0; return res;
+}
+crint crint_lshift(crint x, size_t k, dnml_status *err) {
+    DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
+    DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x.poisoned & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
+    size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; crint res; dnml_status new_stat = crint_snew(&res, x.n);
+    CHOOSE_OPTION((ret_stat), (new_stat == DNML_ALLOC_OOM & (ret_stat == CRINT_SUCCESS)), (DNML_ALLOC_OOM), (ret_stat));
+
+    limb_t fake_dst; limb_t *dst; uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS)), discarded_bits = 0;
+    CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(res.limbs)), ((uintptr_t)(x.limbs)));
+    size_t end; CHOOSE_OPTION((end), (x.n), ((x.n - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
+    __libdnml_memcpy_strict(dst, x.limbs, x.n * U64_BYTES, x.n * U64_BYTES, 0, end, (!(ret_stat == CRINT_SUCCESS)));
+    __CRINT_INTERNAL_LLSHIFT__(&res, x.n, limb_shift & mask); res.n = x.n;
+    for (size_t i = 0; i < x.n; ++i) { /* Individual Bit Shift Loops */
+        CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&res.limbs[i])), ((uintptr_t)(&fake_dst)));
+        *dst = (x.limbs[i] << k) | discarded_bits; uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
+        discarded_bits = x.limbs[i] & (iso_mask << U64_BITS - bshift); iso_mask = 0;
+    }
+    CHOOSE_OPTION((res.limbs), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(res.limbs)), (0));
+    res.n = x.n & mask; res.sign = x.sign & mask; res.poisoned = (ret_stat != CRINT_SUCCESS);
+    // Non-constant-branching here is fine, as it is based on operation status, not secret data
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(&res); /**/ if (err != NULL) *err = ret_stat;
+    /* Aggressive, Post-operation Cleanup */ 
+    ret_stat = 0; new_stat = 0; limb_shift = 0; bshift = 0; end = 0;
+    fake_dst = 0; dst = 0; mask = 0; discarded_bits = 0; return res;
+}
+crint crint_lshiftg(crint x, size_t k, dnml_status *err) {
+    DNML_ASSERT((crint_validate(x)), full_contract, { if (x.limbs != NULL) *(x.limbs) = 0; crint_free(&x); });
+    DNML_TEST_ASSERT((x.poisoned), poisoined, { crint_free(&x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x.poisoned & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
+    size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; crint res;
+    size_t alloc_size = (x.n + limb_shift + !!(bshift)); dnml_status new_stat = crint_snew(&res, alloc_size);
+    CHOOSE_OPTION((ret_stat), (new_stat == DNML_ALLOC_OOM & (ret_stat == CRINT_SUCCESS)), (DNML_ALLOC_OOM), (ret_stat));
+
+    limb_t fake_dst; limb_t *dst; uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS)), discarded_bits = 0;
+    for (size_t i = 0; i < x.n; ++i) { /* Limb Shifting Loop */
+        CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), 
+            ((uintptr_t)(&res.limbs[i + limb_shift])), 
+            ((uintptr_t)(&fake_dst))
+        ); *dst = x.limbs[i];
+    } res.n = alloc_size;
+    for (size_t i = limb_shift; i < res.n; ++i) { /* Individual Bit Shift Loops */
+        CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&res.limbs[i])), ((uintptr_t)(&fake_dst)));
+        uint64_t new_carry = res.limbs[i] >> (U64_BITS - bshift);
+        *dst = (res.limbs[i] << bshift) | discarded_bits;
+        discarded_bits = new_carry; new_carry = 0;
+    }
+    CHOOSE_OPTION((res.limbs), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(res.limbs)), (0));
+    res.n &= mask; res.sign = x.sign & mask; res.poisoned = (ret_stat != CRINT_SUCCESS);
+    // Non-constant-branching here is fine, as it is based on operation status, not secret data
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(&res); /**/ if (err != NULL) *err = ret_stat;
+    /* Aggressive, Post-operation Cleanup */
+    ret_stat = 0; new_stat = 0; limb_shift = 0; bshift = 0;
+    fake_dst = 0; dst = 0; mask = 0; discarded_bits = 0; return res;
+}
+dnml_status crint_mut_not(crint *x) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); 
+    dnml_status ret_stat = CRINT_SUCCESS; CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    for (size_t i = 0; i < x->n; ++i) CHOOSE_OPTION((x->limbs[i]), (x->poisoned), (x->limbs[i]), (~(x->limbs[i])));
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(x); return ret_stat;
+}
+dnml_status crint_mut_rshift(crint *x, size_t k) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(&x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
+    uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS));
+
+    __CRINT_INTERNAL_RLSHIFT__(x, x->n, limb_shift & mask); x->n -= limb_shift & mask; 
+    limb_t fake_dst; limb_t* dst; uint64_t discarded_bits = 0;
+    for (size_t i = x->cap - 1; i >= 0; --i) { /* Individual Bits Loop */
+        size_t index; CHOOSE_OPTION((index), (i < x->n), (i), (0));
+        CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&x->limbs[i])), ((uintptr_t)(&fake_dst)));
+        /* Pre-calculations - Ensure Constant Time */
+        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
+        uint64_t dbit_calc = x->limbs[index] & ((UINT64_C(1) << bshift) - 1);
+        uint64_t dst_val = (x->limbs[index] >> bshift) | positioned_bits;
+        /* Actual Assignment + Per Iteration Cleanup */
+        CHOOSE_OPTION((discarded_bits), (i < x->n), (dbit_calc), (discarded_bits));
+        CHOOSE_OPTION((*dst), (i < x->n), (dst_val), (*dst));
+        index = 0; positioned_bits = 0; dbit_calc = 0; dst_val = 0;
+    } 
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(x);
+    /* Aggrestive, Post-operation Cleanup */ limb_shift = 0; bshift = 0;
+    mask = 0; fake_dst = 0; dst = 0; discarded_bits = 0; return ret_stat;
+}
+dnml_status crint_mut_lshift(crint *x, size_t k) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(&x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
+    size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
+    uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS));
+
+    __CRINT_INTERNAL_LLSHIFT__(x, x->n, limb_shift & mask);
+    limb_t fake_dst; limb_t* dst; uint64_t discarded_bits = 0;
+    for (size_t i = 0; i < x->cap; ++i) { /* Individual Bits Loop */
+        size_t index; CHOOSE_OPTION((index), (i < x->n), (i), (0));
+        CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&x->limbs[i])), ((uintptr_t)(&fake_dst)));
+        /* Pre-calculations - Ensure Constant Time */
+        uint64_t previous_dbits = discarded_bits, iso_mask = (UINT64_C(1) << bshift) - 1;
+        uint64_t dbit_calc = x->limbs[index] & (iso_mask << U64_BITS - bshift);
+        uint64_t dst_val = (x->limbs[index] << bshift) | previous_dbits;
+        /* Actual Assignment + Per Iteration Cleanup */
+        CHOOSE_OPTION((discarded_bits), (i < x->n), (dbit_calc), (discarded_bits));
+        CHOOSE_OPTION((*dst), (i < x->n), (dst_val), (*dst));
+        index = 0; previous_dbits = 0; dbit_calc = 0; dst_val = 0;
+    } 
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(x);
+    /* Aggresive, Post-operation Cleanup */ limb_shift = 0; bshift = 0;
+    mask = 0; fake_dst = 0; dst = 0; discarded_bits = 0; return ret_stat;
+}
+dnml_status crint_mut_lshiftg(crint *x, size_t k) {
+    DNML_ASSERT((crint_pvalidate(x)), full_contract, { if (x->limbs != NULL) *(x->limbs) = 0; crint_free(&x); });
+    DNML_TEST_ASSERT((x->poisoned), poisoined, { crint_free(x); }); dnml_status ret_stat = CRINT_SUCCESS; 
+    CHOOSE_OPTION((ret_stat), (x->poisoned & (ret_stat == CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
+    size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; size_t alloc_cap = (x->n + limb_shift + !!(bshift));
+    dnml_status reserve_stat = crint_reserve(x, alloc_cap); CHOOSE_OPTION((ret_stat), (
+        (reserve_stat == DNML_ALLOC_OOM) & 
+        (ret_stat == CRINT_SUCCESS)), 
+        (reserve_stat), (ret_stat)
+    ); uint64_t mask = (uint64_t)(-(int64_t)(ret_stat == CRINT_SUCCESS));
+
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint *llshift_operated; size_t llshift_size; // Used in LLSHIFT
+    crint fake_operated = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
+    CHOOSE_OPTION((llshift_operated), (ret_stat == DNML_ALLOC_OOM), ((uintptr_t)(&fake_operated)), ((uintptr_t)x));
+    CHOOSE_OPTION((llshift_size), (ret_stat == DNML_ALLOC_OOM), (FAKE_BUF_CAP), (x->cap));
+    __CRINT_INTERNAL_LLSHIFT__(llshift_operated, llshift_size, limb_shift & mask); 
+    x->n += (limb_shift + !!(bshift)) & mask;
+    limb_t fake_dst; limb_t* dst; uint64_t discarded_bits = 0; // Used in individual Bits Loop
+    for (size_t i = limb_shift & mask; i < x->n; ++i) { /* Individual Bits Loop */ 
+       size_t index; CHOOSE_OPTION((index), (i < x->n), (i), (0));
+        CHOOSE_OPTION((dst), (ret_stat == CRINT_SUCCESS), ((uintptr_t)(&x->limbs[i])), ((uintptr_t)(&fake_dst)));
+        /* Pre-calculations - Ensure Constant Time */
+        uint64_t new_carry = x->limbs[i] >> (U64_BITS - bshift);
+        uint64_t dst_val = (x->limbs[index] << bshift) | discarded_bits;
+        /* Actual Assignment + Per Iteration Cleanup */
+        CHOOSE_OPTION((discarded_bits), (i < x->n), (new_carry), (discarded_bits));
+        CHOOSE_OPTION((*dst), (i < x->n), (dst_val), (*dst));
+        index = 0; new_carry = 0; dst_val = 0;
+    }
+    if (ret_stat == CRINT_SUCCESS) crint_normalize(x);
+    /* Aggrestive, Post-operation Cleanup */ 
+    limb_shift = 0; bshift = 0; alloc_cap = 0; reserve_stat = 0; mask = 0;
+    __libdnml_memwipe_strict(fake_buf, FAKE_BUF_CAP * U64_BYTES, false);
+    llshift_operated = 0; llshift_size = 0; fake_operated.poisoned = 0;
+    fake_operated.limbs = 0; fake_operated.n = 0; fake_operated.cap = 0;
+    fake_operated.sign = 0; fake_dst = 0; dst = 0; discarded_bits = 0; return ret_stat;
+}
+/* ----------------------- Mutative, Fixed Width ----------------------- */
+dnml_status crint_mut_andu64(crint *x, const uint64_val) {}
+dnml_status crint_mut_nandu64(crint *x, const uint64_val) {}
+dnml_status crint_mut_oru64(crint *x, const uint64_val) {}
+dnml_status crint_mut_noru64(crint *x, const uint64_val) {}
+dnml_status crint_mut_xoru64(crint *x, const uint64_val) {}
+dnml_status crint_mut_xnoru64(crint *x, const uint64_val) {}
+dnml_status crint_mut_and(crint *x, crint y) {}
+dnml_status crint_mut_nand(crint *x, crint y) {}
+dnml_status crint_mut_or(crint *x, crint y) {}
+dnml_status crint_mut_nor(crint *x, crint y) {}
+dnml_status crint_mut_xor(crint *x, crint y) {}
+dnml_status crint_mut_xnor(crint *x, crint y) {}
+/* ----------------------- Mutative, Explicit Width ----------------------- */
+dnml_status crint_mutex_andu64(crint *x, const uint64_t val, size_t range) {}
+dnml_status crint_mutex_nandu64(crint *x, const uint64_t val, size_t range) {}
+dnml_status crint_mutex_oru64(crint *x, const uint64_t val, size_t range) {}
+dnml_status crint_mutex_noru64(crint *x, const uint64_t val, size_t range) {}
+dnml_status crint_mutex_xoru64(crint *x, const uint64_t val, size_t range) {}
+dnml_status crint_mutex_xnoru64(crint *x, const uint64_t val, size_t range) {}
+dnml_status crint_mutex_andi64(crint *x, const int64_t val, size_t range) {}
+dnml_status crint_mutex_nandi64(crint *x, const int64_t val, size_t range) {}
+dnml_status crint_mutex_ori64(crint *x, const int64_t val, size_t range) {}
+dnml_status crint_mutex_nori64(crint *x, const int64_t val, size_t range) {}
+dnml_status crint_mutex_xori64(crint *x, const int64_t val, size_t range) {}
+dnml_status crint_mutex_xnori64(crint *x, const int64_t val, size_t range) {}
+dnml_status crint_mutex_and(crint *x, crint val, size_t range) {}
+dnml_status crint_mutex_nand(crint *x, crint val, size_t range) {}
+dnml_status crint_mutex_or(crint *x, crint val, size_t range) {}
+dnml_status crint_mutex_nor(crint *x, crint val, size_t range) {}
+dnml_status crint_mutex_xor(crint *x, crint val, size_t range) {}
+dnml_status crint_mutex_xnor(crint *x, crint val, size_t range) {}
+/* ----------------------- Functional, Fixed Width ----------------------- */
+crint crint_andu64(crint x, const uint64_val, dnml_status *err) {}
+crint crint_nandu64(crint x, const uint64_val, dnml_status *err) {}
+crint crint_oru64(crint x, const uint64_val, dnml_status *err) {}
+crint crint_noru64(crint x, const uint64_val, dnml_status *err) {}
+crint crint_xoru64(crint x, const uint64_val, dnml_status *err) {}
+crint crint_xnoru64(crint x, const uint64_val, dnml_status *err) {}
+crint crint_and(crint x, crint y, dnml_status *err) {}
+crint crint_nand(crint x, crint y, dnml_status *err) {}
+crint crint_or(crint x, crint y, dnml_status *err) {}
+crint crint_nor(crint x, crint y, dnml_status *err) {}
+crint crint_xor(crint x, crint y, dnml_status *err) {}
+crint crint_xnor(crint x, crint y, dnml_status *err) {}
+/* ----------------------- Functional, Explicit Width ----------------------- */
+crint crint_ex_andu64(crint x, const uint64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_nandu64(crint x, const uint64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_oru64(crint x, const uint64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_noru64(crint x, const uint64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_xoru64(crint x, const uint64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_xnoru64(crint x, const uint64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_andi64(crint x, const int64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_nandi64(crint x, const int64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_ori64(crint x, const int64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_nori64(crint x, const int64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_xori64(crint x, const int64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_xnori64(crint x, const int64_t val, size_t range, dnml_status *err) {}
+crint crint_ex_and(crint x, crint val, size_t range, dnml_status *err) {}
+crint crint_ex_nand(crint x, crint val, size_t range, dnml_status *err) {}
+crint crint_ex_or(crint x, crint val, size_t range, dnml_status *err) {}
+crint crint_ex_nor(crint x, crint val, size_t range, dnml_status *err) {}
+crint crint_ex_xor(crint x, crint val, size_t range, dnml_status *err) {}
+crint crint_ex_xnor(crint x, crint val, size_t range, dnml_status *err) {}
 
 
 
 
 //* =============================================== COMPARISONS ============================================== */
-static int8_t __CRINT_MAGCMP64__(cryptint *x, const uint64_t val, dnml_status *err) {
+static int8_t __CRINT_MAGCMP64__(crint *x, const uint64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, {});
     DNML_TEST_ASSERT((x->poisoned), poisoined, {});
@@ -376,7 +640,7 @@ static int8_t __CRINT_MAGCMP64__(cryptint *x, const uint64_t val, dnml_status *e
     CHOOSE_OPTION((ret), (ret == 2), (0), (ret)); 
     curr = 0; return ret; // set curr to sanitize memory
 }
-static int8_t __CRINT_MAGCMP__(cryptint *x, cryptint *y) {
+static int8_t __CRINT_MAGCMP__(crint *x, crint *y) {
     /* Pre-operation Validation & Static Analysis */
     DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, {});
     DNML_TEST_ASSERT((x->poisoned), poisoined, {});
@@ -395,7 +659,7 @@ static int8_t __CRINT_MAGCMP__(cryptint *x, cryptint *y) {
     for (size_t i = upperbound - 1; i >= 0; --i) {
         /* 
         * Guarantees that each iteration always access an index to normalize timing
-        * We universally chosen the first limb of each cryptint as a placeholder
+        * We universally chosen the first limb of each crint as a placeholder
         * with not semantic meaning 
         */
         CHOOSE_OPTION((x_curr), (i < x->cap), (x->limbs[i]), (x->limbs[0]));
@@ -420,7 +684,7 @@ static int8_t __CRINT_MAGCMP__(cryptint *x, cryptint *y) {
     return ret;
 }
 /* ---------------- Integer - I64 ---------------- */
-bool crint_equal_i64(cryptint x, const int64_t val, dnml_status *err) {
+bool crint_equal_i64(crint x, const int64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -458,7 +722,7 @@ bool crint_equal_i64(cryptint x, const int64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; vsign = 0; mag_val = 0; return (bool)(ret);
 }
-bool crint_less_i64(cryptint x, const int64_t val, dnml_status *err) {
+bool crint_less_i64(crint x, const int64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -515,7 +779,7 @@ bool crint_less_i64(cryptint x, const int64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; vsign = 0; mag_val = 0; return (bool)(ret);
 }
-bool crint_more_i64(cryptint x, const int64_t val, dnml_status *err) {
+bool crint_more_i64(crint x, const int64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -572,7 +836,7 @@ bool crint_more_i64(cryptint x, const int64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; vsign = 0; mag_val = 0; return (bool)(ret);
 }
-bool crint_lequal_i64(cryptint x, const int64_t val, dnml_status *err) {
+bool crint_lequal_i64(crint x, const int64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -629,7 +893,7 @@ bool crint_lequal_i64(cryptint x, const int64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; vsign = 0; mag_val = 0; return (bool)(ret);
 }
-bool crint_mequal_i64(cryptint x, const int64_t val, dnml_status *err) {
+bool crint_mequal_i64(crint x, const int64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -687,7 +951,7 @@ bool crint_mequal_i64(cryptint x, const int64_t val, dnml_status *err) {
     ret_stat = 0; curr = 0; vsign = 0; mag_val = 0; return (bool)(ret);
 }
 /* ----------- Unsigned Integer - UI64 ----------- */
-bool crint_equal_u64(cryptint x, const uint64_t val, dnml_status *err) {
+bool crint_equal_u64(crint x, const uint64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -723,7 +987,7 @@ bool crint_equal_u64(cryptint x, const uint64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; return (bool)(ret);
 }
-bool crint_less_u64(cryptint x, const uint64_t val, dnml_status *err) {
+bool crint_less_u64(crint x, const uint64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -759,7 +1023,7 @@ bool crint_less_u64(cryptint x, const uint64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; return (bool)(ret);
 }
-bool crint_more_u64(cryptint x, const uint64_t val, dnml_status *err) {
+bool crint_more_u64(crint x, const uint64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -795,7 +1059,7 @@ bool crint_more_u64(cryptint x, const uint64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; return (bool)(ret);
 }
-bool crint_lequal_u64(cryptint x, const uint64_t val, dnml_status *err) {
+bool crint_lequal_u64(crint x, const uint64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -826,7 +1090,7 @@ bool crint_lequal_u64(cryptint x, const uint64_t val, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; return (bool)(ret);
 }
-bool crint_mequal_u64(cryptint x, const uint64_t val, dnml_status *err) {
+bool crint_mequal_u64(crint x, const uint64_t val, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(x)), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -863,7 +1127,7 @@ bool crint_mequal_u64(cryptint x, const uint64_t val, dnml_status *err) {
     ret_stat = 0; curr = 0; return (bool)(ret);
 }
 /* ------------------- Cryptint ------------------ */
-bool crint_equal(cryptint x, cryptint y, dnml_status *err) {
+bool crint_equal(crint x, crint y, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT(((crint_validate(x)) && (crint_validate(y))), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -906,7 +1170,7 @@ bool crint_equal(cryptint x, cryptint y, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptableerr = ret_stat; 
     ret_stat = 0; curr = 0; mag_ret = 0; return (bool)(ret);
 }
-bool crint_less(cryptint x, cryptint y, dnml_status *err) {
+bool crint_less(crint x, crint y, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT(((crint_validate(x)) && (crint_validate(y))), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -969,7 +1233,7 @@ bool crint_less(cryptint x, cryptint y, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; mag_ret = 0; return (bool)(ret);
 }
-bool crint_more(cryptint x, cryptint y, dnml_status *err) {
+bool crint_more(crint x, crint y, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT(((crint_validate(x)) && (crint_validate(y))), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -1032,7 +1296,7 @@ bool crint_more(cryptint x, cryptint y, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; mag_ret = 0; return (bool)(ret);
 }
-bool crint_lequal(cryptint x, cryptint y, dnml_status *err) {
+bool crint_lequal(crint x, crint y, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT(((crint_validate(x)) && (crint_validate(y))), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -1093,7 +1357,7 @@ bool crint_lequal(cryptint x, cryptint y, dnml_status *err) {
     if (err != NULL) *err = ret_stat; // Conditional Branching here is aceptable
     ret_stat = 0; curr = 0; mag_ret = 0; return (bool)(ret);
 }
-bool crint_mequal(cryptint x, cryptint y, dnml_status *err) {
+bool crint_mequal(crint x, crint y, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT(((crint_validate(x)) && (crint_validate(y))), full_contract, {
         if (x.limbs != NULL) *(x.limbs) = 0;
@@ -1158,10 +1422,9 @@ bool crint_mequal(cryptint x, cryptint y, dnml_status *err) {
 
 
 
-
 //* ================================================= COPIES ================================================= */
 /* -------------  Mutative SMALL Copies ------------- */
-dnml_status crint_mut_copyu64(cryptint *dst, const uint64_t src) {
+dnml_status crint_mut_copyu64(crint *dst, const uint64_t src) {
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT(__STORAGE_VAL__(dst), store_inval, {
         if (dst->limbs != NULL) *(dst->limbs) = 0;
@@ -1183,7 +1446,7 @@ dnml_status crint_mut_copyu64(cryptint *dst, const uint64_t src) {
         noop_toggle
     ); val = 0; return ret_stat;
 }
-dnml_status crint_mut_dcopyu64(cryptint *dst, const uint64_t src) {
+dnml_status crint_mut_dcopyu64(crint *dst, const uint64_t src) {
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT(__STORAGE_VAL__(dst), store_inval, {
         if (dst->limbs != NULL) *(dst->limbs) = 0;
@@ -1210,7 +1473,7 @@ dnml_status crint_mut_dcopyu64(cryptint *dst, const uint64_t src) {
     dst->sign &= oom; dst->poisoned &= oom;
     TMP_P = 0; __BUFFER_P = 0; oom = 0; return ret_stat;
 }
-dnml_status crint_mut_copyi64(cryptint *dst, const int64_t src) {
+dnml_status crint_mut_copyi64(crint *dst, const int64_t src) {
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT(__STORAGE_VAL__(dst),
     "Partial Contract Violation: CryptInt invalid for storage "
@@ -1235,7 +1498,7 @@ dnml_status crint_mut_copyi64(cryptint *dst, const int64_t src) {
         (dst->cap - 1) * U64_BYTES + (U64_BYTES - 1), noop_toggle
     ); return ret_stat;
 }
-dnml_status crint_mut_dcopyi64(cryptint *dst, const int64_t src) {
+dnml_status crint_mut_dcopyi64(crint *dst, const int64_t src) {
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT(__STORAGE_VAL__(dst), store_inval, {
         if (dst->limbs != NULL) *(dst->limbs) = 0;
@@ -1265,11 +1528,11 @@ dnml_status crint_mut_dcopyi64(cryptint *dst, const int64_t src) {
     TMP_P = 0; __BUFFER_P = 0; oom = 0; return ret_stat;
 }
 /* -------------  Mutative LARGE Copies ------------- */
-dnml_status crint_mut_copyf128(cryptint *dst, long double src) {}
-dnml_status crint_mut_dcopyf128(cryptint *dst, long double src) {}
-dnml_status crint_mut_ocopyf128(cryptint *dst, long double src) {}
-dnml_status crint_mut_tover_copyf128(cryptint *dst, long double src) {}
-dnml_status crint_mut_copy(cryptint *dst, cryptint src) {
+dnml_status crint_mut_copyf128(crint *dst, long double src) {}
+dnml_status crint_mut_dcopyf128(crint *dst, long double src) {}
+dnml_status crint_mut_ocopyf128(crint *dst, long double src) {}
+dnml_status crint_mut_tover_copyf128(crint *dst, long double src) {}
+dnml_status crint_mut_copy(crint *dst, crint src) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(src)), full_contract,
     { /* Set everything to 0 to completely wipe out memory */
@@ -1298,11 +1561,11 @@ dnml_status crint_mut_copy(cryptint *dst, cryptint src) {
         );
     }
     CHOOSE_OPTION((correctly_set), (ret_stat != DNML_ALLOC_OOM), (UINT64_MAX), (0));
-    limb_t dst_buf[1024] = {0}, src_buf[1024] = {0}; size_t end; limb_t *dst_limbs, src_limbs;
+    limb_t dst_buf[FAKE_BUF_CAP] = {0}, src_buf[FAKE_BUF_CAP] = {0}; size_t end; limb_t *dst_limbs, src_limbs;
     CHOOSE_OPTION((dst_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(dst->limbs)), ((uintptr_t)dst_buf));
     CHOOSE_OPTION((src_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(src.limbs)), ((uintptr_t)src_buf));
-    CHOOSE_OPTION((dst->cap), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (1024));
-    CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (src.n), (1024));
+    CHOOSE_OPTION((dst->cap), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (FAKE_BUF_CAP));
+    CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (src.n), (FAKE_BUF_CAP));
     dst->n = src.n; dst->sign = src.sign;
     __libdnml_memcpy_strict(
         dst_limbs, src_limbs, dst->cap * U64_BYTES, src.n * U64_BYTES,
@@ -1310,7 +1573,7 @@ dnml_status crint_mut_copy(cryptint *dst, cryptint src) {
     );
     size_t clear_start, clear_end;
     CHOOSE_OPTION((clear_start), (ret_stat != DNML_ALLOC_OOM), (dst->n), (0));
-    CHOOSE_OPTION((clear_end), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (1024));
+    CHOOSE_OPTION((clear_end), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (FAKE_BUF_CAP));
     __libdnml_memset_strict(
         dst_limbs, 0, dst->cap * U64_BYTES, clear_start * U64_BYTES,
         (clear_end - 1) * U64_BYTES + (U64_BYTES - 1), 
@@ -1321,12 +1584,12 @@ dnml_status crint_mut_copy(cryptint *dst, cryptint src) {
     dst->poisoned &= correctly_set; dst->sign &= correctly_set;
     dst->n &= correctly_set; dst->cap &= correctly_set;
     rcap_stat = 0; correctly_set = 0;
-    __libdnml_memwipe_strict(dst_buf, 1024 * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_buf, 1024 * U64_BYTES, false);
+    __libdnml_memwipe_strict(dst_buf, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_memwipe_strict(src_buf, FAKE_BUF_CAP * U64_BYTES, false);
     end = 0; dst_limbs = 0; src_limbs = 0;
     clear_start = 0; clear_end = 0; return ret_stat;
 }
-dnml_status crint_mut_dcopy(cryptint *dst, cryptint src) {
+dnml_status crint_mut_dcopy(crint *dst, crint src) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(src)), full_contract,
     { /* Set everything to 0 to completely wipe out memory */
@@ -1353,11 +1616,11 @@ dnml_status crint_mut_dcopy(cryptint *dst, cryptint src) {
         (resize_stat), (ret_stat)
     );
     uint64_t oom_filter = UINT64_MAX;
-    limb_t dst_buf[1024] = {0}, src_buf[1024] = {0}; size_t end; limb_t *dst_limbs, src_limbs;
+    limb_t dst_buf[FAKE_BUF_CAP] = {0}, src_buf[FAKE_BUF_CAP] = {0}; size_t end; limb_t *dst_limbs, src_limbs;
     CHOOSE_OPTION((dst_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(dst->limbs)), ((uintptr_t)dst_buf));
     CHOOSE_OPTION((src_limbs), (ret_stat != DNML_ALLOC_OOM), ((uintptr_t)(src.limbs)), ((uintptr_t)src_buf));
-    CHOOSE_OPTION((dst->cap), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (1024));
-    CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (src.n), (1024));
+    CHOOSE_OPTION((dst->cap), (ret_stat != DNML_ALLOC_OOM), (dst->cap), (FAKE_BUF_CAP));
+    CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (src.n), (FAKE_BUF_CAP));
     CHOOSE_OPTION((oom_filter), (ret_stat != DNML_ALLOC_OOM), (oom_filter), (0));
     dst->n = src.n; dst->sign = src.sign;
     __libdnml_memcpy_strict(
@@ -1369,11 +1632,11 @@ dnml_status crint_mut_dcopy(cryptint *dst, cryptint src) {
     dst->n &= oom_filter; dst->cap &= oom_filter;
     dst->poisoned &= oom_filter; dst->sign &= oom_filter;
     resize_stat = 0; oom_filter = 0; end = 0;
-    __libdnml_memwipe_strict(dst_buf, 1024 * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_buf, 1024 * U64_BYTES, false);
+    __libdnml_memwipe_strict(dst_buf, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_memwipe_strict(src_buf, FAKE_BUF_CAP * U64_BYTES, false);
     dst_limbs = 0; src_limbs = 0; return ret_stat;
 }
-dnml_status crint_mut_ocopy(cryptint *dst, cryptint src) {
+dnml_status crint_mut_ocopy(crint *dst, crint src) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(src)), full_contract,
     { /* Set everything to 0 to completely wipe out memory */
@@ -1405,7 +1668,7 @@ dnml_status crint_mut_ocopy(cryptint *dst, cryptint src) {
     /* Aggresive Post-Operation Clean-up */
     noop_toggle = 0; noop_toggle = 0; return ret_stat;
 }
-dnml_status crint_mut_tover_copy(cryptint *dst, cryptint src) {
+dnml_status crint_mut_tover_copy(crint *dst, crint src) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(src)), full_contract,
     { /* Set everything to 0 to completely wipe out memory */
@@ -1437,8 +1700,8 @@ dnml_status crint_mut_tover_copy(cryptint *dst, cryptint src) {
     op_range = 0; noop_toggle = 0; return ret_status;
 }
 /* -------------  Functional SMALL Copies ------------- */
-cryptint crint_copyu64(const uint64_t src, dnml_status *err) {
-    cryptint dst; dnml_status new_stat; uint64_t correctly_set;
+crint crint_copyu64(const uint64_t src, dnml_status *err) {
+    crint dst; dnml_status new_stat; uint64_t correctly_set;
     limb_t dst_tmp_p[1] = {0}; new_stat = crint_new(&dst);
     CHOOSE_OPTION((dst.limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)dst.limbs), ((uintptr_t)dst_tmp_p));
     CHOOSE_OPTION((correctly_set), (new_stat != DNML_ALLOC_OOM), (UINT64_MAX), (0));
@@ -1452,8 +1715,8 @@ cryptint crint_copyu64(const uint64_t src, dnml_status *err) {
         CHOOSE_OPTION((*err), (new_stat != DNML_ALLOC_OOM), (CRINT_SUCCESS), (DNML_ALLOC_OOM));
     } dst_tmp_p[0] = 0; new_stat = 0; correctly_set = 0; return dst;
 }
-cryptint crint_copyi64(const int64_t src, dnml_status *err) {
-    cryptint dst; dnml_status new_stat; uint64_t correctly_set;
+crint crint_copyi64(const int64_t src, dnml_status *err) {
+    crint dst; dnml_status new_stat; uint64_t correctly_set;
     limb_t dst_tmp_p[1] = {0}; new_stat = crint_new(&dst);
     CHOOSE_OPTION((dst.limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)dst.limbs), ((uintptr_t)dst_tmp_p));
     CHOOSE_OPTION((correctly_set), (new_stat != DNML_ALLOC_OOM), (UINT64_MAX), (0));
@@ -1468,10 +1731,10 @@ cryptint crint_copyi64(const int64_t src, dnml_status *err) {
     } dst_tmp_p[0] = 0; new_stat = 0; correctly_set = 0; return dst;
 }
 /* -------------  Functional LARGE Copies ------------- */
-cryptint crint_copyf128(long double src, dnml_status *err) {}
-cryptint crint_ocopyf128(long double src, size_t output_cap, dnml_status *err) {}
-cryptint crint_tover_copyf128(long double src, size_t output_cap, dnml_status *err) {}
-cryptint crint_copy(cryptint src, dnml_status *err) {
+crint crint_copyf128(long double src, dnml_status *err) {}
+crint crint_ocopyf128(long double src, size_t output_cap, dnml_status *err) {}
+crint crint_tover_copyf128(long double src, size_t output_cap, dnml_status *err) {}
+crint crint_copy(crint src, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(src)), full_contract,
     { /* Set everything to 0 to completely wipe out memory */
@@ -1485,20 +1748,20 @@ cryptint crint_copy(cryptint src, dnml_status *err) {
     CHOOSE_OPTION((noop_toggle), (src.poisoned), (true), (noop_toggle));
 
     /* Main Operation - Copy */
-    cryptint dst; dnml_status new_stat; uint64_t correctly_set;
-    limb_t dst_tmp_p[1024] = {0}, src_tmp_p[1024] = {0}; limb_t* src_limbs;
+    crint dst; dnml_status new_stat; uint64_t correctly_set;
+    limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0}; limb_t* src_limbs;
     new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
     CHOOSE_OPTION((dst.limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)dst.limbs), ((uintptr_t)dst_tmp_p));
     CHOOSE_OPTION((correctly_set), (new_stat != DNML_ALLOC_OOM), (UINT64_MAX), (0));
     CHOOSE_OPTION((src_limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)src.limbs), ((uintptr_t)src_tmp_p));
 
     /* Setting Up correctly - Standard Case */
-    size_t iter_cnt = (size_t)(src.n / 1024 + 1);
+    size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1);
     size_t end; CHOOSE_OPTION(
         (end), (!(src.n)), 0, /* 2nd option: Aligns to the last byte */
         ((src.n - 1) * U64_BYTES + (U64_BYTES - 1))
     ); CHOOSE_OPTION((end), (new_stat != DNML_ALLOC_OOM), (end), (511));
-    CHOOSE_OPTION((dst.cap), (new_stat != DNML_ALLOC_OOM), (dst.cap), (1024));
+    CHOOSE_OPTION((dst.cap), (new_stat != DNML_ALLOC_OOM), (dst.cap), (FAKE_BUF_CAP));
     while (iter_cnt--) __libdnml_memcpy_strict(
         dst.limbs, src.limbs, dst.cap, src.n, 0, end,
         (noop_toggle & new_stat != DNML_ALLOC_OOM)
@@ -1510,11 +1773,11 @@ cryptint crint_copy(cryptint src, dnml_status *err) {
     CHOOSE_OPTION((ret_stat), (new_stat != DNML_ALLOC_OOM & (ret_stat == CRINT_SUCCESS)), (new_stat), (ret_stat));
     if (err != NULL) *err = ret_stat; // Conditional Branching here is acceptable
     new_stat = 0; correctly_set = 0; noop_toggle = 0;
-    __libdnml_memwipe_strict(dst_tmp_p, 1024 * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_tmp_p, 1024 * U64_BYTES, false);
+    __libdnml_memwipe_strict(dst_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_memwipe_strict(src_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
     src_limbs = 0; iter_cnt = 0; end = 0; ret_stat = 0; return dst;
 }
-cryptint crint_ocopy(cryptint src, size_t output_cap, dnml_status *err) {
+crint crint_ocopy(crint src, size_t output_cap, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(src)), full_contract,
     { /* Set everything to 0 to completely wipe out memory */
@@ -1528,22 +1791,22 @@ cryptint crint_ocopy(cryptint src, size_t output_cap, dnml_status *err) {
     CHOOSE_OPTION((noop_toggle), (src.poisoned & (!(noop_toggle))), (true), (noop_toggle));
 
     /* Main Operation - Copy */
-    cryptint dst; uint64_t correctly_set; dnml_status new_stat;
+    crint dst; uint64_t correctly_set; dnml_status new_stat;
     CHOOSE_OPTION((ret_stat), (output_cap < src.n), (CRINT_ERR_RANGE), (ret_stat));
     CHOOSE_OPTION((noop_toggle), ((output_cap < src.n) & (!(noop_toggle))), (true), (noop_toggle));
-    limb_t dst_tmp_p[1024] = {0}, src_tmp_p[1024] = {0}; new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
+    limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0}; new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
     CHOOSE_OPTION((ret_stat), ((new_stat != CRINT_SUCCESS) & (ret_stat == CRINT_SUCCESS)), (new_stat), (ret_stat));
     CHOOSE_OPTION((correctly_set), (ret_stat != DNML_ALLOC_OOM), (UINT64_MAX), (0)); limb_t* dst_limbs, src_limbs;
     CHOOSE_OPTION((dst_limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)dst.limbs), ((uintptr_t)dst_tmp_p));
     CHOOSE_OPTION((src_limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)src.limbs), ((uintptr_t)src_tmp_p));
 
     /* Setting Up correctly - Standard Case */
-    size_t iter_cnt = (size_t)(src.n / 1024 + 1);
+    size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1);
     size_t end; CHOOSE_OPTION(
         (end), (!(src.n)), 0, /* 2nd option: Aligns to the last byte */
         ((src.n - 1) * U64_BYTES + (U64_BYTES - 1))
     ); CHOOSE_OPTION((end), (ret_stat != DNML_ALLOC_OOM), (end), (511));
-    CHOOSE_OPTION((dst.cap), (ret_stat != DNML_ALLOC_OOM), (dst.cap), (1024));
+    CHOOSE_OPTION((dst.cap), (ret_stat != DNML_ALLOC_OOM), (dst.cap), (FAKE_BUF_CAP));
     while (iter_cnt--) __libdnml_memcpy_strict(
         dst_limbs, src_limbs, dst.cap, src.n, 0, end,
         (noop_toggle & (new_stat != DNML_ALLOC_OOM))
@@ -1554,12 +1817,12 @@ cryptint crint_ocopy(cryptint src, size_t output_cap, dnml_status *err) {
     dst.cap &= correctly_set; dst.sign &= correctly_set;
     if (err != NULL) *err = ret_stat; // Conditional Branching here is acceptable
     ret_stat = 0; correctly_set = 0; new_stat = 0; noop_toggle = 0;
-    __libdnml_memwipe_strict(dst_tmp_p, 1024 * U64_BYTES, false);
-    __libdnml_memwipe_strict(src_tmp_p, 1024 * U64_BYTES, false);
+    __libdnml_memwipe_strict(dst_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
+    __libdnml_memwipe_strict(src_tmp_p, FAKE_BUF_CAP * U64_BYTES, false);
     dst_limbs = 0; src_limbs = 0; iter_cnt = 0; end = 0;
     return dst;
 }
-cryptint crint_tover_copy(cryptint src, size_t output_cap, dnml_status *err) {
+crint crint_tover_copy(crint src, size_t output_cap, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
     DNML_ASSERT((crint_validate(src)), full_contract,
     { /* Set everything to 0 to completely wipe out memory */
@@ -1573,18 +1836,18 @@ cryptint crint_tover_copy(cryptint src, size_t output_cap, dnml_status *err) {
     CHOOSE_OPTION((noop_toggle), (src.poisoned), (true), (noop_toggle));
 
     /* Main Operation - Copy */
-    cryptint dst; dnml_status new_stat; uint64_t correctly_set;
+    crint dst; dnml_status new_stat; uint64_t correctly_set;
     size_t op_range; CHOOSE_OPTION((op_range), (output_cap < src.n), (output_cap), (src.n));
-    limb_t dst_tmp_p[1024] = {0}, src_tmp_p[1024] = {0}; new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
+    limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0}; new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
     CHOOSE_OPTION((correctly_set), (new_stat != DNML_ALLOC_OOM), (UINT64_MAX), (0)); limb_t* dst_limbs, src_limbs;
     CHOOSE_OPTION((dst_limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)dst.limbs), ((uintptr_t)dst_tmp_p));
     CHOOSE_OPTION((src_limbs), (new_stat != DNML_ALLOC_OOM), ((uintptr_t)src.limbs), ((uintptr_t)src_tmp_p));
 
     /* Setting Up correctly - Standard Case */
-    size_t iter_cnt = (size_t)(src.n / 1024 + 1); size_t end;
+    size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1); size_t end;
     CHOOSE_OPTION((end), (!(op_range)), 0, ((op_range - 1) * U64_BYTES + (U64_BYTES - 1)));
     CHOOSE_OPTION((end), (new_stat != DNML_ALLOC_OOM), (end), (511));
-    CHOOSE_OPTION((dst.cap), (new_stat != DNML_ALLOC_OOM), (dst.cap), (1024));
+    CHOOSE_OPTION((dst.cap), (new_stat != DNML_ALLOC_OOM), (dst.cap), (FAKE_BUF_CAP));
     while (iter_cnt--) __libdnml_memcpy_strict(
         dst.limbs, src.limbs, dst.cap, src.n, 0, end,
         (noop_toggle & (new_stat != DNML_ALLOC_OOM))
@@ -1596,17 +1859,16 @@ cryptint crint_tover_copy(cryptint src, size_t output_cap, dnml_status *err) {
     CHOOSE_OPTION((ret_stat), (new_stat != CRINT_SUCCESS & ret_stat == CRINT_SUCCESS), (new_stat), (ret_stat));
     if (err != NULL) *err = ret_stat; // Conditional Branching here is acceptable
     ret_stat = 0; new_stat = 0; correctly_set = 0; op_range = 0;
-    __libdnml_memwipe_strict(dst_tmp_p, 1024 * U64_BYTES, false); dst_limbs = 0;
-    __libdnml_memwipe_strict(src_tmp_p, 1024 * U64_BYTES, false); src_limbs = 0;
+    __libdnml_memwipe_strict(dst_tmp_p, FAKE_BUF_CAP * U64_BYTES, false); dst_limbs = 0;
+    __libdnml_memwipe_strict(src_tmp_p, FAKE_BUF_CAP * U64_BYTES, false); src_limbs = 0;
     iter_cnt = 0; end = 0; noop_toggle = 0; return dst;
 }
 
 
 
 
-
 //* ===================================== STATE ALTERATION FUNCTIONS ===================================== *//
-void crint_canonicalize(cryptint *x) {
+void crint_canonicalize(crint *x) {
     // Fix invalid capacity
     uint8_t cap_invalid = (x->cap < 1);
     CT_COND_ASSIGN(x->cap, cap_invalid, 1);
@@ -1623,8 +1885,8 @@ void crint_canonicalize(cryptint *x) {
     CT_COND_ASSIGN(x->sign, sign_invalid, 1);
     cap_invalid = 0; n_overflow = 0; sign_invalid = 0;
 }
-void crint_normalize(cryptint *x) { __CRINT_TRIM_LZ__(x); CHOOSE_OPTION((x->sign), (!x->n), (1), (-1)); }
-dnml_status crint_resize(cryptint *x, size_t k) {
+void crint_normalize(crint *x) { __CRINT_TRIM_LZ__(x); CHOOSE_OPTION((x->sign), (!x->n), (1), (-1)); }
+dnml_status crint_resize(crint *x, size_t k) {
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT(__STORAGE_VAL__(x), store_inval, {
         x->limbs = 0; x->cap = 0; x->n = 0; 
@@ -1662,7 +1924,7 @@ dnml_status crint_resize(cryptint *x, size_t k) {
     start = 0; end = 0; op_cap = 0; operated = 0; oom_mask = 0;
     __BUFFER_P = 0; normalized_size = 0; op_size = 0; return ret_stat;
 }
-dnml_status crint_reserve(cryptint *x, size_t k) {
+dnml_status crint_reserve(crint *x, size_t k) {
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT(__STORAGE_VAL__(x), store_inval, {
         x->limbs = 0; x->cap = 0; x->n = 0;
@@ -1686,7 +1948,7 @@ dnml_status crint_reserve(cryptint *x, size_t k) {
     oom_mask = 0; operated = 0; new_cap = 0; __BUFFER_P = 0; return ret_stat;
     
 }
-dnml_status crint_shrink(cryptint *x, size_t k) { /* Maximum capacity */
+dnml_status crint_shrink(crint *x, size_t k) { /* Maximum capacity */
     // Pre-operation Validation & Static Analysis
     DNML_ASSERT(__STORAGE_VAL__(x), store_inval, {
         x->limbs = 0; x->cap = 0; x->n = 0; 
@@ -1723,7 +1985,7 @@ dnml_status crint_shrink(cryptint *x, size_t k) { /* Maximum capacity */
     start = 0; end = 0; op_cap = 0; operated = 0; oom_mask = 0;
     __BUFFER_P = 0; normalized_size = 0; opsize = 0; return ret_stat;
 }
-dnml_status crint_reset(cryptint *x) {
+dnml_status crint_reset(crint *x) {
     DNML_ASSERT(__STORAGE_VAL__(x),
     "Partial Contract Violation: CryptInt State Invariant is violated "
     "(-Ecrypt_int_state_invalid)", {
@@ -1736,12 +1998,12 @@ dnml_status crint_reset(cryptint *x) {
     __libdnml_memwipe_strict(x->limbs, x->cap * U64_BYTES, (x->poisoned));
     x->n = 0; x->sign = 1;
 }
-static inline uint8_t __STORAGE_VAL__(cryptint *x) {
+static inline uint8_t __STORAGE_VAL__(crint *x) {
     if (x->limbs == NULL) return 0;
     if (x->cap < 1) return 0;
     return 1;
 }
-bool crint_validate(cryptint x) {
+bool crint_validate(crint x) {
     /* State Validation */
     if (x.limbs == NULL) return false;
     if (x.cap < 1) return false;
@@ -1752,7 +2014,7 @@ bool crint_validate(cryptint x) {
     if (x.n == 0 && x.sign != 1) return false;
     return true;
 }
-bool crint_pvalidate(cryptint *x) {
+bool crint_pvalidate(crint *x) {
     /* State Validation */
     if (x == NULL) return false;
     if (x->limbs == NULL) return false;

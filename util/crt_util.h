@@ -37,11 +37,14 @@ void __libdnml_memcpy_strict(
     size_t start, size_t end, bool noop
 );
 uint64_t __MAG_I64__(int64_t x);
+size_t __clamp_size(size_t cap, size_t insize);
 
 
 /* crt_bnum_util.c */
-dnml_status __CRINT_TRIM_LZ__(cryptint *x);
-cryptint __CRINT_ERRVAL__(void);
+dnml_status __CRINT_TRIM_LZ__(crint *x);
+dnml_status __CRINT_INTERNAL_RLSHIFT__(crint *x, size_t len, size_t limb_cnt);
+dnml_status __CRINT_INTERNAL_LLSHIFT__(crint *x, size_t len, size_t limb_cnt);
+crint __CRINT_ERRVAL__(void);
 
 
 

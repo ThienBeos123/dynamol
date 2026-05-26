@@ -157,8 +157,11 @@ bigInt bigInt_fromf128_safe(long double x, dnml_status *err);
 bigInt bigInt_not(const bigInt x, dnml_status *err);
 bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err);
 bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err);
+bigInt bigInt_lshiftg(const bigInt x, size_t k, dnml_status *err);
+void bigInt_mut_not(bigInt *x);
 void bigInt_mut_rshift(bigInt *x, size_t k);
 void bigInt_mut_lshift(bigInt *x, size_t k);
+dnml_status bigInt_mut_lshiftg(bigInt *x, size_t k);
 /* ------------- Mutative, Fixed-width ------------- */
 dnml_status bigInt_mut_andu64  (bigInt *x, const uint64_t y);
 dnml_status bigInt_mut_nandu64 (bigInt *x, const uint64_t y);

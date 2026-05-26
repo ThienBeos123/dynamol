@@ -92,7 +92,7 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 
 
 //* =============== ADDITION + SUBTRACTION CONSTANT ENGINE =============== *//
-dnml_status __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
+dnml_status __CRINT_ADD_WC__(crint *res, const crint *a, const crint *b) {
     // Static Analysis
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
@@ -109,10 +109,10 @@ dnml_status __CRINT_ADD_WC__(cryptint *res, const cryptint *a, const cryptint *b
         CHOOSE_OPTION(y, (i < b->n), b_curr, 0);
         res->limbs[i] = __ADD_UI64__(x, y, &carry);
     } res->limbs[max] = carry; res->n = max + (!!carry);
-    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
-    return CRYPTINT_SUCCESS;
+    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
+    return CRINT_SUCCESS;
 }
-dnml_status __CRINT_SUB_WC__(cryptint *res, const cryptint *a, const cryptint *b) {
+dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
         (__BIGINT_INTERNAL_COMP__(a, b) != -1),
@@ -126,6 +126,6 @@ dnml_status __CRINT_SUB_WC__(cryptint *res, const cryptint *a, const cryptint *b
         CHOOSE_OPTION(y, (i < b->n), curr, 0);
         res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
     } res->n = a->n; __CRINT_TRIM_LZ__(res);
-    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1);
-    return CRYPTINT_SUCCESS;
+    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
+    return CRINT_SUCCESS;
 }

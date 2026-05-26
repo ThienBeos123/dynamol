@@ -23,15 +23,15 @@ size_t __CRINT_DIV_WS__(size_t dend_size, size_t div_size);
 
 
 /* CRYPTINT ALGORITHMS */
-dnml_status __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *quot, cryptint *rem);
+dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, crint *rem);
 dnml_status __CRINT_NEWTON_RECP__(
-    const cryptint *a, const cryptint *b,
-     cryptint *quot, cryptint *rem, 
+    const crint *a, const crint *b,
+     crint *quot, crint *rem, 
      calc_ctx newton_ctx
 );
 dnml_status __CRINT_DIVMOD_DISP__(
-    const cryptint *a, const cryptint *b,
-    cryptint *quot, cryptint *rem,
+    const crint *a, const crint *b,
+    crint *quot, crint *rem,
     calc_ctx dvmod_ctx
 );
 #ifdef __cplusplus

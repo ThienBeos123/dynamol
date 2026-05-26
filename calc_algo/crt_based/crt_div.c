@@ -9,7 +9,7 @@ size_t __CRINT_DIV_WS__(size_t dend_size, size_t div_size) {
 
 
 /* CRYPTINT ALGORITHMS */
-dnml_status __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *quot, cryptint *rem) {
+dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, crint *rem) {
     // Static Analysis
     crint_poison(a); crint_poison(quot); 
     crint_poison(rem); DNML_TEST_ASSERT((b),
@@ -26,16 +26,16 @@ dnml_status __CRINT_SHORT_DIVISION__(const cryptint *a, uint64_t b, cryptint *qu
     } __CRINT_TRIM_LZ__(rem);
     CHOOSE_OPTION((quot->sign), (!(quot->n)), (1), (quot->sign));
     rem->limbs[0] = remainder; rem->n = !!(rem); rem->sign = 1;
-    return CRYPTINT_SUCCESS;
+    return CRINT_SUCCESS;
 }
 dnml_status __CRINT_NEWTON_RECP__(
-    const cryptint *dend, const cryptint *div,
-    cryptint *quot, cryptint *rem, 
+    const crint *dend, const crint *div,
+    crint *quot, crint *rem, 
     calc_ctx newton_ctx
 ) {}
 dnml_status __CRINT_DIVMOD_DISP__(
-    const cryptint *a, const cryptint *b,
-    cryptint *quot, cryptint *rem,
+    const crint *a, const crint *b,
+    crint *quot, crint *rem,
     calc_ctx dvmod_ctx
 ) {
     if (b->n < BIGINT_SHORT) return __CRINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
