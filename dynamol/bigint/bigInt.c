@@ -479,32 +479,32 @@ dnml_status bigInt_mut_xnor (bigInt *x, const bigInt y) {
     } return BIGINT_SUCCESS;
 }
 /* ------------- Mutative, Explicit-width ------------- */
-dnml_status bigInt_mutex_andu64  (bigInt *x, const uint64_t val, size_t range) {
+dnml_status bigInt_mutex_andu64  (bigInt *x, const uint64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n) return BIGINT_SUCCESS;
     x->limbs[0] = x->limbs[0] & val;
     x->n        = (x->limbs[0]) ? 1 : 0;
     x->sign     = (x->limbs[0]) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_nandu64 (bigInt *x, const uint64_t val, size_t range) {
+dnml_status bigInt_mutex_nandu64 (bigInt *x, const uint64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    for (size_t i = 0; i < range; ++i) {
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i] : 0;
         uint64_t b = (i == 0)   ? val         : 0;
         x->limbs[i] = ~(a & b);
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t range) {
+dnml_status bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!val) return BIGINT_SUCCESS;
     else if (!x->n) {
         uint64_t res = 0 | val;
@@ -514,218 +514,218 @@ dnml_status bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t range) {
     } else x->limbs[0] |= val; // All the other limbs stay the same due to |= 0
     return BIGINT_SUCCESS;
 }
-dnml_status bigint_mutex_noru64  (bigInt *x, const uint64_t val, size_t range) {
+dnml_status bigint_mutex_noru64  (bigInt *x, const uint64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    for (size_t i = 0; i < range; ++i) {
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i] : 0;
         uint64_t b = (i == 0)   ? val         : 0;
         x->limbs[i] = ~(a | b);
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n ) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_xoru64  (bigInt *x, const uint64_t val, size_t range) {
+dnml_status bigInt_mutex_xoru64  (bigInt *x, const uint64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    bigInt_reserve(x, range);
+    if (!op_range) return BIGINT_SUCCESS;
+    bigInt_reserve(x, op_range);
     if (x->n == 0) {
         uint64_t res = 0 ^ val;
         x->limbs[0] = res;
         x->n        = (res) ? 1 : 0;
         x->sign     = (res) ? x->sign : 1;
     } else {
-        for (size_t i = 0; i < range; ++i) {
+        for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i == 0)   ? val         : 0;
             x->limbs[i] = a ^ b;
-        } x->n = range; bigInt_normalize(x);
+        } x->n = max(x->n, op_range); bigInt_normalize(x);
         x->sign = (x->n) ? x->sign : 1;
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_xnoru64 (bigInt *x, const uint64_t val, size_t range) {
+dnml_status bigInt_mutex_xnoru64 (bigInt *x, const uint64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    for (size_t i = 0; i < range; ++i) {
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i] : 0;
         uint64_t b = (i == 0)   ? val         : 0;
         x->limbs[i] = ~(a ^ b);
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_andi64  (bigInt *x, const int64_t val, size_t range) {
+dnml_status bigInt_mutex_andi64  (bigInt *x, const int64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n) return BIGINT_SUCCESS;
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
-    for (size_t i = 0; i < range; ++i) {
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i]       : 0;
         uint64_t b = (i == 0)   ? __MAG_I64__(val)  : extension_bits;
         x->limbs[i] = a & b;
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_nandi64 (bigInt *x, const int64_t val, size_t range) {
+dnml_status bigInt_mutex_nandi64 (bigInt *x, const int64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
-    for (size_t i = 0; i < range; ++i) {
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i]       : 0;
         uint64_t b = (i == 0)   ? __MAG_I64__(val)  : extension_bits;
         x->limbs[i] = ~(a & b);
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_ori64   (bigInt *x, const int64_t val, size_t range) {
+dnml_status bigInt_mutex_ori64   (bigInt *x, const int64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
-    for (size_t i = 0; i < range; ++i) {
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i]       : 0;
         uint64_t b = (i == 0)   ? __MAG_I64__(val)  : extension_bits;
         x->limbs[i] = a | b;
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_nori64  (bigInt *x, const int64_t val, size_t range) {
+dnml_status bigInt_mutex_nori64  (bigInt *x, const int64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
-    for (size_t i = 0; i < range; ++i) {
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i]       : 0;
         uint64_t b = (i == 0)   ? __MAG_I64__(val)  : extension_bits;
         x->limbs[i] = ~(a | b);
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_xori64  (bigInt *x, const int64_t val, size_t range) {
+dnml_status bigInt_mutex_xori64  (bigInt *x, const int64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
-    for (size_t i = 0; i < range; ++i) {
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i]       : 0;
         uint64_t b = (i == 0)   ? __MAG_I64__(val)  : extension_bits;
         x->limbs[i] = a ^ b;
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_xnori64 (bigInt *x, const int64_t val, size_t range) {
+dnml_status bigInt_mutex_xnori64 (bigInt *x, const int64_t val, size_t op_range) {
     assert(bigInt_pvalidate(x));
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     uint64_t extension_bits = (val < 0) ? UINT64_MAX : 0;
-    for (size_t i = 0; i < range; ++i) {
+    for (size_t i = 0; i < op_range; ++i) {
         uint64_t a = (i < x->n) ? x->limbs[i]       : 0;
         uint64_t b = (i == 0)   ? __MAG_I64__(val)  : extension_bits;
         x->limbs[i] = ~(a ^ b);
-    } x->n = range; bigInt_normalize(x);
+    } x->n = max(x->n, op_range); bigInt_normalize(x);
     x->sign = (x->n) ? x->sign : 1;
     return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_and   (bigInt *x, const bigInt y, size_t range) {
+dnml_status bigInt_mutex_and   (bigInt *x, const bigInt y, size_t op_range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n) return BIGINT_SUCCESS;
     else if (!y.n) bigInt_reset(x);
     else {
-        for (size_t i = 0; i < range; ++i) {
+        for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             x->limbs[i] = a & b;
-        } x->n = range; bigInt_normalize(x);
+        } x->n = max(x->n, op_range); bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t range) {
+dnml_status bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t op_range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
-    if (!x->n || !y.n) memset(x->limbs, UINT64_MAX, range);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
+    if (!x->n || !y.n) memset(x->limbs, UINT64_MAX, op_range);
     else {
-        for (size_t i = 0; i < range; ++i) {
+        for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             x->limbs[i] = ~(a & b);
-        } x->n = range; bigInt_normalize(x);
+        } x->n = max(x->n, op_range); bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_or    (bigInt *x, const bigInt y, size_t range) {
+dnml_status bigInt_mutex_or    (bigInt *x, const bigInt y, size_t op_range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n) {
-        size_t copy_range = (y.n < range) ? y.n : range;
+        size_t copy_range = (y.n < op_range) ? y.n : op_range;
         memcpy(x->limbs, y.limbs, copy_range * U64_BYTES);
         x->n = copy_range;
         bigInt_normalize(x);
     } else if (y.n) {
-        for (size_t i = 0; i < range; ++i) {
+        for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             x->limbs[i] = a | b;
-        } x->n = range; bigInt_normalize(x);
+        } x->n = max(x->n, op_range); bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t range) {
+dnml_status bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t op_range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n && !y.n) {
-        memset(x->limbs, UINT64_MAX, range * U64_BYTES);
-        x->n = range;
+        memset(x->limbs, UINT64_MAX, op_range * U64_BYTES);
+        x->n = op_range;
     } else {
-        for (size_t i = 0; i < range; ++i) {
+        for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             x->limbs[i] = ~(a | b);
-        } x->n = range; bigInt_normalize(x);
+        } x->n = max(x->n, op_range); bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_xor   (bigInt *x, const bigInt y, size_t range) {
+dnml_status bigInt_mutex_xor   (bigInt *x, const bigInt y, size_t op_range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range) return BIGINT_SUCCESS;
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range) return BIGINT_SUCCESS;
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n && !y.n);
     else {
-        for (size_t i = 0; i < range; ++i) {
+        for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             x->limbs[i] = a ^ b;
-        } x->n = range; bigInt_normalize(x);
+        } x->n = max(x->n, op_range); bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mutex_xnor  (bigInt *x, const bigInt y, size_t range) {
+dnml_status bigInt_mutex_xnor  (bigInt *x, const bigInt y, size_t op_range) {
     assert(bigInt_pvalidate(x) && bigInt_validate(y));
     assert(x->limbs != y.limbs);
-    if (!range);
-    dnml_status err_check = bigInt_reserve(x, range); heap_alloc_oom(err_check);
+    if (!op_range);
+    dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n && !y.n) {
-        memset(x->limbs, UINT64_MAX, range * U64_BYTES);
-        x->n = range;
+        memset(x->limbs, UINT64_MAX, op_range * U64_BYTES);
+        x->n = op_range;
     } else {
-        for (size_t i = 0; i < range; ++i) {
+        for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
             x->limbs[i] = ~(a ^ b);
-        } x->n = range; bigInt_normalize(x);
+        } x->n = max(x->n, op_range); bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
 /* ------------- Functional, Fixed-width ------------- */
