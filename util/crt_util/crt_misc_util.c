@@ -1,10 +1,7 @@
 #include "../crt_util.h"
 
 
-
-
-
-
+/* crt_mem_util*/
 void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop) {
     uint8_t *p = (uint8_t*)buf;
     for (size_t i = 0; i < len; ++i) { uint8_t curr = p[i];
@@ -55,6 +52,7 @@ void __libdnml_smemcpy_u64(
 }
 
 
+/* crt_general_util */
 uint64_t __MAG_I64__(int64_t val) {
     uint64_t i64_min_ret = (uint64_t)(llabs(val + 1)) + 1;
     uint64_t i64_norm_ret = (uint64_t)(llabs(val));

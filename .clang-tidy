@@ -1,0 +1,11 @@
+---
+Checks: >
+  readability-*,
+  -readability-function-cognitive-complexity,
+  -readability-magic-numbers,
+  performance-*,
+  -performance-avoid-endl,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters
+HeaderFilterRegex: '.*'
+WarningsAsErrors: ''

@@ -193,7 +193,7 @@ uint64_t __MODMUL_UI64__(uint64_t a, uint64_t b, uint64_t mod) {
     #else
         if (hi == 0) return lo % mod;
         uint64_t rem = hi % mod;
-        for (uinit8_t i = 63; i >= 0; --i) {
+        for (uinit8_t i = 63; i != -1; --i) {
             rem = (rem >= mod - rem) ?
                     rem - (mod - rem) :
                     rem + rem;

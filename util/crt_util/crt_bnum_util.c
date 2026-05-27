@@ -2,9 +2,8 @@
 
 
 dnml_status __CRINT_TRIM_LZ__(crint *x) {
-    cryptInt_poison(x);
-    uint8_t found_msl = 0;
-    for (size_t i = x->cap - 1; i >= 0; --i) {
+    cryptInt_poison(x); uint8_t found_msl = 0;
+    for (size_t i = x->cap - 1; i != -1; --i) {
         uint8_t behind_n = (i < x->n);
         uint8_t zero = !(x->limbs[i]);
         // Checks if i < n AND i == 0 AND msl has not been set

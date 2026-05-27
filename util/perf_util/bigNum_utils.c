@@ -135,7 +135,7 @@ size_t __BIGINT_CTZ__(const bigInt *x) {
 /* Internal Arithmetic */
 int8_t __BIGINT_INTERNAL_COMP__(const bigInt *x, const bigInt *y) {
     if (x->n != y->n) return (x->n > y->n) ? 1 : -1;
-    for (size_t i = x->n - 1; i >= 0; --i) {
+    for (size_t i = x->n - 1; i != -1; --i) {
         if (x->limbs[i] != y->limbs[i]) return (x->limbs[i] > y->limbs[i]) ? 1 : -1;
     } return 0;
 }
@@ -186,7 +186,7 @@ uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
         return remainder;
     } else {
         uint64_t remainder = 0;
-        for (size_t i = x->n - 1; i >= 0; --i) {
+        for (size_t i = x->n - 1; i != -1; --i) {
         x->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder);
         } __BIGINT_INTERNAL_TRIM_LZ__(x);
         if (x->n == 0) x->sign = 1;

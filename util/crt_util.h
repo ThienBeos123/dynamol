@@ -15,17 +15,13 @@
 extern "C" {
 #endif
 
+#define SIGN_BIT_MASK 0x8000000000000000
+#define CHOOSE_OPTION(dest, cond, a, b) do { (dest) = _lib_crt_select((cond), (a), (b)); } while(0);
+#define RETURN_OPTION(cond, a, b) do { return _lib_crt_select((cond), (a), (b)); } while(0);
 
-#define CHOOSE_OPTION(dest, cond, a, b) do { \
-    uint64_t a_copy = (a); \
-    (a_copy) ^= ((a) ^ (b)) & -((int8_t)(cond)); \
-    (dest) = (a_copy); a_copy = 0; \
-} while(0);
-#define RETURN_OPTION(cond, a, b) do { \
-    uint64_t a_copy = (a); \
-    (a_copy) ^= ((a) ^ (b)) & -((int8_t)(cond)); \
-    return (a_copy); a_copy = 0; \
-} while(0);
+/* Temporary Replacement, would be replaced with constant-time methods */
+#define crtmin(x, y) _lib_crt_select(_lib_crt_lt(x, y), x, y)
+#define crtmax(x, y) _lib_crt_select(_lib_crt_gt(x, y), x, y)
 
 
 /* crt_misc_util.c */
@@ -37,6 +33,24 @@ void __libdnml_smemwipe_u64(uint64_t *buf, size_t len, size_t start, size_t end,
 void __libdnml_smemcpy_u64(uint64_t *dst, uint64_t *src, size_t len, size_t srclen, size_t start, size_t end, bool noop);
 uint64_t __MAG_I64__(int64_t x);
 size_t __clamp_size(size_t cap, size_t insize);
+
+
+/* crt_cmp_util.c */
+uint8_t _lib_crt_lt(uint64_t x, uint64_t y);
+uint8_t _lib_crt_gt(uint64_t x, uint64_t y);
+uint8_t _lib_crt_leq(uint64_t x, uint64_t y);
+uint8_t _lib_crt_geq(uint64_t x, uint64_t y);
+
+uint8_t _lib_crt_lti64(int64_t x, int64_t y);
+uint8_t _lib_crt_gti64(int64_t x, int64_t y);
+uint8_t _lib_crt_leqi64(int64_t x, int64_t y);
+uint8_t _lib_crt_geqi64(int64_t x, int64_t y);
+
+uint8_t _lib_crt_ispos(int64_t x);
+uint8_t _lib_crt_isneg(int64_t x);
+uint8_t _lib_crt_neq(uint64_t x, uint64_t y);
+uint8_t _lib_crt_eq(uint64_t x, uint64_t y);
+uint8_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b);
 
 
 /* crt_bnum_util.c */

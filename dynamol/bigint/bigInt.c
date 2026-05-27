@@ -230,7 +230,7 @@ bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err) {
     if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
     memcpy(res.limbs, x.limbs, x.n * U64_BYTES); res.n = x.n; res.sign = x.sign;
     __BIGINT_INTERNAL_RLSHIFT__(&res, limb_shift); res.n = x.n - limb_shift;
-    if (bshift) for (size_t i = res.n - 1; i >= 0; --i) {
+    if (bshift) for (size_t i = res.n - 1; i != -1; --i) {
         uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
         res.limbs[i] = (x.limbs[i] >> bshift) | positioned_bits;
         discarded_bits = x.limbs[i] & ((UINT64_C(1) << bshift) - 1);
@@ -271,7 +271,7 @@ void bigInt_mut_rshift(bigInt *x, size_t k) {
     assert(bigInt_pvalidate(x)); uint64_t discarded_bits = 0;
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
     __BIGINT_INTERNAL_RLSHIFT__(x, limb_shift); x->n -= limb_shift;
-    if (bshift) for (size_t i = x->n - 1; i >= 0; --i) {
+    if (bshift) for (size_t i = x->n - 1; i != -1; --i) {
         uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
         discarded_bits = x->limbs[i] & ((UINT64_C(1) << bshift) - 1);
         x->limbs[i] = (x->limbs[i] >> bshift) | positioned_bits;
@@ -1162,7 +1162,7 @@ static int8_t __BIGINT_MAGCOMP_UI64__(const bigInt *x, const uint64_t val) {
 static int8_t __BIGINT_MAGCOMP__(const bigInt *a, const bigInt *b) {
     if (a->n != b->n) return (a->n > b->n) ? 1 : -1;
     // Loops from most-significant digit down to least-significant digit
-    for (size_t i = a->n - 1; i >= 0; --i) {
+    for (size_t i = a->n - 1; i != -1; --i) {
         if (a->limbs[i] != b->limbs[i]) return (a->limbs[i] > b->limbs[i]) ? 1 : -1; 
         // Compare which one current most-significant digit is bigger
     }
@@ -1398,7 +1398,7 @@ static void __BIGINT_MAGDIVMOD_U64__(
     assert(val); // Checks for invalid operation ( x / 0 )
     dnml_status err_check = bigInt_reserve(&quot, x->n+1); heap_alloc_oom_void(err_check, err);
     quot->n = x->n; uint64_t remainder = 0;
-    for (size_t i = x->n - 1; i >= 0; --i) {
+    for (size_t i = x->n - 1; i != -1; --i) {
         quot->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder);
     }
     *rem = remainder;
@@ -1483,7 +1483,7 @@ static void __BIGINT_MAGLCM__(bigInt *res, const bigInt *a, const bigInt *b, dnm
 }
 static void __BIGINT_MAGEMOD_U64__(uint64_t* res, const bigInt *a, const uint64_t modulus) {
     uint64_t curr_rem = 0;
-    for (size_t i = a->n - 1; i >= 0; --i) {
+    for (size_t i = a->n - 1; i != -1; --i) {
         uint64_t tmp_quot = __DIV_HELPER_UI64__(
             a->limbs[i], curr_rem, modulus, // Operands
             &curr_rem // Result holders

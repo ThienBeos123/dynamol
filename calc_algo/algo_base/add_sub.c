@@ -96,20 +96,20 @@ dnml_status __CRINT_ADD_WC__(crint *res, const crint *a, const crint *b) {
     // Static Analysis
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
-        (res->cap >= max(a->n, b->n) + 1),
+        (res->cap >= crtmax(a->n, b->n) + 1),
         "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b"
         " (-Eadd_insufficient_cap)", {}
     ); // Main Algorithms
-    size_t max = max(a->n, b->n); uint64_t carry = 0;
-    for (size_t i = 0; i < max; ++i) {
+    size_t max = crtmax(a->n, b->n); uint64_t carry = 0;
+    for (size_t i = 0; _lib_crt_lt(i, max); ++i) {
         uint64_t a_curr = a->limbs[i], b_curr = b->limbs[i], x, y;
         // uint64_t x = (i < a->n) ? a->limbs[i] : 0;
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
-        CHOOSE_OPTION(x, (i < a->n), a_curr, 0);
-        CHOOSE_OPTION(y, (i < b->n), b_curr, 0);
+        CHOOSE_OPTION(x, (_lib_crt_lt(i, a->n)), a_curr, 0);
+        CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), b_curr, 0);
         res->limbs[i] = __ADD_UI64__(x, y, &carry);
     } res->limbs[max] = carry; res->n = max + (!!carry);
-    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
+    __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
 }
 dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
@@ -120,12 +120,12 @@ dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
         " (-Esub_underflow)", {}
     ); // Main Algorithms
     uint64_t borrow = 0;
-    for (size_t i = 0; i < a->n; ++i) {
+    for (size_t i = 0; _lib_crt_lt(i, a->n); ++i) {
         uint64_t curr = b->limbs[i], y;
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
-        CHOOSE_OPTION(y, (i < b->n), curr, 0);
+        CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), curr, 0);
         res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
     } res->n = a->n; __CRINT_TRIM_LZ__(res);
-    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
+    __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
 }

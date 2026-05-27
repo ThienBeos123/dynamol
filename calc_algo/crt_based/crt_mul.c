@@ -15,22 +15,21 @@ dnml_status __CRINT_SCHOOLBOOK__(const crint *a, const crint *b, crint *res) {
     // Static Analysis
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
-        (res->cap >= a->n + b->n),
+        (_lib_crt_geq(res->cap, a->n + b->n)),
         "Insufficient Product Capacity: Capacity insatisfactory for a * b"
         "(-Emul_insufficient_cap)", {}
     ); // Main Algorithms
-    __libdnml_memset_strict(res->limbs, 0, res->cap, (size_t)0, (size_t)res->cap, false);
-    for (size_t i = 0; i < a->n; ++i) {
+    __libdnml_smemset_u64(res->limbs, 0, res->cap, (size_t)0, (size_t)res->cap, false);
+    for (size_t i = 0; _lib_crt_lt(i, a->n); ++i) {
         uint64_t carry = 0;
-        for (size_t j = 0; j < b->n; ++j) {
-            uint64_t lo, hi;
-            lo = __MUL_UI64__(a->limbs[i], b->limbs[j], &hi);
-            uint64_t sum = res->limbs[i + j] + lo; uint8_t c1 = (sum < lo);
-            uint64_t sum2 = sum += carry; uint8_t c2 = (sum2 < carry);
+        for (size_t j = 0; _lib_crt_lt(j, b->n); ++j) {
+            uint64_t lo, hi; lo = __MUL_UI64__(a->limbs[i], b->limbs[j], &hi);
+            uint64_t sum = res->limbs[i + j] + lo; uint8_t c1 = (_lib_crt_lt(sum, lo));
+            uint64_t sum2 = sum += carry; uint8_t c2 = (_lib_crt_lt(sum2, lo));
             carry = hi + (c1 | c2); res->limbs[i + j] = sum2;
         } res->limbs[i + b->n] += carry;
     } res->n = a->n + b->n; __CRINT_TRIM_LZ__(res);
-    __libdnml_memset_strict(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
+    __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
 }
 dnml_status __CRINT_NTT__(const crint *a, const crint *b, crint *res, calc_ctx *ntt_ctx) {}

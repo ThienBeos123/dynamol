@@ -120,7 +120,7 @@ void __BIGINT_2K_ARY__(bigInt *res, const bigInt *base, uint64_t power, uint8_t 
     BIGINT_TEMP(tmp_res, base->n * power, fixed_ctx, err_check, end_stat);
     tmp_res.limbs[0] = 1; tmp_res.n = 1; tmp_res.sign = 1;
     uint64_t mask = (1ULL << k) - 1; uint8_t curr_shift = 0;
-    for (uint8_t i = chunk_count - 1; i >= 0; --i) {
+    for (uint8_t i = chunk_count - 1; i != -1; --i) {
         curr_shift = U64_BITS - k * (chunk_count - i - 1);
         uint64_t curr_chunk = power & (mask << curr_shift);
         curr_chunk = curr_chunk >>= curr_shift; curr_chunk = (uint8_t)(curr_chunk);
@@ -159,7 +159,7 @@ void __BIGINT_SLIDING__(bigInt *res, const bigInt *base, uint64_t power, uint8_t
     tmp_res.limbs[0] = 1; tmp_res.n = 1; tmp_res.sign = 1;
     uint8_t curr_pos = U64_BITS - (__CLZ_UI64__(power)) - 1;
     uint64_t mask = (1ULL << k) - 1;
-    while (curr_pos >= 0) {
+    while (curr_pos != -1) {
         uint8_t curr_bit = power & (1ULL << curr_pos);
         if (!curr_bit) { __BIGINT_MUL_DISPATCH__(&tmp_res, &tmp_res, &tmp_res, slide_ctx); --curr_pos; } 
         else {
