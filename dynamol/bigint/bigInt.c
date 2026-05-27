@@ -403,8 +403,7 @@ dnml_status bigInt_mut_nand (bigInt *x, const bigInt y) {
             uint64_t b = (i < y.n)  ? y.limbs[i]  : 0;
             x->limbs[i] = ~(a & b);
         }
-        x->n = operation_range;
-        bigInt_normalize(x);
+        x->n = operation_range; bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_or   (bigInt *x, const bigInt y) {

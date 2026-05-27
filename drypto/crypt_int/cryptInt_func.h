@@ -17,7 +17,7 @@
 #include "../../calc_algo/crt_calc.h"
 #include "../../util/crt_util.h"
 
-#define FAKE_BUF_CAP 2048
+#define FAKE_BUF_CAP 1024
 #define CT_COND_ASSIGN(x, cond, new_val) do { \
     size_t mask = -(size_t)(cond);  /* All 1s if true, all 0s if false */ \
     (x) = ((x) & ~mask) | ((new_val) & mask); \
