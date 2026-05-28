@@ -117,6 +117,7 @@ extern "C" {
     arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
     arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
 } while (0);
+#define clear_arena_io do { arena_clear(&___DASI_IO_ARENA_); arena_destruct(&___DASI_IO_ARENA_); } while(0);
 #define mut_gret(err, err_code, ret) do { \
     if (err != NULL) *err = err_code; return ret; \
 } while(0)
