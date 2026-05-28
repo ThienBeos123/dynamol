@@ -13,8 +13,9 @@ extern "C" {
 #define U64_BYTES sizeof(uint64_t)
 #define U64_BITS ((sizeof(uint64_t)) * CHAR_BIT)
 #define SIZE_T_BITS ((sizeof(size_t)) * CHAR_BIT)
-#define I64_MAX_BIT_MASK 0x7FFFFFFFFFFFFFFFULL
-#define I64_MIN_BIT_MASK 0x8000000000000000ULL
+#define I64_MAX_BIT_MASK UINT64_C(0x7FFFFFFFFFFFFFFF)
+#define I64_MIN_BIT_MASK UINT64_C(0x8000000000000000)
+#define SIGN_BIT_MASK UINT64_C(0x8000000000000000)
 
 /* Precomputation */
 #define log2_10 3.322

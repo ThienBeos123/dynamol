@@ -12,10 +12,7 @@ static volatile uint8_t _libinit = 0;
 // Library Initialization
 static inline void _libdnml_init(void) {
     if (_libinit) return;
-
     _libdnml_detect_hwcaps();
-    _libdnml_fill_ghw();
-
 #if __compiler_clang || __compiler_gcc || __compiler_msvc
     // Compiler built-ins cover most arithmetic/bitwise optimizations.
     // Hardware RNG and halt hooks still require explicit initialization.
@@ -24,10 +21,8 @@ static inline void _libdnml_init(void) {
 #else
     // Unknown compiler
     // ---> Initialize DNML's handwritten intrinsics
-    _libdnml_fill_galg();
-    _libdnml_fill_garith();
-    _libdnml_fill_gbitops();
-    _libdnml_fill_gmarith();
+    _libdnml_fill_garith(); _libdnml_fill_gbitops();
+    _libdnml_fill_gmarith(); _libdnml_fill_ghw();
     _libinit = 1;
 #endif
 }

@@ -1,12 +1,8 @@
-#ifndef ____DNML_VANILLC_ARITH_H
-#define ____DNML_VANILLC_ARITH_H
-
-#include <stdint.h>
-#include <dnml_sys/sys.h>
+#include "__vanillc_conn__.h"
 
 
 // 64 bit Addition with Carry-over
-static inline uint64_t _cintrin_add64c(uint64_t a, uint64_t b, uint8_t *carry) {
+uint64_t _cintrin_add64c(uint64_t a, uint64_t b, uint8_t *carry) {
     uint64_t sum = a + b;
     uint8_t ab_carry = (sum < a);
     a = sum + *carry;
@@ -15,7 +11,7 @@ static inline uint64_t _cintrin_add64c(uint64_t a, uint64_t b, uint8_t *carry) {
 }
 
 // 64 bit Subtraction with Borrow-over
-static inline uint64_t _cintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
+uint64_t _cintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
     uint64_t diff = a - b;
     uint8_t ab_borrow = (diff > a);
     a = diff - *borrow;
@@ -26,7 +22,7 @@ static inline uint64_t _cintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) 
 // Wide, 64 bit Multiplication of a 128 bit product:
 //  +) Return the low 64 bit
 //  +) Mutate the high 64 bit as a parameter
-static inline uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
+uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     // Seperate a and b into 2 different halves
     uint64_t mask = (1ULL << 32) - 1;
     uint64_t a_low = a & mask;        uint64_t b_low = b & mask; // Extract the 32 lower bits
@@ -84,11 +80,6 @@ static inline uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
 //  +) Return the 64 bit quotient - qhat
 //  +) Mutates the 64 bit remainder parameter - rhat
 //  +) Preconditions: hi < div
-static inline uint64_t _cintrin_wdiv128(
-    uint64_t lo, uint64_t hi, 
-    uint64_t div, uint64_t *rhat
-) {
+uint64_t _cintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat) {
     return 0;
 }
-
-#endif

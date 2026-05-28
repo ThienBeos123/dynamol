@@ -1,10 +1,4 @@
-#ifndef ____DNML_VANILLC_MODOP
-#define ____DNML_VANILLC_MODOP
-
-
-
-#include <stdint.h>
-#include <dnml_sys/sys.h>
+#include "__vanillc_conn__.h"
 
 static const uint8_t inv8_lookup[128] = {
     0x1,   0xAB,  0xCD,  0xB7,  0x39,  0xA3,  0xC5,  0xEF,  
@@ -27,13 +21,10 @@ static const uint8_t inv8_lookup[128] = {
 
 
 // 64 bit Modular Inverse of Modulus 2^64
-static inline uint64_t _cintrin_modinv64(uint64_t x) {
+uint64_t _cintrin_modinv64(uint64_t x) {
     uint64_t res = inv8_lookup[(x >> 1) & 0x7F];
     res *= 2 - x * res;
     res *= 2 - x * res;
     res *= 2 - x * res;
     return res;
 }
-
-
-#endif

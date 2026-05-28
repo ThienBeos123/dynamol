@@ -59,34 +59,33 @@ add_library(dnml_core STATIC
     # 3. Mathematical Intrinsic Operations Files
     intrinsics/intrinsics.c
     # 3a. ARM64 Intrinsic Files
-    intrinsics/arm64/_arm64_alg.S
     intrinsics/arm64/_arm64_arith.S
     intrinsics/arm64/_arm64_bitops.S
     intrinsics/arm64/_arm64_marith.S
     intrinsics/arm64/_arm64_sec.S
-    intrinsics/arm64/_arm64_hw.S
     # 3b. x86_64 Intrinsic Files - SYSTEM-V
-    intrinsics/x86_64/_x86_sysv_alg.S
     intrinsics/x86_64/_x86_sysv_arith.S
     intrinsics/x86_64/_x86_sysv_marith.S
     intrinsics/x86_64/_x86_sysv_bitops.S
     intrinsics/x86_64/_x86_sysv_sec.S
-    intrinsics/x86_64/_x86_sysv_hw.S
     # 3c. x86_64 Intrinsic Files - WIN64
-    intrinsics/x86_64/_x86_win64_alg.S
     intrinsics/x86_64/_x86_win64_arith.S
     intrinsics/x86_64/_x86_win64_marith.S
     intrinsics/x86_64/_x86_win64_bitops.S
     intrinsics/x86_64/_x86_win64_sec.S
-    intrinsics/x86_64/_x86_win64_hw.S
     # 3d. RISC-V 64 bit Intrinsics Files
-    intrinsics/risc-v64/_rv64_alg.S
     intrinsics/risc-v64/_rv64_arith.S
     intrinsics/risc-v64/_rv64_marith.S
     intrinsics/risc-v64/_rv64_bitops.S
     intrinsics/risc-v64/_rv64_sec.S
     intrinsics/risc-v64/_rv64_hw.S
+    # 3e. VANILLA C Intrinsics Files
+    intrinsics/zvanillc/_vanillc_arith.c
+    intrinsics/zvanillc/_vanillc_bitops.c
+    intrinsics/zvanillc/_vanillc_marith.c
+    intrinsics/zvanillc/_vanillc_misc.c
 
+    
     # 4. Calculational Algorithms Files - calc_algo
     calc_algo/algo_base/add_sub.c
     calc_algo/perf_based/mul.c
