@@ -13,8 +13,11 @@ typedef enum {
     BIGINT_TRUNC_SUCCESS,       // 1
     BIGINT_NULL,                // 2
     BIGINT_ERR_INVAL,           // 3
-    BIGINT_ERR_RANGE,           // 4
-    BIGINT_ERR_DOMAIN,          // 5
+    BIGINT_ERR_SINVAL,          // 4
+    BIGINT_ERR_STORE_IN,        // 5
+    BIGINT_ERR_RANGE,           // 6
+    BIGINT_ERR_DOMAIN,          // 7
+    BIGINT_ERR_ALIASED,         // 8
 
     STR_SUCCESS = 100,          // 100
     STR_TRUNC_SUCCESS,          // 101
@@ -47,8 +50,11 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case BIGINT_TRUNC_SUCCESS:  fputs("BIGINT_TRUNC_SUCCESS", f); break;
         case BIGINT_NULL:           fputs("BIGINT_NULL", f);        break;
         case BIGINT_ERR_INVAL:      fputs("BIGINT_ERR_INVAL", f);   break;
+        case BIGINT_ERR_SINVAL:     fputs("BIGINT_ERR_SINVAL", f);  break;
+        case BIGINT_ERR_STORE_IN:   fputs("BIGINT_ERR_STORE_IN", f);break;
         case BIGINT_ERR_RANGE:      fputs("BIGINT_ERR_RANGE", f);   break;
         case BIGINT_ERR_DOMAIN:     fputs("BIGINT_ERR_DOMAIN", f);  break;
+        case BIGINT_ERR_ALIASED:    fputs("BIGINT_ERR_ALIASED", f); break;
 
         case STR_SUCCESS:               fputs("STR_SUCCESS", f);            break;
         case STR_TRUNC_SUCCESS:         fputs("STR_TRUNC_SUCCESS", f);      break;

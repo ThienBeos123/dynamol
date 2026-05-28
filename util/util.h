@@ -67,7 +67,6 @@ dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k);
 dnml_status __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k);
 void __BIGINT_INTERNAL_FREE__(bigInt *x);
 
-uint8_t __STATE_VAL__(bigInt x);
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x);
 uint8_t __BIGINT_INTERNAL_SVALID__(const bigInt *x);
 uint8_t __BIGINT_INTERNAL_PVALID__(const bigInt *x);

@@ -22,9 +22,16 @@ extern "C" {
 #define io_cleanup { arena_clear(&___DASI_IO_ARENA_); arena_destruct(&___DASI_IO_ARENA_); }
 
 //? ======================= COMMON !TEST! ASSERT ERRORS CATALOG ====================== ?//
+// Invariant Enforcement
+#define full_contract "Validation Error: Input BigInt violates the full invariant contract (-Ebigint_inval)"
+#define state_contract "Validation Error: Input BigInt violates contract's state invariants (-Ebigint_sinval)"
+#define storage_inval "Validation Error: Input BigInt violates contract's storage invariants (-EbigInt_err_store_in)"
+#define aliased_limbs "Validation Error: Input BigInts contain aliased limb pointers (-Ebigint_alias_limb)"
+// Unexpected/UB Handling
 #define alloc_oom "CRITICAL ERROR: Heap-Allocation Failure - OOM (-Ealloc_oom)"
 #define inval_cap "Reserve Capacity Calculation/Assumptions incorrect (-Ereserve_incorrect)"
 #define arena_poison_oom "Arena Poisoned: Arena Re-allocation witnessed an OOM error (-Earena_poison)"
+// String Format Handling
 #define str_null "String Format Error: Input string pointer is null (-Estr_null)"
 #define str_empty "String Format Error: Input string is empty (-Estr_empty)"
 #define str_inval_base "String Format Error: Input base-parameter is invalid (-Estr_inval_base)"
@@ -105,6 +112,18 @@ extern "C" {
     ); \
 } while(0); 
 
+/* General Macros */
+#define clear_arena do { \
+    arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
+    arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
+} while (0);
+#define mut_gret(err, err_code, ret) do { \
+    if (err != NULL) *err = err_code; return ret; \
+} while(0)
+#define mut_err(err, err_code) do { \
+    if (err != NULL) *err = err_code; \
+    return __BIGINT_ERROR_VALUE__(); \
+} while(0)
 
 
 //todo ===================================== NUMERIC FUNCTIONALITIES ===================================== todo//
@@ -120,28 +139,28 @@ dnml_status bigInt_new_f128(bigInt *__bigInteger, long double __float );
 
 
 //* ------------------------ ASSIGNMENTS ------------------------ */
-void bigInt_set(const bigInt x, bigInt *receiver);
+dnml_status bigInt_set(const bigInt x, bigInt *receiver);
 dnml_status bigInt_set_safe(const bigInt x, bigInt *receiver);
 /* --------- BigInt --> Primitive Types --------- */
-void bigInt_setu64(const bigInt x, uint64_t* receiver);
-void bigInt_seti64(const bigInt x, int64_t* receiver);
-void bigInt_setf128(const bigInt x, long double* receiver);
+dnml_status bigInt_setu64(const bigInt x, uint64_t* receiver);
+dnml_status bigInt_seti64(const bigInt x, int64_t* receiver);
+dnml_status bigInt_setf128(const bigInt x, long double* receiver);
 dnml_status bigInt_setu64_safe(const bigInt x, uint64_t* receiver);
 dnml_status bigInt_seti64_safe(const bigInt x, int64_t* receiver);
 dnml_status bigInt_setf128_safe(const bigInt x, long double* receiver);
 /* --------- Primitive Types --> BigInt --------- */
-void bigInt_getu64(uint64_t x, bigInt *receiver);
-void bigInt_geti64(int64_t x, bigInt *receiver);
-void bigInt_getf128(long double x, bigInt *receiver);
+dnml_status bigInt_getu64(uint64_t x, bigInt *receiver);
+dnml_status bigInt_geti64(int64_t x, bigInt *receiver);
+dnml_status bigInt_getf128(long double x, bigInt *receiver);
 dnml_status bigInt_getf128_safe(long double x, bigInt *receiver);
 
 
 
 //* ------------------------ CONVERSIONS ------------------------ */
 /* --------- BigInt --> Primitive Types --------- */
-uint64_t bigInt_tou64(const bigInt x);
-int64_t bigInt_toi64(const bigInt x);
-long double bigInt_tof128(const bigInt x);
+uint64_t bigInt_tou64(const bigInt x, dnml_status *err);
+int64_t bigInt_toi64(const bigInt x, dnml_status *err);
+long double bigInt_tof128(const bigInt x, dnml_status *err);
 uint64_t bigInt_tou64_safe(const bigInt x, dnml_status *err);
 int64_t bigInt_toi64_safe(const bigInt x, dnml_status *err);
 long double bigInt_tof128_safe(const bigInt x, dnml_status *err);
@@ -158,9 +177,9 @@ bigInt bigInt_not(const bigInt x, dnml_status *err);
 bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err);
 bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err);
 bigInt bigInt_lshiftg(const bigInt x, size_t k, dnml_status *err);
-void bigInt_mut_not(bigInt *x);
-void bigInt_mut_rshift(bigInt *x, size_t k);
-void bigInt_mut_lshift(bigInt *x, size_t k);
+dnml_status bigInt_mut_not(bigInt *x);
+dnml_status bigInt_mut_rshift(bigInt *x, size_t k);
+dnml_status bigInt_mut_lshift(bigInt *x, size_t k);
 dnml_status bigInt_mut_lshiftg(bigInt *x, size_t k);
 /* ------------- Mutative, Fixed-width ------------- */
 dnml_status bigInt_mut_andu64  (bigInt *x, const uint64_t y);
@@ -231,23 +250,23 @@ bigInt bigInt_ex_xnor  (const bigInt x, const bigInt y, size_t op_range, dnml_st
 
 //* ------------------------ COMPARISONS ------------------------ */
 /* --------------- Integer - I64 --------------- */
-bool bigInt_equal_i64(const bigInt x, const int64_t val);
-bool bigInt_less_i64(const bigInt x, const int64_t val);
-bool bigInt_more_i64(const bigInt x, const int64_t val);
-bool bigInt_lequal_i64(const bigInt x, const int64_t val);
-bool bigInt_mequal_i64(const bigInt x, const int64_t val);
+bool bigInt_equal_i64(const bigInt x, const int64_t val, dnml_status *err);
+bool bigInt_less_i64(const bigInt x, const int64_t val, dnml_status *err);
+bool bigInt_more_i64(const bigInt x, const int64_t val, dnml_status *err);
+bool bigInt_lequal_i64(const bigInt x, const int64_t val, dnml_status *err);
+bool bigInt_mequal_i64(const bigInt x, const int64_t val, dnml_status *err);
 /* ---------- Unsigned Integer - UI64 ---------- */
-bool bigInt_equal_u64(const bigInt x, const uint64_t val);
-bool bigInt_less_u64(const bigInt x, const uint64_t val);
-bool bigInt_more_u64(const bigInt x, const uint64_t val);
-bool bigInt_lequal_u64(const bigInt x, const uint64_t val);
-bool bigInt_mequal_u64(const bigInt x, const uint64_t val);
+bool bigInt_equal_u64(const bigInt x, const uint64_t val, dnml_status *err);
+bool bigInt_less_u64(const bigInt x, const uint64_t val, dnml_status *err);
+bool bigInt_more_u64(const bigInt x, const uint64_t val, dnml_status *err);
+bool bigInt_lequal_u64(const bigInt x, const uint64_t val, dnml_status *err);
+bool bigInt_mequal_u64(const bigInt x, const uint64_t val, dnml_status *err);
 /* ------------------- BigInt ------------------ */
-bool bigInt_equal(const bigInt a, const bigInt b);
-bool bigInt_less(const bigInt a, const bigInt b);
-bool bigInt_more(const bigInt a, const bigInt b);
-bool bigInt_lequal(const bigInt a, const bigInt b);
-bool bigInt_mequal(const bigInt a, const bigInt b);
+bool bigInt_equal(const bigInt a, const bigInt b, dnml_status *err);
+bool bigInt_less(const bigInt a, const bigInt b, dnml_status *err);
+bool bigInt_more(const bigInt a, const bigInt b, dnml_status *err);
+bool bigInt_lequal(const bigInt a, const bigInt b, dnml_status *err);
+bool bigInt_mequal(const bigInt a, const bigInt b, dnml_status *err);
 
 
 //* -------------------- SIGNED ARITHMETIC --------------------- */
@@ -297,7 +316,7 @@ bigInt bigInt_gcd(const bigInt x, const bigInt y, dnml_status *err);
 bigInt bigInt_lcmu64(const bigInt x, const uint64_t val, dnml_status *err);
 bigInt bigInt_lcmi64(const bigInt x, const int64_t val, dnml_status *err);
 bigInt bigInt_lcm(const bigInt x, const bigInt y, dnml_status *err);
-bool bigInt_is_prime(const bigInt x);
+bool bigInt_is_prime(const bigInt x, dnml_status *err);
 /* ---------------- Modular Reduction ---------------- */
 dnml_status bigInt_mut_emodu64(bigInt *x, const uint64_t modulus);
 dnml_status bigInt_mut_emodi64(bigInt *x, const int64_t modulus);
@@ -356,19 +375,19 @@ bigInt bigInt_nrt(const bigInt x, const uint64_t root, dnml_status *err);
 
 //* ------------------------- COPIES --------------------------- */
 /* -------------  Mutative SMALL Copies ------------- */
-void bigInt_mut_copyu64(bigInt *dst__, const uint64_t source__);
+dnml_status bigInt_mut_copyu64(bigInt *dst__, const uint64_t source__);
 dnml_status bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__);
-void bigInt_mut_copyi64(bigInt *dst__, const int64_t source__);
+dnml_status bigInt_mut_copyi64(bigInt *dst__, const int64_t source__);
 dnml_status bigInt_mut_dcopyi64(bigInt *dst__, const int64_t source__);
 /* -------------  Mutative LARGE Copies ------------- */
 dnml_status bigInt_mut_copyf128(bigInt *dst__, long double source__);
 dnml_status bigInt_mut_dcopyf128(bigInt *dst__, long double source__);
 dnml_status bigInt_mut_ocopyf128(bigInt *dst__, long double source__);
-void bigInt_mut_tover_copyf128(bigInt *dst__, long double source__);
+dnml_status bigInt_mut_tover_copyf128(bigInt *dst__, long double source__);
 dnml_status bigInt_mut_copy(bigInt *dst__, const bigInt source__);
 dnml_status bigInt_mut_dcopy(bigInt *dst__, const bigInt source__);
 dnml_status bigInt_mut_ocopy(bigInt *dst__, const bigInt source__);
-void bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__);
+dnml_status bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__);
 /* -------------  Functional SMALL Copies ------------- */
 bigInt bigInt_copyu64(const uint64_t source__, dnml_status *err);
 bigInt bigInt_copyi64(const int64_t source__, dnml_status *err);
@@ -383,12 +402,12 @@ bigInt bigInt_tover_copy(const bigInt source__, size_t output_cap, dnml_status *
 
 
 //* -------------------- GENERAL UTILITIES --------------------- */
-void bigInt_canonicalize(bigInt *x);
-void bigInt_normalize(bigInt *x);
+dnml_status bigInt_canonicalize(bigInt *x);
+dnml_status bigInt_normalize(bigInt *x);
 dnml_status bigInt_resize(bigInt *x, size_t k);
 dnml_status bigInt_reserve(bigInt *x, size_t k);
 dnml_status bigInt_shrink(bigInt *x, size_t k);
-void bigInt_reset(bigInt *x);
+dnml_status bigInt_reset(bigInt *x);
 bool bigInt_validate(bigInt x);
 bool bigInt_pvalidate(bigInt *x);
 
@@ -501,7 +520,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base);
 
 //* -------------------- BINARY INPUTS/OUTPUTS --------------------- */
 /* --------- Binary INPUT/OUTPUT ---------  */
-void bigInt_fwrite(FILE *stream, const bigInt x);
+dnml_status bigInt_fwrite(FILE *stream, const bigInt x);
 size_t bigInt_fread_size(FILE *stream);
 dnml_status bigInt_fread(FILE *stream, bigInt *x);
 dnml_status bigInt_fsread(FILE *stream, bigInt *x);
@@ -517,10 +536,10 @@ dnml_status bigInt_deserialize(bigInt *x, const char* str, size_t len);
 
 
 //* -------------------- GENERAL UTILITIES --------------------- */
-void bigInt_limb_dump(FILE *stream, const bigInt x);
-void bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase);
-void bigInt_bindump(FILE *stream, const bigInt x); 
-void bigInt_info(FILE *stream, const bigInt x);
+dnml_status bigInt_limb_dump(FILE *stream, const bigInt x);
+dnml_status bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase);
+dnml_status bigInt_bindump(FILE *stream, const bigInt x); 
+dnml_status bigInt_info(FILE *stream, const bigInt x);
 
 
 #ifdef __cplusplus

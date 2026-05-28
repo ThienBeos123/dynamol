@@ -35,13 +35,6 @@ void __BIGINT_INTERNAL_FREE__(bigInt *x) {
 }
 
 /* Safety Utilities */
-uint8_t __STATE_VAL__(bigInt x) {
-    if (x.limbs == NULL) return 0;
-    if (x.cap < 1) return 0;
-    if (x.n > x.cap) return 0;
-    if (x.sign != 1 && x.sign != -1) return 0;
-    return 1;
-}
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity */
     if (x == NULL) return 0;
     /* State Validation */

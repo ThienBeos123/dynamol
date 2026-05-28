@@ -57,14 +57,21 @@ cryptographically-ready cleanup code insertions
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
-        if (cond) { (*err) = (err_code); return retval; } \
+        if (cond) { \
+            if (err != NULL) *err = err_code; \
+            return retval; \
+        } \
     } \
 } while (0);
 #define test_assert_pre(cond, err_msg, cleanup, err, err_code, baseout, base, retsize ) do { \
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
-        if (cond) { (*err) = (err_code); (*baseout) = (base); return retsize; } \
+        if (cond) { \
+            if (err != NULL) *err = err_code; \
+            (*baseout) = (base); \
+            return retsize; \
+        } \
     } \
 } while (0);
 
