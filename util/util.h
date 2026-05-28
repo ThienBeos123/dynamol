@@ -1,21 +1,25 @@
 #ifndef DNML_UTIL_H
 #define DNML_UTIL_H
 
+#include <libdnml_types.h>
+#include <include.h>
+#include <dnml_sys/sys.h>
+#include <_libdnml_config/numeric_config.h>
+#include <_libdnml_mem/_ctx.h>
+#include <dnml_status.h>
+#include "../intrinsics/intrinsics.h"
+#include "aconv_macros.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <include.h>
-#include <system/sys.h>
-#include "../sconfigs/settings/numeric_config.h"
-#include "../sconfigs/memory/_ctx.h"
-#include "../intrinsics/intrinsics.h"
-#include "../../dynamol/big_numbers/bigNums.h"
-#include "aconv_macros.h"
+#define min(x, y) ( ((x) < (y)) ? (x) : (y) )
+#define max(x, y) ( ((x) > (y)) ? (x) : (y) )
 
 
 /* ---------------------- */
-/* sec_util.c */
+/* rng_util.c */
 /* ---------------------- */
 typedef struct { uint64_t s[4]; } xoshiro256_state;
 uint64_t splitmix64(uint64_t x);
@@ -57,10 +61,10 @@ uint64_t _dnml_ipower_u64(uint64_t base, uint8_t power);
 /* ---------------------- */
 /* bigNum_utils.c */
 /* ---------------------- */
-void __BIGINT_INTERNAL_EMPINIT__(bigInt *x);
-void __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k);
-void __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k);
-void __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_EMPINIT__(bigInt *x);
+dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k);
 void __BIGINT_INTERNAL_FREE__(bigInt *x);
 
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x);

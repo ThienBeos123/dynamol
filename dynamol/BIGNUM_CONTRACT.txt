@@ -4,17 +4,23 @@ while other properties, like arithmetic validity, is only required by some funct
 therefore objects not meeting such properties might still qualify for certain operations.
 
 BIGINT:
-    -- CORE PROPERTIES --
-    1. A bigInt's limbs MUST NEVER be NULL (bi.limbs != NULL)
-    2. A bigInt's capacity MUST NEVER be less than 1 (bi.cap >= 1)
-    3. A bigInt's utilized length MUST NEVER be more than its capacity (bi.n <= bi.cap)
-    4. A bigInt's sign MUST ALWAYS be either 1 (Positive) or -1 (Negative) 
+   - CORE PROPERTIES --
+   1. A bigInt's limbs MUST NEVER be NULL (bi.limbs != NULL)
+   2. A bigInt's capacity MUST NEVER be less than 1 (bi.cap >= 1)
+   3. A bigInt's utilized length MUST NEVER be more than its capacity (bi.n <= bi.cap)
+   4. A bigInt's sign MUST ALWAYS be either 1 (Positive) or -1 (Negative) 
        (bi.sign = (1 || -1))
-    5. A bigInt's with a value of 0 canonically have 0 utilized length (bi.n == 0)
-    -- ARITHMETIC VALIDITY --
-    5. A bigInt's Most Significant Limb must NOT be 0 (bi.limbs[bi.n - 1] != 0)
-    6. A bigInt with a value of zero (n == 0) MUST have a positive sign (sign == 1) 
+   5. A bigInt's with a value of 0 canonically have 0 utilized length (bi.n == 0)
+
+   -- ARITHMETIC VALIDITY --
+   6. A bigInt's Most Significant Limb must NOT be 0 (bi.limbs[bi.n - 1] != 0)
+   7. A bigInt with a value of zero (n == 0) MUST have a positive sign (sign == 1) 
        (bi.n == 0 ---> bi.sign == 1)
+
+   -- OBJECT INTERACTIONS  --
+   8. Object Aliasing (memory sharing) is ONLY permitted for functions
+      with uni-directional operation flow, and must NOT be used for any functions
+      requiring persistent past data read-reliance for writes
 
 
 BIGFLOAT:

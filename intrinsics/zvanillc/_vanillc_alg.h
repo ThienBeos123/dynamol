@@ -2,7 +2,7 @@
 #define ____DNML_VANILLC_ALG_H
 
 #include <stdint.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 
 
 

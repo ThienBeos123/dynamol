@@ -3,7 +3,7 @@
 
 
 #include <include.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 #include "intrinsics/intrinsics.h"
 
 static volatile uint8_t _libinit = 0;

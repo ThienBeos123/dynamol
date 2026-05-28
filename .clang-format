@@ -1,0 +1,36 @@
+---
+Language: C
+BasedOnStyle: LLVM
+ColumnLimit: 120
+IndentWidth: 4
+UseTab: Never
+
+# Variable declarations
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+
+# Line breaking
+BreakBeforeBraces: Attach
+PackConstructorInitializers: Never
+
+# Function calls and macros
+PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyExcessCharacter: 10
+PenaltyReturnTypeOnItsOwnLine: 100
+
+# Formatting
+CompactNamespaces: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+# Spaces
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+
+# Pointer alignment
+PointerAlignment: Left

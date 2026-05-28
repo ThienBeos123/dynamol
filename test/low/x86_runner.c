@@ -5,7 +5,7 @@
 #include "../../test_ui/lowui.h"
 #include "low_setup.h"
 // STDLIB utilities
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
         case rcases[rcount * x86_scount]; case* rslices[x86_scount];
         _suite_slices(rslices, rcases, rcount, sizeof(case), x86_scount);
         u64 rinbuf[rcount * x86_scount][3]; u64* rinslices[x86_scount];
-        _suite_slices(rinslices, rinbuf, rcount, BYTES_IN_UINT64_T * x86_mrin, x86_scount);
+        _suite_slices(rinslices, rinbuf, rcount, U64_BYTES * x86_mrin, x86_scount);
         size_t ressizes = resbuf_size(20, rcount);
         pair resbuf[ressizes * x86_scount]; pair* resslices[x86_scount];
         _suite_slices(resslices, resbuf, ressizes, sizeof(pair), x86_scount);

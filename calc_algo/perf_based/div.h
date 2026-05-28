@@ -2,25 +2,25 @@
 #define DNML_DIV_H
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include <dnml_status.h>
+#include <debug_util.h>
+#include <libdnml_types.h>
 #include <include.h>
-#include <system/sys.h>
-#include "../../sconfigs/settings/numeric_config.h"
-#include "../../sconfigs/memory/_ctx.h"
+#include <dnml_sys/sys.h>
+#include <_libdnml_config/numeric_config.h>
+#include <_libdnml_mem/_ctx.h>
 
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
-#include "../../dynamol/big_numbers/bigNums.h"
 
-#include "add_sub.h"
+#include "../algo_base/add_sub.h"
 #include "mul.h"
 
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 size_t __BIGINT_SHORTDIV_WS__(size_t a_size, size_t b_size);
 size_t __BIGINT_KNUTH_WS__(size_t a_size, size_t b_size);
 size_t __BIGINT_NEWTON_WS__(size_t a_size, size_t b_size);
@@ -38,13 +38,10 @@ void __BIGINT_DIVMOD_DISPATCH__(
     const bigInt *a, const bigInt *b, 
     bigInt *quot, bigInt *rem, calc_ctx div_ctx
 );
-
-
-
-
 #ifdef __cplusplus
 }
 #endif
+
 
 
 #endif

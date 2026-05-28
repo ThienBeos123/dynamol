@@ -7,15 +7,18 @@
     #else
         #define __ARCH_ARM64__ 0
     #endif
-    #include <system/asm/__asm_macros.h>
+    #include <dnml_sys/asm/__asm_macros.h>
 #else
-    #include <system/sys.h>
+    #include <dnml_sys/sys.h>
 #endif
 
 #if __ARCH_ARM64__
 #include "__arm64_macros.h"
 
 #ifndef __ASSEMBLER__
+#ifdef __cplusplus
+extern "C" {
+#endif
 // _arm64_arith.S
 extern uint64_t _arm64_add64c(uint64_t a, uint64_t b, uint8_t *carry);
 extern uint64_t _arm64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow);
@@ -34,6 +37,9 @@ extern uint64_t _arm64_hw_trng(int *err);
 // _arm64_hw_.S
 extern void _arm64_full_halt(void);
 extern void _arm64_shallow_halt(void);
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 #endif

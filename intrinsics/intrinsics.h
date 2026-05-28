@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
-#include <system/sys.h>
-#include "../sconfigs/settings/numeric_config.h"
-#include "../sconfigs/settings/settings.h"
+#include <dnml_sys/sys.h>
+#include <_libdnml_config/numeric_config.h>
+#include <_libdnml_config/settings.h>
 
 #include "arm64/_arm64_conn.h"
 #include "x86_64/_x86_conn.h"
@@ -37,8 +37,9 @@
 #endif
 
 
-#define min(x, y) ( ((x) < (y)) ? (x) : (y) )
-#define max(x, y) ( ((x) > (y)) ? (x) : (y) )
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // //* ---------------------------------------------------------------------------- *//
 // //*                              IFUNC FUNCTION TABLES                           *//
@@ -111,11 +112,12 @@ uint8_t __PCNT_UI64__(uint64_t x);
 
 
 //* --------------------------------------------------------------------------------------- *//
-//*                                   GENERAL MEMORY UTILITIES                              *//
+//*                                     FAST MEMORY UTILITIES                               *//
 //* --------------------------------------------------------------------------------------- *//
-// STRICT, SECURED MEM UTILS - Secured (does NOT utilize SIMD)
-void __MEMCPY_STRICT__(void *buf, const void *src, size_t bytes);
-void __MEMWIPE_STRICT__(void *buf, size_t len);
+// FAST MEMORY UTILITIES (UTILIZE SIMD EXTENSIVELY)
+void __libdnml_MEMSET_FAST__(void *buf, uint64_t val, size_t len);
+void __libdnml_MEMCPY_FAST__(void *buf, const void *src, size_t len);
+void __libdnml_MEMWIPE__(void *buf, size_t len);
 
 
 //* --------------------------------------------------------------------------------------- *//
@@ -137,5 +139,9 @@ void __GET_ENTROPY_FAST(void* buf, size_t len);
 void __GET_ENTROPY_STD(void *buf, size_t len);
 int __GET_ENTROPY_PQC(void *buf, size_t len);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

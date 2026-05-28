@@ -21,23 +21,24 @@ endif()
 # Add include directories globally
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/system
-    ${CMAKE_SOURCE_DIR}/include/system/asm
-    ${CMAKE_SOURCE_DIR}/sconfigs
-    ${CMAKE_SOURCE_DIR}/sconfigs/memory
-    ${CMAKE_SOURCE_DIR}/sconfigs/perf
-    ${CMAKE_SOURCE_DIR}/sconfigs/settings
+    ${CMAKE_SOURCE_DIR}/include/dnml_sys
+    ${CMAKE_SOURCE_DIR}/include/dnml_sys/asm
+    ${CMAKE_SOURCE_DIR}/include/_libdnml_config
+    ${CMAKE_SOURCE_DIR}/include/_libdnml_mem
+    ${CMAKE_SOURCE_DIR}/include/_libdnml_perf
+
     ${CMAKE_SOURCE_DIR}/intrinsics
     ${CMAKE_SOURCE_DIR}/intrinsics/arm64
     ${CMAKE_SOURCE_DIR}/intrinsics/risc-v64
     ${CMAKE_SOURCE_DIR}/intrinsics/x86_64
     ${CMAKE_SOURCE_DIR}/intrinsics/zvanillc
+
     ${CMAKE_SOURCE_DIR}/util
     ${CMAKE_SOURCE_DIR}/calc_algo
     ${CMAKE_SOURCE_DIR}/calc_algo/perf_based
     ${CMAKE_SOURCE_DIR}/calc_algo/crt_based
-    ${CMAKE_SOURCE_DIR}/dynamol/big_numbers
-    ${CMAKE_SOURCE_DIR}/dynamol/fsize_nums
+    ${CMAKE_SOURCE_DIR}/dynamol/bigint
+    ${CMAKE_SOURCE_DIR}/dynamol/bigfloat
     ${CMAKE_SOURCE_DIR}/test_ui                 # Added so lowui.h is universally accessible
 )
 
@@ -46,48 +47,39 @@ include_directories(
 # =====================================================
 add_library(dnml_core STATIC
     # 1a. Main Module Files - BigNum
-    dynamol/big_numbers/bigInt.c
-    dynamol/big_numbers/bigInt_io.c
+    dynamol/bigint/bigInt.c
+    dynamol/bigint/bigInt_io.c
 
-    # 2. Calculational Algorithms Files - calc_algo
-    calc_algo/perf_based/add_sub.c
-    calc_algo/perf_based/mul.c
-    calc_algo/perf_based/div.c
-    calc_algo/perf_based/mod.c
-    calc_algo/perf_based/mod_op.c
-    calc_algo/perf_based/num_theory.c
-    calc_algo/perf_based/pow_root.c
+    # 2. System Assembly files
+    include/dnml_sys/__hwcaps.c
+    include/dnml_sys/asm/_dnml_cpuid.S
+    # Character tables (lookup arrays)
+    include/char_table.c
 
-    # 3. Utility Files
-    util/bigNum_utils.c
-    util/misc_utils.c
-    util/str_parse.c
-    util/sec_util.c
-
-    # 4. Mathematical Intrinsic Operations Files
+    # 3. Mathematical Intrinsic Operations Files
     intrinsics/intrinsics.c
-    # 4a. ARM64 Intrinsic Files
+    # 3a. ARM64 Intrinsic Files
     intrinsics/arm64/_arm64_alg.S
     intrinsics/arm64/_arm64_arith.S
     intrinsics/arm64/_arm64_bitops.S
     intrinsics/arm64/_arm64_marith.S
     intrinsics/arm64/_arm64_sec.S
     intrinsics/arm64/_arm64_hw.S
-    # 4b. x86_64 Intrinsic Files - SYSTEM-V
+    # 3b. x86_64 Intrinsic Files - SYSTEM-V
     intrinsics/x86_64/_x86_sysv_alg.S
     intrinsics/x86_64/_x86_sysv_arith.S
     intrinsics/x86_64/_x86_sysv_marith.S
     intrinsics/x86_64/_x86_sysv_bitops.S
     intrinsics/x86_64/_x86_sysv_sec.S
     intrinsics/x86_64/_x86_sysv_hw.S
-    # 4c. x86_64 Intrinsic Files - WIN64
+    # 3c. x86_64 Intrinsic Files - WIN64
     intrinsics/x86_64/_x86_win64_alg.S
     intrinsics/x86_64/_x86_win64_arith.S
     intrinsics/x86_64/_x86_win64_marith.S
     intrinsics/x86_64/_x86_win64_bitops.S
     intrinsics/x86_64/_x86_win64_sec.S
     intrinsics/x86_64/_x86_win64_hw.S
-    # 4d. RISC-V 64 bit Intrinsics Files
+    # 3d. RISC-V 64 bit Intrinsics Files
     intrinsics/risc-v64/_rv64_alg.S
     intrinsics/risc-v64/_rv64_arith.S
     intrinsics/risc-v64/_rv64_marith.S
@@ -95,19 +87,33 @@ add_library(dnml_core STATIC
     intrinsics/risc-v64/_rv64_sec.S
     intrinsics/risc-v64/_rv64_hw.S
 
-    # 5. System Assembly files
-    include/system/__hwcaps.c
-    include/system/asm/_dnml_cpuid.S
-    # Character tables (lookup arrays)
-    include/char_table.c
+    # 4. Calculational Algorithms Files - calc_algo
+    calc_algo/algo_base/add_sub.c
+    calc_algo/perf_based/mul.c
+    calc_algo/perf_based/div.c
+    calc_algo/perf_based/mod.c
+    calc_algo/perf_based/mod_op.c
+    calc_algo/perf_based/num_theory.c
+    calc_algo/perf_based/pow_root.c
+
+    # 5. Utility Files
+    util/perf_util/bigNum_utils.c
+    util/perf_util/misc_utils.c
+    util/perf_util/str_parse.c
+    util/perf_util/rng_util.c
 )
 
 # Extra commands for clearer debugging and cleaning up
 target_compile_options(dnml_core PUBLIC
     # Add this to prevent GCC/Clang flags pollution into MSVC Build
-    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
+    $<$<CXX_COMPILER_ID:GNU,AppleClang>:
         -fsanitize=address,undefined -fno-omit-frame-pointer -g
         -Wall -Wextra -pedantic
+    >
+    # Additional Clang flags for an even more concise build
+    $<$<CXX_COMPILER_ID:Clang>:
+        -fsanitize=address,undefined -fno-omit-frame-pointer -g
+        -Wall -Wextra -pedantic -Weverything
     >
     # Add this to prevent MSVC flags pollution in GCC/Clang build
     $<$<CXX_COMPILER_ID:MSVC>:

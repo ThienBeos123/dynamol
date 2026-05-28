@@ -5,10 +5,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
+#include <libdnml_types.h>
 #include "../../../test_ui/_strui.h"
-#include "../../../sconfigs/memory/_scratch.h"
-#include "../../../dynamol/big_numbers/bigNums.h"
 
 #define DNML_UNFINISHED() do { \
     fputs("\n\n !CRITICAL FAILURE!: This feature is either: ", stderr); \

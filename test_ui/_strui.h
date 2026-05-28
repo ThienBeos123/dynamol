@@ -3,10 +3,9 @@
 
 
 
+#include <libdnml_types.h>
 #include <include.h>
-#include "../dynamol/big_numbers/bigNums.h"
-#include "../sconfigs/dnml_status.h"
-#include "../sconfigs/memory/_scratch.h"
+#include <dnml_status.h>
 #include "../util/util.h"
 #include "_test_base.h"
 
