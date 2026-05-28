@@ -208,24 +208,24 @@ bigInt bigInt_nor   (const bigInt x, const bigInt y, dnml_status *err);
 bigInt bigInt_xor   (const bigInt x, const bigInt y, dnml_status *err);
 bigInt bigInt_xnor  (const bigInt x, const bigInt y, dnml_status *err);
 /* ------------- Functional, Explicit-width ------------- */
-bigInt bigInt_ex_andu64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_nandu64 (const bigInt x, const uint64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_oru64   (const bigInt x, const uint64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_noru64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_xoru64  (const bigInt x, const uint64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_xnoru64 (const bigInt x, const uint64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_andi64  (const bigInt x, const int64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_nandi64 (const bigInt x, const int64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_ori64   (const bigInt x, const int64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_nori64  (const bigInt x, const int64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_xori64  (const bigInt x, const int64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_xnori64 (const bigInt x, const int64_t val, size_t width, dnml_status *err);
-bigInt bigInt_ex_and   (const bigInt x, const bigInt y, size_t width, dnml_status *err);
-bigInt bigInt_ex_nand  (const bigInt x, const bigInt y, size_t width, dnml_status *err);
-bigInt bigInt_ex_or    (const bigInt x, const bigInt y, size_t width, dnml_status *err);
-bigInt bigInt_ex_nor   (const bigInt x, const bigInt y, size_t width, dnml_status *err);
-bigInt bigInt_ex_xor   (const bigInt x, const bigInt y, size_t width, dnml_status *err);
-bigInt bigInt_ex_xnor  (const bigInt x, const bigInt y, size_t width, dnml_status *err);
+bigInt bigInt_ex_andu64  (const bigInt x, const uint64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_nandu64 (const bigInt x, const uint64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_oru64   (const bigInt x, const uint64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_noru64  (const bigInt x, const uint64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_xoru64  (const bigInt x, const uint64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_xnoru64 (const bigInt x, const uint64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_andi64  (const bigInt x, const int64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_nandi64 (const bigInt x, const int64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_ori64   (const bigInt x, const int64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_nori64  (const bigInt x, const int64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_xori64  (const bigInt x, const int64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_xnori64 (const bigInt x, const int64_t val, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_and   (const bigInt x, const bigInt y, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_nand  (const bigInt x, const bigInt y, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_or    (const bigInt x, const bigInt y, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_nor   (const bigInt x, const bigInt y, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_xor   (const bigInt x, const bigInt y, size_t op_range, dnml_status *err);
+bigInt bigInt_ex_xnor  (const bigInt x, const bigInt y, size_t op_range, dnml_status *err);
 
 
 
