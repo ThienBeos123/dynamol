@@ -703,8 +703,7 @@ dnml_status bigInt_mutex_xor   (bigInt *x, const bigInt y, size_t op_range) {
     assert(x->limbs != y.limbs);
     if (!op_range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
-    if (!x->n && !y.n);
-    else {
+    if (x->n | y.n) {
         for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
             uint64_t b = (i < y.n) ? y.limbs[i] : 0;
