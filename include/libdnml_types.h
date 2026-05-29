@@ -9,6 +9,9 @@ extern "C" {
 #include "dnml_sys/sys.h"
 #include "_libdnml_config/settings.h"
 
+typedef struct { uint64_t a; uint64_t b } _ldnml_u128;
+
+
 //* ======================================= DYNAMOL DEFINITION ========================================= *//
 #define BIGINT_LIMBS_BITS 64
 #define DASI_OVERFLOW_THRES10                                                  \
@@ -30,7 +33,7 @@ typedef struct {
 
 
 
-//* ======================================= DYNAMOL DEFINITION ========================================= *//
+//* ======================================= DRYPTO DEFINITION ========================================= *//
 #define CRYPTINT_LIMBS_BITS 64
 typedef struct {
     size_t n; size_t cap;

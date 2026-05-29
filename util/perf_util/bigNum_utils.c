@@ -178,10 +178,12 @@ uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
         __BIGINT_INTERNAL_RSHIFT__(x, n);
         return remainder;
     } else {
-        uint64_t remainder = 0;
+        uint64_t remainder = 0; uint8_t overflow_check;
         for (size_t i = x->n - 1; i != -1; --i) {
-        x->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder);
-        } __BIGINT_INTERNAL_TRIM_LZ__(x);
+            x->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &overflow_check);
+            DNML_TEST_ASSERT(overflow_check, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
+        }
+        __BIGINT_INTERNAL_TRIM_LZ__(x);
         if (x->n == 0) x->sign = 1;
         return remainder;
     }

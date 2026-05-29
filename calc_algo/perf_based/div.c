@@ -56,10 +56,12 @@ static inline void ___DASI_BURK_3BY2(
 
 /* ------ ALGORITHMS FUNCTIONS ------ */
 void __BIGINT_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem) {
-    uint64_t remainder = 0;
+    uint64_t remainder = 0; uint8_t overflow_check;
     for (size_t i = a->n; i > 0; --i) {
-    quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder);
-    } __BIGINT_INTERNAL_TRIM_LZ__(rem);
+        quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
+        DNML_TEST_ASSERT(overflow_check, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
+    } 
+    __BIGINT_INTERNAL_TRIM_LZ__(rem);
     if (quot->n == 0) quot->sign = 1;
     rem->limbs[0] = remainder;
     rem->n = (remainder) ? 1 : 0;
@@ -76,7 +78,6 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
         { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
     ); bigInt a_copy = {.limbs = a_limbs, .sign  = 1, .cap = m + 1, .n = 0};
-
     limb_t *b_limbs = scratch_alloc(&knuth_ctx, n, &err_check); mod_endstat(end_stat, err_check);
     DNML_TEST_ASSERT(
         !(end_stat == DNML_ARENA_ALLOC_OVERFLOW), 
@@ -113,15 +114,20 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
         *   ------> qhat = (a2 * 2^64 + a1) / b1
         *   ------> rhat = (a2 * 2^64 + a1) % b1
         *   --------------> a2 * 2^64 + a1 = qhat * b1 + rhat   (Important identity D)
-        *   --------------> a2 * 2^64 + a1 - qhat.b1 = rhat     (Call this P)
+        *   --------------> a2 * 2^64 + a1 - qhat * b1 = rhat   (Call this P)
         */
         uint64_t a2 = a_copy.limbs[j + n]; //                       1st highest limb of a
         uint64_t a1 = a_copy.limbs[j + n - 1]; //                   2nd highest limb of a
         uint64_t a0 = (n >= 2) ? a_copy.limbs[j + n - 2] : 0; //    3rd highest limb of a (DETECT OVERESTIMATION)
         uint64_t b1 = b_copy.limbs[n - 1]; //                       1st highest limb of b
         uint64_t b0 = (n >= 2) ? b_copy.limbs[n - 2] : 0; //        2nd highest limb of b (used to validate quotient estimation - DETECT OVERESTIMATION)
-        uint64_t qhat, rhat;
-        qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat);
+        uint64_t qhat, rhat; uint8_t overflow_check;
+        qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat, &overflow_check);
+        DNML_TEST_ASSERT((overflow_check),
+            "CRTIICAL DEBUG ERROR: Knuth-D Divisor normalization fail, causing quotient overflow",
+            { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
+        );
+
         // Validating quotient estimation (Prevent overestimation before multi-limb subtraction (expensive & risky))
         if (qhat == UINT64_MAX) --qhat; // Check if estimates quotient is too large
         while (qhat * b0 > ((uint128)rhat << U64_BITS) + a0) {

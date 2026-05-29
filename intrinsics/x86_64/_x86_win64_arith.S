@@ -90,27 +90,51 @@ _x86w64_wmul128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND -------
-* uint64_t _x86sv_wdiv128(
-*    uint64_t lo, uint64_t hi, 
-*    uint64_t div, uint64_t *rem
-* ) 
+* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed) 
 * arg:
-*   rcx: uint64_t lo ----> (64 BIT)
-*   rdx: uint64_t hi ----> (64 BIT)
-*   r8:  uint64_t div ---> (64 BIT)
-*   r9:  uint64_t *rem --> (64 BIT)
+*   rcx:        uint64_t lo ----> (64 BIT)
+*   rdx:        uint64_t hi ----> (64 BIT)
+*   r8:         uint64_t div ---> (64 BIT)
+*   r9:         uint64_t *rem --> (64 BIT)
+*   [RSP + 40]: uint8_t *overflowed --> (1 | 0)
 * ret:
-*   rax - quot: (lo
-*   r9  - rem: (a * b) >> 64;
-* pre-conditions:
-*   hi/rsi < div
+*   rax - quot: ([lo:hi] / div)
+*   r9  - rhat: ([lo:hi] % div)
+* pre-conditions: hi/rsi < div
 */
 _x86w64_wdiv128:
+    cmp rdx, r8
+    ja .overflow
+
+    ; Divison + Returns
     mov rax, rcx ; rax = lo
     div r8 ; [rdx:rax] / r8
-    ; rax = quot
-    ; rdx = rem
+    ; rax = quot | rdx = rem
     mov [r9], rdx
+    ; if (overflowed != NULL) *overflowed = 0
+    mov r10, [rsp + 40]
+    test r10, r10
+    jz .done
+    mov byte [r10], 0
+    ret
+.done:
+    ret
+
+/* Overflow handling blocs */
+.overflow:
+    mov rax, rdx
+    xor rdx, rdx
+    div r8
+    ; rax = quot | rdx = rem
+    mov [r9], rdx
+    mov rax, -1
+    ; if (overflowed != NULL) *overflowed = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    jz .done_overflow
+    mov byte [r10], 1
+    ret
+.done_overflow:
     ret
 
 

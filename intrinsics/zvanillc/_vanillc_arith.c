@@ -3,19 +3,15 @@
 
 // 64 bit Addition with Carry-over
 uint64_t _cintrin_add64c(uint64_t a, uint64_t b, uint8_t *carry) {
-    uint64_t sum = a + b;
-    uint8_t ab_carry = (sum < a);
-    a = sum + *carry;
-    uint8_t final_carry = (a < sum);
+    uint64_t sum = a + b; uint8_t ab_carry = (sum < a);
+    a = sum + *carry; uint8_t final_carry = (a < sum);
     *carry = ab_carry | final_carry; return a;
 }
 
 // 64 bit Subtraction with Borrow-over
 uint64_t _cintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
-    uint64_t diff = a - b;
-    uint8_t ab_borrow = (diff > a);
-    a = diff - *borrow;
-    uint8_t final_borrow = (a > diff);
+    uint64_t diff = a - b; uint8_t ab_borrow = (diff > a);
+    a = diff - *borrow; uint8_t final_borrow = (a > diff);
     *borrow = ab_borrow | final_borrow; return a;
 }
 
@@ -80,6 +76,18 @@ uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
 //  +) Return the 64 bit quotient - qhat
 //  +) Mutates the 64 bit remainder parameter - rhat
 //  +) Preconditions: hi < div
-uint64_t _cintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat) {
-    return 0;
+uint64_t _cintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
+    if (hi >= div) {
+        if (overflowed) *overflowed = 1;
+        *rhat = hi % div; return UINT64_MAX;
+    }
+    /* Normal Operations here */
+    uint64_t q = 0;
+    for (int i = U64_BITS - 1; i >= 0; --i) {
+        q <<= 1;
+        uint64_t test_rem = (hi << 1) | ((lo >> i) & 1);
+        if (test_rem >= div) { q |= 1; hi = test_rem - div; }
+        else hi = test_rem;
+    }
+    *rhat = hi; *overflowed = 0; return q;
 }

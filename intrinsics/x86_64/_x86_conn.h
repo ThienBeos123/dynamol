@@ -24,10 +24,7 @@ extern "C" {
 extern uint64_t _x86sv_add64c(uint64_t a, uint64_t b, uint8_t *carry);
 extern uint64_t _x86sv_sub64b(uint64_t a, uint64_t b, uint8_t *borrow);
 extern uint64_t _x86sv_wmul128(uint64_t a, uint64_t b, uint64_t *hi);
-extern uint64_t _x86sv_wdiv128(
-    uint64_t lo, uint64_t hi,
-    uint64_t div, uint64_t *rem
-);
+extern uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed);
 #define _x86_add64c     _x86sv_add64c
 #define _x86_sub64b     _x86sv_sub64b
 #define _x86_wmul128    _x86sv_wmul128
@@ -37,17 +34,20 @@ extern uint64_t _x86sv_modinv64(uint64_t x);
 #define _x86_modinv64   _x86sv_modinv64
 // _x86_sysv_alg.S
 // _x86_sysv_bitops.S
-extern uint64_t _x86sv_clz64e(uint64_t x);
-extern uint64_t _x86sv_clz64s(uint64_t x);
-extern uint64_t _x86sv_ctz64e(uint64_t x);
-extern uint64_t _x86sv_ctz64s(uint64_t x);
+extern uint8_t _x86sv_clz64e(uint64_t x);
+extern uint8_t _x86sv_clz64s(uint64_t x);
+extern uint8_t _x86sv_ctz64e(uint64_t x);
+extern uint8_t _x86sv_ctz64s(uint64_t x);
 extern uint64_t _x86sv_bswap64(uint64_t x);
+extern uint8_t _x86sv_pcnt64e(uint64_t x);
+extern uint8_t _x86sv_pcnt64s(uint64_t x);
 #define _x86_clz64e     _x86sv_clz64e
 #define _x86_clz64s     _x86sv_clz64s 
 #define _x86_ctz64e     _x86sv_ctz64e
 #define _x86_ctz64s     _x86sv_ctz64s
 #define _x86_bswap64    _x86sv_bswap64
 #define _x86_pcnt64e    _x86sv_pcnt64e
+#define _x86_pcnt64s    _x86sv_pcnt64s
 // _x86_sysv_sec.S
 extern uint64_t _x86sv_hw_drbg(int *err)
 extern uint64_t _x86sv_hw_trng(int *err)
@@ -74,10 +74,7 @@ extern "C" {
 extern uint64_t _x86w64_add64c(uint64_t a, uint64_t b, uint8_t *carry);
 extern uint64_t _x86w64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow);
 extern uint64_t _x86w64_wmul128(uint64_t a, uint64_t b, uint64_t *hi);
-extern uint64_t _x86w64_wdiv128(
-    uint64_t lo, uint64_t hi,
-    uint64_t div, uint64_t *rem
-);
+extern uint64_t _x86w64_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed);
 #define _x86_add64c     _x86w64_add64c
 #define _x86_sub64b     _x86w64_sub64b
 #define _x86_wmul128    _x86w64_wmul128
@@ -92,13 +89,15 @@ extern uint8_t _x86w64_clz64s(uint64_t x);
 extern uint8_t _x86w64_ctz64e(uint64_t x);
 extern uint8_t _x86w64_ctz64s(uint64_t x);
 extern uint64_t _x86w64_bswap64(uint64_t x);
-extern uint8_t
+extern uint8_t _x86w64_pcnt64e(uint64_t x);
+extern uint8_t _x86w64_pcnt64s(uint64_t x);
 #define _x86_clz64e     _x86w64_clz64e
 #define _x86_clz64s     _x86w64_clz64s  
 #define _x86_ctz64e     _x86w64_ctz64e
 #define _x86_ctz64s     _x86w64_ctz64s
 #define _x86_bswap64    _x86w64_bswap64
-#define _x86_pcnt64e    _x86w64_pcnt64
+#define _x86_pcnt64e    _x86w64_pcnt64e
+#define _x86_pcnt64s    _x86w64_pcnt64s
 // _x86_win64_sec.S
 extern uint64_t _x86w64_hw_drbg(int *err)
 extern uint64_t _x86w64_hw_trng(int *err)

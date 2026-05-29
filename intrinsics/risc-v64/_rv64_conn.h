@@ -22,6 +22,7 @@ extern "C" {
 extern uint64_t _rv64_add64c(uint64_t a, uint64_t b, uint8_t *carry);
 extern uint64_t _rv64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow);
 extern uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi);
+extern uint64_t _rv64_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed);
 // _rv64_marith.S
 extern uint64_t _rv64_modinv64(uint64_t x);
 // _rv64_alg.S
@@ -30,6 +31,13 @@ extern uint8_t _rv64_clz64(uint64_t x);
 extern uint8_t _rv64_ctz64(uint64_t x);
 extern uint64_t _rv64_bswap64(uint64_t x);
 extern uint8_t _rv64_pcnt64(uint64_t x);
+// _rv64_port_bitops.S
+extern uint8_t _rv64_clz64p(uint64_t x); // perf-based
+extern uint8_t _rv64_clz64c(uint64_t x); // crypto-based
+extern uint8_t _rv64_ctz64p(uint64_t x); // perf-based
+extern uint8_t _rv64_ctz64c(uint64_t x); // crypto-based
+extern uint64_t _rv64_bswap64_port(uint64_t x);
+extern uint8_t _rv64_pcnt64_port(uint64_t x);
 // _rv64_sec.S
 extern uint64_t _rv64_hw_trng(int *err);
 // _rv64_hw.S

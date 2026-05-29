@@ -22,7 +22,7 @@ asm_text_section
 * arg: 
 *   rdi: uint64_t a       (64 BIT)
 *   rsi: uint64_t b       (64 BIT)
-*   rdx: uint8_t *carry   (8  BIT)
+*   rdx: uint8_t *carry   (64 BIT ADRESS)
 * ret: 
 *   rax: (a + b + *carry) mod(2^64)
 *   rdx: boolean - 1/0
@@ -50,7 +50,7 @@ _x86sv_add64c:
 * arg: 
 *   rdi: uint64_t a       (64 BIT)
 *   rsi: uint64_t b       (64 BIT)
-*   rdx: uint8_t *borrow  (8  BIT)
+*   rdx: uint8_t *borrow  (64 BIT ADRESS)
 * ret: 
 *   rax: (a - b - *borrow) mod(2^64)
 *   rdx: boolean - 1/0
@@ -91,29 +91,52 @@ _x86sv_wmul128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND -------
-* uint64_t _x86sv_wdiv128(
-*    uint64_t lo, uint64_t hi, 
-*    uint64_t div, uint64_t *rem
-* ) 
+* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed) 
 * arg:
 *   rdi: uint64_t lo ----> (64 BIT)
 *   rsi: uint64_t hi ----> (64 BIT)
 *   rdx: uint64_t div ---> (64 BIT)
 *   rcx: uint64_t *rem --> (64 BIT)
+*   r8:  uint8_t *overflowed -> (1 | 0 -- 64 BIT ADRESS)
 * ret:
-*   rax - quot: (lo
-*   rcx - rem: (a * b) >> 64;
-* pre-conditions:
-*   hi/rsi < div
+*   rax - quot: ([lo:hi] / div)
+*   rcx - rhat: ([lo:hi] % div)
+* pre-conditions: hi/rsi < div
 */
 _x86sv_wdiv128:
+    cmp rsi, rdx
+    ja .overflow
+
+    ; Division + Returns
     mov r9, rdx ; r9 = div
     mov rdx, rsi ; rdx = hi
     mov rax, rdi ; rax = lo
     div r9 ; [rdx:rax] / r9
-    ; rax = quot
-    ; rdx = rem
+    ; rax = quot | rdx = rem
     mov [rcx], rdx
+    ; if (overflow != NULL) *overflow = 0
+    test r8, r8
+    .jz .done
+    mov byte [r8], 0
+    ret
+.done:
+    ret
+    
+/* Overflow hanndling blocks */
+.overflow:
+    mov rax, rsi
+    mov r9,  rdx
+    xor rdx, rdx
+    div r9
+    ; rax = quot | rdx = rem
+    mov [rcx], rdx
+    mov rax, -1
+    ; if (overflow != NULL) *overflow = 1
+    test r8, r8
+    .jz .done_overflow
+    mov byte [r8], 1
+    ret
+.done_overflow:
     ret
 
 #endif

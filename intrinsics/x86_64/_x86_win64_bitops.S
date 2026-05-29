@@ -11,14 +11,16 @@ asm_text_section
 .globl          _x86w64_ctz64e
 .globl          _x86w64_ctz64s
 .globl          _x86w64_bswap64
-.globl          _x86w64_pcnt64
+.globl          _x86w64_pcnt64e
+.globl          _x86w64_pcnt64s
 
 .type	        _x86w64_clz64e, %function
 .type           _x86w64_clz64s, %function
 .type           _x86w64_ctz64e, %function
 .type           _x86w64_ctz64s, %function
 .type           _x86w64_bswap64, %function
-.type           _x86w64_pcnt64, %function
+.type           _x86w64_pcnt64e, %function
+.type           _x86w64_pcnt64s, %function
 
 .p2align	    4, 0x90
 
@@ -37,7 +39,11 @@ _x86w64_clz64e:
 * ret: rax: bsr(x) ------> (8  BIT)
 */
 _x86w64_clz64s:
-    bsr rax, rcx
+    mov rdi, 64
+    bsf rax, rcx
+    cmovz rax, rdi
+    mov rcx, 0 # register clearance
+    mov rdi, 0 # register clearance
     ret
 
 
@@ -56,14 +62,19 @@ _x86w64_ctz64e:
 * ret: rax: bsf(x) ------> (8  BIT)
 */
 _x86w64_ctz64s:
-    bsf rax, rcx
+    mov rdi, 64
+    bsr rax, rcx
+    cmovz rax, rdi
+    mov rcx, 0 # register clearance
+    mov rdi, 0 # register clearance
+    ret
     ret
 
 
 
 
 /* ------- BYTE SWAP 64 BIT -------
-* uint8_t _x86w64_bswap64(uint64_t x)
+* uint64_t _x86w64_bswap64(uint64_t x)
 * arg: rcx: uint64_t x ----> (64 BIT)
 * ret: rax: bswap(x) ------> (8  BIT)
 */
@@ -71,13 +82,49 @@ _x86w64_bswap64:
     bswap   rcx
     mov rax, rcx
     ret
-/* ------- POPULATION COUNT 64 BIT -------
-* uint8_t _x86w64_pcnt64(uint64_t x)
+
+
+
+/* ------- POPULATION COUNT 64 BIT - SSE4.2 EXTENDED -------
+* uint8_t _x86w64_pcnt64e(uint64_t x)
 * arg: rcx: uint64_t x ----> (64 BIT)
 * ret: rax: pcnt(x) -------> (8  BIT)
 */
-_x86w64_pcnt64:
+_x86w64_pcnt64e:
     popcnt rax, rcx
+    ret
+/* ------- POPULATION COUNT 64 BIT - 80386-STANDARD -------
+* uint8_t _x86w64_pcnt64s(uint64_t x)
+* arg: rcx: uint64_t x ----> (64 BIT)
+* ret: rax: pcnt(x) -------> (8  BIT)
+*/
+_x86w64_pcnt64s:
+    ; --- Step 1: x = x - ((x >> 1) & 0x5555555555555555) ---
+    mov rax, rcx
+    shr rax, 1                      ; rax = x >> 1
+    movabs rdx, 0x5555555555555555  ; Load mask 0x55...
+    and rax, rdx                    ; rax = (x >> 1) & 0x55...
+    sub rcx, rax                    ; rcx = x - rax (This updates our working x)
+
+    ; --- Step 2: x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333) ---
+    mov rax, rcx
+    shr rax, 2                      ; rax = x >> 2
+    movabs rdx, 0x3333333333333333  ; Load mask 0x33...
+    and rcx, rdx                    ; rcx = x & 0x33...
+    and rax, rdx                    ; rax = (x >> 2) & 0x33...
+    add rcx, rax                    ; rcx = structural sum of pairs
+
+    ; --- Step 3: x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0F ---
+    mov rax, rcx
+    shr rax, 4                      ; rax = x >> 4
+    add rax, rcx                    ; rax = x + (x >> 4)
+    movabs rdx, 0x0F0F0F0F0F0F0F0F  ; Load mask 0x0F...
+    and rax, rdx                    ; rax = integrated byte totals
+
+    ; --- Step 4 & 5: x = (x * 0x0101010101010101) >> 56 ---
+    movabs rdx, 0x0101010101010101  ; Load multiplier mask
+    imul rax, rdx                   ; rax = rax * 0x01... (sums all bytes into MSB)
+    shr rax, 56                     ; Shift the accumulated total to lowest 8 bits
     ret
 
 

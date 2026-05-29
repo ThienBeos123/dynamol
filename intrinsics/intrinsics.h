@@ -55,10 +55,7 @@ typedef struct {
     uint64_t (*add64c)(uint64_t a, uint64_t b, uint8_t *carry);
     uint64_t (*sub64b)(uint64_t a, uint64_t b, uint8_t *borrow);
     uint64_t (*wmul128)(uint64_t a, uint64_t b, uint64_t *hi);
-    uint64_t (*wdiv128)(
-        uint64_t lo, uint64_t hi, uint64_t div, 
-        uint64_t *rhat
-    );
+    uint64_t (*wdiv128)(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed);
 } _ARITH_FTABLE;
 typedef struct {
     uint64_t (*modinv64)(uint64_t x);
@@ -96,10 +93,7 @@ typedef struct {
     uint64_t (*add64c)(uint64_t a, uint64_t b, uint8_t *carry);
     uint64_t (*sub64b)(uint64_t a, uint64_t b, uint8_t *borrow);
     uint64_t (*wmul128)(uint64_t a, uint64_t b, uint64_t *hi);
-    uint64_t (*wdiv128)(
-        uint64_t lo, uint64_t hi, uint64_t div, 
-        uint64_t *rhat
-    );
+    uint64_t (*wdiv128)(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed);
 } _CRT_ARITH_FTABLE;
 typedef struct {} _CRT_ALG_FTABLE;
 typedef struct {
@@ -141,7 +135,7 @@ void _libdnml_fill_crt_gsec(void);
 uint64_t __ADD_UI64__(uint64_t a, uint64_t b, uint8_t *carry);
 uint64_t __SUB_UI64__(uint64_t a, uint64_t b, uint8_t *borrow);
 uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi);
-uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat);
+uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed);
 /* ----------------- Modular Arithmetic ----------------- */
 uint64_t __MODINV_UI64__(uint64_t x);
 uint64_t __MODMUL_UI64__(uint64_t a, uint64_t b, uint64_t mod);
@@ -167,7 +161,7 @@ uint8_t __IS_2POW__(uint64_t x);
 uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry);
 uint64_t __CRT_SUB_U64__(uint64_t a, uint64_t b, uint8_t *borrow);
 uint64_t __CRT_MUL_U64__(uint64_t a, uint64_t b, uint64_t *hi);
-uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat);
+uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed);
 /* ------------------ Bitwise Intrinsics ----------------- */
 uint8_t __CRT_CLZ_UI64__(uint64_t x);
 uint8_t __CRT_CTZ_UI64__(uint64_t x);

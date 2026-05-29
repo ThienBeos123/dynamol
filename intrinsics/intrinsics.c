@@ -47,7 +47,7 @@ uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi) {
         return (*_libdnml_garith_ftable.wmul128)(a, b, hi);
     #endif
 }
-uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat) {
+uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
     if (hi >= div) { 
         if (_DNML_DEBUG_MODE) { 
             fputs("Division Error - Can't contain full quotient in 64 bit", stderr);
@@ -64,7 +64,7 @@ uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *r
         #if !(__ARCH_X86_64__)
             *rhat = _libdnml_gbitops_ftable.clz64(div);
         #endif
-        return (*_libdnml_garith_ftable.wdiv128)(lo, hi, div, rhat);
+        return (*_libdnml_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
     #endif
 }
 uint64_t __MODINV_UI64__(uint64_t x) { 
