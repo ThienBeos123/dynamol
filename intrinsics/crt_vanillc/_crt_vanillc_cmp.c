@@ -28,4 +28,7 @@ uint8_t _vanillc_crt_ispos(int64_t x) { return ~(x & SIGN_BIT_MASK); }
 uint8_t _vanillc_crt_isneg(int64_t x) { return (x & SIGN_BIT_MASK); }
 uint8_t _vanillc_crt_eq(uint64_t x, uint64_t y) { return ~((x ^ y) | (-(x ^ y))) >> (U64_BITS - 1); }
 uint8_t _vanillc_crt_neq(uint64_t x, uint64_t y) { return ((x ^ y) | (-x ^ y)) >> (U64_BITS - 1); }
-uint8_t _vanillc_crt_select(uint8_t cond, uint64_t a, uint64_t b) { return b ^ ((a ^ b) & -((int64_t)cond)); }
+uint64_t _vanillc_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
+    uint64_t mask = -((int64_t)cond);
+    return (a & mask) | (b & (~mask));
+}

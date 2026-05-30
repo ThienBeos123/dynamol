@@ -1,4 +1,4 @@
-#include "_arm64_conn.h"
+#include "__arm64_conn__.h"
 #if __ARCH_ARM64__
 
 
@@ -24,8 +24,7 @@ FUNC_SIZE(ASM_SYM(arm64_hw_trng))
 // to seed entropy to the user swiftly
 /* ----- HARDWRE DETERMINISTIC RANDOM BIT GENERATOR -----
 * uint64_t _arm64_hw_drbg(int *err)
-* arg:
-*   x1: int *err (16 bit)
+* arg: x1: int *err (16 bit)
 * ret:
 *   x0: Random Number
 *   x1: 1 (error) / 0 (success)
@@ -37,6 +36,7 @@ ASM_SYM(arm64_hw_drbg):
     // N = 0, Z = 1, C = 0, V = 0
     cset    x3, eq // Cflag = 1 --> x3 = 1 (error)
     str x3, [x1] // Store x3 into the adress of x1 (*x1 = x3)
+    mov x3, #0
     ret
 
 
@@ -44,8 +44,7 @@ ASM_SYM(arm64_hw_drbg):
 // Harvests raw, unmanipulated True Entropy from hardware entropy pool
 /* ----- HARDWRE TRUE RANDOM NUMBER GENERATOR -----
 * uint64_t _arm64_hw_trng(int *err)
-* arg:
-*   x1: int *err (16 bit)
+* arg: x1: int *err (16 bit)
 * ret:
 *   x0: Random Number
 *   x1: 1 (error) / 0 (success)
@@ -57,6 +56,7 @@ ASM_SYM(arm64_hw_trng):
     // N = 0, Z = 1, C = 0, V = 0
     cset    x3, eq // Cflag = 1 --> x3 = 1 (error)
     str x3, [x1] // Store x3 into the adress of x1 (*x1 = x3)
+    mov x3, #0
     ret
 
 

@@ -71,6 +71,8 @@ uint64_t _crtintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     */
     // Takes the carry from lower half + the overflowed mid bit
     *hi = fourth_mul + carry1 + mid_high + (mid_carry << 32);
+    /* Aggressive, Post-operation Clearance */
+    mask = 0; a_low = 0;
     return res;
 }
 
@@ -90,6 +92,8 @@ uint64_t _crtintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rh
         q |= (1 & mask); hi = test_rem - (div & mask);
         test_rem = 0; mask = 0;
     }
-    uint64_t ret_quotient = _vanillc_crt_select(overflow_flag, (q), (UINT64_MAX));
-    *rhat = _vanillc_crt_select(overflow_flag, (0), (chosen_hi)); return ret_quotient;
+    uint64_t ret_quotient = _vanillc_crt_select(overflow_flag, (UINT64_MAX), (q));
+    *rhat = _vanillc_crt_select(overflow_flag, (0), (chosen_hi)); // clang-format off
+    overflow_flag = 0; q = 0; fake_hi = 0; fake_lo = 0; 
+    chosen_lo = 0; chosen_hi = 0; return ret_quotient; // clang-format on
 }

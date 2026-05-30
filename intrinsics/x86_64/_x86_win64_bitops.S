@@ -1,4 +1,4 @@
-#include "_x86_conn.h"
+#include "__x86_conn__.h"
 #if __ARCH_X86_64__
 #if __ABI_X64_WIN64__
 
@@ -32,6 +32,7 @@ asm_text_section
 */
 _x86w64_clz64e:
     lzcnt rax, rcx
+    mov rcx, 0 ; register clearance
     ret
 /* ------- COUNT LEADING ZERO 64 BIT - 80386-STANDARD -------
 * uint8_t _x86w64_clz64s(uint64_t x)
@@ -42,8 +43,8 @@ _x86w64_clz64s:
     mov rdi, 64
     bsf rax, rcx
     cmovz rax, rdi
-    mov rcx, 0 # register clearance
-    mov rdi, 0 # register clearance
+    mov rcx, 0 ; register clearance
+    mov rdi, 0 ; register clearance
     ret
 
 
@@ -55,6 +56,7 @@ _x86w64_clz64s:
 */
 _x86w64_ctz64e:
     tzcnt rax, rcx
+    mov rcx, 0 ; register clearance
     ret
 /* ------- COUNT TRAILING ZERO 64 BIT - 80386-STANDARD -------
 * uint8_t _x86w64_ctz64s(uint64_t x)
@@ -65,8 +67,8 @@ _x86w64_ctz64s:
     mov rdi, 64
     bsr rax, rcx
     cmovz rax, rdi
-    mov rcx, 0 # register clearance
-    mov rdi, 0 # register clearance
+    mov rcx, 0 ; register clearance
+    mov rdi, 0 ; register clearance
     ret
     ret
 
@@ -79,8 +81,9 @@ _x86w64_ctz64s:
 * ret: rax: bswap(x) ------> (8  BIT)
 */
 _x86w64_bswap64:
-    bswap   rcx
+    bswap rcx
     mov rax, rcx
+    mov rcx, 0 ; register clearance
     ret
 
 
@@ -92,6 +95,7 @@ _x86w64_bswap64:
 */
 _x86w64_pcnt64e:
     popcnt rax, rcx
+    mov rcx, 0 ; register clearance
     ret
 /* ------- POPULATION COUNT 64 BIT - 80386-STANDARD -------
 * uint8_t _x86w64_pcnt64s(uint64_t x)
@@ -125,6 +129,9 @@ _x86w64_pcnt64s:
     movabs rdx, 0x0101010101010101  ; Load multiplier mask
     imul rax, rdx                   ; rax = rax * 0x01... (sums all bytes into MSB)
     shr rax, 56                     ; Shift the accumulated total to lowest 8 bits
+    /* ------ POST-OPERATION REGISTER CLEARANCE ------ */ 
+    mov rcx, 0 ; function arguments
+    mov rdx, 0 ; function arguments
     ret
 
 

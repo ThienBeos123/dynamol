@@ -1,4 +1,4 @@
-#include "_x86_conn.h"
+#include "__x86_conn__.h"
 #if __ARCH_X86_64__
 #if __ABI_X64_WIN64__
 
@@ -34,6 +34,7 @@ _x86w64_hw_drbg:
     ; RDRAND Success --> CF = 1 and vice versa
     movzx rsi, sil ; Zero extends sil (1-byte) --> rsi (8-byte)
     mov [rcx], rsi ; *rcx = rsi
+    mov rsi, 0 ; register clearance
     ret
 
 
@@ -53,6 +54,7 @@ _x86w64_hw_trng:
     ; RDRAND Success --> CF = 1 and vice versa
     movzx rsi, sil ; Zero extends sil (1-byte) --> rsi (8-byte)
     mov [rcx], rsi ; *rcx = rsi
+    mov rsi, 0 ; register clearance
     ret
 
 

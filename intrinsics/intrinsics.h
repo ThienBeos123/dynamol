@@ -12,9 +12,9 @@
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_config/settings.h>
 
-#include "arm64/_arm64_conn.h"
-#include "x86_64/_x86_conn.h"
-#include "risc-v64/_rv64_conn.h"
+#include "arm64/__arm64_conn__.h"
+#include "x86_64/__x86_conn__.h"
+#include "risc-v64/__rv64_conn__.h"
 #include "zvanillc/__vanillc_conn__.h"
 #include "crt_vanillc/__crt_vanillc_con__.h"
 
@@ -112,7 +112,7 @@ typedef struct {
     uint8_t (*is_pos)(int64_t x);
     uint8_t (*eq_func)(uint64_t x, uint64_t y);
     uint8_t (*neq_func)(uint64_t x, uint64_t y);
-    uint8_t (*select_fn)(uint8_t cond, uint64_t a, uint64_t b);
+    uint64_t (*select_fn)(uint8_t cond, uint64_t a, uint64_t b);
     
 } _CRT_SEC_FTABLE;
 

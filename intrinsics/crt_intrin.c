@@ -8,7 +8,7 @@
 //*                                    SINGLE-LIMB ARITHMETIC                               *//
 //* --------------------------------------------------------------------------------------- *//
 uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
-    *carry = (*carry) ? 1 : 0;
+    *carry = !!(*carry);
     #if __compiler_clang // Clang --> Always used
         return __builtin_addcll(a, b, *carry, (unsigned long long*)carry);
     #elif __compiler_gcc // GCC --> Always used
@@ -24,7 +24,7 @@ uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
     #endif
 }
 uint64_t __CRT_SUB_U64__(uint64_t a, uint64_t b, uint8_t *borrow) {
-    *borrow = (*borrow) ? 1 : 0;
+    *borrow = !!(*borrow);
     #if (__compiler_gcc || __compiler_clang) 
         // Clang / GCC --> Always used
         uint64_t diff;
@@ -79,7 +79,6 @@ uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat
 //*                                    BITWISE OPERATIONS                               *//
 //* ----------------------------------------------------------------------------------- *//
 uint8_t __CRT_CLZ_UI64__(uint64_t x) {
-    if (!x) return U64_BITS;
     // The actual code
     #if (__compiler_gcc || __compiler_clang)
         return __builtin_clzll(x);
@@ -90,7 +89,6 @@ uint8_t __CRT_CLZ_UI64__(uint64_t x) {
     #endif
 }
 uint8_t __CRT_CTZ_UI64__(uint64_t x) {
-    if (!x) return U64_BITS;
     // The actual code
     #if (__compiler_gcc || __compiler_clang) 
         return __builtin_ctzll(x);
@@ -162,7 +160,7 @@ int __CPU_CSTRNG_SEED__(void *buf, size_t len, int retry_max, uint8_t crypt, siz
 //*                                  RANDOM-GENERATION OPERATIONS                             *//
 //* ----------------------------------------------------------------------------------------- *//
 // Helper functions
-static void __MEMCPY_STRICT__(void *buf, const void *src,  size_t len) {}
+static void __MEMCPY_STRICT__(void *buf, const void *src, size_t len) {}
 static void __MEMWIPE_STRICT__(void *buf, size_t len) {}
 static inline uint64_t ___get_time_stamp(void) {
 #if __ARCH_X86_64__

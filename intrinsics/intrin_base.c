@@ -8,10 +8,17 @@ _HW_FTABLE _libdnml_ghw_ftable;
 
 void _libdnml_fill_gbitops(void) {
 #if __ARCH_X86_64__
-_libdnml_gbitops_ftable.clz64 = (libdnml_x64_caps.x86_abm) ? _x86_clz64e : _x86_clz64s;
-_libdnml_gbitops_ftable.clz64 = (libdnml_x64_caps.x86_bmi1) ? _x86_ctz64e : _x86_ctz64s
-_libdnml_fill_gbitops.pcnt64 = (libdnml_x64_caps.x86_sse4_2) ? _x86_pcnt64e : _x86_pcnt64s;
-_libdnml_gbitops_ftable.bswap64 = _x86_bswap64;
+#if __ABI_X64_SYSV__ || __ABI_X64_WIN64__
+    _libdnml_gbitops_ftable.clz64 = (libdnml_x64_caps.x86_abm) ? _x86_clz64e : _x86_clz64s;
+    _libdnml_gbitops_ftable.clz64 = (libdnml_x64_caps.x86_bmi1) ? _x86_ctz64e : _x86_ctz64s
+    _libdnml_fill_gbitops.pcnt64 = (libdnml_x64_caps.x86_sse4_2) ? _x86_pcnt64e : _x86_pcnt64s;
+    _libdnml_gbitops_ftable.bswap64 = _x86_bswap64;
+#else
+    _libdnml_gbitops_ftable.clz64 = _cintrin_clz64;
+    _libdnml_gbitops_ftable.clz64 = _cintrin_ctz64
+    _libdnml_fill_gbitops.pcnt64 = _cintrin_pcnt64
+    _libdnml_gbitops_ftable.bswap64 = _cintrin_bswap64;
+#endif
 #elif __ARCH_ARM64__
 _libdnml_gbitops_ftable.clz64 = _arm64_clz64;
 _libdnml_gbitops_ftable.ctz64 = _arm64_ctz64;
@@ -38,10 +45,17 @@ _libdnml_gbitops_ftable.pcnt64 = _cintrin_pcnt64;
 }
 void _libdnml_fill_garith(void) {
 #if __ARCH_X86_64__
-_libdnml_garith_ftable.add64c = _x86_add64c;
-_libdnml_garith_ftable.sub64b = _x86_sub64b;
-_libdnml_garith_ftable.wmul128 = _x86_wmul128;
-_libdnml_garith_ftable.wdiv128 = _x86_wdiv128;
+#if __ABI_X64_SYSV__ || __ABI_X64_WIN64__
+    _libdnml_garith_ftable.add64c = _x86_add64c;
+    _libdnml_garith_ftable.sub64b = _x86_sub64b;
+    _libdnml_garith_ftable.wmul128 = _x86_wmul128;
+    _libdnml_garith_ftable.wdiv128 = _x86_wdiv128;
+#else
+    _libdnml_garith_ftable.add64c = _cintrin_add64c;
+    _libdnml_garith_ftable.sub64b = _cintrin_sub64b;
+    _libdnml_garith_ftable.wmul128 = _cintrin_wmul128;
+    _libdnml_garith_ftable.wdiv128 = _cintrin_wdiv128;
+#endif
 #elif __ARCH_ARM64__
 _libdnml_garith_ftable.add64c = _arm64_add64c;
 _libdnml_garith_ftable.sub64b = _arm64_sub64b;
@@ -61,7 +75,11 @@ _libdnml_garith_ftable.wdiv128 = _cintrin_wdiv128;
 }
 void _libdnml_fill_gmarith(void) {
 #if __ARCH_X86_64__
-_libdnml_gmarith_ftable.modinv64 = _x86_modinv64;
+#if __ABI_X64_SYSV__ || __ABI_X64_WIN64__
+    _libdnml_gmarith_ftable.modinv64 = _x86_modinv64;
+#else
+    _libdnml_gmarith_ftable.modinv64 = _cintrin_modinv64;
+#endif
 #elif __ARCH_ARM64__
 _libdnml_gmarith_ftable.modinv64 = _arm64_modinv64;
 #elif __ARCH_RVI64__
@@ -79,10 +97,17 @@ void _libdnml_fill_galg(void) {
 }
 void _libdnml_fill_ghw(void) {
 #if __ARCH_X86_64__
-_libdnml_ghw_ftable.hw_drbg = (libdnml_x64_caps.x86_rdrand) ? _x86_hw_drbg : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_trng = (libdnml_x64_caps.x86_rdseed) ? _x86_hw_trng : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_halt = _x86_full_halt;
-_libdnml_ghw_ftable.hw_shalt = _x86_shallow_halt;
+#if __ABI_X64_SYSV__ || __ABI_X64_WIN64__
+    _libdnml_ghw_ftable.hw_drbg = (libdnml_x64_caps.x86_rdrand) ? _x86_hw_drbg : _cintrin_shallow_rng;
+    _libdnml_ghw_ftable.hw_trng = (libdnml_x64_caps.x86_rdseed) ? _x86_hw_trng : _cintrin_shallow_rng;
+    _libdnml_ghw_ftable.hw_halt = _x86_full_halt;
+    _libdnml_ghw_ftable.hw_shalt = _x86_shallow_halt;
+#else
+    _libdnml_ghw_ftable.hw_drbg = _cintrin_shallow_rng
+    _libdnml_ghw_ftable.hw_trng = _cintrin_shallow_rng
+    _libdnml_ghw_ftable.hw_halt = _cintrin_nop_halt;
+    _libdnml_ghw_ftable.hw_shalt = _cintrin_nop_halt;
+#endif
 #elif __ARCH_ARM64__
 _libdnml_ghw_ftable.hw_drbg = (libdnml_arm64_caps.armv85_feat_rng) ? _arm64_hw_drbg : _cintrin_shallow_rng;
 _libdnml_ghw_ftable.hw_trng = (libdnml_arm64_caps.armv85_feat_rng) ? _arm64_hw_trng : _cintrin_shallow_rng;

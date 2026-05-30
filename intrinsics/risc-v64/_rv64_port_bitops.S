@@ -1,4 +1,4 @@
-#include "_rv64_conn.h"
+#include "___rv64_conn__.h"
 #if __ARCH_RVI64__
 
 asm_rodata_section
@@ -149,10 +149,10 @@ _rv64_clz64c:
     xor t0, a2, t0 # t0 = n ^ (is_zero_mask & (n ^ U64_BITS));
     mv a0, t0 # return t0 via a0 = t0
     # ----- Aggressive Temporary Registers Clearance -----
-    ld a1, 0 # Zero out the general-purpose register a1
-    ld a2, 0 # Zero out the general-purpose register a2
-    ld a3, 0 # Zero out the general-purpose register a3
-    ld t0, 0 # Zero out the temporary register t0
+    ld a1, x0 # Zero out the general-purpose register a1
+    ld a2, x0 # Zero out the general-purpose register a2
+    ld a3, x0 # Zero out the general-purpose register a3
+    ld t0, x0 # Zero out the temporary register t0
     ret
 
 
@@ -249,11 +249,11 @@ _rv64_ctz64c:
     xor t0, a2, t0 # t0 = ctz_val ^ (is_zero_mask & (ctz_val ^ U64_BITS));
     mv a0, t0 # return t0 via a0 = t0
     # ----- Aggressive Temporary Registers Clearance -----
-    ld a1, 0 # Zero out the general-purpose register a1
-    ld a2, 0 # Zero out the general-purpose register a2
-    ld a3, 0 # Zero out the general-purpose register a3
-    ld a4, 0 # Zero out the general-purpose register a4
-    ld t0, 0 # Zero out the temporary register t0
+    ld a1, x0 # Zero out the general-purpose register a1
+    ld a2, x0 # Zero out the general-purpose register a2
+    ld a3, x0 # Zero out the general-purpose register a3
+    ld a4, x0 # Zero out the general-purpose register a4
+    ld t0, x0 # Zero out the temporary register t0
     ret
 
     ret
@@ -290,10 +290,10 @@ _rv64_bswap64_port:
     slli t1, a0, 32
     orr  a0, t0, t1
     # ----- Aggressive Temporary Registers Clearance -----
-    ld t0, 0 # Zero out the temporary register t0
-    ld t1, 0 # Zero out the temporary register t1
-    ld t2, 0 # Zero out the temporary register t2
-    ld t3, 0 # Zero out the temporary register t3
+    ld t0, x0 # Zero out the temporary register t0
+    ld t1, x0 # Zero out the temporary register t1
+    ld t2, x0 # Zero out the temporary register t2
+    ld t3, x0 # Zero out the temporary register t3
     ret
 
 
@@ -331,9 +331,9 @@ _rv64_pcnt64_port:
     mul  a0, a0, t0 # x *= 0x0101010101010101
     srli a0, a0, 56 # x >>= 56 --> return
     # ----- Aggressive Temporary Registers Clearance -----
-    ld t0, 0 # Zero out the temporary register t0
-    ld t1, 0 # Zero out the temporary register t1
-    ld t2, 0 # Zero out the temporary register t2
+    ld t0, x0 # Zero out the temporary register t0
+    ld t1, x0 # Zero out the temporary register t1
+    ld t2, x0 # Zero out the temporary register t2
     ret
 
 

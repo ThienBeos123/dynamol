@@ -21,7 +21,7 @@ uint8_t _vanillc_crt_ispos(int64_t x);
 uint8_t _vanillc_crt_isneg(int64_t x);
 uint8_t _vanillc_crt_eq(uint64_t x, uint64_t y);
 uint8_t _vanillc_crt_neq(uint64_t x, uint64_t y);
-uint8_t _vanillc_crt_select(uint8_t cond, uint64_t a, uint64_t b);
+uint64_t _vanillc_crt_select(uint8_t cond, uint64_t a, uint64_t b);
 
 
 /* _crt_vanillc_arith.c */

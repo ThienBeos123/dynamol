@@ -1,4 +1,4 @@
-#include "_x86_conn.h"
+#include "__x86_conn__.h"
 #if __ARCH_X86_64__
 #if __ABI_X64_SYSV__
 
@@ -30,6 +30,7 @@ type            _x86sv_pcnt64s, %function
 */
 _x86sv_clz64e:
     lzcnt rax, rdi
+    mov rdi, 0 # register clearance
     ret
 /* ------- COUNT LEADING ZERO 64 BIT - 80386-STANDARD -------
 * uint8_t _x86sv_clz64s(uint64_t x)
@@ -54,6 +55,7 @@ _x86sv_clz64s:
 */
 _x86sv_ctz64e:
     tzcnt rax, rdi
+    mov rdi, 0 # register clearance
     ret
 /* ------- COUNT TRAILING ZERO 64 BIT - 80386-STANDARD -------
 * uint8_t _x86sv_ctz64s(uint64_t x)
@@ -77,6 +79,7 @@ _x86sv_ctz64s:
 _x86sv_bswap64:
     bswap   rdi
     mov rax, rdi
+    mov rdi, 0 # register clearance
     ret
 
 
@@ -88,6 +91,7 @@ _x86sv_bswap64:
 */
 _x86sv_pcnt64e:
     popcnt rax, rdi
+    mov rdi, 0 # register clearance
     ret
 /* ------- POPULATION COUNT 64 BIT - 80386-STANDARD -------
 * uint8_t _x86sv_pcnt64s(uint64_t x)
@@ -121,6 +125,9 @@ _x86sv_pcnt64s:
     movabs rdx, 0x0101010101010101  ; Load multiplier mask
     imul rax, rdx                   ; rax = rax * 0x01... (sums all bytes into MSB)
     shr rax, 56                     ; Shift the accumulated total to lowest 8 bits
+    ; ------ REGISTER CLEARANCE ---------
+    mov rdi, 0
+    mov rdx, 0
     ret
 
 
