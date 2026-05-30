@@ -107,23 +107,30 @@ typedef struct {
     uint8_t (*gti64_func)(int64_t x, int64_t y);
     uint8_t (*leqi64_func)(int64_t x, int64_t y);
     uint8_t (*geqi64_func)(int64_t x, int64_t y);
-    /* Equality COmparisons */
+    /* Equality Comparisons */
     uint8_t (*is_neg)(int64_t x);
     uint8_t (*is_pos)(int64_t x);
     uint8_t (*eq_func)(uint64_t x, uint64_t y);
     uint8_t (*neq_func)(uint64_t x, uint64_t y);
     uint64_t (*select_fn)(uint8_t cond, uint64_t a, uint64_t b);
-    
+} _CRT_CMP_FTABLE;
+typedef struct {
+    uint64_t (*hw_drbg)(int *err); // Uses fast, hardware CSPRNG seeded by hardware entropy
+    uint64_t (*hw_trng)(int *err); // Bypasses PRNG and retrieves raw entropy from the hardware
+    void (*hw_halt)(void); // Nanoseconds CPU Execution delay
+    void (*hw_shalt)(void); // Shallow NOP Halts
 } _CRT_SEC_FTABLE;
 
 extern _CRT_BITOPS_FTABLE _libdnml_crt_gbitops_ftable;
 extern _CRT_ARITH_FTABLE _libdnml_crt_garith_ftable;
 extern _CRT_ALG_FTABLE _libdnml_crt_galg_ftable;
+extern _CRT_CMP_FTABLE _libdnml_crt_cmp_ftable;
 extern _CRT_SEC_FTABLE _libdnml_crt_sec_ftable;
 
 void _libdnml_fill_crt_gbitops(void);
 void _libdnml_fill_crt_garith(void);
 void _libdnml_fill_crt_galg(void);
+void _libdnml_fill_crt_gcmp(void);
 void _libdnml_fill_crt_gsec(void);
 
 
@@ -181,11 +188,7 @@ uint8_t _lib_crt_ispos(int64_t x);
 uint8_t _lib_crt_isneg(int64_t x);
 uint8_t _lib_crt_neq(uint64_t x, uint64_t y);
 uint8_t _lib_crt_eq(uint64_t x, uint64_t y);
-uint8_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b);
-/* ----------------- HARDWARE INTERACTION + RNG ----------------- */
-int __CPU_CSDBRG_SEED__(void *buf, size_t len, int retry_max, uint8_t crypt, size_t *written);
-int __CPU_CSTRNG_SEED__(void *buf, size_t len, int retry_max, uint8_t crypt, size_t *written);
-int __GET_ENTROPY_PQC(void *buf, size_t len);
+uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b);
 
 
 
@@ -198,8 +201,8 @@ int __GET_ENTROPY_PQC(void *buf, size_t len);
 // Security-Extension Hardware Functionalities
 int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written);
 int __CPU_TRNG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written);
-int __CPU_CSDBRG_SEED__(void *buf, size_t len, int retry_max, uint8_t crypt, size_t *written);
-int __CPU_CSTRNG_SEED__(void *buf, size_t len, int retry_max, uint8_t crypt, size_t *written);
+int __CPU_CSDBRG_SEED__(void *buf, size_t len, int retry_max, size_t *written);
+int __CPU_CSTRNG_SEED__(void *buf, size_t len, int retry_max, size_t *written);
 // Hardware-Interactive Functionalities
 void __CPU_FULL_HALT__(void);
 void __CPU_SHALLOW_HALT__(void);

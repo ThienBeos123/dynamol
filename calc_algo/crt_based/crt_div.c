@@ -21,9 +21,12 @@ dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, cr
         "(-Eshort_div_insufficient_cap)", {}
     );
     // Main Algorithms
-    uint64_t remainder = 0; for (size_t i = a->n - 1; _lib_crt_neq(i, -1); --i) {
-        quot->limbs[i] = __DIV_HELPER_UI64__(remainder, a->limbs[i], b, &remainder);
-    } __CRINT_TRIM_LZ__(rem); CHOOSE_OPTION((quot->sign), (!(quot->n)), (1), (quot->sign));
+    uint64_t remainder = 0; dnml_status ovf_test;
+    for (size_t i = a->n - 1; _lib_crt_neq(i, -1); --i) {
+        quot->limbs[i] = __CRT_DIV_U128__(remainder, a->limbs[i], b, &remainder, &ovf_test);
+        DNML_TEST_ASSERT(ovf_test, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
+    }
+    __CRINT_TRIM_LZ__(rem); CHOOSE_OPTION((quot->sign), (!(quot->n)), (1), (quot->sign));
     rem->limbs[0] = remainder; rem->n = !!(rem); rem->sign = 1; return CRINT_SUCCESS;
 }
 dnml_status __CRINT_NEWTON_RECP__(

@@ -23,7 +23,7 @@ dnml_status __CRINT_SCHOOLBOOK__(const crint *a, const crint *b, crint *res) {
     for (size_t i = 0; _lib_crt_lt(i, a->n); ++i) {
         uint64_t carry = 0;
         for (size_t j = 0; _lib_crt_lt(j, b->n); ++j) {
-            uint64_t lo, hi; lo = __MUL_UI64__(a->limbs[i], b->limbs[j], &hi);
+            uint64_t lo, hi; lo = __CRT_MUL_U64__(a->limbs[i], b->limbs[j], &hi);
             uint64_t sum = res->limbs[i + j] + lo; uint8_t c1 = (_lib_crt_lt(sum, lo));
             uint64_t sum2 = sum += carry; uint8_t c2 = (_lib_crt_lt(sum2, lo));
             carry = hi + (c1 | c2); res->limbs[i + j] = sum2;

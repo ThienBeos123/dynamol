@@ -20,9 +20,13 @@ static inline void _libdnml_init(void) {
     return;
 #else
     // Unknown compiler
-    // ---> Initialize DNML's handwritten intrinsics
+    // --- Performance-based Intrinsics Dispatch ---
     _libdnml_fill_garith(); _libdnml_fill_gbitops();
     _libdnml_fill_gmarith(); _libdnml_fill_ghw();
+    // --- Cryptography-based Intrinsics Dispatch ---
+    _libdnml_fill_crt_gcmp(); _libdnml_fill_crt_gsec();
+    _libdnml_fill_crt_gbitops(); _libdnml_fill_crt_garith();
+    _libdnml_fill_crt_galg();
     _libinit = 1;
 #endif
 }

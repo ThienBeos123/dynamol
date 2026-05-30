@@ -166,7 +166,7 @@ uint8_t __PCNT_UI64__(uint64_t x) {
 //* --------------------------------------------------------------------------------------- *//
 /* Security-Extension Hardware Functionalities */
 int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written) {
-    if (_libdnml_ghw_ftable.hw_drbg == _cintrin_shallow_rng) return -1;
+    if (_libdnml_ghw_ftable.hw_drbg == _cintrin_shallow_rng) { *written = 0; return -1; }
     unsigned char *p = (unsigned char *)buf;
     size_t rem = len; int retry_cnt = 0;
     // Filling in 64-bit chunks / 8-byte chunks
@@ -196,7 +196,7 @@ int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *
     } return 0;
 }
 int __CPU_TRNG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written) {
-    if (_libdnml_ghw_ftable.hw_trng == _cintrin_shallow_rng) return -1;
+    if (_libdnml_ghw_ftable.hw_trng == _cintrin_shallow_rng) { *written = 0; return -1; }
     unsigned char *p = (unsigned char *)buf;
     size_t rem = len; int retry_cnt = 0;
     // Filling in 64-bit chunks / 8-byte chunks

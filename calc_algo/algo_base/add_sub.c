@@ -107,7 +107,7 @@ dnml_status __CRINT_ADD_WC__(crint *res, const crint *a, const crint *b) {
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
         CHOOSE_OPTION(x, (_lib_crt_lt(i, a->n)), a_curr, 0);
         CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), b_curr, 0);
-        res->limbs[i] = __ADD_UI64__(x, y, &carry);
+        res->limbs[i] = __CRT_ADD_U64__(x, y, &carry);
     } res->limbs[max] = carry; res->n = max + (!!carry);
     __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
@@ -124,7 +124,7 @@ dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
         uint64_t curr = b->limbs[i], y;
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
         CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), curr, 0);
-        res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
+        res->limbs[i] = __CRT_SUB_U64__(a->limbs[i], y, &borrow);
     } res->n = a->n; __CRINT_TRIM_LZ__(res);
     __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
