@@ -9,7 +9,7 @@ extern "C" {
 #include "dnml_sys/sys.h"
 #include "_libdnml_config/settings.h"
 
-typedef struct { uint64_t a; uint64_t b } _ldnml_u128;
+typedef uintptr_t ptr_t;
 
 
 //* ======================================= DYNAMOL DEFINITION ========================================= *//

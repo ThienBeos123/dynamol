@@ -21,14 +21,25 @@
 static local_thread dnml_arena ___DASI_NUMERIC_ARENA_;
 static local_thread dnml_arena ___DASI_LOWLVL_ARENA_;
 static inline dnml_arena* _USE_ARENA(void) {
-    /* Support 512 limbs (the gold standard) */
-    if (___DASI_NUMERIC_ARENA_.base = NULL) init_arena(&___DASI_NUMERIC_ARENA_, 512);
+    /* Support 64 limbs (the gold standard) */
+    if (___DASI_NUMERIC_ARENA_.base == NULL) init_arena(&___DASI_NUMERIC_ARENA_, 64);
     return &___DASI_NUMERIC_ARENA_;
 } 
 static inline dnml_arena* _USE_LOW_ARENA(void) {
-    /* Support 512 limbs (the gold standard) */
-    if (___DASI_LOWLVL_ARENA_.base = NULL) init_arena(&___DASI_NUMERIC_ARENA_, 512);
+    /* Support 64 limbs (the gold standard) */
+    if (___DASI_LOWLVL_ARENA_.base == NULL) init_arena(&___DASI_NUMERIC_ARENA_, 64);
     return &___DASI_LOWLVL_ARENA_;
+}
+dnml_status _init_dynamol_bigint(void) {
+    test_assert(
+        init_arena(&___DASI_NUMERIC_ARENA_, 64) != DNML_ALLOC_OOM, arena_oom, { 
+        arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);
+    }, DNML_ALLOC_OOM);
+    test_assert(
+        init_arena(&___DASI_LOWLVL_ARENA_, 64) != DNML_ALLOC_OOM, arena_oom, { 
+        arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);
+        arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_);
+    }, DNML_ALLOC_OOM);
 }
 
 
@@ -1382,7 +1393,7 @@ bool bigInt_mequal(const bigInt a, const bigInt b, dnml_status *err) {
 
 
 
-//* ========================================= MAGNITUDE MATHEMATICA ========================================== */
+//* ========================================= MAGNITUDE MATHEMATICA ========================================== *//
 /* -------------------- MAGNITUDED ARITHMETIC --------------------- */
 static void __BIGINT_MAGADD__(bigInt *res, const bigInt *a, const bigInt *b, dnml_status *err) {
     size_t max = max(a->n, b->n);
@@ -1486,9 +1497,10 @@ static void __BIGINT_MAGDIVMOD_U64__(
     // Since the divisior size is small (n <= 1), we implement normal/long division
     assert(val); // Checks for invalid operation ( x / 0 )
     dnml_status err_check = bigInt_reserve(&quot, x->n+1); heap_alloc_oom_void(err_check, err);
-    quot->n = x->n; uint64_t remainder = 0;
+    quot->n = x->n; uint64_t remainder = 0; uint8_t ovf_test;
     for (size_t i = x->n - 1; i != -1; --i) {
-        quot->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder);
+        quot->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &ovf_test);
+        DNML_TEST_ASSERT(ovf_test, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", clear_arena);
     }
     *rem = remainder;
     bigInt_normalize(quot);
@@ -1571,12 +1583,10 @@ static void __BIGINT_MAGLCM__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     arena_reset(_DASI_MAGLCM_ARENA, maglcm_mark);
 }
 static void __BIGINT_MAGEMOD_U64__(uint64_t* res, const bigInt *a, const uint64_t modulus) {
-    uint64_t curr_rem = 0;
+    uint64_t curr_rem = 0; uint8_t ovf_test;
     for (size_t i = a->n - 1; i != -1; --i) {
-        uint64_t tmp_quot = __DIV_HELPER_UI64__(
-            a->limbs[i], curr_rem, modulus, // Operands
-            &curr_rem // Result holders
-        );
+        uint64_t tmp_quot = __DIV_HELPER_UI64__(a->limbs[i], curr_rem, modulus, &curr_rem, &ovf_test);
+        DNML_TEST_ASSERT(ovf_test, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", clear_arena);
     } *res = curr_rem;
 }
 static void __BIGINT_MAGEMOD__(bigInt *res, const bigInt *a, const bigInt *modulus, dnml_status *err) {

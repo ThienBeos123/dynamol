@@ -8,14 +8,17 @@
 #include <include.h>
 #include <char_tables.h>
 #include <dnml_sys/sys.h>
+#include <debug_util.h>
 #include <_libdnml_config/settings.h>
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/_ctx.h>
+#include <_libdnml_mem/_cr_arena.h>
 #include <dnml_status.h>
 
 #include "../../intrinsics/intrinsics.h"
 #include "../../calc_algo/crt_calc.h"
 #include "../../util/crt_util.h"
+#include "crint_algo_core.h"
 
 #define FAKE_BUF_CAP 1024 /* Constant tweaked to specific use case */
 #define CT_COND_ASSIGN(x, cond, new_val) do { \
@@ -26,8 +29,15 @@
     (dst) = (x) | (!(x)); \
 } while(0);
 
+// ARENA - ALGORITHMICLY ESSENTIAL
+extern local_thread dnml_arena ___DASI_ALGO_ARENA_;
+dnml_arena* _USE_CARENA(void);
+
+
+
 
 //* ========================== COMMON ASSERT ERRORS CATALOG ========================== *//
+#define arena_poison_oom "Arena Poisoned: Arena Re-allocation witnessed an OOM error (-Earena_poison)"
 #define calloc_null "Allocation Failure: calloc() returned NULL (-Ealloc_calloc_fail)" /* CALLOC returns NULL */
 #define realloc_null "Allocation Failure: realloc() returned NULL (-Ealloc_realloc_fail)" /* REALLOC returns NULL */
 #define full_contract "Contract Violation: Invalid CryptInt (-Ecrypt_int_invalid)" /* FULL Contract Violation */
@@ -36,8 +46,21 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
 
 
 //* ========================== COMMON !TEST! ASSERT ERRORS CATALOG ========================== *//
-#define poisoined "Mathematical Error: CryptInt Poisoned (-Ecrypt_int_invalid)" /* CryptInt Poisoined - Testing */
+#define crint_poisoned "Mathematical Error: CryptInt Poisoned (-Ecrypt_int_invalid)" /* CryptInt Poisoined - Testing */
 #define null_err "Parameter Error: Status/Error parameter-based returns is null (-Enull_err_param)" /* err == NULL - testing */
+
+
+
+
+//* ===================== TEST ASSERT CONVENIENT MACROS ===================== *//
+// Functional Macros
+
+
+// Mutative Macros
+#define _magcrint_poison(x, cleanup) do { DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, {cleanup}); } while(0);
+#define _mheap_alloc_oom(err_check, err) do { \
+    test_assert_mut((err_check != DNML_ALLOC_OOM), realloc_null, __crint_exit(), err, DNML_ALLOC_OOM, ;); \
+} while(0);
 
 
 

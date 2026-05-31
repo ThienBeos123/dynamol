@@ -28,6 +28,7 @@ extern "C" {
 #define storage_inval "Validation Error: Input BigInt violates contract's storage invariants (-EbigInt_err_store_in)"
 #define aliased_limbs "Validation Error: Input BigInts contain aliased limb pointers (-Ebigint_alias_limb)"
 // Unexpected/UB Handling
+#define arena_oom "CRITICAL ERROR: Arena initliaizationf failed due to OOM (-Ealloc_arena_oom)"
 #define alloc_oom "CRITICAL ERROR: Heap-Allocation Failure - OOM (-Ealloc_oom)"
 #define inval_cap "Reserve Capacity Calculation/Assumptions incorrect (-Ereserve_incorrect)"
 #define arena_poison_oom "Arena Poisoned: Arena Re-allocation witnessed an OOM error (-Earena_poison)"
@@ -127,7 +128,10 @@ extern "C" {
 } while(0)
 
 
+
+
 //todo ===================================== NUMERIC FUNCTIONALITIES ===================================== todo//
+dnml_status _init_dynamol_bigint(void);
 //* ------------- CONSTRUCTORS & DESCTRUCTORS -------------- */
 void bigInt_free(bigInt *x); // Destructor
 dnml_status bigInt_new(bigInt *__bigInteger); // Default Constructor

@@ -5,12 +5,14 @@
 #include <include.h>
 #include <dnml_sys/sys.h>
 #include "intrinsics/intrinsics.h"
+#include "dynamol/bigint/bigInt_func.h"
+#include "drypto/crypt_int/cryptInt_func.h"
 
 static volatile uint8_t _libinit = 0;
 
 //* ---------- LIBRARY INITIALIZATION FUNCTIONS ---------- *//
 // Library Initialization
-static inline void _libdnml_init(void) {
+static inline dnml_status _libdnml_init(void) {
     if (_libinit) return;
     _libdnml_detect_hwcaps();
 #if __compiler_clang || __compiler_gcc || __compiler_msvc
@@ -27,6 +29,9 @@ static inline void _libdnml_init(void) {
     _libdnml_fill_crt_gcmp(); _libdnml_fill_crt_gsec();
     _libdnml_fill_crt_gbitops(); _libdnml_fill_crt_garith();
     _libdnml_fill_crt_galg();
+    // --------- MODULES INITIALIZATION ---------
+    if (_init_dynamol_bigint() == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; // dynamol/bigint
+    if (_init_drypto_crint() == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; // drypto/crypt_int
     _libinit = 1;
 #endif
 }

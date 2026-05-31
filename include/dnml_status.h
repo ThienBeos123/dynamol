@@ -31,17 +31,19 @@ typedef enum {
     STR_INVALID_DIGIT,          // 109
 
     CRINT_SUCCESS = 200,     // 200
-    CRINT_POISON,         // 201
+    CRINT_POISON,            // 201
     CRINT_ERR_RANGE,         // 202
 
-    FILE_ERR_PARSE = 300,       // 300
-    FILE_INVAL,                 // 301
-    FILE_ILLEGAL,               // 302
-    DNML_ALLOC_OOM,             // 303
-    DNML_NULL_EPARAM,           // 304
-    DNML_INVAL_CAP_REQUEST,     // 305
-    DNML_ARENA_ALLOC_OVERFLOW,  // 306
-    DNML_ARENA_ALLOC_SUCCESS,   // 307
+    DARENA_OVERFLOW = 300,  // 301
+    DARENA_SUCCESS,         // 302
+    DARENA_POISON,          // 303
+
+    FILE_ERR_PARSE = 400,       // 400
+    FILE_INVAL,                 // 401
+    FILE_ILLEGAL,               // 402
+    DNML_ALLOC_OOM,             // 403
+    DNML_NULL_EPARAM,           // 404
+    DNML_INVAL_CAP_REQUEST,     // 405
 } dnml_status;
 
 static inline void _print_dnml_status(dnml_status a, FILE *f) {
@@ -77,8 +79,8 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case DNML_ALLOC_OOM:            fputs("DNML_ALLOC_OOM", f); break;
         case DNML_NULL_EPARAM:          fputs("DNML_NULL_EPARAM", f); break;
         case DNML_INVAL_CAP_REQUEST:    fputs("DNML_INVAL_CAP_REQUEST", f); break;
-        case DNML_ARENA_ALLOC_OVERFLOW: fputs("DNML_ARENA_ALLOC_OVERFLOW", f); break;
-        case DNML_ARENA_ALLOC_SUCCESS:  fputs("DNML_ARENA_ALLOC_SUCCESS", f); break;
+        case DARENA_OVERFLOW:           fputs("DARENA_OVERFLOW", f); break;
+        case DARENA_SUCCESS:            fputs("DARENA_SUCCESS", f); break;
     }
 }
 
