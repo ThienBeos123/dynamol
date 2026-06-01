@@ -1429,14 +1429,14 @@ static void __BIGINT_MAGMUL__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     )
     size_t needed_size = __BIGINT_MUL_WS__(a->n, b->n);
     if (_DASI_MAGMUL_ARENA->cap < needed_size) {
-        dnml_status err_check; arena_grow(_DASI_MAGMUL_ARENA, needed_size);
+        dnml_status err_check = arena_grow(_DASI_MAGMUL_ARENA, needed_size);
         test_assert_mut(
             /* Static Analysis - Assert Parameters */
             (err_check != DNML_ALLOC_OOM), alloc_oom, {
                 arena_clear(_DASI_MAGMUL_ARENA); arena_destruct(_DASI_MAGMUL_ARENA);
                 arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);
             }, err, DNML_ALLOC_OOM, ; /* Error Returns Parameters */
-    )
+        );
     }
     calc_ctx magmul_ctx = {
         .alloc = &arena_alloc_adapter,
@@ -1478,16 +1478,15 @@ static void __BIGINT_MAGDIVMOD__(bigInt *quot, bigInt *rem, const bigInt *a, con
 }
 static void __BIGINT_MAGMUL_U64__(bigInt *res, const bigInt *x, const uint64_t val, dnml_status *err) {
     // Since the divisor size is small (n <= 1), we implement schoolbook multiplication
-    dnml_status err_check = bigInt_reserve(res, x->n + 1); heap_alloc_oom_void(err_check, err);
-    uint64_t carry = 0;
+    dnml_status err_check = bigInt_reserve(res, x->n + 1); 
+    heap_alloc_oom_void(err_check, err); uint64_t carry = 0;
     for (size_t i = 0; i < x->n; ++i) {
         uint64_t low, high;
         low = __MUL_UI64__(x->limbs[i], val, &high);
         uint64_t sum = low + carry;
         carry = high + (sum < low) + (sum < carry);
         res->limbs[i] = sum;
-    }
-    res->n = x->n;
+    } res->n = x->n;
     if (carry) { res->limbs[res->n++] = carry; }
 }
 static void __BIGINT_MAGDIVMOD_U64__(
@@ -1495,8 +1494,9 @@ static void __BIGINT_MAGDIVMOD_U64__(
     const bigInt *x, const uint64_t val, dnml_status *err
 ) {
     // Since the divisior size is small (n <= 1), we implement normal/long division
-    assert(val); // Checks for invalid operation ( x / 0 )
+    DNML_TEST_ASSERT(val, "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", clear_arena);
     dnml_status err_check = bigInt_reserve(&quot, x->n+1); heap_alloc_oom_void(err_check, err);
+    err_check = bigInt_reserve(rem, 1); heap_alloc_oom_void(err_check, err);
     quot->n = x->n; uint64_t remainder = 0; uint8_t ovf_test;
     for (size_t i = x->n - 1; i != -1; --i) {
         quot->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &ovf_test);

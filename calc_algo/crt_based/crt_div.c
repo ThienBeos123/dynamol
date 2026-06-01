@@ -1,13 +1,5 @@
 #include "crt_div.h"
 
-/* CRYPTINT WORKSPACE SIZE */
-size_t __CRINT_NEWTON_WS__(size_t dend_size, size_t div_size) {}
-size_t __CRINT_DIV_WS__(size_t dend_size, size_t div_size) {
-    if (div_size < BIGINT_SHORT) return 0;
-    else return __CRINT_NEWTON_WS__(dend_size, div_size);
-}
-
-
 /* CRYPTINT ALGORITHMS */
 dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, crint *rem) {
     // Static Analysis
@@ -31,14 +23,12 @@ dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, cr
 }
 dnml_status __CRINT_NEWTON_RECP__(
     const crint *dend, const crint *div,
-    crint *quot, crint *rem, 
-    calc_ctx newton_ctx
+    crint *quot, crint *rem
 ) {}
 dnml_status __CRINT_DIVMOD_DISP__(
     const crint *a, const crint *b,
-    crint *quot, crint *rem,
-    calc_ctx dvmod_ctx
+    crint *quot, crint *rem
 ) {
     if (b->n < BIGINT_SHORT) return __CRINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
-    else return __CRINT_NEWTON_RECP__(a, b, quot, rem, dvmod_ctx);
+    else return __CRINT_NEWTON_RECP__(a, b, quot, rem);
 }

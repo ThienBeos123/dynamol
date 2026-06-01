@@ -20,7 +20,7 @@ extern "C" {
     limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count), (&(err_check))); \
     mod_endstat((end_stat), (err_check)); \
     DNML_TEST_ASSERT( \
-        !((end_stat) == DNML_ARENA_ALLOC_OVERFLOW),  \
+        !((end_stat) == DARENA_OVERFLOW),  \
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)", \
         { scratch_clear(&(ctx)); scratch_destruct(&(ctx)); } \
     ); \

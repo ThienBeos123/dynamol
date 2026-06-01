@@ -55,10 +55,7 @@ size_t __BIGINT_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size) 
 //* ------------------------------ *//
 //* --------- ALGORITHMS --------- *//
 //* ------------------------------ *//
-void __BIGINT_CLASSICAL_MODMUL__(
-    const bigInt *a, const bigInt *b, 
-    const bigInt *modulus, bigInt *res, calc_ctx modmul_ctx
-) {
+void __BIGINT_CMODMUL__(const bigInt *a, const bigInt *b, const bigInt *modulus, bigInt *res, calc_ctx modmul_ctx) {
     dnml_status err_check, end_stat = 0;
     size_t cmodmul_mark = scratch_mark(&modmul_ctx);
     BIGINT_TEMP(prod, (a->n + b->n), modmul_ctx, err_check, end_stat);
@@ -67,10 +64,7 @@ void __BIGINT_CLASSICAL_MODMUL__(
     __BIGINT_MOD_DISPATCH__(&prod, modulus, res, &tmp, modmul_ctx
     ); scratch_reset(&modmul_ctx, cmodmul_mark);
 }
-void __BIGINT_MONTMUL__(
-    const bigInt *a, const bigInt *b, 
-    mont_ctx ctx, bigInt *res, calc_ctx montmul_ctx
-) {
+void __BIGINT_MONTMUL__(const bigInt *a, const bigInt *b, mont_ctx ctx, bigInt *res, calc_ctx montmul_ctx) {
     dnml_status err_check, end_stat;
     size_t montmul_mark = scratch_mark(&montmul_ctx);
     BIGINT_TEMP(t, (2*ctx.k + 1), montmul_ctx, err_check, end_stat);

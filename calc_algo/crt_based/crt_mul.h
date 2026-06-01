@@ -23,8 +23,8 @@ size_t __CRINT_MUL_WS__(size_t a_size, size_t b_size);
 
 /* CRYPTINT ALGORITHMS */
 dnml_status __CRINT_SCHOOLBOOK__(const crint *a, const crint *b, crint *res);
-dnml_status __CRINT_NTT__(const crint *a, const crint *b, crint *res, calc_ctx *ntt_ctx);
-dnml_status __CRINT_MUL_DISP__(const crint *a, const crint *b, crint *res, calc_ctx *mul_ctx);
+dnml_status __CRINT_NTT__(const crint *a, const crint *b, crint *res);
+dnml_status __CRINT_MUL_DISP__(const crint *a, const crint *b, crint *res);
 #ifdef __cplusplus
 }
 #endif

@@ -30,7 +30,7 @@ dnml_status crint_new(crint *x) {
 dnml_status crint_snew(crint *x, const size_t n) {
     uint64_t oom_mask = UINT64_MAX;
     dnml_status ret_stat = CRINT_SUCCESS;
-    size_t salloc; NORMALIZE_0_TO_1(salloc, n);
+    size_t salloc = (n) | (!(n));
     limb_t *__BUFFER_P = calloc(salloc, U64_BYTES);
     DNML_TEST_ASSERT(_lib_crt_neq((ptr_t)__BUFFER_P, NULL), realloc_null, {});
     CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, NULL) & _lib_crt_eq((ptr_t)x->limbs, NULL)), DNML_ALLOC_OOM, ret_stat);
@@ -1629,18 +1629,18 @@ crint crint_tover_copy(crint src, size_t output_cap, dnml_status *err) {
 void crint_canonicalize(crint *x) {
     // Fix invalid capacity
     uint8_t cap_invalid = (_lib_crt_lt(x->cap, 1));
-    CT_COND_ASSIGN(x->cap, cap_invalid, 1);
-    CT_COND_ASSIGN(x->n, cap_invalid, 0);
-    CT_COND_ASSIGN(x->sign, cap_invalid, 1);
+    CHOOSE_OPTION(x->cap, cap_invalid, x->cap, 1);
+    CHOOSE_OPTION(x->n, cap_invalid, x->n, 0);
+    CHOOSE_OPTION(x->sign, cap_invalid, x->sign, 1);
     
     // Clamp n to capacity
     uint8_t n_overflow = (_lib_crt_gt(x->n, x->cap));
-    CT_COND_ASSIGN(x->n, n_overflow, x->cap);
+    CHOOSE_OPTION(x->n, n_overflow, x->n, x->cap);
     
     // Fix invalid sign
     uint8_t sign_invalid = (_lib_crt_neq(x->sign, -1)) & (_lib_crt_neq(x->sign, 1));
-    CT_COND_ASSIGN(x->n, sign_invalid, 0);
-    CT_COND_ASSIGN(x->sign, sign_invalid, 1);
+    CHOOSE_OPTION(x->n, sign_invalid, x->n, 0);
+    CHOOSE_OPTION(x->sign, sign_invalid, x->sign, 1);
     cap_invalid = 0; n_overflow = 0; sign_invalid = 0;
 }
 void crint_normalize(crint *x) { __CRINT_TRIM_LZ__(x); CHOOSE_OPTION((x->sign), (!x->n), (1), (-1)); }
@@ -1665,7 +1665,7 @@ dnml_status crint_resize(crint *x, size_t k) {
 
     /* Main Resizing */ limb_t* operated;
     CHOOSE_OPTION((operated), (_lib_crt_eq(ret_stat, CRINT_POISON)), ((ptr_t)(malloc(1))), ((ptr_t)x->limbs));
-    size_t normalized_size; NORMALIZE_0_TO_1(normalized_size, k); size_t op_size; 
+    size_t normalized_size = (k) | (!(k)); size_t op_size; 
     CHOOSE_OPTION((op_size), (_lib_crt_eq(ret_stat, CRINT_POISON)), (1), (normalized_size));
     limb_t *__BUFFER_P = realloc(operated, op_size * U64_BYTES);
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)__BUFFER_P, NULL)), realloc_null, { if (_lib_crt_neq((ptr_t)operated, NULL)) free(operated); });
@@ -1744,7 +1744,7 @@ dnml_status crint_shrink(crint *x, size_t k) { /* Maximum capacity */
 
     /* Main Resizing */ limb_t* operated;
     CHOOSE_OPTION((operated), (_lib_crt_eq(ret_stat, CRINT_POISON)), ((ptr_t)(malloc(U64_BYTES))), ((ptr_t)x->limbs));
-    size_t normalized_size; NORMALIZE_0_TO_1(normalized_size, new_cap); size_t opsize;
+    size_t normalized_size = (k) | (!(k)); size_t opsize;
     CHOOSE_OPTION((opsize), (_lib_crt_eq(ret_stat, CRINT_POISON)), (1), (normalized_size));
     limb_t* __BUFFER_P = realloc(operated, opsize * U64_BYTES);
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)__BUFFER_P, NULL)), realloc_null, { if (_lib_crt_neq((ptr_t)operated, NULL)) free(operated); });

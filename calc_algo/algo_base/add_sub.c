@@ -115,7 +115,7 @@ dnml_status __CRINT_ADD_WC__(crint *res, const crint *a, const crint *b) {
 dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
     crint_poison(a); crint_poison(b); 
     crint_poison(res); DNML_TEST_ASSERT(
-        (__BIGINT_INTERNAL_COMP__(a, b) != -1),
+        (__CRINT_INTERNAL_CMP__(a, b) != -1),
         "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
         " (-Esub_underflow)", {}
     ); // Main Algorithms
