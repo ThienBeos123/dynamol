@@ -1447,22 +1447,49 @@ static void __BIGINT_MAGMUL__(bigInt *res, const bigInt *a, const bigInt *b, dnm
         .state = _DASI_MAGMUL_ARENA
     }; __BIGINT_MUL_DISPATCH__(a, b, res, magmul_ctx);
 }
-static void __BIGINT_MAGDIVMOD__(bigInt *quot, bigInt *rem, const bigInt *a, const bigInt *b, dnml_status *err) {
-    dnml_arena *_DASI_MAGDIVMOD_ARENA = _USE_LOW_ARENA();
+static void __BIGINT_MAGDIV__(bigInt *quot, bigInt *tmp_rem, const bigInt *a, const bigInt *b, dnml_status *err) {
+    dnml_arena *_DASI_MAGDIV_ARENA = _USE_LOW_ARENA();
     test_assert_mut(
         /* Static Analysis - Assert Parameters */
-        (!(_DASI_MAGDIVMOD_ARENA->poisoined)), alloc_oom, {
-            arena_clear(_DASI_MAGDIVMOD_ARENA); arena_destruct(_DASI_MAGDIVMOD_ARENA);
+        (!(_DASI_MAGDIV_ARENA->poisoined)), alloc_oom, {
+            arena_clear(_DASI_MAGDIV_ARENA); arena_destruct(_DASI_MAGDIV_ARENA);
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);
         }, err, DNML_ALLOC_OOM, ; /* Error Returns Parameters */
     )
-    size_t needed_size = __BIGINT_DIVMOD_WS__(a->n, b->n);
-    if (_DASI_MAGDIVMOD_ARENA->cap < needed_size) {
-        dnml_status err_check = arena_grow(_DASI_MAGDIVMOD_ARENA, needed_size);
+    size_t needed_size = __BIGINT_DIV_WS__(a->n, b->n) + b->n;
+    if (_DASI_MAGDIV_ARENA->cap < needed_size) {
+        dnml_status err_check = arena_grow(_DASI_MAGDIV_ARENA, needed_size);
         test_assert_mut(
             /* Static Analysis - Assert Parameters */
             (err_check != DNML_ALLOC_OOM), alloc_oom, {
-                arena_clear(_DASI_MAGDIVMOD_ARENA); arena_destruct(_DASI_MAGDIVMOD_ARENA);
+                arena_clear(_DASI_MAGDIV_ARENA); arena_destruct(_DASI_MAGDIV_ARENA);
+                arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);
+            }, err, DNML_ALLOC_OOM, ; /* Error Returns Parameters */
+        )
+    }
+    calc_ctx magdivmod_ctx = {
+        .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
+        .reset = &arena_reset_adapter, .clear = &arena_clear_adapter,
+        .destruct = &arena_destruct_adapter, .state = _DASI_MAGDIV_ARENA
+    };
+    __BIGINT_DIV_DISPATCH__(a, b, quot, tmp_rem, magdivmod_ctx);
+}
+static void __BIGINT_MAGMOD__(bigInt *rem, bigInt *tmp_quot, const bigInt *a, const bigInt *b, dnml_status *err) {
+    dnml_arena *_DASI_MAGDIV_ARENA = _USE_LOW_ARENA();
+    test_assert_mut(
+        /* Static Analysis - Assert Parameters */
+        (!(_DASI_MAGDIV_ARENA->poisoined)), alloc_oom, {
+            arena_clear(_DASI_MAGDIV_ARENA); arena_destruct(_DASI_MAGDIV_ARENA);
+            arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);
+        }, err, DNML_ALLOC_OOM, ; /* Error Returns Parameters */
+    )
+    size_t needed_size = __BIGINT_MOD_WS__(a->n, b->n) + a->n;
+    if (_DASI_MAGDIV_ARENA->cap < needed_size) {
+        dnml_status err_check = arena_grow(_DASI_MAGDIV_ARENA, needed_size);
+        test_assert_mut(
+            /* Static Analysis - Assert Parameters */
+            (err_check != DNML_ALLOC_OOM), alloc_oom, {
+                arena_clear(_DASI_MAGDIV_ARENA); arena_destruct(_DASI_MAGDIV_ARENA);
                 arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);
             }, err, DNML_ALLOC_OOM, ; /* Error Returns Parameters */
         )
@@ -1473,8 +1500,9 @@ static void __BIGINT_MAGDIVMOD__(bigInt *quot, bigInt *rem, const bigInt *a, con
         .reset = &arena_reset_adapter,
         .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter,
-        .state = _DASI_MAGDIVMOD_ARENA
-    }; __BIGINT_DIVMOD_DISPATCH__(a, b, quot, rem, magdivmod_ctx);
+        .state = _DASI_MAGDIV_ARENA
+    };
+    __BIGINT_MOD_DISPATCH__(a, b, rem, tmp_quot, magdivmod_ctx);
 }
 static void __BIGINT_MAGMUL_U64__(bigInt *res, const bigInt *x, const uint64_t val, dnml_status *err) {
     // Since the divisor size is small (n <= 1), we implement schoolbook multiplication
@@ -1577,7 +1605,7 @@ static void __BIGINT_MAGLCM__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     bigInt temp_rem = { .limbs = tmp_limbs, /**/ .n = 0, /**/ .cap = min(a->n, b->n), .sign = 1 };
     bigInt temp_quot = { .limbs = tmpq_limbs, /**/ .n = 0, /**/ .cap = a->n, .sign = 1 };
     __BIGINT_GCD_DISPATCH__(&gcd_res, a, b, _maglcm_ctx);
-    __BIGINT_DIVMOD_DISPATCH__(a, &gcd_res, &temp_quot, &temp_rem, _maglcm_ctx);
+    __BIGINT_DIV_DISPATCH__(a, &gcd_res, &temp_quot, &temp_rem, _maglcm_ctx);
     __BIGINT_MUL_DISPATCH__(&temp_quot, b, &gcd_res, _maglcm_ctx);
     tmp_check = bigInt_mut_ocopy(res, gcd_res); ocopy_check(tmp_check, _DASI_MAGLCM_ARENA);
     arena_reset(_DASI_MAGLCM_ARENA, maglcm_mark);
@@ -1629,8 +1657,8 @@ static void __BIGINT_MAGMODSUB__(bigInt *res, const bigInt *a, const bigInt *b, 
 static void __BIGINT_MAGMODMUL__(bigInt *res, const bigInt *a, const bigInt *b, const bigInt *mod) {}
 static void __BIGINT_MAGMODDIV__(bigInt *res, const bigInt *a, const bigInt *b, const bigInt *mod) {}
 static void __BIGINT_MAGMODEXP__(bigInt *res, const bigInt *a, const bigInt *b, const bigInt *mod) {}
-static void __BIGINT_MAGNMODSQR__(bigInt *res, const bigInt *a, const bigInt *b, const bigInt *mod) {}
-static void __BIGINT_MAGNMODINV__(bigInt *res, const bigInt *a, const bigInt *b, const bigInt *mod) {}
+static void __BIGINT_MAGMODSQR__(bigInt *res, const bigInt *a, const bigInt *b, const bigInt *mod) {}
+static void __BIGINT_MAGMODINV__(bigInt *res, const bigInt *a, const bigInt *b, const bigInt *mod) {}
 /* ----------------- MAGNITUDED ALGEBRAIC OPERATIONS ------------------ */
 static void __BIGINT_MAGSQR__(bigInt *res, const bigInt *base, dnml_status *err) {
     dnml_arena *_DASI_MAGSQR_ARENA = _USE_LOW_ARENA();
@@ -1791,7 +1819,7 @@ dnml_status bigInt_mut_mulu64(bigInt *x, const uint64_t val) {
     else if (!val) bigInt_reset(x);
     else if (x->n == 1 && x->limbs[0] == 1) bigInt_mut_copyu64(x, val);
     else { dnml_status err_check = bigInt_reserve(x, x->n + 1); heap_alloc_oom(err_check);
-        dnml_arena *_DASI_MUL_UI64_ARENA = _USE_ARENA();  arena_poisoined(_DASI_MUL_UI64_ARENA);
+        dnml_arena *_DASI_MUL_UI64_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUL_UI64_ARENA);
         size_t tmp_mark = arena_mark(_DASI_MUL_UI64_ARENA);
         limb_t *tmp_limbs = arena_galloc(_DASI_MUL_UI64_ARENA, x->n + 1, &err_check); 
         arena_alloc_oom(err_check, _DASI_MUL_UI64_ARENA);
@@ -2005,7 +2033,7 @@ dnml_status bigInt_mut_div(bigInt *x, const bigInt y) {
         limb_t *rem_limbs = arena_alloc(_DASI_DIV_ARENA, y.n, &err_check);
         bigInt temp_quot = {.limbs = quot_limbs, .sign = 1,     /**/    .cap = x->n, .n = 0}; 
         bigInt temp_rem = {.limbs = rem_limbs, .sign = 1,       /**/    .cap = y.n,  .n = 0};
-        __BIGINT_MAGDIVMOD__(&temp_quot, &temp_rem, x, &y, &err_check); arena_alloc_oom(err_check, _DASI_DIV_ARENA);
+        __BIGINT_MAGDIV__(&temp_quot, &temp_rem, x, &y, &err_check); arena_alloc_oom(err_check, _DASI_DIV_ARENA);
         temp_quot.sign = x->sign * y.sign; bigInt_normalize(&temp_quot);
         err_check = bigInt_mut_ocopy(x, temp_quot); ocopy_check(err_check, _DASI_DIV_ARENA);
         arena_reset(_DASI_DIV_ARENA, mutdiv_mark); _DASI_DIV_ARENA = NULL;
@@ -2030,7 +2058,7 @@ dnml_status bigInt_mut_mod(bigInt *x, const bigInt y) {
             limb_t *rem_limbs = arena_alloc(_DASI_MOD_ARENA, y.n, &err_check);
             bigInt temp_quot = {.limbs = quot_limbs, .sign = 1,     /**/    .cap = x->n, .n = 0}; 
             bigInt temp_rem = {.limbs = rem_limbs, .sign = 1,       /**/    .cap = y.n,  .n = 0};
-            __BIGINT_MAGDIVMOD__(&temp_quot, &temp_rem, x, &y, &err_check);
+            __BIGINT_MAGMOD__(&temp_rem, &temp_quot, x, &y, &err_check);
             arena_alloc_oom(err_check, _DASI_MOD_ARENA); temp_rem.sign = x->sign; 
             err_check = bigInt_mut_ocopy(x, temp_rem); ocopy_check(err_check, _DASI_MOD_ARENA);
             arena_reset(_DASI_MOD_ARENA, mutmod_mark); _DASI_MOD_ARENA = NULL;
@@ -2255,7 +2283,7 @@ bigInt bigInt_div(const bigInt x, const bigInt y, dnml_status *err) {
         arena_alloc_oom_mut(err_check, _DASI_FDIV_ARENA, err);
 
         bigInt temp_rem = { .limbs = tmp_limbs, .cap = y.n, .n = 0, .sign = 1 };
-        __BIGINT_MAGDIVMOD__(&quot, &temp_rem, &x, &y, &err_check);
+        __BIGINT_MAGDIV__(&quot, &temp_rem, &x, &y, &err_check);
         arena_alloc_oom_mut(err_check, _DASI_FDIV_ARENA, err);
         quot.sign = x.sign * y.sign; bigInt_normalize(&quot);
         arena_reset(_DASI_FDIV_ARENA, tmp_mark); _DASI_FDIV_ARENA = NULL;
@@ -2282,7 +2310,7 @@ bigInt bigInt_mod(const bigInt x, const bigInt y, dnml_status *err) {
             limb_t *tmp_limbs = arena_galloc(_DASI_FMOD_ARENA, x.n, &err_check);
             arena_alloc_oom_mut(err_check, _DASI_FMOD_ARENA, err);
             bigInt temp_quot = { .limbs = tmp_limbs, .cap = x.n, .n = 0, .sign  = 1 }; 
-            __BIGINT_MAGDIVMOD__(&temp_quot, &rem, &x, &y, &err_check);
+            __BIGINT_MAGMOD__(&rem, &temp_quot, &x, &y, &err_check);
             arena_alloc_oom_mut(err_check, _DASI_FMOD_ARENA, err);
             rem.sign = x.sign; bigInt_normalize(&rem);
             arena_reset(_DASI_FMOD_ARENA, tmp_mark); _DASI_FMOD_ARENA = NULL;

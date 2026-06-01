@@ -22,16 +22,13 @@
 #define FAKE_BUF_CAP 128 /* Constant tweaked to specific use case */
 
 
-//? ========================== COMMON ASSERT ERRORS CATALOG ========================== ?//
+//? ============================= COMMON !TEST! ASSERT ERRORS CATALOG ============================= ?//
+#define pointer_null "Invalid Input: Pointer input passed as NULL (-Einput_null_pointer)"
 #define calloc_null "Allocation Failure: calloc() returned NULL (-Ealloc_calloc_fail)" /* CALLOC returns NULL */
 #define realloc_null "Allocation Failure: realloc() returned NULL (-Ealloc_realloc_fail)" /* REALLOC returns NULL */
 #define full_contract "Contract Violation: Invalid CryptInt (-Ecrypt_int_invalid)" /* FULL Contract Violation */
 #define store_inval "\
 Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)" /* Partial Contract Violation - Storage */
-
-
-
-//? ========================== COMMON !TEST! ASSERT ERRORS CATALOG ========================== ?//
 #define crint_poisoned "Mathematical Error: CryptInt Poisoned (-Ecrypt_int_invalid)" /* CryptInt Poisoined - Testing */
 #define null_err "Parameter Error: Status/Error parameter-based returns is null (-Enull_err_param)" /* err == NULL - testing */
 
@@ -40,6 +37,7 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
 
 //? ================================= TEST ASSERT CONVENIENT MACROS ================================= ?//
 // Functional Macros
+#define pbv_crint_clear(x) do { x.limbs = 0; x.cap = 0; x.n = 0; x.sign = 0; x.poisoned = 0; } while(0);
 
 
 // Mutative Macros
@@ -53,7 +51,7 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
 
 
 //* ===================================== TYPE SETUP FUNCTION ===================================== *//
-void crint_free(crint *x);
+dnml_status crint_free(crint *x);
 dnml_status crint_new(crint *x);
 dnml_status crint_snew(crint *x, const size_t n);
 dnml_status crint_cinew(crint *x, crint *y);
@@ -200,6 +198,35 @@ bool crint_mequal(const crint x, crint y, dnml_status *err);
 
 
 
+//* ============================================ SIGNED ARITHMETIC ========================================== */
+/* ------------------- MUTATIVE ARITHMETIC -------------------- */
+dnml_status crint_mut_mulu64(crint *x, uint64_t val);
+dnml_status crint_mut_divu64(crint *x, uint64_t val);
+dnml_status crint_mut_modu64(crint *x, uint64_t val);
+dnml_status crint_mut_muli64(crint *x, int64_t val);
+dnml_status crint_mut_divi64(crint *x, int64_t val);
+dnml_status crint_mut_modi64(crint *x, int64_t val);
+dnml_status crint_mut_add(crint *x, crint y);
+dnml_status crint_mut_sub(crint *x, crint y);
+dnml_status crint_mut_mul(crint *x, crint y);
+dnml_status crint_mut_div(crint *x, crint y);
+dnml_status crint_mut_mod(crint *x, crint y);
+/* ------------------ FUNCTIONAL ARITHMETIC ------------------- */
+crint crint_mulu64(crint x, uint64_t val, dnml_status *err);
+crint crint_divu64(crint x, uint64_t val, dnml_status *err);
+crint crint_modu64(crint x, uint64_t val, dnml_status *err);
+crint crint_muli64(crint x, int64_t val, dnml_status *err);
+crint crint_divi64(crint x, int64_t val, dnml_status *err);
+crint crint_modi64(crint x, int64_t val, dnml_status *err);
+crint crint_add(crint x, crint y, dnml_status *err);
+crint crint_sub(crint x, crint y, dnml_status *err);
+crint crint_mul(crint x, crint y, dnml_status *err);
+crint crint_div(crint x, crint y, dnml_status *err);
+crint crint_mod(crint x, crint y, dnml_status *err);
+
+
+
+
 //* ================================================= COPIES ================================================= */
 /* -------------  Mutative SMALL Copies ------------- */
 dnml_status crint_mut_copyu64(crint *dst__, const uint64_t source__);
@@ -230,8 +257,8 @@ crint crint_tover_copy(const crint source__, size_t output_cap, dnml_status *__e
 
 
 //* ===================================== STATE ALTERATION FUNCTIONS ===================================== *//
-void crint_canonicalize(crint *x);
-void crint_normalize(crint *X);
+dnml_status crint_canonicalize(crint *x);
+dnml_status crint_normalize(crint *X);
 dnml_status crint_resize(crint *x, size_t k);
 dnml_status crint_reserve(crint *x, size_t k);
 dnml_status crint_shrink(crint *x, size_t k);

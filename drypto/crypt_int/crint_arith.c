@@ -51,23 +51,41 @@ void __CRINT_MAGMUL___(crint *res, crint *a, crint *b) {
         { crint_free(res); crint_free(a); crint_free(b); }
     ); __CRINT_MUL_DISP__(a, b, res);
 }
-void __CRINT_MAGDIVMOD__(crint *quot, crint *rem, crint *a, crint *b) {
-    _pre_assert(quot, { crint_free(quot); crint_free(rem); crint_free(a); crint_free(b); })
-    _pre_assert(rem, { crint_free(quot); crint_free(rem); crint_free(a); crint_free(b); })
-    _pre_assert(a, { crint_free(quot); crint_free(rem); crint_free(a); crint_free(b); })
-    _pre_assert(b, { crint_free(quot); crint_free(rem); crint_free(a); crint_free(b); })
+void __CRINT_MAGDIV__(crint *quot, crint *temp_rem, crint *a, crint *b) {
+    _pre_assert(quot, { crint_free(quot); crint_free(temp_rem); crint_free(a); crint_free(b); })
+    _pre_assert(temp_rem, { crint_free(quot); crint_free(temp_rem); crint_free(a); crint_free(b); })
+    _pre_assert(a, { crint_free(quot); crint_free(temp_rem); crint_free(a); crint_free(b); })
+    _pre_assert(b, { crint_free(quot); crint_free(temp_rem); crint_free(a); crint_free(b); })
     DNML_TEST_ASSERT((b->n),
         "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", 
-        { crint_free(quot); crint_free(rem); crint_free(a); crint_free(b); }
+        { crint_free(quot); crint_free(temp_rem); crint_free(a); crint_free(b); }
     );
     DNML_TEST_ASSERT((quot->cap >= a->n),
         "Insufficient Quotient Capacity: Capacity unsatisfactory for a / b (-Ediv_insufficient_qcap)",
-        { crint_free(quot); crint_free(rem); crint_free(a); crint_free(b); }
+        { crint_free(quot); crint_free(temp_rem); crint_free(a); crint_free(b); }
+    );
+    DNML_TEST_ASSERT((temp_rem->cap >= b->n),
+        "Insufficient Remainder Capacity: Capacity unsatisfactory for a mod(b) (-Ediv_insufficient_rcap)",
+        { crint_free(quot); crint_free(temp_rem); crint_free(a); crint_free(b); }
+    ); __CRINT_DIV_DISP__(a, b, quot, temp_rem);
+}
+void __CRINT_MAGMOD__(crint *temp_quot, crint *rem, crint *a, crint *b) {
+    _pre_assert(temp_quot, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
+    _pre_assert(rem, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
+    _pre_assert(a, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
+    _pre_assert(b, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
+    DNML_TEST_ASSERT((b->n),
+        "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", 
+        { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); }
+    );
+    DNML_TEST_ASSERT((temp_quot->cap >= a->n),
+        "Insufficient Quotient Capacity: Capacity unsatisfactory for a / b (-Ediv_insufficient_qcap)",
+        { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); }
     );
     DNML_TEST_ASSERT((rem->cap >= b->n),
         "Insufficient Remainder Capacity: Capacity unsatisfactory for a mod(b) (-Ediv_insufficient_rcap)",
-        { crint_free(quot); crint_free(rem); crint_free(a); crint_free(b); }
-    ); __CRINT_DIVMOD_DISP__(a, b, quot, rem);
+        { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); }
+    ); __CRINT_MOD_DISP__(a, b, rem, temp_quot);
 }
 void __CRINT_MAGMUL_U64__(crint *res, crint *x, uint64_t val) {
     DNML_TEST_ASSERT(
@@ -98,13 +116,73 @@ void __CRINT_MAGDIVMOD_U64__(crint *quot, crint *rem, crint *a, uint64_t val) {
         { crint_free(quot); crint_free(rem); crint_free(a); val = 0; }
     ); __CRINT_SHORT_DIVISION__(a, val, quot, rem);
 }
+/* --------------- MAGNITUDED MODULAR ARITHMETIC --------------- */
+void __CRINT_MAGEMOD_U64__(uint64_t *rem, crint *tmp_quot, crint *dend, uint64_t mod) {}
+void __CRINT_MAGEMOD__(crint *rem, crint *tmp_quot, crint *dend, crint *mod) {}
+void __CRINT_MAGMADD__(crint *res, crint *a, crint *b, crint *mod) {}
+void __CRINT_MAGMSUB__(crint *res, crint *a, crint *b, crint *mod) {}
+void __CRINT_MAGMMUL__(crint *res, crint *a, crint *b, crint *mod) {}
+void __CRINT_MAGMDIV__(crint *res, crint *a, crint *b, crint *mod) {}
+void __CRINT_MAGMEXP__(crint *res, crint *a, crint *b, crint *mod) {}
+void __CRINT_MAGMSQR__(crint *res, crint *a, crint *b, crint *mod) {}
+void __CRINT_MAGMINV__(crint *res, crint *a, crint *b, crint *mod) {}
 
 
 
 
 //* ============================================ SIGNED ARITHMETIC ========================================== */
 /* ------------------- MUTATIVE ARITHMETIC -------------------- */
+dnml_status crint_mut_mulu64(crint *x, uint64_t val) {
+    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, {
+        if (_lib_crt_neq((ptr_t)(x->limbs), NULL)) *(x->limbs) = 0;
+        crint_free(x); x->limbs = 0; x->cap = 0; 
+        x->n = 0; x->poisoned = 0; x->sign = 0; val = 0;
+    });
+    DNML_TEST_ASSERT((x->poisoned), crint_poisoned, {});
+    dnml_status ret_stat = CRINT_SUCCESS; uint64_t mask = UINT64_MAX;
+    CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
+    dnml_status reserve_stat = crint_reserve(x, x->n + 1);
+    CHOOSE_OPTION((ret_stat), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM) & 
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (DNML_ALLOC_OOM), (ret_stat)
+    );
+    /* Main Operation */
+    crint tmp_prod; dnml_status snew_stat = crint_snew(&tmp_prod, x->n + 1);
+    CHOOSE_OPTION((ret_stat),
+        (_lib_crt_eq(snew_stat, DNML_ALLOC_OOM) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
+        (DNML_ALLOC_OOM), (ret_stat)
+    ); crint *src, *prod;
+    limb_t fsbuf[FAKE_BUF_CAP] = {UINT64_MAX}, fpbuf[FAKE_BUF_CAP + 1] = {0}, fake_mul = UINT64_C(0x123456789ABCDEF0);
+    crint fake_source = { .limbs = fsbuf, .cap = FAKE_BUF_CAP, .n = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
+    crint fake_prod = { .limbs = fpbuf, .cap = FAKE_BUF_CAP + 1, .n = 0, .sign = 1, .poisoned = false };
+    CHOOSE_OPTION((src), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), ((ptr_t)x), ((ptr_t)&fake_source));
+    CHOOSE_OPTION((prod), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), ((ptr_t)&tmp_prod), ((ptr_t)&fake_prod));
+
+}
+dnml_status crint_mut_divu64(crint *x, uint64_t val) {}
+dnml_status crint_mut_modu64(crint *x, uint64_t val) {}
+dnml_status crint_mut_muli64(crint *x, int64_t val) {}
+dnml_status crint_mut_divi64(crint *x, int64_t val) {}
+dnml_status crint_mut_modi64(crint *x, int64_t val) {}
+dnml_status crint_mut_add(crint *x, crint y) {}
+dnml_status crint_mut_sub(crint *x, crint y) {}
+dnml_status crint_mut_mul(crint *x, crint y) {}
+dnml_status crint_mut_div(crint *x, crint y) {}
+dnml_status crint_mut_mod(crint *x, crint y) {}
 /* ------------------ FUNCTIONAL ARITHMETIC ------------------- */
+crint crint_mulu64(crint x, uint64_t val, dnml_status *err) {}
+crint crint_divu64(crint x, uint64_t val, dnml_status *err) {}
+crint crint_modu64(crint x, uint64_t val, dnml_status *err) {}
+crint crint_muli64(crint x, int64_t val, dnml_status *err) {}
+crint crint_divi64(crint x, int64_t val, dnml_status *err) {}
+crint crint_modi64(crint x, int64_t val, dnml_status *err) {}
+crint crint_add(crint x, crint y, dnml_status *err) {}
+crint crint_sub(crint x, crint y, dnml_status *err) {}
+crint crint_mul(crint x, crint y, dnml_status *err) {}
+crint crint_div(crint x, crint y, dnml_status *err) {}
+crint crint_mod(crint x, crint y, dnml_status *err) {}
 
 
 

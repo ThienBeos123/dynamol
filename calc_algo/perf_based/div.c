@@ -21,7 +21,7 @@ size_t __BIGINT_BURNIKEL_WS__(size_t a_size, size_t b_size) {
     // a_size has been updated/halved from recursion.
 }
 size_t __BIGINT_NEWTON_WS__(size_t a_size, size_t b_size) {}
-size_t __BIGINT_DIVMOD_WS__(size_t a_size, size_t b_size) {
+size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size) {
     if      (b_size < BIGINT_SHORT) return __BIGINT_SHORTDIV_WS__(a_size, b_size);
     else if (b_size < BIGINT_KNUTH) return __BIGINT_KNUTH_WS__(a_size, b_size);
     else __BIGINT_NEWTON_WS__(a_size, b_size);
@@ -74,13 +74,13 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
     dnml_status err_check, end_stat = 0;
     limb_t *a_limbs = scratch_alloc(&knuth_ctx, m + 1, &err_check); mod_endstat(end_stat, err_check);
     DNML_TEST_ASSERT(
-        !(end_stat == DNML_ARENA_ALLOC_OVERFLOW), 
+        !(end_stat == DARENA_OVERFLOW), 
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
         { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
     ); bigInt a_copy = {.limbs = a_limbs, .sign  = 1, .cap = m + 1, .n = 0};
     limb_t *b_limbs = scratch_alloc(&knuth_ctx, n, &err_check); mod_endstat(end_stat, err_check);
     DNML_TEST_ASSERT(
-        !(end_stat == DNML_ARENA_ALLOC_OVERFLOW), 
+        !(end_stat == DARENA_OVERFLOW), 
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
         { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
     ); bigInt b_copy = {.limbs = b_limbs, .sign  = 1, .cap = n, .n = 0};
@@ -268,19 +268,19 @@ void __BIGINT_BURNIKEL__(
     scratch_reset(&burk_ctx, burk_mark);
 }
 void __BIGINT_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx newton_ctx) {}
-void __BIGINT_DIVMOD_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx div_ctx) {
-    if (b->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
-    else if (b->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, b, quot, rem, div_ctx);
+void __BIGINT_DIV_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *tmp_rem, calc_ctx div_ctx) {
+    if (b->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem);
+    else if (b->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, b, quot, tmp_rem, div_ctx);
     else if (b->n < BIGINT_BURNIKEL) {
         size_t k = (size_t)(b->n >> 1) + 1;
         bigInt AL = {.limbs = a->limbs, .sign = a->sign, .n = max(a->n, 2*k), .cap = max(a->n, 2*k)};
         bigInt AH = {
             .limbs = a->limbs + max(a->n, 2*k), 
-            .sign = a->sign, 
+            .sign = a->sign,
             .n = (a->n < 2*k) ? 0 : 2*k - a->n, 
             .cap = (a->n < 2*k) ? 0 : 2*k - a->n
         };
-        __BIGINT_BURNIKEL__(&AH, &AL, b, quot, rem, div_ctx);
-    } else __BIGINT_NEWTON__(a, b, quot, rem, div_ctx);
+        __BIGINT_BURNIKEL__(&AH, &AL, b, quot, tmp_rem, div_ctx);
+    } else __BIGINT_NEWTON__(a, b, quot, tmp_rem, div_ctx);
 }
 

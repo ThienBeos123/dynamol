@@ -24,7 +24,7 @@ extern "C" {
 size_t __BIGINT_SHORTDIV_WS__(size_t a_size, size_t b_size);
 size_t __BIGINT_KNUTH_WS__(size_t a_size, size_t b_size);
 size_t __BIGINT_NEWTON_WS__(size_t a_size, size_t b_size);
-size_t __BIGINT_DIVMOD_WS__(size_t a_size, size_t b_size);
+size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size);
 
 
 void __BIGINT_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem);
@@ -34,10 +34,7 @@ void __BIGINT_BURNIKEL__(
     const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx burk_ctx
 );
 void __BIGINT_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx newton_ctx);
-void __BIGINT_DIVMOD_DISPATCH__(
-    const bigInt *a, const bigInt *b, 
-    bigInt *quot, bigInt *rem, calc_ctx div_ctx
-);
+void __BIGINT_DIV_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx div_ctx);
 #ifdef __cplusplus
 }
 #endif

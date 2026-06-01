@@ -26,24 +26,6 @@ and is generally unsafe for production-use for the user */
 #define DNML_TEST_ASSERT(condition, message)
 #endif
 
-/* 
-This version is targeted as the production-ready assertion, 
-allowing for detailed fail reason to the user + 
-cryptographically-ready cleanup code insertions 
-
-! PLEASE ALSO CLEARLY DOCUMENT THIS FUNCTION MACRO, AS IT
-! USES POTENTIALLY DANGEROUS AND BUG-RIDDEN COD INSERTION
-*/
-#define DNML_ASSERT(condition, message, cleanup_code) do { \
-    if (!(condition)) { \
-        do { cleanup_code } while (0); \
-        fprintf(stderr, "  - [FATAL] Assertion Failed: (%s)", #condition); \
-        fprintf(stderr, "    Function %s(): %s\n", __func__, message); \
-        fprintf(stderr, "     File: %s | Line: %d\n", __FILE__, __LINE__); \
-        exit(EXIT_FAILURE); \
-    } \
-} while (0)
-
 
 // Pre-opreration evaluation asserts
 #define test_assert(cond, err_msg, cleanup, err_code) do { \

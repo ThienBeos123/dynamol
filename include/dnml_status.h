@@ -33,6 +33,9 @@ typedef enum {
     CRINT_SUCCESS = 200,     // 200
     CRINT_POISON,            // 201
     CRINT_ERR_RANGE,         // 202
+    CRINT_NULL,              // 203
+    CRINT_ERR_INVAL,         // 204
+    CRINT_ERR_SINVAL,        // 205
 
     DARENA_OVERFLOW = 300,  // 301
     DARENA_SUCCESS,         // 302
@@ -72,6 +75,9 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case CRINT_SUCCESS:     fputs("CRINT_SUCCESS", f); break;
         case CRINT_POISON:      fputs("CRINT_POISON", f); break;
         case CRINT_ERR_RANGE:   fputs("CRINT_ERR_RANGE", f); break;
+        case CRINT_NULL:        fputs("CRINT_NULL", f); break;
+        case CRINT_ERR_INVAL:   fputs("CRINT_ERR_INVAL", f); break;
+        case CRINT_ERR_SINVAL:  fputs("CRINT_ERR_SINVAL", f); break;
 
         case FILE_ERR_PARSE:            fputs("FILE_ERR_PARSE", f); break;
         case FILE_INVAL:                fputs("FILE_INVAL", f); break;

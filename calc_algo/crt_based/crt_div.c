@@ -21,14 +21,8 @@ dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, cr
     __CRINT_TRIM_LZ__(rem); CHOOSE_OPTION((quot->sign), (!(quot->n)), (1), (quot->sign));
     rem->limbs[0] = remainder; rem->n = !!(rem); rem->sign = 1; return CRINT_SUCCESS;
 }
-dnml_status __CRINT_NEWTON_RECP__(
-    const crint *dend, const crint *div,
-    crint *quot, crint *rem
-) {}
-dnml_status __CRINT_DIVMOD_DISP__(
-    const crint *a, const crint *b,
-    crint *quot, crint *rem
-) {
+dnml_status __CRINT_NEWTON_RECP__(const crint *dend, const crint *div, crint *quot, crint *rem) {}
+dnml_status __CRINT_DIV_DISP__(const crint *a, const crint *b, crint *quot, crint *rem) {
     if (b->n < BIGINT_SHORT) return __CRINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
     else return __CRINT_NEWTON_RECP__(a, b, quot, rem);
 }
