@@ -42,6 +42,7 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
 
 // Mutative Macros
 #define _pre_assert(x, cleanup) do { \
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, NULL)), pointer_null, {}); \
     DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, {cleanup}); \
     DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, {cleanup}); \
 } while(0);
@@ -259,6 +260,7 @@ crint crint_tover_copy(const crint source__, size_t output_cap, dnml_status *__e
 //* ===================================== STATE ALTERATION FUNCTIONS ===================================== *//
 dnml_status crint_canonicalize(crint *x);
 dnml_status crint_normalize(crint *X);
+dnml_status crint_transfer(crint *dst, crint *src);
 dnml_status crint_resize(crint *x, size_t k);
 dnml_status crint_reserve(crint *x, size_t k);
 dnml_status crint_shrink(crint *x, size_t k);

@@ -133,13 +133,12 @@ void __CRINT_MAGMINV__(crint *res, crint *a, crint *b, crint *mod) {}
 //* ============================================ SIGNED ARITHMETIC ========================================== */
 /* ------------------- MUTATIVE ARITHMETIC -------------------- */
 dnml_status crint_mut_mulu64(crint *x, uint64_t val) {
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, {
-        if (_lib_crt_neq((ptr_t)(x->limbs), NULL)) *(x->limbs) = 0;
-        crint_free(x); x->limbs = 0; x->cap = 0; 
-        x->n = 0; x->poisoned = 0; x->sign = 0; val = 0;
-    });
-    DNML_TEST_ASSERT((x->poisoned), crint_poisoned, {});
-    dnml_status ret_stat = CRINT_SUCCESS; uint64_t mask = UINT64_MAX;
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, NULL)), pointer_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((x->poisoned), crint_poisoned, { crint_free(x); });
+    if (_lib_crt_eq((ptr_t)x, NULL)) { x = 0; val = 0; return CRINT_NULL; }
+    if (!crint_pvalidate(x)) { x = 0; val = 0; return CRINT_ERR_INVAL; }
+    /* Actual Operation */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
     dnml_status reserve_stat = crint_reserve(x, x->n + 1);
     CHOOSE_OPTION((ret_stat), 
@@ -153,13 +152,21 @@ dnml_status crint_mut_mulu64(crint *x, uint64_t val) {
         (_lib_crt_eq(snew_stat, DNML_ALLOC_OOM) &
         (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
-    ); crint *src, *prod;
+    ); crint *src, *prod; limb_t *prev_src_buf;
     limb_t fsbuf[FAKE_BUF_CAP] = {UINT64_MAX}, fpbuf[FAKE_BUF_CAP + 1] = {0}, fake_mul = UINT64_C(0x123456789ABCDEF0);
     crint fake_source = { .limbs = fsbuf, .cap = FAKE_BUF_CAP, .n = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     crint fake_prod = { .limbs = fpbuf, .cap = FAKE_BUF_CAP + 1, .n = 0, .sign = 1, .poisoned = false };
     CHOOSE_OPTION((src), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), ((ptr_t)x), ((ptr_t)&fake_source));
     CHOOSE_OPTION((prod), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), ((ptr_t)&tmp_prod), ((ptr_t)&fake_prod));
-
+    __CRINT_MAGMUL_U64__(prod, src, _lib_crt_select(_lib_crt_eq(ret_stat, CRINT_SUCCESS), val, fake_mul));
+    CHOOSE_OPTION((prev_src_buf), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), ((ptr_t)x->limbs), ((ptr_t)NULL));
+    crint_transfer(src, prod); free(prev_src_buf); // Would lead to a standard no-op
+    /* Post-operation Aggressive Cleanup */ // clang-format off
+    __libdnml_smemwipe_u64(fsbuf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
+    __libdnml_smemwipe_u64(fpbuf, FAKE_BUF_CAP + 1, 0, FAKE_BUF_CAP, false);
+    reserve_stat = 0; pbv_crint_clear(tmp_prod); snew_stat = 0; src = 0; 
+    prod = 0; prev_src_buf = 0; fake_mul = 0; pbv_crint_clear(fake_source); 
+    pbv_crint_clear(fake_prod); x = 0; val = 0; return ret_stat;
 }
 dnml_status crint_mut_divu64(crint *x, uint64_t val) {}
 dnml_status crint_mut_modu64(crint *x, uint64_t val) {}

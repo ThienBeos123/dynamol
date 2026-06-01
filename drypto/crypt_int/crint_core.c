@@ -7,7 +7,7 @@
 dnml_status crint_free(crint *x) {
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, NULL)), pointer_null, {});
     if (_lib_crt_eq((ptr_t)x, NULL)) { x = 0; return CRINT_NULL; }
-    if (_lib_crt_neq((ptr_t)x->limbs, NULL)) free(x->limbs); // clang-format off
+    free(x->limbs); // clang-format off
     x->limbs = NULL; x->cap = 0; x->n = 0;
     x->poisoned = 0; x->sign = 0; x = 0; // clang-format on
 }
@@ -1573,11 +1573,12 @@ dnml_status crint_transfer(crint *dst, crint *src) {
     DNML_TEST_ASSERT((__STORAGE_VAL__(dst) & __STORAGE_VAL__(src)), store_inval, { crint_free(dst); crint_free(src); });
     if (_lib_crt_eq((ptr_t)dst, NULL) | _lib_crt_eq((ptr_t)src, NULL)) { dst = 0; src = 0; return CRINT_NULL;}
     if (!__STORAGE_VAL__(dst) | !__STORAGE_VAL__(src)) { dst = 0; src = 0; return CRINT_ERR_SINVAL; } // clang-format off
+    crint_free(dst);
     dst->limbs = src->limbs; dst->n = src->n; dst->cap = src->cap;
     dst->sign = src->sign; dst->poisoned = src->poisoned;
     /* Invalidate src */
-    src->limbs = NULL; src->n = 0; src->cap = 0; src->sign = 1; 
-    src->poisoned = 0; dst = 0; src = 0; return CRINT_SUCCESS; // clang-format on
+    src->limbs = NULL; src->n = 0; src->cap = 1; src->sign = 1;
+    src->poisoned = false; dst = 0; src = 0; return CRINT_SUCCESS; // clang-format on
 }
 dnml_status crint_resize(crint *x, size_t k) {
     // Pre-operation Validation & Static Analysis
