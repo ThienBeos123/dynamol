@@ -1,0 +1,11 @@
+Diagnostics:
+  # 1. Manage Clang-Tidy Rules
+  ClangTidy:
+    Add:
+      - bugprone-macro-*
+    Remove:
+      - readability-*
+      - bugprone-*
+
+  # 2. Manage native clangd include warnings separately
+  UnusedIncludes: None

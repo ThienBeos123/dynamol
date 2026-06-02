@@ -33,9 +33,10 @@ typedef enum {
     CRINT_SUCCESS = 200,     // 200
     CRINT_POISON,            // 201
     CRINT_ERR_RANGE,         // 202
-    CRINT_NULL,              // 203
-    CRINT_ERR_INVAL,         // 204
-    CRINT_ERR_SINVAL,        // 205
+    CRINT_ERR_DOMAIN,        // 203
+    CRINT_NULL,              // 204
+    CRINT_ERR_INVAL,         // 205
+    CRINT_ERR_SINVAL,        // 206
 
     DARENA_OVERFLOW = 300,  // 301
     DARENA_SUCCESS,         // 302
@@ -47,6 +48,7 @@ typedef enum {
     DNML_ALLOC_OOM,             // 403
     DNML_NULL_EPARAM,           // 404
     DNML_INVAL_CAP_REQUEST,     // 405
+    DNML_LIB_INISUCCESS,        // 406
 } dnml_status;
 
 static inline void _print_dnml_status(dnml_status a, FILE *f) {
@@ -75,6 +77,7 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case CRINT_SUCCESS:     fputs("CRINT_SUCCESS", f); break;
         case CRINT_POISON:      fputs("CRINT_POISON", f); break;
         case CRINT_ERR_RANGE:   fputs("CRINT_ERR_RANGE", f); break;
+        case CRINT_ERR_DOMAIN:  fputs("CRINT_ERR_DOMAIN", f); break;
         case CRINT_NULL:        fputs("CRINT_NULL", f); break;
         case CRINT_ERR_INVAL:   fputs("CRINT_ERR_INVAL", f); break;
         case CRINT_ERR_SINVAL:  fputs("CRINT_ERR_SINVAL", f); break;
@@ -87,6 +90,7 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case DNML_INVAL_CAP_REQUEST:    fputs("DNML_INVAL_CAP_REQUEST", f); break;
         case DARENA_OVERFLOW:           fputs("DARENA_OVERFLOW", f); break;
         case DARENA_SUCCESS:            fputs("DARENA_SUCCESS", f); break;
+        case DNML_LIB_INISUCCESS:       fputs("DNML_LIB_INISUCCESS", f); break;
     }
 }
 

@@ -17,7 +17,7 @@ size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size) {
     size_t mul_divmod_size = max(
         __BIGINT_MUL_WS__(anumerator_size, n_size), max(
             __BIGINT_MUL_WS__(aaslimbs_size, prelimbs_size), 
-            __BIGINT_DIVMOD_WS__(numlimbs_size, n_size)
+            __BIGINT_DIV_WS__(numlimbs_size, n_size)
         )
     ); return numlimbs_size + prelimbs_size + tmp_size 
               + aaslimbs_size + anumerator_size 
@@ -42,7 +42,7 @@ void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx b
     BIGINT_TEMP(precomp, precomp_size, barett_ctx, err_check, end_stat);
     BIGINT_TEMP(tmp, n->n, barett_ctx, err_check, end_stat);
     numer.limbs[(n->n << 1)] = 1;
-    __BIGINT_DIVMOD_DISPATCH__(&numer, n, &precomp, &tmp, barett_ctx);
+    __BIGINT_DIV_DISPATCH__(&numer, n, &precomp, &tmp, barett_ctx);
 
 
     //* ---- 2. NUMERATOR CALCULATION ---- *//
@@ -91,7 +91,8 @@ void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
     for (size_t i = 0; i < mredc_ctx.k; ++i) {
         uint64_t lo, hi; m = t->limbs[i] * mredc_ctx.nprime;
         lo = __MUL_UI64__(mredc_ctx.n->limbs[i], m, &hi);
-        t->limbs[i] = __ADD_UI64__(t->limbs[i], lo + carry, &carry);
+        uint8_t u8_carry = (uint8_t)carry;
+        t->limbs[i] = __ADD_UI64__(t->limbs[i], lo + carry, &u8_carry);
         carry += hi;
     } t->limbs[mredc_ctx.k] += carry;
     // Right Limb Shift by k  --  t +>> k (+>> or +<< means LIMB SHIFT)
@@ -101,8 +102,8 @@ void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
     __BIGINT_INTERNAL_COPY__(rem, t);
 }
 void __BIGINT_MOD_DISPATCH__(const bigInt *a, const bigInt *n, bigInt *rem, bigInt *tmp_quot, calc_ctx mod_ctx) {
-    if (n->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, n->limbs[0], &tmp_quot, rem);
-    else if (n->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, n, &tmp_quot, rem, mod_ctx);
+    if (n->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem);
+    else if (n->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, n, tmp_quot, rem, mod_ctx);
     else if (n->n < BIGINT_BARETT) __BIGINT_BARETT__(a, n, rem, mod_ctx);
-    else __BIGINT_NEWTON__(a, n, &tmp_quot, rem, mod_ctx);
+    else __BIGINT_NEWTON__(a, n, tmp_quot, rem, mod_ctx);
 }

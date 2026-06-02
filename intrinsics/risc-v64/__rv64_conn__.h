@@ -58,8 +58,8 @@ extern uint8_t _rv64_crt_gti64(int64_t a, int64_t b);
 extern uint8_t _rv64_crt_leqi64(int64_t a, int64_t b);
 extern uint8_t _rv64_crt_geqi64(int64_t a, int64_t b);
 // _rv64_crt_equal.S
-extern uint8_t _rv64_crt_ispos(uint64_t a);
-extern uint8_t _rv64_crt_isneg(uint64_t a);
+extern uint8_t _rv64_crt_ispos(int64_t a);
+extern uint8_t _rv64_crt_isneg(int64_t a);
 extern uint8_t _rv64_crt_eq(uint64_t a, uint64_t b);
 extern uint8_t _rv64_crt_neq(uint64_t a, uint64_t b);
 extern uint64_t _rv64_crt_select(uint8_t cond, uint64_t a, uint64_t b);

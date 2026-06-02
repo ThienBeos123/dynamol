@@ -185,7 +185,7 @@ uint8_t __BIGINT_MILLER_RABIN__(const bigInt *n, const bigInt* base, calc_ctx mr
     // 2nd test: a^(2^r * d) mod(n)
     if (unlikely(n->n <= BIGINT_CLASSICAL)) {
         for (uint64_t mrr = 1; mrr < s; ++mrr) {
-            __BIGINT_CLASSICAL_MODMUL__(&x, &x, n, &x, mrabin_ctx);
+            __BIGINT_CMODMUL__(&x, &x, n, &x, mrabin_ctx);
             if (x.n == 1 && x.limbs[0] == 1) { prim_status = 1; break; }
             else if (!__BIGINT_INTERNAL_COMP__(&x, &n_minus_one)) { prim_status = 1; break; }
         }

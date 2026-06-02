@@ -204,7 +204,7 @@ _x86sv_crt_wdiv128:
     ; security because pointer presence is an execution environment property, 
     ; completely independent of secret mathematical data keys.
     test r8, r8
-    jz .done
+    jz .crt_done
     mov [r8], r9b ; *overflowed = overflow_flag
     /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
     mov rdi, 0 # Function parameter / argument
@@ -217,7 +217,7 @@ _x86sv_crt_wdiv128:
     mov r12, 0
     mov r13, 0
     mov r14, 0
-.done:
+.crt_done:
     /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
     mov rdi, 0 # Function parameter / argument
     mov rsi, 0 # Function parameter / argument

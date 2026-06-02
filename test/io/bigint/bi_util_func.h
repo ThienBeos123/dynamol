@@ -8,6 +8,7 @@
 #include <libdnml_types.h>
 #include "../../../test_ui/_strui.h"
 #include "../_ioconv.h"
+#include "../../../dynamol/bigint/bigInt_func.h"
 
 
 void _suite_slices(

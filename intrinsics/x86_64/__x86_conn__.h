@@ -71,17 +71,17 @@ uint8_t _x86sv_crt_geq(uint64_t a, uint64_t b);
 #define _x86_crt_leq    _x86sv_crt_leq
 #define _x86_crt_geq    _x86sv_crt_geq
 // _x86_sysv_crt_i64cmp.S
-uint8_t _x86sv_crt_lti64(uint64_t a, uint64_t b);
-uint8_t _x86sv_crt_gti64(uint64_t a, uint64_t b);
-uint8_t _x86sv_crt_leqi64(uint64_t a, uint64_t b);
-uint8_t _x86sv_crt_geqi64(uint64_t a, uint64_t b);
+uint8_t _x86sv_crt_lti64(int64_t a, int64_t b);
+uint8_t _x86sv_crt_gti64(int64_t a, int64_t b);
+uint8_t _x86sv_crt_leqi64(int64_t a, int64_t b);
+uint8_t _x86sv_crt_geqi64(int64_t a, int64_t b);
 #define _x86_crt_lti64     _x86sv_crt_lti64
 #define _x86_crt_gti64     _x86sv_crt_gti64
 #define _x86_crt_leqi64    _x86sv_crt_leqi64
 #define _x86_crt_geqi64    _x86sv_crt_geqi64
 // _x86_sysv_crt_equal.S
-uint8_t _x86sv_crt_ispos(uint64_t a);
-uint8_t _x86sv_crt_isneg(uint64_t a);
+uint8_t _x86sv_crt_ispos(int64_t a);
+uint8_t _x86sv_crt_isneg(int64_t a);
 uint8_t _x86sv_crt_eq(uint64_t a, uint64_t b);
 uint8_t _x86sv_crt_neq(uint64_t a, uint64_t b);
 uint64_t _x86sv_crt_select(uint8_t cond, uint64_t a, uint64_t b);
@@ -155,17 +155,17 @@ uint8_t _x86w64_crt_geq(uint64_t a, uint64_t b);
 #define _x86_crt_leq    _x86w64_crt_leq
 #define _x86_crt_geq    _x86w64_crt_geq
 // _x86_win64_crt_i64cmp.S
-uint8_t _x86w64_crt_lti64(uint64_t a, uint64_t b);
-uint8_t _x86w64_crt_gti64(uint64_t a, uint64_t b);
-uint8_t _x86w64_crt_leqi64(uint64_t a, uint64_t b);
-uint8_t _x86w64_crt_geqi64(uint64_t a, uint64_t b);
+uint8_t _x86w64_crt_lti64(int64_t a, int64_t b);
+uint8_t _x86w64_crt_gti64(int64_t a, int64_t b);
+uint8_t _x86w64_crt_leqi64(int64_t a, int64_t b);
+uint8_t _x86w64_crt_geqi64(int64_t a, int64_t b);
 #define _x86_crt_lti64     _x86w64_crt_lti64
 #define _x86_crt_gti64     _x86w64_crt_gti64
 #define _x86_crt_leqi64    _x86w64_crt_leqi64
 #define _x86_crt_geqi64    _x86w64_crt_geqi64
 // _x86_win64_crt_equal.S
-uint8_t _x86w64_crt_ispos(uint64_t a);
-uint8_t _x86w64_crt_isneg(uint64_t a);
+uint8_t _x86w64_crt_ispos(int64_t a);
+uint8_t _x86w64_crt_isneg(int64_t a);
 uint8_t _x86w64_crt_eq(uint64_t a, uint64_t b);
 uint8_t _x86w64_crt_neq(uint64_t a, uint64_t b);
 uint64_t _x86w64_crt_select(uint8_t cond, uint64_t a, uint64_t b);

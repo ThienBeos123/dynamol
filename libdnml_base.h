@@ -13,13 +13,13 @@ static volatile uint8_t _libinit = 0;
 //* ---------- LIBRARY INITIALIZATION FUNCTIONS ---------- *//
 // Library Initialization
 static inline dnml_status _libdnml_init(void) {
-    if (_libinit) return;
+    if (_libinit) return DNML_LIB_INISUCCESS;
     _libdnml_detect_hwcaps();
 #if __compiler_clang || __compiler_gcc || __compiler_msvc
     // Compiler built-ins cover most arithmetic/bitwise optimizations.
     // Hardware RNG and halt hooks still require explicit initialization.
     _libinit = 1;
-    return;
+    return DNML_LIB_INISUCCESS;
 #else
     // Unknown compiler
     // --- Performance-based Intrinsics Dispatch ---
@@ -32,7 +32,7 @@ static inline dnml_status _libdnml_init(void) {
     // --------- MODULES INITIALIZATION ---------
     if (_init_dynamol_bigint() == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; // dynamol/bigint
     if (_init_drypto_crint() == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; // drypto/crypt_int
-    _libinit = 1;
+    _libinit = 1; return DNML_LIB_INISUCCESS;
 #endif
 }
 static inline uint8_t _libdnml_cinit(void) { return _libinit; }

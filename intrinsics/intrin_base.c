@@ -248,7 +248,7 @@ _libdnml_crt_cmp_ftable.is_neg = _arm64_crt_isneg;
 _libdnml_crt_cmp_ftable.is_pos = _arm64_crt_ispos;
 _libdnml_crt_cmp_ftable.eq_func = _arm64_crt_eq;
 _libdnml_crt_cmp_ftable.neq_func = _arm64_crt_neq;
-_libdnml_crt_cmp_ftable.select_fn = __arm64_crt_select;
+_libdnml_crt_cmp_ftable.select_fn = _arm64_crt_select;
 #elif __ARCH_RVI64__
 // U64 COMPARISONS
 _libdnml_crt_cmp_ftable.lt_func = _rv64_crt_lt;

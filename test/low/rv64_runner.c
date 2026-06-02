@@ -1,5 +1,5 @@
-#include "../intrinsics/risc-v64/_rv64_conn.h"
-#include "../intrinsics/zvanillc/_vanillc_conn.h"
+#include "../intrinsics/risc-v64/__rv64_conn__.h"
+#include "../intrinsics/zvanillc/__vanillc_conn__.h"
 // Utilities
 #include "../util/util.h"
 #include "../test_ui/lowui.h"

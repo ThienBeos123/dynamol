@@ -29,63 +29,66 @@ extern "C" {
 #define DASI_DC_PARSE            750 // digits > 750
 
 /* Multiplication */
-typedef enum {
-    BIGINT_SCHOOLBOOK       = 24,    BIGINT_KARATSUBA        = 72,
-    BIGINT_TOOM_3           = 144,   BIGINT_TOOM_4           = 288,  BIGINT_TOOM_5           = 512,
-    BIGINT_TOOM_6p5         = 1024,  BIGINT_TOOM_7p5         = 1536, BIGINT_TOOM_8p5         = 3072,
-    BIGINT_SSA,
+typedef enum MUL_THRESHOLDS {
+    BIGINT_SCHOOLBOOK = 24,
+    BIGINT_KARATSUBA = 72,
+    BIGINT_TOOM_3 = 144, 
+    BIGINT_TOOM_4 = 288, 
+    BIGINT_TOOM_5 = 512,
+    BIGINT_TOOM_6p5 = 1024, 
+    BIGINT_TOOM_7p5 = 1536,
+    BIGINT_TOOM_8p5 = 3072,
+    BIGINT_SSA
 } MUL_THRESHOLDS;
 
 /* Division + Euclidean Modulo */
-typedef enum {
-    BIGINT_SHORT                = 1,   // n < 1        DIV + MOD
-    BIGINT_KNUTH                = 64,  // n < 64       DIV + MOD
-    BIGINT_BURNIKEL             = 512, // n < 512      DIV
-    BIGINT_BARETT               = 512, // n < 512            MOD
-    BIGINT_NEWTON,                     // n >= 512     DIV + MOD
+typedef enum DIV_THRESHOLDS {
+    BIGINT_SHORT = 1,           // n < 1        DIV + MOD
+    BIGINT_KNUTH = 64,          // n < 64       DIV + MOD
+    BIGINT_BURNIKEL = 512,      // n < 512      DIV
+    BIGINT_BARETT = 512,        // n < 512            MOD
+    BIGINT_NEWTON,              // n >= 512     DIV + MOD
 } DIV_THRESHOLDS;
 
 /* Power, Roots, & Miscallenous Algebraic Operations */
-typedef enum {
+typedef enum ALG_THRESHOLDS {
     /* Power / Exponentiation */
-    BIGINT_BINARY       = 8,
-    BIGINT_FIXED        = 32,
+    BIGINT_BINARY = 8,
+    BIGINT_FIXED = 32,
     BIGINT_SLIDING,
     /* Square root / Nth Root */
-    BIGINT_NAIVE            = 1,
-    BIGINT_NEWTON_RAPHSON,
+    BIGINT_NAIVE = 1,
+    BIGINT_NEWTON_RAPHSON
 } ALG_THRESHOLDS ;
 
 typedef enum {
     /* GCD - Greatest Common Divisor */
-    BIGINT_EUCLID           = 1,
-    BIGINT_STEIN            = 512,
-    BIGINT_LEHMER           = 4096,
+    BIGINT_EUCLID = 1,
+    BIGINT_STEIN = 512,
+    BIGINT_LEHMER = 4096,
     BIGINT_HALF_GCD,
 
     /* Primality Testing */ 
-    TRIAL_DIVISION          = 207936, // Value, not limbs
-    DETERMINISTIC_MR        = 207936, // Value, not limbs
-    BPSW_ONLY               = 128, // Baillie-PSW ONLY
-    MIXED_MAIN                   , // Baillie-PSW + 10-20 Miller-Rabin random-base rounds
-    ECPP                    = 0, // PROOF OF PRIMALITY ONLY
+    TRIAL_DIVISION = 207936, // Value, not limbs
+    DETERMINISTIC_MR = 207936, // Value, not limbs
+    BPSW_ONLY = 128, // Baillie-PSW ONLY
+    MIXED_MAIN // Baillie-PSW + 10-20 Miller-Rabin random-base rounds
 } NUM_THEORY_THRESHOLDS;
 
 /* Modular Arithmetic */
 typedef enum {
     /* Modular Multiplication */
-    BIGINT_CLASSICAL    = 64,
+    BIGINT_CLASSICAL = 64,
     BIGINT_MONTGOMERY,
     /* Modular Exponentiation */
-    BIGINT_MOD_BINARY   = 8,
-    BIGINT_MONT_BINARY  = 512,
-    BIGINT_MOD_FIXED    = 1536,
+    BIGINT_MOD_BINARY = 8,
+    BIGINT_MONT_BINARY = 512,
+    BIGINT_MOD_FIXED = 1536,
     BIGINT_MOD_SLIDING,
-    //todo MODULAR SQUARES HERE
     /* Modular Inverse */
-    BIGINT_XEUCLID          = 256,
-    BIGINT_BINARY_XGCD      = 2048,
-    BIGINT_HALF_XGCD,
+    BIGINT_XEUCLID = 256,
+    BIGINT_BINARY_XGCD = 2048,
+    BIGINT_HALF_XGCD
 } MOD_ARITHMETIC_THRESHOLDS;
 
 #define MRROUNDS_DNML               5 // Dynamol - Scientific Calculation

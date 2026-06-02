@@ -46,28 +46,28 @@ size_t __BIGINT_SLIDIN_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
 }
 size_t __BIGINT_HERON_WS__(size_t a_size) {
     size_t raw_size = 3 * a_size + 1;
-    size_t fcall = __BIGINT_DIVMOD_WS__(a_size, a_size);
+    size_t fcall = __BIGINT_DIV_WS__(a_size, a_size);
     return raw_size + fcall;
 }
 size_t __BIGINT_NEWTON_CBRT_WS__(size_t a_size) {
     size_t raw_size = 7 * (a_size + 1);
     size_t fcall = max(
         __BIGINT_MUL_WS__(a_size + 1, a_size + 1),
-        __BIGINT_DIVMOD_WS__(a_size, (a_size + 1) << 1)
+        __BIGINT_DIV_WS__(a_size, (a_size + 1) << 1)
     ); return raw_size + fcall;
 }
 size_t __BIGINT_NEWTON_2NROOT_WS__(size_t a_size, uint64_t root) {
     size_t raw_size = 3 * (a_size * (root - 1));
     size_t fcall = max(
         __BIGINT_EXP_WS__(a_size, root - 1),
-        __BIGINT_DIVMOD_WS__(a_size, a_size * (root - 1))
+        __BIGINT_DIV_WS__(a_size, a_size * (root - 1))
     ); return raw_size + a_size + fcall;
 }
 size_t __BIGINT_NEWTON_NROOT_WS__(size_t a_size, uint64_t root) {
     size_t raw_size = 3 * (a_size * (root - 1));
     size_t fcall = max(
         __BIGINT_EXP_WS__(a_size, root - 1),
-        __BIGINT_DIVMOD_WS__(a_size, a_size * (root - 1))
+        __BIGINT_DIV_WS__(a_size, a_size * (root - 1))
     ); return raw_size + a_size + fcall;
 }
 
@@ -187,7 +187,7 @@ void __BIGINT_HERON__(bigInt *res, const bigInt *a, calc_ctx heron_ctx) {
     guess.n = (guess_bits << 6) + 1;
     while (true) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer
-        __BIGINT_DIVMOD_DISPATCH__(a, &guess, &ratio, &next, heron_ctx);
+        __BIGINT_DIV_DISPATCH__(a, &guess, &ratio, &next, heron_ctx);
         __BIGINT_ADD_WC__(&next, &guess, &ratio);
         __BIGINT_INTERNAL_RSHIFT__(&next, 1);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
@@ -207,7 +207,7 @@ void __BIGINT_NEWTON_CBRT__(bigInt *res, const bigInt *a, calc_ctx cbrt_ctx) {
     guess.n = (guess_bits << 6) + 1;
     while (true) {
         __BIGINT_MUL_DISPATCH__(&guess, &guess, &next, cbrt_ctx);
-        __BIGINT_DIVMOD_DISPATCH__(a, &next, &ratio, &tmp, cbrt_ctx);
+        __BIGINT_DIV_DISPATCH__(a, &next, &ratio, &tmp, cbrt_ctx);
         __BIGINT_INTERNAL_COPY__(&next, &guess);
         __BIGINT_INTERNAL_LSHIFT__(&next, 1);
         __BIGINT_ADD_WC__(&next, &next, &ratio);
@@ -264,7 +264,7 @@ void __BIGINT_NEWTON_2NROOT__(bigInt *res, const bigInt *a, uint64_t root, calc_
     __BIGINT_EXP_DISPATCH__(&xpow, &guess, (root - 1), _2nroot_ctx);
     while (true) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer;
-        __BIGINT_DIVMOD_DISPATCH__(a, &xpow, &ratio, &next, _2nroot_ctx);
+        __BIGINT_DIV_DISPATCH__(a, &xpow, &ratio, &next, _2nroot_ctx);
         __BIGINT_INTERNAL_COPY__(&next, &guess);
         __BIGINT_INTERNAL_MUL_UI64__(&next, (root - 1));
         __BIGINT_ADD_WC__(&next, &next, &ratio);
@@ -288,7 +288,7 @@ void __BIGINT_NEWTON_NROOT__(bigInt *res, const bigInt *a, uint64_t root, calc_c
     __BIGINT_EXP_DISPATCH__(&xpow, &guess, (root - 1), nroot_ctx);
     while (true) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer;
-        __BIGINT_DIVMOD_DISPATCH__(a, &xpow, &ratio, &next, nroot_ctx);
+        __BIGINT_DIV_DISPATCH__(a, &xpow, &ratio, &next, nroot_ctx);
         __BIGINT_INTERNAL_COPY__(&next, &guess);
         if (__IS_2POW__(root - 1)) {
             __BIGINT_INTERNAL_LSHIFT__(&next, __CTZ_UI64__(root - 1));

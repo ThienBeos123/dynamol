@@ -1,6 +1,6 @@
 // Functions to compare
-#include "../../intrinsics/arm64/_arm64_conn.h"
-#include "../../intrinsics/zvanillc/_vanillc_conn.h"
+#include "../../intrinsics/arm64/__arm64_conn__.h"
+#include "../../intrinsics/zvanillc/__vanillc_conn__.h"
 // Utilities
 #include "../../util/util.h"
 #include "../../test_ui/lowui.h"

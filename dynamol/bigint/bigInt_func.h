@@ -43,7 +43,7 @@ extern "C" {
 //? ======================= OUT-OF-MEMORY HANDLING MACROS ====================== ?//
 /* Functional Macros */
 #define heap_alloc_oom(err_check) do { \
-    test_assert(((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+    test_assert((((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
             arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
         }, DNML_ALLOC_OOM \
@@ -52,8 +52,8 @@ extern "C" {
 #define arena_poisoined(arena_name) do { \
     test_assert( \
         /* Static Analysis - Assert Parameters */ \
-        (!(arena_name->poisoined)), alloc_oom, { \
-            arena_clear(arena_name); arena_destruct(arena_name); \
+        (!((arena_name)->poisoined)), alloc_oom, { \
+            arena_clear((arena_name)); arena_destruct((arena_name)); \
             arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
         }, DNML_ALLOC_OOM /* Error Returns Parameters */ \
     ) \
@@ -61,8 +61,8 @@ extern "C" {
 #define arena_alloc_oom(err_check, arena_name) do { \
     test_assert( \
         /* Static Analysis - Assert Parameters */ \
-        ((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
-            arena_clear(arena_name); arena_destruct(arena_name); \
+        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
+            arena_clear((arena_name)); arena_destruct((arena_name)); \
             arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
         }, DNML_ALLOC_OOM /* Error Returns Parameters */ \
     ); \
@@ -71,43 +71,43 @@ extern "C" {
 
 /* Mutative Macros */
 #define heap_alloc_oom_void(err_check, err) do { \
-    test_assert_mut(((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+    test_assert_mut((((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
             arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, err, DNML_ALLOC_OOM, ; \
+        }, (err), DNML_ALLOC_OOM, ; \
     ); \
 } while(0);
 #define heap_alloc_oom_mut(err_check, err) do { \
-    test_assert_mut(((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
+    test_assert_mut((((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
             arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, err, DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() \
+        }, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() \
     ); \
 } while(0);
 #define arena_poison_mut(arena_name, err) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
-        (!(arena_name->poisoined)), alloc_oom, { \
-            arena_clear(arena_name); arena_destruct(arena_name); \
+        (!((arena_name)->poisoined)), alloc_oom, { \
+            arena_clear((arena_name)); arena_destruct((arena_name)); \
             arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, err, DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+        }, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
     ) \
 } while(0);
 #define arena_alloc_oom_mut(err_check, arena_name, err) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
-        ((err_check != DNML_ALLOC_OOM)), alloc_oom, { \
-            arena_clear(arena_name); arena_destruct(arena_name); \
+        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
+            arena_clear((arena_name)); arena_destruct((arena_name)); \
             arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, err, DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+        }, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
     ); \
 } while(0);
-#define func_ret_oom(err) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+#define func_ret_oom(err) { *(err) = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
 #define ocopy_check(err_check, arena_name) do { \
     DNML_TEST_ASSERT( \
         /* Static Analysis - Assert Parameters */ \
-        ((err_check != BIGINT_ERR_RANGE)), inval_cap, { \
-            arena_clear(arena_name); arena_destruct(arena_name); \
+        (((err_check) != BIGINT_ERR_RANGE)), inval_cap, { \
+            arena_clear((arena_name)); arena_destruct((arena_name)); \
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_); \
         } \
     ); \
@@ -120,10 +120,10 @@ extern "C" {
 } while (0);
 #define clear_arena_io do { arena_clear(&___DASI_IO_ARENA_); arena_destruct(&___DASI_IO_ARENA_); } while(0);
 #define mut_gret(err, err_code, ret) do { \
-    if (err != NULL) *err = err_code; return ret; \
+    if ((err) != NULL) *(err) = err_code; return ret; \
 } while(0)
 #define mut_err(err, err_code) do { \
-    if (err != NULL) *err = err_code; \
+    if ((err) != NULL) *(err) = err_code; \
     return __BIGINT_ERROR_VALUE__(); \
 } while(0)
 

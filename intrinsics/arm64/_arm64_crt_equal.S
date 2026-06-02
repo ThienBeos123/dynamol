@@ -26,7 +26,7 @@ FUNC_SIZE(ASM_SYM(arm64_crt_select))
 
 
 /* ------- SIGNED 64 BIT POSITIVITY CHECK -------
-* uint8_t _arm64_crt_ispos(int64_t a, int64_t b)
+* uint8_t _arm64_crt_ispos(int64_t a)
 * arg: x0: int64_t a    (64 BIT)
 * ret: x0: 1 (true) | 0 (false)
 */
@@ -37,7 +37,7 @@ ASM_SYM(arm64_crt_ispos):
 
 
 /* ------- UNSIGNED 64 BIT NEGATIVITIY CHECK -------
-* uint8_t _arm64_crt_isneg(int64_t a, int64_t b)
+* uint8_t _arm64_crt_isneg(int64_t a)
 * arg: x0: int64_t a    (64 BIT)
 * ret: x0: 1 (true) | 0 (false)
 */

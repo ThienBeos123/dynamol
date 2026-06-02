@@ -1,5 +1,5 @@
-#include "../../intrinsics/x86_64/_x86_conn.h"
-#include "../../intrinsics/zvanillc/_vanillc_conn.h"
+#include "../../intrinsics/x86_64/__x86_conn__.h"
+#include "../../intrinsics/zvanillc/__vanillc_conn__.h"
 // Utilities
 #include "../../util/util.h"
 #include "../../test_ui/lowui.h"

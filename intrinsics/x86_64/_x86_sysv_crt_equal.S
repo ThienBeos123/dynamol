@@ -20,8 +20,8 @@ asm_text_section
 
 
 /* ------- 64 BIT POSITIVITY CHECK -------
-* uint8_t _x86sv_crt_ispos(uint64_t a, uint64_t b)
-* arg: rdi -- uint64_t a   (64 BIT)
+* uint8_t _x86sv_crt_ispos(int64_t a)
+* arg: rdi -- int64_t a    (64 BIT)
 * ret: rax -- 1 (true) | 0 (false)
 */
 _x86sv_crt_ispos:
@@ -33,8 +33,8 @@ _x86sv_crt_ispos:
 
 
 /* ------- 64 BIT NEGATIVITY CHECK -------
-* uint8_t _x86sv_crt_isneg(uint64_t a, uint64_t b)
-* arg: rdi -- uint64_t a   (64 BIT)
+* uint8_t _x86sv_crt_isneg(int64_t a)
+* arg: rdi -- int64_t a    (64 BIT)
 * ret: rax -- 1 (true) | 0 (false)
 */
 _x86sv_crt_isneg:

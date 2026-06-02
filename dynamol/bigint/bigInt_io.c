@@ -61,7 +61,7 @@ size_t _finval_charb(const char *str, size_t len, uint8_t base) {
     } return len - whspace;
 }
 static inline void _ASCII_COLUMN__(limb_t val, char* c) {
-    uint8_t *p = &val;
+    uint8_t *p = (uint8_t*)&val;
     for (uint8_t i = 7; i != -1; --i) {
         c[i] = (*p >= 32 && *p <= 126) ? (char)(*p) : '.';
         ++p;
@@ -173,7 +173,7 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
     }
 
     //* ======= 3. Instatiating Temporary BigInt ======= *//
-    dnml_status *err_check; size_t d = strlen(&str[curr_pos]);
+    dnml_status err_check; size_t d = strlen(&str[curr_pos]);
     size_t bits = __BITCOUNT___(d, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     size_t tmp_mark = arena_mark(_DASI_BASE_INIT_ARENA);
@@ -573,8 +573,8 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
     size_t total_needed = digit_needed + sign_space;
     if (str_length < total_needed) return STR_INVALID_CAP;
     if (sign_space) { str[0] = '-'; (*written)++; }
-    size_t tmp_mark = arena_mark(&_DASI_SET_STRING_ARENA);
-    limb_t *tmp_limbs = arena_galloc(&_DASI_SET_STRING_ARENA, x.n * U64_BYTES, &err_check);
+    size_t tmp_mark = arena_mark(_DASI_SET_STRING_ARENA);
+    limb_t *tmp_limbs = arena_galloc(_DASI_SET_STRING_ARENA, x.n * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     memcpy(tmp_limbs, x.limbs, x.n * U64_BYTES);
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n };
@@ -583,7 +583,7 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
     for (size_t i = total_needed - 1; i >= sign_space; --i) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
-    }  arena_reset(&_DASI_SET_STRING_ARENA, tmp_mark); return STR_SUCCESS;
+    }  arena_reset(_DASI_SET_STRING_ARENA, tmp_mark); return STR_SUCCESS;
 }
 dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
     /* Pre-operation Validation & Static Analysis */
@@ -1928,7 +1928,7 @@ size_t bigInt_fscan_size(FILE *stream, uint8_t *baseout, dnml_status *err) {
             } offset_set = (-parse_res - curr_lexpos - 1);
         }
     } fseek(stream, offset_set, SEEK_CUR);
-    int curr_char = fgetc(stream);
+    uint16_t curr_char = fgetc(stream);
     while (curr_char != EOF && curr_char == '0') curr_char = fgetc(stream);
     if (curr_char == EOF) {
         if (sign == -1) { *err = STR_INVALID_SIGN; *baseout = base; return res; }
@@ -1963,7 +1963,7 @@ size_t bigInt_fscan_size(FILE *stream, uint8_t *baseout, dnml_status *err) {
 size_t bigInt_fscanb_size(FILE *stream, uint8_t base, dnml_status *err) {
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     //* Whitespace -> Signs -> Leading Zeros *//
-    uint8_t sign = 1; int curr_char; size_t res = 0;
+    uint8_t sign = 1; uint16_t curr_char; size_t res = 0;
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
     curr_char = fgetc(stream);
     if (curr_char == '-' || curr_char == '+') {
@@ -2045,7 +2045,7 @@ size_t bigInt_fscansa_size(FILE *stream, uint8_t *baseout, size_t bi_size, dnml_
             } offset_set = (-parse_res - curr_lexpos - 1);
         }
     } fseek(stream, offset_set, SEEK_CUR);
-    int curr_char = fgetc(stream);
+    uint16_t curr_char = fgetc(stream);
     while (curr_char != EOF && curr_char == '0') curr_char = fgetc(stream);
     if (curr_char == EOF) {
         if (sign == -1) { *err = STR_INVALID_SIGN; *baseout = base; return res; }
@@ -2092,7 +2092,7 @@ size_t bigInt_fscansa_size(FILE *stream, uint8_t *baseout, size_t bi_size, dnml_
 size_t bigInt_fscanbsa_size(FILE *stream, uint8_t base, size_t bi_size, dnml_status *err) {
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     //* Whitespace -> Signs -> Leading Zeros *//
-    uint8_t sign = 1; int curr_char; size_t res = 0;
+    uint8_t sign = 1; uint16_t curr_char; size_t res = 0;
     while (isspace(fgetc(stream))) fseek(stream, 1, SEEK_CUR); // Whitespace
     curr_char = fgetc(stream);
     if (curr_char == '-' || curr_char == '+') {
@@ -3002,7 +3002,7 @@ dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
 /* --------- Custom Stream INPUT ---------  */
 dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap-allocated Temporary
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN); clearerr(stream);
-    /* Whitespace */ int curr_char;
+    /* Whitespace */ uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != EOF && isspace(curr_char)) 
     scan_eof(curr_char, stream, STR_EMPTY);
     
@@ -3078,7 +3078,7 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
     clearerr(stream);
 
     //* Whitespace *//
-    uint8_t sign = 1; int curr_char;
+    uint8_t sign = 1; uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != EOF && isspace(curr_char))
     scan_eof(curr_char, stream, STR_EMPTY);
 
@@ -3147,7 +3147,7 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     dnml_arena *_DASI_FSGET = _USE_ARENA();
     test_assert(!(_DASI_FSGET->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
-    /* Whitespace */ int curr_char;
+    /* Whitespace */ uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != EOF && isspace(curr_char)) 
     scan_eof(curr_char, stream, STR_EMPTY);
     
@@ -3229,7 +3229,7 @@ dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
     test_assert(!(_DASI_FSGETB->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
 
     //* Whitespace *//
-    uint8_t sign = 1; int curr_char;
+    uint8_t sign = 1; uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != EOF && isspace(curr_char))
     scan_eof(curr_char, stream, STR_EMPTY);
 
@@ -3304,7 +3304,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
     dnml_arena *_DASI_FSGET = _USE_ARENA();
     test_assert(!(_DASI_FSGET->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
     //* Whitespace & Signs *//
-    int curr_char; uint8_t sign = 1, base = 10;
+    uint16_t curr_char; uint8_t sign = 1, base = 10;
     while ((curr_char = fgetc(stream)) != EOF && isspace(curr_char)) 
     scan_eof(curr_char, stream, STR_EMPTY);
     if (curr_char == '-') { sign = -1; curr_char = fgetc(stream); }
@@ -3385,7 +3385,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
     clearerr(stream); dnml_arena *_DASI_FSGETB = _USE_ARENA();
     test_assert(!(_DASI_FSGETB->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
     //* Whitespace *//
-    uint8_t sign = 1; int curr_char;
+    uint8_t sign = 1; uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != EOF && isspace(curr_char))
     scan_eof(curr_char, stream, STR_EMPTY);
 
@@ -3490,7 +3490,7 @@ dnml_status bigInt_limb_dump(FILE *stream, const bigInt x) {
     fputs(          "memloc              offset     value                   ASCII\n", stream);
     char ascii[8];
     for (size_t i = 0; i < x.cap; ++i) {
-        _ASCII_COLUMN__(x.limbs[i], &ascii);
+        _ASCII_COLUMN__(x.limbs[i], ascii);
         fprintf(stream, "%p %#9zx %20" PRIu64 "%.8s", &x.limbs[i], i, x.limbs[i], ascii);
     } fputc('\n', stream);
     fputs(          "--------------------------------------------------------\n", stream);
@@ -3503,7 +3503,7 @@ dnml_status bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase) {
     fputs(          "memloc              offset     value               ASCII\n", stream);
     char ascii[8];
     for (size_t i = 0; i < x.cap; ++i) {
-        _ASCII_COLUMN__(x.limbs[i], &ascii);
+        _ASCII_COLUMN__(x.limbs[i], ascii);
         fprintf(stream, "%p %#9zx %#16" PRIX64 "%.8s", &x.limbs[i], i, x.limbs[i], ascii);
     } fputc('\n', stream);
     fputs(          "--------------------------------------------------------\n", stream);
@@ -3522,7 +3522,7 @@ dnml_status bigInt_bindump(FILE *stream, const bigInt x) {
             d[i] = (temp_val & 1) ? '1' : '0';
             temp_val >>= 1;
         }
-        _ASCII_COLUMN__(x.limbs[i], &ascii);
+        _ASCII_COLUMN__(x.limbs[i], ascii);
         fprintf(stream, "%p %#9zx %.64s %.8s", &x.limbs[i], i, d, ascii);
     } fputc('\n', stream);
     fputs(          "-------------------------------------------------------------------------------------------------------------\n", stream);

@@ -30,7 +30,7 @@ void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t srcl
 void __libdnml_smemset_u64(uint64_t *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop);
 void __libdnml_smemwipe_u64(uint64_t *buf, size_t len, size_t start, size_t end, bool noop);
 void __libdnml_smemcpy_u64(uint64_t *dst, uint64_t *src, size_t len, size_t srclen, size_t start, size_t end, bool noop);
-uint64_t __MAG_I64__(int64_t x);
+uint64_t __CRT_MAG_I64__(int64_t x);
 size_t __clamp_size(size_t cap, size_t insize);
 
 

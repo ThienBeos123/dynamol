@@ -166,11 +166,7 @@ uint8_t _lib_crt_eq(uint64_t x, uint64_t y) {
     return (*_libdnml_crt_cmp_ftable.neq_func)(x, y);
 }
 uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
-    #if __compiler_clang
-        return __builtin_ct_select(cond, a, b);
-    #else
-        return (*_libdnml_crt_cmp_ftable.select_fn)(cond, a, b);
-    #endif
+    return (*_libdnml_crt_cmp_ftable.select_fn)(cond, a, b);
 }
 
 
@@ -182,6 +178,9 @@ uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
 //* ----------------------------------------------------------------------------------------- *//
 typedef uint64_t (*rng_func_t)(int*);
 typedef void (*halt_func_t)(void);
+// Helper Functions
+static void __INTERNAL_MEMCPY_STRICT__(void *buf, const void *src, size_t len) {}
+static void __INTERNAL_MEMWIPE_STRICT__(void *buf, size_t len) {}
 static int __internal_write_seed(
     void *buf, size_t len, int retry_max, 
     rng_func_t hw_rng, halt_func_t hw_halt, 
@@ -253,6 +252,7 @@ static int __internal_write_seed(
     p = 0; rem = 0; sum_len = 0; loop_limit = 0;
     retry_cnt = 0; dummy_sink = 0; return global_status; // clang-format on
 }
+// Main Ones
 int __CPU_CSDBRG_SEED__(void *buf, size_t len, int retry_max, size_t *written) {
     if (_libdnml_crt_sec_ftable.hw_drbg == _cintrin_shallow_rng) { *written = 0; return -1; }
     return __internal_write_seed(
@@ -275,8 +275,6 @@ int __CPU_CSTRNG_SEED__(void *buf, size_t len, int retry_max, size_t *written) {
 //*                                  RANDOM-GENERATION OPERATIONS                             *//
 //* ----------------------------------------------------------------------------------------- *//
 // Helper functions
-static void __INTERNAL_MEMCPY_STRICT__(void *buf, const void *src, size_t len) {}
-static void __INTERNAL_MEMWIPE_STRICT__(void *buf, size_t len) {}
 static inline uint64_t ___get_time_stamp(void) {
 #if __ARCH_X86_64__
     return _rdtsc();

@@ -5,6 +5,8 @@
 asm_text_section
 .globl      ASM_SYM(arm64_hw_drbg)
 .globl      ASM_SYM(arm64_hw_trng)
+.globl      ASM_SYM(arm64_full_halt)
+.globl      ASM_SYM(arm64_shallow_halt)
 
 FUNC_TYPE(ASM_SYM(arm64_hw_drbg))
 FUNC_TYPE(ASM_SYM(arm64_hw_trng))

@@ -11,7 +11,8 @@ void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     for (size_t i = 0; i < max; ++i) {
         uint64_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
         uint64_t y = (i < b->n) ? b->limbs[i] : 0; // Assigning limb at position i of b to x
-        res->limbs[i] = __ADD_UI64__(x, y, &carry); // Do single-limb addition with carry (if have)
+        uint8_t u8_carry = (uint8_t)carry;
+        res->limbs[i] = __ADD_UI64__(x, y, &u8_carry); // Do single-limb addition with carry (if have)
         // Stores the carry
     }
     if (carry) res->limbs[max] = carry; // If there is still a carry
@@ -56,7 +57,8 @@ void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b) {
     ); uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t y = (i < b->n) ? b->limbs[i] : 0;
-        res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
+        uint8_t u8_borrow = (uint64_t)borrow;
+        res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &u8_borrow);
         // Do single-limb subtraction with borrow ---> Stores the borrow
     } res->n = a->n;
 }
@@ -107,7 +109,9 @@ dnml_status __CRINT_ADD_WC__(crint *res, const crint *a, const crint *b) {
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
         CHOOSE_OPTION(x, (_lib_crt_lt(i, a->n)), a_curr, 0);
         CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), b_curr, 0);
-        res->limbs[i] = __CRT_ADD_U64__(x, y, &carry);
+        uint8_t u8_carry = (uint8_t)carry;
+        res->limbs[i] = __CRT_ADD_U64__(x, y, &u8_carry);
+        a_curr = 0; b_curr = 0; u8_carry = 0;
     } res->limbs[max] = carry; res->n = max + (!!carry);
     __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
@@ -124,7 +128,9 @@ dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
         uint64_t curr = b->limbs[i], y;
         // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
         CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), curr, 0);
-        res->limbs[i] = __CRT_SUB_U64__(a->limbs[i], y, &borrow);
+        uint8_t u8_borrow = (uint8_t)borrow;
+        res->limbs[i] = __CRT_SUB_U64__(a->limbs[i], y, &u8_borrow);
+        curr = 0; u8_borrow = 0;
     } res->n = a->n; __CRINT_TRIM_LZ__(res);
     __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;

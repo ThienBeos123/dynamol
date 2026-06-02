@@ -14,7 +14,6 @@
 
 #if __ARCH_ARM64__
 #include "__arm64_macros.h"
-#include <_libdnml_config/numeric_config.h>
 
 #ifndef __ASSEMBLER__
 #ifdef __cplusplus
@@ -47,16 +46,16 @@ uint8_t _arm64_crt_gt(uint64_t a, uint64_t b);
 uint8_t _arm64_crt_leq(uint64_t a, uint64_t b);
 uint8_t _arm64_crt_geq(uint64_t a, uint64_t b);
 // _arm64_crt_i64cmp.S
-uint8_t _arm64_crt_lti64(uint64_t a, uint64_t b);
-uint8_t _arm64_crt_gti64(uint64_t a, uint64_t b);
-uint8_t _arm64_crt_leqi64(uint64_t a, uint64_t b);
-uint8_t _arm64_crt_geqi64(uint64_t a, uint64_t b);
+uint8_t _arm64_crt_lti64(int64_t a, int64_t b);
+uint8_t _arm64_crt_gti64(int64_t a, int64_t b);
+uint8_t _arm64_crt_leqi64(int64_t a, int64_t b);
+uint8_t _arm64_crt_geqi64(int64_t a, int64_t b);
 // _arm64_crt_equal.S
-uint8_t _arm64_crt_ispos(uint64_t a);
-uint8_t _arm64_crt_isneg(uint64_t a);
+uint8_t _arm64_crt_ispos(int64_t a);
+uint8_t _arm64_crt_isneg(int64_t a);
 uint8_t _arm64_crt_eq(uint64_t a, uint64_t b);
 uint8_t _arm64_crt_neq(uint64_t a, uint64_t b);
-uint64_t __arm64_crt_select(uint8_t cond, uint64_t a, uint64_t b);
+uint64_t _arm64_crt_select(uint8_t cond, uint64_t a, uint64_t b);
 // _arm64_crt_alg.S
 
 

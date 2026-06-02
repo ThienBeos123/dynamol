@@ -20,7 +20,7 @@
                 "${workspaceFolder}/test_ui"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "compilerPath": "/usr/local/bin/llvm-mainstream/clang",
             "cStandard": "c23",
             "cppStandard": "c++26",
             "intelliSenseMode": "macos-clang-arm64"

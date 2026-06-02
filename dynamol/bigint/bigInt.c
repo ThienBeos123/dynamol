@@ -1404,7 +1404,8 @@ static void __BIGINT_MAGADD__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     for (size_t i = 0; i < max; ++i) {
         uint64_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
         uint64_t y = (i < b->n) ? b->limbs[i] : 0; // Assigning limb at position i of b to x
-        res->limbs[i] = __ADD_UI64__(x, y, &carry); // Do single-limb addition with carry (if have) --> Stores the carry
+        uint8_t u8_carry = (uint8_t)carry;
+        res->limbs[i] = __ADD_UI64__(x, y, &u8_carry); // Do single-limb addition with carry (if have) --> Stores the carry
     }
     if (carry) res->limbs[max] = carry; // If carry still needed ---> stores the carry in the (res->cap - 1) limb
     res->n = max + (carry != 0); *err = BIGINT_SUCCESS;
@@ -1414,7 +1415,8 @@ static void __BIGINT_MAGSUB__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     uint64_t borrow = 0;
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t y = (i < b->n) ? b->limbs[i] : 0;
-        res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
+        uint8_t u8_borrow = (uint8_t)borrow;
+        res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &u8_borrow);
         // Do single-limb subtraction with borrow ---> Stores the borrow
     } res->n = a->n;
 }
@@ -1523,8 +1525,7 @@ static void __BIGINT_MAGDIVMOD_U64__(
 ) {
     // Since the divisior size is small (n <= 1), we implement normal/long division
     DNML_TEST_ASSERT(val, "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", clear_arena);
-    dnml_status err_check = bigInt_reserve(&quot, x->n+1); heap_alloc_oom_void(err_check, err);
-    err_check = bigInt_reserve(rem, 1); heap_alloc_oom_void(err_check, err);
+    dnml_status err_check = bigInt_reserve(quot, x->n+1); heap_alloc_oom_void(err_check, err);
     quot->n = x->n; uint64_t remainder = 0; uint8_t ovf_test;
     for (size_t i = x->n - 1; i != -1; --i) {
         quot->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &ovf_test);
@@ -1576,7 +1577,7 @@ static void __BIGINT_MAGLCM__(bigInt *res, const bigInt *a, const bigInt *b, dnm
     size_t low_needed = (
         /* THESE CALCULATIONS ARE MOST CERTAINLY THE UPPERBOUND */
         __BIGINT_GCD_WS__(a->n, b->n) + min(a->n, b->n) << 1 + 
-        __BIGINT_DIVMOD_WS__(a->n, min(a->n, b->n)) +
+        __BIGINT_DIV_WS__(a->n, min(a->n, b->n)) +
         __BIGINT_MUL_WS__(a->n, b->n)
     );
     if (_DASI_MAGLCM_ARENA->cap < low_needed) {
@@ -2805,8 +2806,8 @@ bigInt bigInt_nrt(const bigInt x, const uint64_t root, dnml_status *err) {
 dnml_status bigInt_mut_copyu64(bigInt *dst__, const uint64_t source__) {
     test_assert(__BIGINT_INTERNAL_SVALID__(dst__), storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     bigInt_canonicalize(dst__);
-    if (dst__->n == 0 && !source__) return;
-    if (dst__->n == 1 && dst__->limbs[0] == source__) return;
+    if (dst__->n == 0 && !source__) return BIGINT_SUCCESS;
+    if (dst__->n == 1 && dst__->limbs[0] == source__) return BIGINT_SUCCESS;
     dst__->limbs[0] = source__;
     dst__->n        = source__ ? 1 : 0;
     dst__->sign     = 1;
@@ -2830,9 +2831,9 @@ dnml_status bigInt_mut_dcopyu64(bigInt *dst__, const uint64_t source__) {
 dnml_status bigInt_mut_copyi64(bigInt *dst__, const int64_t source__) {
     test_assert(__BIGINT_INTERNAL_SVALID__(dst__), storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     bigInt_canonicalize(dst__);
-    if (dst__->n == 0 && !source__) return;
+    if (dst__->n == 0 && !source__) return BIGINT_SUCCESS;
     if (dst__->n == 1 && dst__->limbs[0] == __MAG_I64__(source__)) {
-        dst__->sign = (source__ < 0) ? -1 : 1; return;
+        dst__->sign = (source__ < 0) ? -1 : 1; return BIGINT_SUCCESS;
     }
     dst__->limbs[0] = __MAG_I64__(source__);
     dst__->n        = source__ ? 1 : 0;
@@ -2937,10 +2938,10 @@ dnml_status bigInt_mut_tover_copy(bigInt *dst__, const bigInt source__) {
     /* Fast Paths */
     // Since they're equal, and due to Contract 3
     //  ------> They're not subjected to truncation if these cases are true
-    if (dst__->n == 0 && source__.n == 0) return;
+    if (dst__->n == 0 && source__.n == 0) return BIGINT_SUCCESS;
     if (dst__->n == source__.n && !memcmp(dst__->limbs, source__.limbs, source__.n * sizeof(uint64_t))) {
         dst__->sign = source__.sign;
-        return;
+        return BIGINT_SUCCESS;
     }
     /* Standard Route */
     size_t operation_range = (dst__->cap < source__.n) ? dst__->cap : source__.n;

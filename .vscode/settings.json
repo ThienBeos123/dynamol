@@ -1,0 +1,27 @@
+{
+    "explicitFolding.rules": {
+        "c": [
+            { "begin": "{", "end": "}" },
+            { "begin": "`", "end": "`" },
+            { "foldLastLine": true }
+        ],
+        "cpp": [
+            { "begin": "{", "end": "}" },
+            { "begin": "`", "end": "`" },
+            { "foldLastLine": true }
+        ],
+        "javascript": [
+            { "begin": "{", "end": "}" },
+            { "begin": "`", "end": "`" },
+            { "foldLastLine": true }
+        ], 
+    },
+    "clangd.arguments": [
+        "--header-insertion=never",
+        "--compile-commands-dir=${workspaceFolder}/build"
+    ],
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "[c]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    }
+}

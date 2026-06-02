@@ -86,8 +86,8 @@ void __BIGINT_BIN_MODEXP__(
     __BIGINT_MOD_DISPATCH__(base, modulus, &tmp_base, &buf, binexp_ctx);
     while (tmp_exp.n > 0) {
         if (tmp_exp.limbs[0] & 1) {
-            __BIGINT_CLASSICAL_MODMUL__(&tmp_res, &tmp_base, modulus, &tmp_res, binexp_ctx);
-        } __BIGINT_CLASSICAL_MODMUL__(&tmp_base, &tmp_base, modulus, &tmp_base, binexp_ctx);
+            __BIGINT_CMODMUL__(&tmp_res, &tmp_base, modulus, &tmp_res, binexp_ctx);
+        } __BIGINT_CMODMUL__(&tmp_base, &tmp_base, modulus, &tmp_base, binexp_ctx);
         __BIGINT_INTERNAL_RSHIFT__(&tmp_exp, 1);
     } __BIGINT_INTERNAL_COPY__(res, &tmp_res); 
     scratch_reset(&binexp_ctx, binexp_mark);
@@ -135,7 +135,7 @@ void __BIGINT_MODMUL_DISPATCH__(
     const bigInt *a, const bigInt *b, 
     const bigInt *modulus, bigInt *res, calc_ctx modmul_ctx
 ) {
-    if (modulus->n <= BIGINT_CLASSICAL) __BIGINT_CLASSICAL_MODMUL__(a, b, modulus, res, modmul_ctx);
+    if (modulus->n <= BIGINT_CLASSICAL) __BIGINT_CMODMUL__(a, b, modulus, res, modmul_ctx);
     else {
         dnml_status err_check, end_stat = 0;
         mont_ctx modmul_dispatch_ctx = {

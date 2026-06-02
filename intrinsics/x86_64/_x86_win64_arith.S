@@ -202,7 +202,7 @@ _x86w64_crt_wdiv128:
     ; completely independent of secret mathematical data keys.
     mov r10, [rsp + 40]
     test r10, r10
-    jz .done
+    jz .crt_done
     mov [r10], bl ; *overflowed = overflow_flag
     /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
     mov rcx, 0 ; Parameters / Arguments
@@ -214,7 +214,7 @@ _x86w64_crt_wdiv128:
     mov r12, 0
     mov rsi, 0
     mov rdi, 0
-.done:
+.crt_done:
     /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
     mov rcx, 0 ; Parameters / Arguments
     mov rdx, 0 ; Parameters / Arguments

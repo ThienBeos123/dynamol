@@ -126,7 +126,7 @@ ASM_SYM(arm64_wdiv128):
     // 1. Shift the 128-bit dividend [x1:x0] left by 1 bit.
     //    We extract the top bit of x0 and shift it into the bottom bit of x1.
     lsl x7, x1, #1                  // x7 = x1 << 1  (hi << 1)
-    lsr x8, x0, #(U64_BITS - 1)     // x8 = x0 >> x5 (lo >> 63) MSB extraction
+    lsr x8, x0, #63     // x8 = x0 >> x5 (lo >> 63) MSB extraction
     orr x1, x7, x8                  // x1 (hi) becomes the updated test_rem
     lsl x0, x0, #1                  // x0 = x0 << 1 (shift 'lo' left)
 
@@ -161,7 +161,7 @@ ASM_SYM(arm64_wdiv128):
     str x9, [x3] // *x3 = x9
     movn x0, #0 // return UINT64_MAX
     // if (overflow != NULL) *overflow = 1
-    cbz x4, done_overflow
+    cbz x4, .done_overflow
     mov x8, #1 
     str x8, [x4] // *x4 = x8/1
     ret
@@ -206,7 +206,7 @@ ASM_SYM(arm64_crt_wdiv128):
         - x6 -- fake_hi: 1          - x7 -- fake_lo: 0x1928356720912386
         - x8 -- chosen_lo           - x9 -- chosen_hi
         - x10 - q (RESULT QUOTIENT)
-    /* UNMODIFIABLE VARIALBES/REGISTERS LIST:
+    * UNMODIFIABLE VARIALBES/REGISTERS LIST:
         - x3 -- *rem
         - x4 -- *ovf
     */ 
@@ -214,12 +214,12 @@ ASM_SYM(arm64_crt_wdiv128):
     mov   x10, xzr // q = 0
     mov   x11, #64 // i = 64 -- Loop counter
 
-.div_loop:
+.crt_div_loop:
     lsl   x10, x10, #1 // q <<= 1
     // test_rem = (chosen_hi << 1) | ((chosen_lo >> i) & 1)
     // In this implementation, we operate directly onto x9 (chosen_hi)
     lsl   x9, x9, #1 // chosen_hi <<= 1
-    lsr   x12, x8, #(U64_BITS - 1) // Extract bit 63 from chosen_lo
+    lsr   x12, x8, #63 // Extract bit 63 from chosen_lo
     orr   x9, x9, x12 // x9 (chosen_hi) |= x12
     lsl   x8, x8, #1 // Shift chosen_lo left for the next iteration
 
@@ -237,7 +237,7 @@ ASM_SYM(arm64_crt_wdiv128):
 
     // Decreaing the loop counter
     subs  x11, x11, #1
-    b.ne  .div_loop
+    b.ne  .crt_div_loop
 
 
     /* =========== 5. Final Output Selections =========== */

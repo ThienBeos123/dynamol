@@ -1,4 +1,4 @@
-#include "___rv64_conn__.h"
+#include "__rv64_conn__.h"
 #if __ARCH_RVI64__
 
 
@@ -25,23 +25,23 @@ asm_text_section
 
 
 /* ------- SIGNED 64 BIT POSITIVITY CHECK -------
-* uint8_t _rv64_crt_ispos(uint64_t a, uint64_t b)
+* uint8_t _rv64_crt_ispos(int64_t a)
 * arg: a0: int64_t a    (64 BIT)
 * ret: a0: 1 (true) | 0 (false)
 */
 _rv64_crt_ispos:
-    srli a0, a0, (U64_BITS - 1)
+    srli a0, a0, 63
     xori a0, a0, 1
     ret
 
 
 /* ------- UNSIGNED 64 BIT NEGATIVITY CHECK  -------
-* uint8_t _rv64_crt_isneg(uint64_t a, uint64_t b)
+* uint8_t _rv64_crt_isneg(int64_t b)
 * arg: a0: int64_t a    (64 BIT)
 * ret: a0: 1 (true) | 0 (false)
 */
 _rv64_crt_isneg:
-    srli a0, a0, (U64_BITS - 1)
+    srli a0, a0, 63
     ret
 
 
@@ -56,8 +56,8 @@ _rv64_crt_isneg:
 _rv64_crt_eq:
     xor t0, a0, a1
     sseqz a0, t0
-    ld t0, 0 # Register clearance
-    ld a1, 0 # Register clearance
+    ld t0, 0 // Register clearance
+    ld a1, 0 // Register clearance
     ret
 
 
@@ -71,8 +71,8 @@ _rv64_crt_eq:
 _rv64_crt_neq:
     xor t0, a0, a1
     snez a0, t0
-    ld t0, 0 # Register clearance
-    ld a1, 0 # Register clearance
+    ld t0, 0 // Register clearance
+    ld a1, 0 // Register clearance
     ret
 
 
@@ -85,18 +85,18 @@ _rv64_crt_neq:
 * ret: EITHER a1 OR a2
 */
 _rv64_crt_select:
-    neg t0, a0 # Masking (1 --> 0xFFFF..., 0 --> 0)
-    and t1, a1, t0 # First choice (a & mask)
-    not t2, t0 # Inverting the mask (~mask)
-    and t3, a2, t2 # Second choice (b & ~mask)
-    or a0, t1, t3 # Return t1 | t3 ((a & mask) | (b & ~mask))
+    neg t0, a0 // Masking (1 --> 0xFFFF..., 0 --> 0)
+    and t1, a1, t0 // First choice (a & mask)
+    not t2, t0 // Inverting the mask (~mask)
+    and t3, a2, t2 // Second choice (b & ~mask)
+    or a0, t1, t3 // Return t1 | t3 ((a & mask) | (b & ~mask))
     /* ----- Register clearance ----- */
-    ld a1, 0 # Clearing out general-purpose/parameter register a1
-    ld a2, 0 # Clearing out general-purpose/parameter register a2
-    ld t0, 0 # Clearing out general-purpose/parameter register t0
-    ld t1, 0 # Clearing out general-purpose/parameter register t1
-    ld t2, 0 # Clearing out general-purpose/parameter register t2
-    ld t3, 0 # Clearing out general-purpose/parameter register t3
+    ld a1, 0 // Clearing out general-purpose/parameter register a1
+    ld a2, 0 // Clearing out general-purpose/parameter register a2
+    ld t0, 0 // Clearing out general-purpose/parameter register t0
+    ld t1, 0 // Clearing out general-purpose/parameter register t1
+    ld t2, 0 // Clearing out general-purpose/parameter register t2
+    ld t3, 0 // Clearing out general-purpose/parameter register t3
     ret
 
 

@@ -164,6 +164,8 @@ uint8_t __PCNT_UI64__(uint64_t x) {
 //* --------------------------------------------------------------------------------------- *//
 //*                                HARDWARE INTERACTION UTILITIES                           *//
 //* --------------------------------------------------------------------------------------- *//
+static void __MEMCPY_STRICT__(void *buf, const void *src,  size_t len) {}
+static void __MEMWIPE_STRICT__(void *buf, size_t len) {}
 /* Security-Extension Hardware Functionalities */
 int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written) {
     if (_libdnml_ghw_ftable.hw_drbg == _cintrin_shallow_rng) { *written = 0; return -1; }
@@ -235,9 +237,7 @@ void __CPU_SHALLOW_HALT__(void) { (*_libdnml_ghw_ftable.hw_shalt); }
 //*                                  CRYPTOGRAPHICAL OPERATIONS                             *//
 //* --------------------------------------------------------------------------------------- *//
 // Helper functions
-static void __MEMCPY_STRICT__(void *buf, const void *src,  size_t len) {}
-static void __MEMWIPE_STRICT__(void *buf, size_t len) {}
-static inline uint64_t ___get_time_stamp(void) {
+static uint64_t ___get_time_stamp(void) {
 #if __ARCH_X86_64__
     return _rdtsc();
 #else

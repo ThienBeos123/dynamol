@@ -1,4 +1,4 @@
-#include "___rv64_conn__.h"
+#include "__rv64_conn__.h"
 #if __ARCH_RVI64__
 
 
@@ -55,10 +55,10 @@ _rv64_crt_gt:
 * ret: 1 (true) | 0 (false)
 */
 _rv64_crt_leq:
-    sltu t0, a1, a0 # a <= b is the logical NOT of a > b (b < a)
-    xori a0, t0, 1 # Invert it (logical NOT)
-    ld t0, 0 # Register clearance
-    ld a1, 0 # Register clearance
+    sltu t0, a1, a0 // a <= b is the logical NOT of a > b (b < a)
+    xori a0, t0, 1 // Invert it (logical NOT)
+    ld t0, 0 // Register clearance
+    ld a1, 0 // Register clearance
     ret
 
 
@@ -70,10 +70,10 @@ _rv64_crt_leq:
 * ret: 1 (true) | 0 (false)
 */
 _rv64_crt_geq:
-    sltu t0, a0, a1 # a >= b is the logical NOT of a < b
-    xori a0, t0, 1 # Invert it (logical NOT)
-    ld t0, 0 # Register clearance
-    ld a1, 0 # Register clearance
+    sltu t0, a0, a1 // a >= b is the logical NOT of a < b
+    xori a0, t0, 1 // Invert it (logical NOT)
+    ld t0, 0 // Register clearance
+    ld a1, 0 // Register clearance
     ret
 
 

@@ -21,8 +21,8 @@ asm_text_section
 
 
 /* ------- 64 BIT POSITIVITY CHECK -------
-* uint8_t _x86w64_crt_ispos(uint64_t a, uint64_t b)
-* arg: rdx -- uint64_t a   (64 BIT)
+* uint8_t _x86w64_crt_ispos(int64_t a)
+* arg: rdx -- int64_t a    (64 BIT)
 * ret: rax -- 1 (true) | 0 (false)
 */
 _x86w64_crt_ispos:
@@ -34,8 +34,8 @@ _x86w64_crt_ispos:
 
 
 /* ------- 64 BIT NEGATIVITY CHECK -------
-* uint8_t _x86w64_crt_isneg(uint64_t a, uint64_t b)
-* arg: rdx -- uint64_t a   (64 BIT)
+* uint8_t _x86w64_crt_isneg(int64_t a)
+* arg: rdx -- int64_t a    (64 BIT)
 * ret: rax -- 1 (true) | 0 (false)
 */
 _x86w64_crt_isneg:
