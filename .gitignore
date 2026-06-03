@@ -1,3 +1,4 @@
+.cache/
 ztest/
 zbuild/
 build/

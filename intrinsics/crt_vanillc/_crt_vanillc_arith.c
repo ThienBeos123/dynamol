@@ -5,16 +5,16 @@
 uint64_t _crtintrin_add64c(uint64_t a, uint64_t b, uint8_t *carry) {
     uint64_t sum = a + b; uint8_t ab_carry = (_vanillc_crt_lt(sum, a));
     a = sum + *carry; uint8_t final_carry = (_vanillc_crt_lt(sum, *carry));
-    *carry = ab_carry | final_carry; sum = 0; ab_carry = 0; final_carry = 0;
-    return a;
+    *carry = ab_carry | final_carry; // clang-format off
+    sum = 0; ab_carry = 0; final_carry = 0; a = 0; b = 0; carry = 0; return a; // clang-format on
 }
 
 // 64 bit Subtraction with Borrow-over
 uint64_t _crtintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
     uint64_t diff = a - b; uint8_t ab_borrow = (diff > a);
     a = diff - *borrow; uint8_t final_borrow = (a > diff);
-    *borrow = ab_borrow | final_borrow; diff = 0; 
-    ab_borrow = 0; final_borrow = 0; return a;
+    *borrow = ab_borrow | final_borrow; diff = 0; // clang-format off
+    ab_borrow = 0; final_borrow = 0; a = 0; b = 0; borrow = 0; return a; // clang-format on
 }
 
 
@@ -71,9 +71,10 @@ uint64_t _crtintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     */
     // Takes the carry from lower half + the overflowed mid bit
     *hi = fourth_mul + carry1 + mid_high + (mid_carry << 32);
-    /* Aggressive, Post-operation Clearance */
-    mask = 0; a_low = 0;
-    return res;
+    /* Aggressive, Post-operation Clearance */ // clang-format off
+    mask = 0; a_low = 0; a_high = 0; first_mul = 0; second_mul = 0;
+    third_mul = 0; fourth_mul = 0; mid = 0; mid_carry = 0; mid_low = 0;
+    carry1 = 0; mid_high = 0; a = 0; b = 0; hi = 0; return res;
 }
 
 
@@ -94,6 +95,6 @@ uint64_t _crtintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rh
     }
     uint64_t ret_quotient = _vanillc_crt_select(overflow_flag, (UINT64_MAX), (q));
     *rhat = _vanillc_crt_select(overflow_flag, (0), (chosen_hi)); // clang-format off
-    overflow_flag = 0; q = 0; fake_hi = 0; fake_lo = 0; 
-    chosen_lo = 0; chosen_hi = 0; return ret_quotient; // clang-format on
+    overflow_flag = 0; q = 0; fake_hi = 0; fake_lo = 0; chosen_lo = 0; chosen_hi = 0; 
+    lo = 0; hi = 0; div = 0; rhat = 0; overflowed = 0; return ret_quotient; // clang-format on
 }

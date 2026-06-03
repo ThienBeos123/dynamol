@@ -132,6 +132,6 @@ dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
         res->limbs[i] = __CRT_SUB_U64__(a->limbs[i], y, &u8_borrow);
         curr = 0; u8_borrow = 0;
     } res->n = a->n; __CRINT_TRIM_LZ__(res);
-    __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
-    return CRINT_SUCCESS;
+    __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false); // clang-format off
+    borrow = 0; res = 0; a = 0; return CRINT_SUCCESS;
 }

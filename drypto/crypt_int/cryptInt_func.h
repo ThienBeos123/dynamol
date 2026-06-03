@@ -38,6 +38,12 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
 //? ================================= TEST ASSERT CONVENIENT MACROS ================================= ?//
 // Functional Macros
 #define pbv_crint_clear(x) do { x.limbs = 0; x.cap = 0; x.n = 0; x.sign = 0; x.poisoned = 0; } while(0);
+#define preop_err(cond, err, err_code, cleanup) do { \
+    if (cond) { \
+        if (_lib_crt_neq((ptr_t)err, (ptr_t)NULL)) *err = err_code; \
+        cleanup; return __CRINT_ERRVAL__(); \
+    } \
+} while(0);
 
 
 // Mutative Macros

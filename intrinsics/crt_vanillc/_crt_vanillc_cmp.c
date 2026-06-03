@@ -4,8 +4,9 @@
 /* U64 crt_choice_util */
 uint8_t _vanillc_crt_lt(uint64_t x, uint64_t y) {
     uint64_t x_msb = (x >> (U64_BITS - 1));
-    uint64_t y_msb = (y >> (U64_BITS - 1));
-    return ((x_msb ^ 1) & y_msb) | (~(x_msb ^ y_msb) & ((x - y) >> (U64_BITS - 1)));
+    uint64_t y_msb = (y >> (U64_BITS - 1)); // clang-format off
+    uint8_t res = (uint8_t)(((x_msb ^ 1) & y_msb) | (~(x_msb ^ y_msb) & ((x - y) >> (U64_BITS - 1))));
+    x = 0; y = 0; x_msb = 0; y_msb = 0; return res; // clang-format on
 }
 uint8_t _vanillc_crt_gt(uint64_t x, uint64_t y) { return _vanillc_crt_lt(y, x); }
 uint8_t _vanillc_crt_leq(uint64_t x, uint64_t y) { return _vanillc_crt_lt(x, y) ^ 1; }
@@ -16,7 +17,8 @@ uint8_t _vanillc_crt_lti64(int64_t x, int64_t y) {
     int64_t sx = (x >> (U64_BITS - 1)) & 1;
     int64_t sy = (y >> (U64_BITS - 1)) & 1;
     int64_t sd = ((x - y) >> (U64_BITS - 1)) & 1;
-    return (sx & !sy) | (!(sx ^ sy) & sd);
+    uint8_t res = (uint8_t)((sx & !sy) | (!(sx ^ sy) & sd)); // clang-format off
+    sx = 0; sy = 0; sd = 0; x = 0; y = 0; return res; // clang-format on
 }
 uint8_t _vanillc_crt_gti64(int64_t x, int64_t y) { return _vanillc_crt_lti64(y, x); }
 uint8_t _vanillc_crt_leqi64(int64_t x, int64_t y) { return _vanillc_crt_lti64(x, y) ^ 1; }

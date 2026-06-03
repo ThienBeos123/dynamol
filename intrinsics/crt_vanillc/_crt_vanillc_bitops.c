@@ -11,8 +11,9 @@ uint8_t _crtintrin_clz64(uint64_t x) {
     mask = -((int64_t)!(x >> 56)); n += mask & 8;  x <<= mask & 8;
     mask = -((int64_t)!(x >> 60)); n += mask & 4;  x <<= mask & 4;
     mask = -((int64_t)!(x >> 62)); n += mask & 2;  x <<= mask & 2;
-    mask = -((int64_t)!(x >> 63)); n += mask & 1;
-    mask = 0; return (uint8_t)(n ^ (is_zero_mask & (n ^ U64_BITS)));
+    mask = -((int64_t)!(x >> 63)); n += mask & 1; // clang-format off
+    uint8_t res = (uint8_t)(n ^ (is_zero_mask & (n ^ U64_BITS)));
+    is_zero_mask = 0; n = 0; mask = 0; x = 0; return res; // clang-format on
 }
 
 // 64 bit Count Trailing Zeros
@@ -23,9 +24,9 @@ uint8_t _crtintrin_ctz64(uint64_t x) {
     mask = -((int64_t)!(lowest_bit >> 48)); n += mask & 16; lowest_bit <<= mask & 16;
     mask = -((int64_t)!(lowest_bit >> 56)); n += mask & 8;  lowest_bit <<= mask & 8;
     mask = -((int64_t)!(lowest_bit >> 60)); n += mask & 4;  lowest_bit <<= mask & 4;
-    mask = -((int64_t)!(lowest_bit >> 62)); n += mask & 2;  lowest_bit <<= mask & 2;
-    uint64_t ctz_val = 63 - n; lowest_bit = 0; n = 0; mask = 0; // Clearance 
-    return (uint8_t)(ctz_val ^ (is_zero_mask & (ctz_val ^ U64_BITS)));
+    mask = -((int64_t)!(lowest_bit >> 62)); n += mask & 2;  lowest_bit <<= mask & 2; // clang-format off
+    uint64_t ctz_val = 63 - n; uint8_t res =  (uint8_t)(ctz_val ^ (is_zero_mask & (ctz_val ^ U64_BITS)));
+    is_zero_mask = 0; lowest_bit = 0; n = 0; mask = 0; ctz_val = 0; x = 0; return res; // clang-format on
 }
 
 // 64 bit Byte Swapping

@@ -389,23 +389,27 @@ crint crint_fromu64(uint64_t x, dnml_status *err) {
     crint ret; dnml_status new_stat; limb_t tmp[1] = {0}; new_stat = crint_new(&ret);
     ret.limbs = (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) ? tmp : ret.limbs;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_neq(new_stat, DNML_ALLOC_OOM)));
-    ret.limbs[0] = x; ret.n = !!(x); ret.sign = 1; /* Correctly Setting Up - Standard Case */
-    ret.limbs[0] &= mask; ret.n &= mask; ret.sign &= mask; /* Selectively masking into invalidity */
+    ret.limbs[0] = x; ret.n = !!(x); ret.sign = 1;
+    ret.limbs[0] &= mask; ret.n &= mask; ret.sign &= mask;
     ret.limbs = (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) ? NULL : ret.limbs;
-    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) CHOOSE_OPTION((*err), (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)), (DNML_ALLOC_OOM), (CRINT_SUCCESS));
-    /* Aggressive POst-Operation Cleanup */ // clang-format off
+    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) {
+        CHOOSE_OPTION((*err), (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)), (DNML_ALLOC_OOM), (CRINT_SUCCESS));
+    }
+    /* Aggressive Post-Operation Cleanup */ // clang-format off
     new_stat = 0; tmp[0] = 0; mask = 0; x = 0; err = 0; return ret; // clang-format on
 }
 crint crint_fromi64(int64_t x, dnml_status *err) {
     crint ret; dnml_status new_stat; limb_t tmp[1] = {0}; new_stat = crint_new(&ret);
     ret.limbs = (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) ? tmp : ret.limbs;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_neq(new_stat, DNML_ALLOC_OOM)));
-    ret.limbs[0] = __CRT_MAG_I64__(x); ret.n = !!(x); /* Correctly Setting Up - Standard Case */
-    CHOOSE_OPTION((ret.sign), (_lib_crt_isneg(x)), (-1), (1)); /* Correctly Setting Up - Standard Case */
-    ret.limbs[0] &= mask; ret.n &= mask; ret.sign &= mask; /* Selectively masking into invalidity */
+    ret.limbs[0] = __CRT_MAG_I64__(x); ret.n = !!(x);
+    CHOOSE_OPTION((ret.sign), (_lib_crt_isneg(x)), (-1), (1));
+    ret.limbs[0] &= mask; ret.n &= mask; ret.sign &= mask;
     ret.limbs = (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) ? NULL : ret.limbs;
-    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) CHOOSE_OPTION((*err), (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)), (DNML_ALLOC_OOM), (CRINT_SUCCESS));
-    /* Aggressive POst-Operation Cleanup */ // clang-format off
+    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) {
+        CHOOSE_OPTION((*err), (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)), (DNML_ALLOC_OOM), (CRINT_SUCCESS));
+    }
+    /* Aggressive Post-Operation Cleanup */ // clang-format off
     new_stat = 0; tmp[0] = 0; mask = 0; x = 0; err = 0; return ret; // clang-format on
 }
 crint crint_fromf128(long double x, dnml_status *err) {}
@@ -1415,39 +1419,41 @@ crint crint_copy(crint src, dnml_status *err) {
     /* Actual Operation */
     dnml_status ret_stat = CRINT_SUCCESS; uint8_t noop_toggle = false;
     CHOOSE_OPTION((ret_stat), (src.poisoned & _lib_crt_eq(ret_stat, CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
-    CHOOSE_OPTION((noop_toggle), (src.poisoned), (true), (noop_toggle));
 
     /* Main Operation - Copy */
     crint dst; dnml_status new_stat; uint64_t correctly_set;
     limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0}; limb_t* src_limbs;
     new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
-    dst.limbs = (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)) ? dst.limbs : dst_tmp_p;
-    CHOOSE_OPTION((correctly_set), (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), (UINT64_MAX), (0));
-    src_limbs = (_lib_crt_neq((new_stat), DNML_ALLOC_OOM)) ? src.limbs : src_tmp_p;
-
-    /* Setting Up correctly - Standard Case */
-    size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1);
-    size_t end; CHOOSE_OPTION( (end), (!(src.n)), 0, (src.n - 1));
-    CHOOSE_OPTION((end), (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), (end), (511));
-    CHOOSE_OPTION((dst.cap), (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), (dst.cap), (FAKE_BUF_CAP));
-    while (iter_cnt--) __libdnml_smemcpy_u64(
-        dst.limbs, src.limbs, dst.cap, src.n, 
-        0, end, (noop_toggle & _lib_crt_neq(new_stat, DNML_ALLOC_OOM))
-    ); dst.n = src.n; dst.sign = src.sign; *err = CRINT_SUCCESS;
-
-    /* Setting Up invalid metadata + Agressive Stack Cleanup */ // clang-format off
-    dst.limbs[0] &= correctly_set; dst.n &= correctly_set;
-    dst.cap &= correctly_set; dst.sign &= correctly_set; // clang-format on
     CHOOSE_OPTION((ret_stat),
         (_lib_crt_neq(new_stat, DNML_ALLOC_OOM) & 
         (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
         (new_stat), (ret_stat)
-    ); // clang-format off
-    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) *err = ret_stat; // Conditional Branching here is acceptable
+    );
+    dst.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? dst.limbs : dst_tmp_p;
+    CHOOSE_OPTION((noop_toggle), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (noop_toggle), (true));
+    correctly_set = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
+    src_limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? src.limbs : src_tmp_p;
+
+    /* Setting Up correctly - Standard Case */
+    size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1);
+    size_t end; CHOOSE_OPTION( (end), (!(src.n)), 0, (src.n - 1));
+    CHOOSE_OPTION((end), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (end), (FAKE_BUF_CAP - 1));
+    CHOOSE_OPTION((dst.cap), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (dst.cap), (FAKE_BUF_CAP));
+    while (iter_cnt--) __libdnml_smemcpy_u64( dst.limbs, src.limbs, dst.cap, src.n,  0, end, noop_toggle);
+    dst.n = src.n; dst.sign = src.sign; *err = CRINT_SUCCESS;
+
+    /* Setting Up invalid metadata */ // clang-format off
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : dst.limbs;
+    free(chosen_freed); // Mandated to be safe nop since ANSI-C
+    dst.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? dst.limbs : 0;
+    dst.n &= correctly_set; dst.cap &= correctly_set; 
+    dst.sign &= correctly_set; dst.poisoned = src.poisoned;
+    /* Aggressive Post-operation Cleanup */ 
+    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) *err = ret_stat;
     new_stat = 0; correctly_set = 0; noop_toggle = 0; src_limbs = 0; iter_cnt = 0; 
     __libdnml_smemwipe_u64(dst_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     __libdnml_smemwipe_u64(src_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
-    end = 0; ret_stat = 0; pbv_crint_clear(src); err = 0; return dst; // clang-format on
+    end = 0; ret_stat = 0; pbv_crint_clear(src); err = 0; chosen_freed = 0; return dst; // clang-format on
 }
 crint crint_ocopy(crint src, size_t output_cap, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
@@ -1461,41 +1467,43 @@ crint crint_ocopy(crint src, size_t output_cap, dnml_status *err) {
     /* Actual Operation */
     dnml_status ret_stat = CRINT_SUCCESS; uint8_t noop_toggle = false;
     CHOOSE_OPTION((ret_stat), (src.poisoned & _lib_crt_eq(ret_stat, CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
-    CHOOSE_OPTION((noop_toggle), (src.poisoned & (!(noop_toggle))), (true), (noop_toggle));
 
     /* Main Operation - Copy */
-    crint dst; uint64_t correctly_set; dnml_status new_stat;
+    crint dst; uint64_t correctly_set;
     CHOOSE_OPTION((ret_stat), (_lib_crt_lt(output_cap, src.n)), (CRINT_ERR_RANGE), (ret_stat));
     CHOOSE_OPTION((noop_toggle), ((_lib_crt_lt(output_cap, src.n)) & (!(noop_toggle))), (true), (noop_toggle));
-    limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0}; new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
+    limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0};
+    dnml_status new_stat = crint_snew(&dst, src.n);
     CHOOSE_OPTION((ret_stat), (
         (_lib_crt_neq(new_stat, CRINT_SUCCESS)) & 
         (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
         (new_stat), (ret_stat)
     );
-    limb_t* dst_limbs, *src_limbs;
-    CHOOSE_OPTION((correctly_set), (_lib_crt_neq(ret_stat, DNML_ALLOC_OOM)), (UINT64_MAX), (0));
-    dst_limbs = (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)) ? dst.limbs : dst_tmp_p;
-    src_limbs = (_lib_crt_neq((new_stat), DNML_ALLOC_OOM)) ? src.limbs : src_tmp_p;
+    CHOOSE_OPTION((noop_toggle), (_lib_crt_neq(ret_stat, CRINT_SUCCESS)), (true), (noop_toggle));
+    correctly_set = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
+    limb_t* dst_limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? dst.limbs : dst_tmp_p;
+    limb_t* src_limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? src.limbs : src_tmp_p;
 
     /* Setting Up correctly - Standard Case */
     size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1);
     size_t end; CHOOSE_OPTION( (end), (!(src.n)), 0, (src.n - 1));
-    CHOOSE_OPTION((end), (_lib_crt_neq(ret_stat, DNML_ALLOC_OOM)), (end), (511));
-    CHOOSE_OPTION((dst.cap), (_lib_crt_neq(ret_stat, DNML_ALLOC_OOM)), (dst.cap), (FAKE_BUF_CAP));
-    while (iter_cnt--) __libdnml_smemcpy_u64(
-        dst_limbs, src_limbs, dst.cap, src.n, 
-        0, end, (noop_toggle & (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)))
-    ); dst.n = src.n; dst.sign = src.sign;
+    CHOOSE_OPTION((end), (_lib_crt_eq(ret_stat, DNML_ALLOC_OOM)), (end), (FAKE_BUF_CAP - 1));
+    CHOOSE_OPTION((dst.cap), (_lib_crt_eq(ret_stat, DNML_ALLOC_OOM)), (dst.cap), (FAKE_BUF_CAP));
+    while (iter_cnt--) __libdnml_smemcpy_u64(dst_limbs, src_limbs, dst.cap, src.n, 0, end, noop_toggle);
+    dst.n = src.n; dst.sign = src.sign;
 
     /* Setting Up invalid metadata + Agressive Stack Cleanup */ // clang-format off
-    dst.limbs[0] &= correctly_set; dst.n &= correctly_set;
-    dst.cap &= correctly_set; dst.sign &= correctly_set;
-    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) *err = ret_stat; // Conditional Branching here is acceptable
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : dst.limbs;
+    free(chosen_freed); // Mandated to be safe nop since ANSI-C
+    dst.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? dst.limbs : 0;
+    dst.n &= correctly_set; dst.cap &= correctly_set;
+    dst.sign &= correctly_set; dst.poisoned = src.poisoned;
+    /* Aggressive Post-operation Cleanup */
+    if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) *err = ret_stat;
     ret_stat = 0; correctly_set = 0; new_stat = 0; noop_toggle = 0; dst_limbs = 0; output_cap = 0;
     __libdnml_smemwipe_u64(dst_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     __libdnml_smemwipe_u64(src_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
-    src_limbs = 0; iter_cnt = 0; end = 0; pbv_crint_clear(src); err = 0; return dst; // clang-format on
+    src_limbs = 0; iter_cnt = 0; end = 0; pbv_crint_clear(src); err = 0; chosen_freed = 0; return dst; // clang-format on
 }
 crint crint_tover_copy(crint src, size_t output_cap, dnml_status *err) {
     /* Pre-operation Validation & Static Analysis */
@@ -1509,40 +1517,41 @@ crint crint_tover_copy(crint src, size_t output_cap, dnml_status *err) {
     /* Actual Operation */
     dnml_status ret_stat = CRINT_SUCCESS; uint8_t noop_toggle = false;
     CHOOSE_OPTION((ret_stat), (src.poisoned & _lib_crt_eq(ret_stat, CRINT_SUCCESS)), (CRINT_POISON), (ret_stat));
-    CHOOSE_OPTION((noop_toggle), (src.poisoned), (true), (noop_toggle));
 
-    /* Main Operation - Copy */
-    crint dst; dnml_status new_stat; uint64_t correctly_set;
+    /* Main Operation - Copy */ crint dst; uint64_t correctly_set;
     size_t op_range; CHOOSE_OPTION((op_range), (_lib_crt_lt(output_cap, src.n)), (output_cap), (src.n));
-    limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0}; new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
-    CHOOSE_OPTION((correctly_set), (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), (UINT64_MAX), (0)); limb_t* dst_limbs, *src_limbs;
-    dst_limbs = (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)) ? dst.limbs : dst_tmp_p;
-    src_limbs = (_lib_crt_neq((new_stat), DNML_ALLOC_OOM)) ? src.limbs : src_tmp_p;
-
-    /* Setting Up correctly - Standard Case */
-    size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1); size_t end;
-    CHOOSE_OPTION((end), (!(op_range)), 0, (op_range - 1));
-    CHOOSE_OPTION((end), (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), (end), (511));
-    CHOOSE_OPTION((dst.cap), (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), (dst.cap), (FAKE_BUF_CAP));
-    while (iter_cnt--) __libdnml_smemcpy_u64(
-        dst.limbs, src.limbs, dst.cap, src.n,
-        0, end, (noop_toggle & (_lib_crt_neq(new_stat, DNML_ALLOC_OOM)))
-    ); 
-    dst.n = src.n; dst.sign = src.sign;
-
-    /* Setting Up invalid metadata - DNML_ALLOC_OOM */ // clang-format off
-    dst.limbs[0] &= correctly_set; dst.n &= correctly_set;
-    dst.cap &= correctly_set; dst.sign &= correctly_set; // clang-format on
+    limb_t dst_tmp_p[FAKE_BUF_CAP] = {0}, src_tmp_p[FAKE_BUF_CAP] = {0};
+    dnml_status new_stat = crint_snew(&dst, src.n); // Guaraneed dst->cap >= 1
     CHOOSE_OPTION((ret_stat), (
         _lib_crt_neq(new_stat, CRINT_SUCCESS) & 
         _lib_crt_eq(ret_stat, CRINT_SUCCESS)), 
         (new_stat), (ret_stat)
-    ); // clang-format off
+    );
+    CHOOSE_OPTION((noop_toggle), (_lib_crt_neq(ret_stat, CRINT_SUCCESS)), (true), (noop_toggle));
+    correctly_set = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
+    limb_t* dst_limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? dst.limbs : dst_tmp_p;
+    limb_t* src_limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? src.limbs : src_tmp_p;
+
+    /* Setting Up correctly - Standard Case */
+    size_t iter_cnt = (size_t)(src.n / FAKE_BUF_CAP + 1); size_t end;
+    CHOOSE_OPTION((end), (!(op_range)), 0, (op_range - 1));
+    CHOOSE_OPTION((end), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (end), (FAKE_BUF_CAP - 1));
+    CHOOSE_OPTION((dst.cap), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (dst.cap), (FAKE_BUF_CAP));
+    while (iter_cnt--) __libdnml_smemcpy_u64(dst.limbs, src.limbs, dst.cap, src.n, 0, end, noop_toggle);
+    dst.n = src.n; dst.sign = src.sign;
+
+    /* Setting Up invalid metadata - DNML_ALLOC_OOM */ // clang-format off
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : dst.limbs;
+    free(chosen_freed); // Mandated to be safe nop since ANSI-C
+    dst.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? dst.limbs : 0;
+    dst.n &= correctly_set; dst.cap &= correctly_set;
+    dst.sign &= correctly_set; dst.poisoned = src.poisoned;
+    /* Aggressive Post-operation Cleanuo */
     if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) *err = ret_stat; // Conditional Branching here is acceptable
     ret_stat = 0; new_stat = 0; correctly_set = 0; op_range = 0; iter_cnt = 0; output_cap = 0;
     __libdnml_smemwipe_u64(dst_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false); dst_limbs = 0;
     __libdnml_smemwipe_u64(src_tmp_p, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false); src_limbs = 0;
-    end = 0; noop_toggle = 0; pbv_crint_clear(src); err = 0; return dst; // clang-format on
+    end = 0; noop_toggle = 0; pbv_crint_clear(src); err = 0; chosen_freed = 0; return dst; // clang-format on
 }
 
 

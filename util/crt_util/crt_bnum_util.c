@@ -9,8 +9,9 @@ dnml_status __CRINT_TRIM_LZ__(crint *x) {
         // Checks if i < n AND i == 0 AND msl has not been set
         x->n -= ((behind_n & zero) & (~found_msl));
         // Checks if i < n AND i != 0 AND msl has not been set
-        found_msl |= (behind_n & (~zero));
-    } return CRINT_SUCCESS;
+        found_msl |= (behind_n & (~zero)); // clang-format off
+        behind_n = 0; zero = 0;
+    } found_msl = 0; x = 0; return CRINT_SUCCESS; // clang-format on
 }
 int8_t __CRINT_INTERNAL_CMP__(crint *x, crint *y) {
     /* Basically a more bareboned version of __CRINT_MAGCMP__ */
@@ -48,9 +49,9 @@ int8_t __CRINT_INTERNAL_CMP__(crint *x, crint *y) {
     } 
     // ALL CHECKS WEREN'T SATIFIES --> EQUAL
     CHOOSE_OPTION((ret), (_lib_crt_eq(ret, 2)), (0), (ret));
-    /* Aggresive Memory Sanitization */
-    curr = 0; upperbound = 0; x_curr = 0; y_curr = 0;
-    return ret;
+    /* Aggresive Memory Sanitization */ // clang-format off
+    curr = 0; upperbound = 0; x_curr = 0; 
+    y_curr = 0; x = 0; y = 0; return ret; // clang-format on
 }
 crint __CRINT_ERRVAL__(void) { return (crint){ .limbs = NULL, .n = 1, .cap = 0, .sign = 0, .poisoned = true }; }
 

@@ -17,11 +17,18 @@
         ], 
     },
     "clangd.arguments": [
+        // ClangD Core Configs
+        "--compile-commands-dir=${workspaceFolder}/build",
+        "--background-index",
+        "--clang-tidy",
+        // Completion and QOLs
+        "--function-arg-placeholders=0",
         "--header-insertion=never",
-        "--compile-commands-dir=${workspaceFolder}/build"
+        "--completion-style=bundled",
     ],
     "C_Cpp.intelliSenseEngine": "disabled",
     "[c]": {
         "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
-    }
+    },
+    "editor.inlayHints.enabled": "off",
 }
