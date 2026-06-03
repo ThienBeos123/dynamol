@@ -1,0 +1,30 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/_libdnml_mem",
+                "${workspaceFolder}/include/_libdnml_perf",
+                "${workspaceFolder}/include/_libdnml_config",
+                "${workspaceFolder}/intrinsics",
+                "${workspaceFolder}/intrinsics/x86_64",
+                "${workspaceFolder}/intrinsics/arm64",
+                "${workspaceFolder}/intrinsics/risc-v64",
+                "${workspaceFolder}/calc_algo/perf_based",
+                "${workspaceFolder}/calc_algo/crt_based",
+                "${workspaceFolder}/util",
+                "${workspaceFolder}/util/crt_util",
+                "${workspaceFolder}/util/perf_util",
+                "${workspaceFolder}/dynamol/bigint",
+                "${workspaceFolder}/test_ui"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/local/bin/llvm-mainstream/clang",
+            "cStandard": "c23",
+            "cppStandard": "c++26",
+            "intelliSenseMode": "macos-clang-arm64"
+        }
+    ],
+    "version": 4
+}

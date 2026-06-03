@@ -2,13 +2,10 @@
 #define _BIGINT_EXEC_FUNC_H
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
+#include <include.h>
+#include <libdnml_types.h>
 #include "../../../test_ui/_strui.h"
-#include "../../../dynamol/big_numbers/bigNums.h"
-#include "../../../dynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/bigint/bigInt_func.h"
 #include "../_ioconv.h"
 #include "bi_indef.h"
 
@@ -280,7 +277,7 @@ static inline void exec_stobi_strinit(const void *vin, str_res *out, void *vctx)
     out->status = bigInt_strinit(&tmp, in->str);
 
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);
@@ -291,7 +288,7 @@ static inline void exec_stobi_strbinit(const void *vin, str_res *out, void *vctx
     out->status = bigInt_strbinit(&tmp, in->str, in->base);
     
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);
@@ -302,7 +299,7 @@ static inline void exec_stobi_strninit(const void *vin, str_res *out, void *vctx
     out->status = bigInt_strninit(&tmp, in->str, in->len);
     
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);
@@ -313,7 +310,7 @@ static inline void exec_stobi_strnbinit(const void *vin, str_res *out, void *vct
     out->status = bigInt_strnbinit(&tmp, in->str, in->len, in->base);
     
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);
@@ -325,7 +322,7 @@ static inline void exec_stobi_from_str(const void *vin, str_res *out, void *vctx
     tmp = bigInt_from_str(in->str, &out->status);
 
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);
@@ -336,7 +333,7 @@ static inline void exec_stobi_from_strb(const void *vin, str_res *out, void *vct
     tmp = bigInt_from_strb(in->str, in->base, &out->status);
 
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);
@@ -347,7 +344,7 @@ static inline void exec_stobi_from_strn(const void *vin, str_res *out, void *vct
     tmp = bigInt_from_strn(in->str, in->len, &out->status);
 
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);
@@ -358,7 +355,7 @@ static inline void exec_stobi_from_strnb(const void *vin, str_res *out, void *vc
     tmp = bigInt_from_strnb(in->str, in->len, in->base, &out->status);
 
     limb_t *tmp_limbs = (limb_t*)vctx;
-    memcpy(tmp_limbs, tmp.limbs, tmp.n * BYTES_IN_UINT64_T);
+    memcpy(tmp_limbs, tmp.limbs, tmp.n * U64_BYTES);
     out->data.bi.limbs = tmp_limbs;     out->data.bi.sign = tmp.sign;
     out->data.bi.n = tmp.n;             out->data.bi.cap = tmp.cap;
     __BIGINT_INTERNAL_FREE__(&tmp);

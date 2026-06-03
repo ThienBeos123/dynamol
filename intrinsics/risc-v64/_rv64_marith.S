@@ -1,4 +1,4 @@
-#include "_rv64_conn.h"
+#include "__rv64_conn__.h"
 #if __ARCH_RVI64__
 
 
@@ -38,44 +38,44 @@ asm_text_section
 * ret: a0: x^-1 mod(2^64)
 */
 _rv64_modinv64:
-    # Index calculation
-    addi t0, a0, 0 # t0 = a0
-    srli t0, t0, 1 # t0 = x >> 1
-    andi t0, t0, 0x7F # t0 = (x >> 1) & 0x7F
+    // Index calculation
+    addi t0, a0, 0 // t0 = a0
+    srli t0, t0, 1 // t0 = x >> 1
+    andi t0, t0, 0x7F // t0 = (x >> 1) & 0x7F
 
-    # Table adress loading
-    lui t1, %hi(inv8_lookup) # Loading upper 32 bits
-    addi    t2, t1, %lo(inv8_lookup) # Loading lower 64 bits
-    # ----> Full 64 bit adress of table's base (t2)
-    # element_adress = arr_base + (index * byte_size)
-    add t0, t2, t0 # --> res_adress = arr_base + index
-    ld t1, 0(t0) # res = *res_adress
+    // Table adress loading
+    lui t1, %hi(inv8_lookup) // Loading upper 32 bits
+    addi    t2, t1, %lo(inv8_lookup) // Loading lower 64 bits
+    // ----> Full 64 bit adress of table's base (t2)
+    // element_adress = arr_base + (index * byte_size)
+    add t0, t2, t0 // --> res_adress = arr_base + index
+    ld t1, 0(t0) // res = *res_adress
 
-    # General Formula: res *= 2 - x * res
-    # Iteration 1: 
-    mv t0, 2 # t0 = 2
-    mv t2, t1 # t2 = t1/res
-    mul t2, t2, a0 # t2 = res * x
-    sub t0, t0, t2 # t0 = 2 - (res * x)
-    mul t1, t1, t0 # t1 = res * (2 - (res * x)
-    # ---> res *= 2 - (x * res)
+    // General Formula: res *= 2 - x * res
+    // Iteration 1: 
+    mv t0, 2 // t0 = 2
+    mv t2, t1 // t2 = t1/res
+    mul t2, t2, a0 // t2 = res * x
+    sub t0, t0, t2 // t0 = 2 - (res * x)
+    mul t1, t1, t0 // t1 = res * (2 - (res * x)
+    // ---> res *= 2 - (x * res)
 
-    # Iteration 2: 
-    mv t0, 2 # t0 = 2
-    mv t2, t1 # t2 = t1/res
-    mul t2, t2, a0 # t2 = res * x
-    sub t0, t0, t2 # t0 = 2 - (res * x)
-    mul t1, t1, t0 # t1 = res * (2 - (res * x)
-    # ---> res *= 2 - (x * res)
+    // Iteration 2: 
+    mv t0, 2 // t0 = 2
+    mv t2, t1 // t2 = t1/res
+    mul t2, t2, a0 // t2 = res * x
+    sub t0, t0, t2 // t0 = 2 - (res * x)
+    mul t1, t1, t0 // t1 = res * (2 - (res * x)
+    // ---> res *= 2 - (x * res)
 
-    # Iteration 3: 
-    mv t0, 2 # t0 = 2
-    mv t2, t1 # t2 = t1/res
-    mul t2, t2, a0 # t2 = res * x
-    sub t0, t0, t2 # t0 = 2 - (res * x)
-    mul t1, t1, t0 # t1 = res * (2 - (res * x)
-    # ---> res *= 2 - (x * res)
-    mv a0, t1 # return res;
+    // Iteration 3: 
+    mv t0, 2 // t0 = 2
+    mv t2, t1 // t2 = t1/res
+    mul t2, t2, a0 // t2 = res * x
+    sub t0, t0, t2 // t0 = 2 - (res * x)
+    mul t1, t1, t0 // t1 = res * (2 - (res * x)
+    // ---> res *= 2 - (x * res)
+    mv a0, t1 // return res;
     ret
 
 

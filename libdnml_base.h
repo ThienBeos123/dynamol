@@ -3,32 +3,36 @@
 
 
 #include <include.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 #include "intrinsics/intrinsics.h"
+#include "dynamol/bigint/bigInt_func.h"
+#include "drypto/crypt_int/cryptInt_func.h"
 
 static volatile uint8_t _libinit = 0;
 
 //* ---------- LIBRARY INITIALIZATION FUNCTIONS ---------- *//
 // Library Initialization
-static inline void _libdnml_init(void) {
-    if (_libinit) return;
-
+static inline dnml_status _libdnml_init(void) {
+    if (_libinit) return DNML_LIB_INISUCCESS;
     _libdnml_detect_hwcaps();
-    _libdnml_fill_ghw();
-
 #if __compiler_clang || __compiler_gcc || __compiler_msvc
     // Compiler built-ins cover most arithmetic/bitwise optimizations.
     // Hardware RNG and halt hooks still require explicit initialization.
     _libinit = 1;
-    return;
+    return DNML_LIB_INISUCCESS;
 #else
     // Unknown compiler
-    // ---> Initialize DNML's handwritten intrinsics
-    _libdnml_fill_galg();
-    _libdnml_fill_garith();
-    _libdnml_fill_gbitops();
-    _libdnml_fill_gmarith();
-    _libinit = 1;
+    // --- Performance-based Intrinsics Dispatch ---
+    _libdnml_fill_garith(); _libdnml_fill_gbitops();
+    _libdnml_fill_gmarith(); _libdnml_fill_ghw();
+    // --- Cryptography-based Intrinsics Dispatch ---
+    _libdnml_fill_crt_gcmp(); _libdnml_fill_crt_gsec();
+    _libdnml_fill_crt_gbitops(); _libdnml_fill_crt_garith();
+    _libdnml_fill_crt_galg();
+    // --------- MODULES INITIALIZATION ---------
+    if (_init_dynamol_bigint() == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; // dynamol/bigint
+    if (_init_drypto_crint() == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; // drypto/crypt_int
+    _libinit = 1; return DNML_LIB_INISUCCESS;
 #endif
 }
 static inline uint8_t _libdnml_cinit(void) { return _libinit; }

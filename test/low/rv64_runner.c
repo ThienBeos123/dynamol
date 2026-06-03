@@ -1,11 +1,11 @@
-#include "../intrinsics/risc-v64/_rv64_conn.h"
-#include "../intrinsics/zvanillc/_vanillc_conn.h"
+#include "../intrinsics/risc-v64/__rv64_conn__.h"
+#include "../intrinsics/zvanillc/__vanillc_conn__.h"
 // Utilities
 #include "../util/util.h"
 #include "../test_ui/lowui.h"
 #include "low_setup.h"
 // STDLIB utilities
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
         case rcases[rcount * rv64_scount]; case* rslices[rv64_scount];
         _suite_slices(rslices, rcases, rcount, sizeof(case), rv64_scount);
         u64 rinbuf[rcount * rv64_scount][3]; u64* rinslices[rv64_scount];
-        _suite_slices(rinslices, rinbuf, rcount, BYTES_IN_UINT64_T * rv64_mrin, rv64_scount);
+        _suite_slices(rinslices, rinbuf, rcount, U64_BYTES * rv64_mrin, rv64_scount);
         size_t ressizes = resbuf_size(20, rcount);
         pair resbuf[ressizes * rv64_scount]; pair* resslices[rv64_scount];
         _suite_slices(resslices, resbuf, ressizes, sizeof(pair), rv64_scount);

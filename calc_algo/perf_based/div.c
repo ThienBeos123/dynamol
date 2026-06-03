@@ -21,7 +21,7 @@ size_t __BIGINT_BURNIKEL_WS__(size_t a_size, size_t b_size) {
     // a_size has been updated/halved from recursion.
 }
 size_t __BIGINT_NEWTON_WS__(size_t a_size, size_t b_size) {}
-size_t __BIGINT_DIVMOD_WS__(size_t a_size, size_t b_size) {
+size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size) {
     if      (b_size < BIGINT_SHORT) return __BIGINT_SHORTDIV_WS__(a_size, b_size);
     else if (b_size < BIGINT_KNUTH) return __BIGINT_KNUTH_WS__(a_size, b_size);
     else __BIGINT_NEWTON_WS__(a_size, b_size);
@@ -34,11 +34,13 @@ static inline void ___DASI_BURK_3BY2(
     const bigInt *b1, const bigInt *b2, const bigInt *B,
     bigInt *q, bigInt *r, calc_ctx burk_helper_ctx
 ) {
+    dnml_status err_check, end_stat = 0;
     size_t burk_helper_mark = scratch_mark(&burk_helper_ctx);
-    BIGINT_TEMP(c, B->n, burk_helper_ctx);
-    BIGINT_TEMP(iq, a1->n + a2->n, burk_helper_ctx);
+    BIGINT_TEMP(c, B->n, burk_helper_ctx, err_check, end_stat);
+    BIGINT_TEMP(iq, a1->n + a2->n, burk_helper_ctx, err_check, end_stat);
     __BIGINT_BURNIKEL__(a1, a2, b1, &q, &c, burk_helper_ctx);
-    BIGINT_TEMP(d, (iq.n + b2->n), burk_helper_ctx);
+
+    BIGINT_TEMP(d, (iq.n + b2->n), burk_helper_ctx, err_check, end_stat);
     uint64_t a[1] = {1}; bigInt one = {.limbs = a, .sign = 1, .n = 1, .cap = 1};
     __BIGINT_MUL_DISPATCH__(&iq, b2, &d, burk_helper_ctx);
     __BIGINT_ADD_WC__(&c, &c, a3);
@@ -54,10 +56,12 @@ static inline void ___DASI_BURK_3BY2(
 
 /* ------ ALGORITHMS FUNCTIONS ------ */
 void __BIGINT_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem) {
-    uint64_t remainder = 0;
+    uint64_t remainder = 0; uint8_t overflow_check;
     for (size_t i = a->n; i > 0; --i) {
-    quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder);
-    } __BIGINT_INTERNAL_TRIM_LZ__(rem);
+        quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
+        DNML_TEST_ASSERT(overflow_check, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
+    } 
+    __BIGINT_INTERNAL_TRIM_LZ__(rem);
     if (quot->n == 0) quot->sign = 1;
     rem->limbs[0] = remainder;
     rem->n = (remainder) ? 1 : 0;
@@ -66,11 +70,20 @@ void __BIGINT_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt
 void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx knuth_ctx) {
     // Setup
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
-    size_t m = a->n, n = b->n, knuth_mark = scratch_mark(&knuth_ctx); 
-    limb_t *a_limbs = scratch_alloc(&knuth_ctx, BYTES_IN_UINT64_T * (m + 1));
-    limb_t *b_limbs = scratch_alloc(&knuth_ctx, BYTES_IN_UINT64_T * (n));
-    bigInt a_copy = {.limbs = a_limbs, .sign  = 1,    /**/   .cap = m + 1, .n = 0};
-    bigInt b_copy = {.limbs = b_limbs, .sign  = 1,    /**/   .cap = n, .n = 0};
+    size_t m = a->n, n = b->n, knuth_mark = scratch_mark(&knuth_ctx);
+    dnml_status err_check, end_stat = 0;
+    limb_t *a_limbs = scratch_alloc(&knuth_ctx, m + 1, &err_check); mod_endstat(end_stat, err_check);
+    DNML_TEST_ASSERT(
+        !(end_stat == DARENA_OVERFLOW), 
+        "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
+        { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
+    ); bigInt a_copy = {.limbs = a_limbs, .sign  = 1, .cap = m + 1, .n = 0};
+    limb_t *b_limbs = scratch_alloc(&knuth_ctx, n, &err_check); mod_endstat(end_stat, err_check);
+    DNML_TEST_ASSERT(
+        !(end_stat == DARENA_OVERFLOW), 
+        "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
+        { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
+    ); bigInt b_copy = {.limbs = b_limbs, .sign  = 1, .cap = n, .n = 0};
 
     /* 1. Normalization */
     /*  - This stage basically make sure b is large enough to be divided by a
@@ -80,7 +93,7 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
     for (size_t i = 0; i < m; ++i) {
         uint64_t x = a->limbs[i];
         a_copy.limbs[i] = (x << shift) || carry;
-        carry = (shift ? x >> BITS_IN_UINT64_T : 0);
+        carry = (shift ? x >> U64_BITS : 0);
     }
     a_copy.limbs[m] = carry; 
     a_copy.n = m + 1;
@@ -88,7 +101,7 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
     for (size_t i = 0; i < n; ++i) {
         uint64_t x = b->limbs[i];
         b_copy.limbs[i] = (x << shift) | carry;
-        carry = (shift ? x >> BITS_IN_UINT64_T : 0);
+        carry = (shift ? x >> U64_BITS : 0);
     }
     b_copy.n = n;
     quot->n = m - n + 1;
@@ -101,18 +114,23 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
         *   ------> qhat = (a2 * 2^64 + a1) / b1
         *   ------> rhat = (a2 * 2^64 + a1) % b1
         *   --------------> a2 * 2^64 + a1 = qhat * b1 + rhat   (Important identity D)
-        *   --------------> a2 * 2^64 + a1 - qhat.b1 = rhat     (Call this P)
+        *   --------------> a2 * 2^64 + a1 - qhat * b1 = rhat   (Call this P)
         */
         uint64_t a2 = a_copy.limbs[j + n]; //                       1st highest limb of a
         uint64_t a1 = a_copy.limbs[j + n - 1]; //                   2nd highest limb of a
         uint64_t a0 = (n >= 2) ? a_copy.limbs[j + n - 2] : 0; //    3rd highest limb of a (DETECT OVERESTIMATION)
         uint64_t b1 = b_copy.limbs[n - 1]; //                       1st highest limb of b
         uint64_t b0 = (n >= 2) ? b_copy.limbs[n - 2] : 0; //        2nd highest limb of b (used to validate quotient estimation - DETECT OVERESTIMATION)
-        uint64_t qhat, rhat;
-        qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat);
+        uint64_t qhat, rhat; uint8_t overflow_check;
+        qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat, &overflow_check);
+        DNML_TEST_ASSERT((overflow_check),
+            "CRTIICAL DEBUG ERROR: Knuth-D Divisor normalization fail, causing quotient overflow",
+            { scratch_clear(&knuth_ctx); scratch_destruct(&knuth_ctx); }
+        );
+
         // Validating quotient estimation (Prevent overestimation before multi-limb subtraction (expensive & risky))
         if (qhat == UINT64_MAX) --qhat; // Check if estimates quotient is too large
-        while (qhat * b0 > ((uint128)rhat << BITS_IN_UINT64_T) + a0) {
+        while (qhat * b0 > ((uint128)rhat << U64_BITS) + a0) {
             /* We've already got: (note: B = 2^64)
             *    +) Dividend (3 limbs of a) = a2 * B^2 + a1 * B + a0
             *    +) Divisor  (2 limbs of b) = b1 * B + b0
@@ -193,7 +211,7 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
     for (size_t i = n; i > 0; --i) {
         uint64_t x = a_copy.limbs[i];
         rem->limbs[i] = (x >> shift) | carry;
-        carry = (shift ? x << BITS_IN_UINT64_T : 0);
+        carry = (shift ? x << U64_BITS : 0);
     }
     rem->n = n;
     __BIGINT_INTERNAL_TRIM_LZ__(quot);      /**/     __BIGINT_INTERNAL_TRIM_LZ__(rem);
@@ -205,12 +223,14 @@ void __BIGINT_BURNIKEL__(
     const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx burk_ctx
 ) {
     if (AH->n + AL->n <= (BIGINT_SHORT << 1) && b->n <= BIGINT_SHORT) {
+        dnml_status err_check;
         size_t base_mark = scratch_mark(&burk_ctx);
-        BIGINT_TEMP(a, AH->n + AL->n, burk_ctx);
-        memcpy(a.limbs, AL->limbs, AL->n * BYTES_IN_UINT64_T);
-        memcpy(a.limbs + AH->n, AH->limbs, AH->n * BYTES_IN_UINT64_T);
+        BIGINT_TEMP(a, AH->n + AL->n, burk_ctx, err_check, err_check);
+        memcpy(a.limbs, AL->limbs, AL->n * U64_BYTES);
+        memcpy(a.limbs + AH->n, AH->limbs, AH->n * U64_BYTES);
         __BIGINT_SHORT_DIVISION__(&a, b->limbs[0], quot, rem); scratch_reset(&burk_ctx, base_mark);
-    } //* -------- 1. SPLIT ---------- *//
+    } 
+    //* -------- 1. SPLIT ---------- *//
     size_t k = (size_t)(b->n >> 1) + 1;
     /* Dividend - A - QUARTERS */
     bigInt a4 = {.limbs = AL->limbs,        .sign = 1,  /**/    .n = k,         .cap = k};
@@ -222,10 +242,11 @@ void __BIGINT_BURNIKEL__(
     bigInt b1 = {.limbs = b->limbs + k, .sign = 1,  /**/    .n = b->n - k, .cap = b->n - k};
 
     //* --------- 2. ACTUAL OPERATION --------- *//
+    dnml_status err_check, end_status = 0;
     size_t burk_mark = scratch_mark(&burk_ctx);
-    BIGINT_TEMP(q1, (k << 1), burk_ctx);
-    BIGINT_TEMP(q2, (k << 1), burk_ctx);
-    BIGINT_TEMP(r,  (k << 1), burk_ctx);
+    BIGINT_TEMP(q1, (k << 1), burk_ctx, err_check, end_status);
+    BIGINT_TEMP(q2, (k << 1), burk_ctx, err_check, end_status);
+    BIGINT_TEMP(r,  (k << 1), burk_ctx, err_check, end_status);
     ___DASI_BURK_3BY2(
         &a1, &a2, &a3,  // Dividends
         &b1, &b2, b,    // Divisors
@@ -240,22 +261,26 @@ void __BIGINT_BURNIKEL__(
     );
 
     //* ---------- 3. RECOMPOSITION ---------- *//
-    memcpy(quot->limbs, q2.limbs, q2.cap * BYTES_IN_UINT64_T);
-    memcpy(quot->limbs + q2.cap, q1.limbs, q1.cap * BYTES_IN_UINT64_T);
+    memcpy(quot->limbs, q2.limbs, q2.cap * U64_BYTES);
+    memcpy(quot->limbs + q2.cap, q1.limbs, q1.cap * U64_BYTES);
     quot->n = 2*k; __BIGINT_INTERNAL_TRIM_LZ__(quot);
     __BIGINT_INTERNAL_COPY__(rem, &r);
     scratch_reset(&burk_ctx, burk_mark);
 }
 void __BIGINT_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx newton_ctx) {}
-void __BIGINT_DIVMOD_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx div_ctx) {
-    if      (b->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
-    else if (b->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, b, quot, rem, div_ctx);
+void __BIGINT_DIV_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *tmp_rem, calc_ctx div_ctx) {
+    if (b->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem);
+    else if (b->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, b, quot, tmp_rem, div_ctx);
     else if (b->n < BIGINT_BURNIKEL) {
         size_t k = (size_t)(b->n >> 1) + 1;
         bigInt AL = {.limbs = a->limbs, .sign = a->sign, .n = max(a->n, 2*k), .cap = max(a->n, 2*k)};
-        bigInt AH = {.limbs = a->limbs + max(a->n, 2*k), .sign = a->sign, 
-                     .n = (a->n < 2*k) ? 0 : 2*k - a->n, .cap = (a->n < 2*k) ? 0 : 2*k - a->n};
-        __BIGINT_BURNIKEL__(&AH, &AL, b, quot, rem, div_ctx);
-    } else __BIGINT_NEWTON__(a, b, quot, rem, div_ctx);
+        bigInt AH = {
+            .limbs = a->limbs + max(a->n, 2*k), 
+            .sign = a->sign,
+            .n = (a->n < 2*k) ? 0 : 2*k - a->n, 
+            .cap = (a->n < 2*k) ? 0 : 2*k - a->n
+        };
+        __BIGINT_BURNIKEL__(&AH, &AL, b, quot, tmp_rem, div_ctx);
+    } else __BIGINT_NEWTON__(a, b, quot, tmp_rem, div_ctx);
 }
 

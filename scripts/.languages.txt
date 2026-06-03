@@ -1,7 +1,2 @@
 .py python3
 .lua lua
-.sh bash
-.rb ruby
-.js node
-.ts node
-.pl perl

@@ -1,3 +1,5 @@
+.cache/
+ztest/
 zbuild/
 build/
 build_asan/
@@ -8,6 +10,5 @@ build_debug/
 *.a
 *.so
 *.dSYM
-.vscode/
 .idea/
 *.pdf

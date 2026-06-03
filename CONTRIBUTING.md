@@ -52,11 +52,7 @@ Copyright 20xx-20yy The lib-dnml Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0. You may not use this file except in compliance with the License. You can obtain a copy in the file LICENSE in the source distribution
 ```
-### Performance Requirements:
-    - Avoid unnecesary allocations (especially heap)
-    - Avoid O(n²) or higher where linear, log, or log-linear is possible
-    - Do not introduce abstraction overhead in hot paths
-    - Intrinsics must be preferred when available
+For more information, please refer to [CODE-STANDARDS.md](/CODE-STANDARDS.md)
 
 
 <!-- ----------------------------------------------- -->

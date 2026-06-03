@@ -1,4 +1,4 @@
-#include "_rv64_conn.h"
+#include "__rv64_conn__.h"
 #if __ARCH_RVI64__
 
 
@@ -20,7 +20,7 @@ asm_text_section
 
 
 
-# Halt CPU Execution by a few cycles via the ISB instruction,
+// Halt CPU Execution by a few cycles via the ISB instruction,
 /* ----- HARDWRE CPU EXECUTION HALT - FULL SYSTEM FLUSH -----
 * void _rv64_full_halt(void)
 * arg: NONE
@@ -32,8 +32,8 @@ _rv64_full_halt:
 
 
 
-# Halt CPU Execution by a single cycles via the NOP addi instruction,
-# Add 0 into x0 (zero register) and basically is useless
+// Halt CPU Execution by a single cycles via the NOP addi instruction,
+// Add 0 into x0 (zero register) and basically is useless
 /* ----- HARDWRE CPU EXECUTION HALT - SHALLOW NOP HALTH -----
 * void _rv64_shallow_halt(void)
 * arg: NONE

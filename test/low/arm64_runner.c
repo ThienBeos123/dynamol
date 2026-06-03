@@ -1,12 +1,12 @@
 // Functions to compare
-#include "../../intrinsics/arm64/_arm64_conn.h"
-#include "../../intrinsics/zvanillc/_vanillc_conn.h"
+#include "../../intrinsics/arm64/__arm64_conn__.h"
+#include "../../intrinsics/zvanillc/__vanillc_conn__.h"
 // Utilities
 #include "../../util/util.h"
 #include "../../test_ui/lowui.h"
 #include "low_setup.h"
 // STDLIB utilities
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
         case rcases[rcount * arm64_scount]; case* rslices[arm64_scount];
         _suite_slices(rslices, rcases, rcount, sizeof(case), arm64_scount);
         u64 rinbuf[rcount * arm64_scount][3]; u64* rinslices[arm64_scount];
-        _suite_slices(rinslices, rinbuf, rcount, BYTES_IN_UINT64_T * arm64_mrin, arm64_scount);
+        _suite_slices(rinslices, rinbuf, rcount, U64_BYTES * arm64_mrin, arm64_scount);
         size_t ressizes = resbuf_size(20, rcount);
         pair resbuf[ressizes * arm64_scount]; pair* resslices[arm64_scount];
         _suite_slices(resslices, resbuf, ressizes, sizeof(pair), arm64_scount);

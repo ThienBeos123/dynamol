@@ -2,14 +2,13 @@
 #define _BIGINT_UTIL_FUNC_H
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
+
+#include <include.h>
 #include "bi_indef.h"
+#include <libdnml_types.h>
 #include "../../../test_ui/_strui.h"
-#include "../../../dynamol/big_numbers/bigNums.h"
 #include "../_ioconv.h"
+#include "../../../dynamol/bigint/bigInt_func.h"
 
 
 void _suite_slices(

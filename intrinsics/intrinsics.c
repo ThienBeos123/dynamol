@@ -1,121 +1,10 @@
 #include "intrinsics.h"
 
-_BITOPS_FTABLE _libdnml_gbitops_ftable;
-_ARITH_FTABLE _libdnml_garith_ftable;
-_MARITH_FTABLE _libdnml_gmarith_ftable;
-_ALG_FTABLE _libdnml_galg_ftable;
-_HW_FTABLE _libdnml_ghw_ftable;
-
-
-//* =================== IFUNC TABLE UNIT FUNCTIONS =================== *//
-void _libdnml_fill_gbitops(void) {
-#if __ARCH_X86_64__
-// CLZ - Detect ABM (Advanced Bit Manipulation)
-_libdnml_gbitops_ftable.clz64 = (libdnml_x64_caps.x86_abm) ? _x86_clz64e : _x86_clz64s;
-// CTZ - Detect BMI1 (Bit Manipulation Instructions 1)
-_libdnml_gbitops_ftable.clz64 = (libdnml_x64_caps.x86_bmi1) ? _x86_ctz64e : _x86_ctz64s
-// POPCNT - Detect SSE4.2
-_libdnml_fill_gbitops.pcnt64 = (libdnml_x64_caps.x86_sse4_2) ? _x86_pcnt64e : _cintrin_pcnt64;
-_libdnml_gbitops_ftable.bswap64 = _x86_bswap64;
-#elif __ARCH_ARM64__
-_libdnml_gbitops_ftable.clz64 = _arm64_clz64;
-_libdnml_gbitops_ftable.ctz64 = _arm64_ctz64;
-_libdnml_gbitops_ftable.bswap64 = _arm64_bswap64;
-_libdnml_gbitops_ftable.pcnt64 = _arm64_pcnt64;
-#elif __ARCH_RVI64__
-if (libdnml_caps.rv64_zbb) {
-    _libdnml_gbitops_ftable.clz64 = _rv64_clz64;
-    _libdnml_gbitops_ftable.ctz64 = _rv64_ctz64;
-    _libdnml_gbitops_ftable.bswap64 = _rv64_bswap64;
-    _libdnml_gbitops_ftable.pcnt64 = _rv64_pcnt64;
-} else {
-    _libdnml_gbitops_ftable.clz64 = _cintrin_clz64;
-    _libdnml_gbitops_ftable.ctz64 = _cintrin_ctz64;
-    _libdnml_gbitops_ftable.bswap64 = _cintrin_bswap64;
-    _libdnml_gbitops_ftable.pcnt64 = _cintrin_pcnt64;
-}
-#else
-_libdnml_gbitops_ftable.clz64 = _cintrin_clz64;
-_libdnml_gbitops_ftable.ctz64 = _cintrin_ctz64;
-_libdnml_gbitops_ftable.bswap64 = _cintrin_bswap64;
-_libdnml_gbitops_ftable.pcnt64 = _cintrin_pcnt64;
-#endif
-}
-void _libdnml_fill_garith(void) {
-#if __ARCH_X86_64__
-_libdnml_garith_ftable.add64c = _x86_add64c;
-_libdnml_garith_ftable.sub64b = _x86_sub64b;
-_libdnml_garith_ftable.wmul128 = _x86_wmul128;
-_libdnml_garith_ftable.wdiv128 = _x86_wdiv128;
-#elif __ARCH_ARM64__
-_libdnml_garith_ftable.add64c = _arm64_add64c;
-_libdnml_garith_ftable.sub64b = _arm64_sub64b;
-_libdnml_garith_ftable.wmul128 = _arm64_wmul128;
-_libdnml_garith_ftable.wdiv128 = _cintrin_wdiv128;
-#elif __ARCH_RVI64__
-_libdnml_garith_ftable.add64c = _rv64_add64c;
-_libdnml_garith_ftable.sub64b = _rv64_sub64b;
-_libdnml_garith_ftable.wmul128 = _rv64_wmul128;
-_libdnml_garith_ftable.wdiv128 = _cintrin_wdiv128;
-#else
-_libdnml_garith_ftable.add64c = _cintrin_add64c;
-_libdnml_garith_ftable.sub64b = _cintrin_sub64b;
-_libdnml_garith_ftable.wmul128 = _cintrin_wmul128;
-_libdnml_garith_ftable.wdiv128 = _cintrin_wdiv128;
-#endif
-}
-void _libdnml_fill_gmarith(void) {
-#if __ARCH_X86_64__
-_libdnml_gmarith_ftable.modinv64 = _x86_modinv64;
-#elif __ARCH_ARM64__
-_libdnml_gmarith_ftable.modinv64 = _arm64_modinv64;
-#elif __ARCH_RVI64__
-_libdnml_gmarith_ftable.modinv64 = _rv64_modinv64;
-#else
-_libdnml_gmarith_ftable.modinv64 = _cintrin_modinv64;
-#endif
-}
-void _libdnml_fill_galg(void) {
-#if __ARCH_X86_64__
-#elif __ARCH_ARM64__
-#elif __ARCH_RVI64__
-#else
-#endif
-}
-void _libdnml_fill_ghw(void) {
-#if __ARCH_X86_64__
-_libdnml_ghw_ftable.hw_drbg = (libdnml_x64_caps.x86_rdrand) ? _x86_hw_drbg : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_trng = (libdnml_x64_caps.x86_rdseed) ? _x86_hw_trng : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_halt = _x86_full_halt;
-_libdnml_ghw_ftable.hw_shalt = _x86_shallow_halt;
-#elif __ARCH_ARM64__
-_libdnml_ghw_ftable.hw_drbg = (libdnml_arm64_caps.armv85_feat_rng) ? _arm64_hw_drbg : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_trng = (libdnml_arm64_caps.armv85_feat_rng) ? _arm64_hw_trng : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_halt = _arm64_full_halt;
-_libdnml_ghw_ftable.hw_shalt = _arm64_shallow_halt;
-#elif __ARCH_RVI64__
-_libdnml_ghw_ftable.hw_drbg = (libdnml_x64_caps.rv64_zkr) ? _rv64_hw_trng : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_trng = (libdnml_x64_caps.rv64_zkr) ? _rv64_hw_trng : _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_halt = (libdnml_x64_caps.rv64_zihintpause) ? _rv64_full_halt : _cintrin_nop_halt;
-_libdnml_ghw_ftable.hw_shalt = (libdnml_x64_caps.rv64_zihintpause) ? _rv64_shallow_halt : _cintrin_nop_halt;
-#else
-_libdnml_ghw_ftable.hw_drbg = _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_trng = _cintrin_shallow_rng;
-_libdnml_ghw_ftable.hw_halt = _cintrin_nop_halt;
-_libdnml_ghw_ftable.hw_shalt = _cintrin_nop_halt;
-#endif
-}
-
-
 
 
 //* --------------------------------------------------------------------------------------- *//
 //*                                    SINGLE-LIMB ARITHMETIC                               *//
 //* --------------------------------------------------------------------------------------- *//
-uint64_t _cintrin_divwrap(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat) {
-    *rhat = _cintrin_clz64(div);
-    return _cintrin_wdiv128(lo, hi, div, rhat);
-}
 uint64_t __ADD_UI64__(uint64_t a, uint64_t b, uint8_t *carry) {
     *carry = (*carry) ? 1 : 0;
     #if __compiler_clang // Clang --> Always used
@@ -150,7 +39,7 @@ uint64_t __SUB_UI64__(uint64_t a, uint64_t b, uint8_t *borrow) {
 uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #if __HAS_int128__ // GCC / Clang --> ALWAYS USED
         uint128 res = ((uint128)a) * ((uint128)b);
-        *hi = (uint64_t)(res >> BITS_IN_UINT64_T);
+        *hi = (uint64_t)(res >> U64_BITS);
         return (uint64_t)res;
     #elif __compiler_msvc // MSVC - Only on x86/ARM64
         return _umul128(a, b, hi);
@@ -158,10 +47,7 @@ uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi) {
         return (*_libdnml_garith_ftable.wmul128)(a, b, hi);
     #endif
 }
-uint64_t __DIV_HELPER_UI64__(
-    uint64_t lo, uint64_t hi, uint64_t div, 
-    uint64_t *rhat
-) {
+uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
     if (hi >= div) { 
         if (_DNML_DEBUG_MODE) { 
             fputs("Division Error - Can't contain full quotient in 64 bit", stderr);
@@ -169,7 +55,7 @@ uint64_t __DIV_HELPER_UI64__(
         } else { *rhat = 0; return 0; }
     } 
     #if __HAS_int128__ // GCC / Clang
-        uint128 dividend = ((uint128)(hi) << BITS_IN_UINT64_T) | lo; 
+        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo; 
         *rhat = (uint64_t)(dividend % div);
         return (uint64_t)(dividend / div);
     #elif __compiler_msvc // MSVC
@@ -178,7 +64,7 @@ uint64_t __DIV_HELPER_UI64__(
         #if !(__ARCH_X86_64__)
             *rhat = _libdnml_gbitops_ftable.clz64(div);
         #endif
-        return (*_libdnml_garith_ftable.wdiv128)(lo, hi, div, rhat);
+        return (*_libdnml_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
     #endif
 }
 uint64_t __MODINV_UI64__(uint64_t x) { 
@@ -193,7 +79,7 @@ uint64_t __MODMUL_UI64__(uint64_t a, uint64_t b, uint64_t mod) {
     #else
         if (hi == 0) return lo % mod;
         uint64_t rem = hi % mod;
-        for (uinit8_t i = 63; i >= 0; --i) {
+        for (uinit8_t i = 63; i != -1; --i) {
             rem = (rem >= mod - rem) ?
                     rem - (mod - rem) :
                     rem + rem;
@@ -225,11 +111,11 @@ uint8_t __SAFE_EXP__(uint64_t base, uint64_t exp) {
     if (exp == 0) return 1;
     if (exp == 1) return 1;
     if (exp == 2) return (base <= (1ULL << 32) - 1);
-    return (double)exp * log2((double)base) < (double)(BITS_IN_UINT64_T);
+    return (double)exp * log2((double)base) < (double)(U64_BITS);
 }
 uint8_t __IS_2POW__(uint64_t x) { return (x) && !(x & (x - 1));  }
 uint8_t __CLZ_UI64__(uint64_t x) {
-    if (!x) return BITS_IN_UINT64_T;
+    if (!x) return U64_BITS;
     // The actual code
     #if (__compiler_gcc || __compiler_clang)
         return __builtin_clzll(x);
@@ -240,7 +126,7 @@ uint8_t __CLZ_UI64__(uint64_t x) {
     #endif
 }
 uint8_t __CTZ_UI64__(uint64_t x) {
-    if (!x) return BITS_IN_UINT64_T;
+    if (!x) return U64_BITS;
     // The actual code
     #if (__compiler_gcc || __compiler_clang) 
         return __builtin_ctzll(x);
@@ -262,32 +148,27 @@ uint64_t __BSWAP_UI64__(uint64_t x) {
 }
 uint8_t __PCNT_UI64__(uint64_t x) { 
     if (!x) return 0; 
-    else if (x== UINT64_MAX) return BITS_IN_UINT64_T;
+    else if (x== UINT64_MAX) return U64_BITS;
     #if (__compiler_gcc || __compiler_clang)
         return __builtin_popcountll(x);
     #elif __compiler_msvc
         return __popcnt64(x);
     #else
-        return (*_libdnml_fill_gbitops.pcnt64)(x);
+        return (*_libdnml_gbitops_ftable.pcnt64)(x);
     #endif
 }
 
-
-//* --------------------------------------------------------------------------------------- *//
-//*                                   GENERAL MEMORY UTILITIES                              *//
-//* --------------------------------------------------------------------------------------- *//
-// STRICT, SECURED MEM UTILS - Secured (does NOT utilize SIMD)
-void __MEMCPY_STRICT__(void *buf, const void *src, size_t bytes) {}
-void __MEMWIPE_STRICT__(void *buf, size_t len) {}
 
 
 
 //* --------------------------------------------------------------------------------------- *//
 //*                                HARDWARE INTERACTION UTILITIES                           *//
 //* --------------------------------------------------------------------------------------- *//
+static void __MEMCPY_STRICT__(void *buf, const void *src,  size_t len) {}
+static void __MEMWIPE_STRICT__(void *buf, size_t len) {}
 /* Security-Extension Hardware Functionalities */
 int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written) {
-    if (_libdnml_ghw_ftable.hw_drbg == _cintrin_shallow_rng) return -1;
+    if (_libdnml_ghw_ftable.hw_drbg == _cintrin_shallow_rng) { *written = 0; return -1; }
     unsigned char *p = (unsigned char *)buf;
     size_t rem = len; int retry_cnt = 0;
     // Filling in 64-bit chunks / 8-byte chunks
@@ -317,7 +198,7 @@ int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *
     } return 0;
 }
 int __CPU_TRNG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *written) {
-    if (_libdnml_ghw_ftable.hw_trng == _cintrin_shallow_rng) return -1;
+    if (_libdnml_ghw_ftable.hw_trng == _cintrin_shallow_rng) { *written = 0; return -1; }
     unsigned char *p = (unsigned char *)buf;
     size_t rem = len; int retry_cnt = 0;
     // Filling in 64-bit chunks / 8-byte chunks
@@ -356,7 +237,7 @@ void __CPU_SHALLOW_HALT__(void) { (*_libdnml_ghw_ftable.hw_shalt); }
 //*                                  CRYPTOGRAPHICAL OPERATIONS                             *//
 //* --------------------------------------------------------------------------------------- *//
 // Helper functions
-static inline uint64_t ___get_time_stamp(void) {
+static uint64_t ___get_time_stamp(void) {
 #if __ARCH_X86_64__
     return _rdtsc();
 #else
@@ -525,44 +406,4 @@ void __GET_ENTROPY_FAST(void* buf, size_t len) {
     }
 }
 void __GET_ENTROPY_STD(void *buf, size_t len) {}
-int __GET_ENTROPY_PQC(void *buf, size_t len) {
-    // Chunk based approach - Safer
-    uint8_t pool_os[512], pool_hw[512];
-    size_t processed = 0, os_write = 0, hw_write = 0;
-    while (processed < len) {
-        size_t chunk = (len - processed > 512) ? 512 : (len - processed);
-        // Gathers into pool_hw via CPU instruction for Hardware pool
-        int trng_ret = __CPU_TRNG_SEED__(pool_hw, chunk, 512, true, &hw_write);
-        if (trng_ret == -2) return -1; // FATAL ERROR IN HARDWARE POOL
-        if (trng_ret == -1) {
-            int drbg_ret = __CPU_DBRG_SEED__(&pool_hw[hw_write], chunk - hw_write, 512, true, &hw_write);
-            if (drbg_ret == -2) return -1; // FATAL ERROR IN HARDWARE DRBG
-            if (drbg_ret == -1) {
-                uint64_t *jitter_ptr = (uint64_t *)(&pool_hw[hw_write]);
-                for (size_t i = 0; i < ((chunk - hw_write) >> 3); ++i) jitter_ptr[i] = __jitter_harvest(4096);
-                size_t tail = (chunk - hw_write) & (3 - 1); // chunk % 8
-                if (tail) { // Filling in the remaining spaces
-                    uint64_t last_jit = __jitter_harvest(4096);
-                    __MEMCPY_STRICT__(pool_os + ((chunk - hw_write) - tail), &last_jit, tail);
-                }
-            }
-        }
-        // Gathers into pool_os via Kernel Entropy Pool
-        int os_ret = __GET_ENTROPY_UNBL(pool_os, chunk, 512, &os_write);
-        if (os_ret) {
-            uint64_t *jitter_ptr = (uint64_t *)(&pool_os[os_write]);
-            for (size_t i = 0; i < ((chunk - os_write) >> 3); ++i) jitter_ptr[i] = __jitter_harvest(4096);
-            size_t tail = (chunk - os_write) & (3 - 1); // chunk % 8
-            if (tail) { // Filling in the remaining spaces
-                uint64_t last_jit = __jitter_harvest(4096);
-                __MEMCPY_STRICT__(pool_os + ((chunk - os_write) - tail), &last_jit, tail);
-            }
-        }
-        // Prevention of structural bias via XORing + Multiplying raw entropy
-        for (size_t i = 0; i < chunk; ++i) {
-            ((uint8_t*)buf)[processed + i] = pool_os[i] ^ pool_hw[i]; /* XORing */
-            ((uint8_t*)buf)[processed + i] *= (pool_hw[i] & 1) ? pool_hw[i] : pool_hw [i] - 1; // Mul by odd
-        } processed += chunk; hw_write = 0; os_write = 0;
-    } __MEMWIPE_STRICT__(pool_os, 512); __MEMWIPE_STRICT__(pool_hw, 512);
-}
 

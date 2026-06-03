@@ -1,6 +1,6 @@
 // STDLIB & /include Utilities
 #include <include.h>
-#include <system/sys.h>
+#include <dnml_sys/sys.h>
 // Main Components
 #include "../../../test_ui/_strui.h"
 #include "../../case_gen/case_gen.h"
@@ -13,7 +13,7 @@
 #include "bi_util_func.h"
 // Functions to be tested
 #include "../../../libdnml_base.h"
-#include "../../../dynamol/big_numbers/bigInt_func.h"
+#include "../../../dynamol/bigint/bigInt_func.h"
 // Miscallenous Utilities
 #include "../../../util/util.h"
 #include "../../../intrinsics/intrinsics.h"

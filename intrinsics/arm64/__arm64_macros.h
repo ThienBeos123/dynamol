@@ -1,6 +1,10 @@
 #ifndef ____ARM64_MACROS_H
 #define ____ARM64_MACROS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(__ELF__)
     #define FUNC_TYPE(name)  .type name, %function
     #define FUNC_SIZE(name)  .size name, .- name
@@ -12,6 +16,10 @@
     #define FUNC_SIZE(name)
 #endif
 
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

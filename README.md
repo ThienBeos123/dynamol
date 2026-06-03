@@ -94,7 +94,10 @@ After the acquisition of the source code, have a look at INSTALLATION.md for det
 ## Documentation
 If you are a developer who wants to either contribute to our project, or just wants better integration quality by reading ducomentation, here are some valuable documentation for notable types:
 
-* [BigNumbers Utilization Details](/adynamol/BIGNUM_CONTRACT.txt)
+* [BigNumbers Utilization Details](/dynamol/BIGNUM_CONTRACT.txt)
+* [CryptNumbers Utilization Details](/drypto/CRYPT_NUM_CONTRACT.txt)
+* [Cryptographically-secure API design protocol](/drypto/API-DESIGN.md)
+* [Formal, Standardized, Porject-wide Code standard](/CODE-STANDARDS.md)
 * Future documentation incoming..
 
 
