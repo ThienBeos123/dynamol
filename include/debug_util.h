@@ -32,14 +32,14 @@ and is generally unsafe for production-use for the user */
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
-        if (cond) return err_code; \
+        if (!(cond)) return err_code; \
     } \
 } while (0);
 #define test_assert_mut(cond, err_msg, cleanup, err, err_code, retval) do { \
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
-        if (cond) { \
+        if (!(cond)) { \
             if (err != NULL) *err = err_code; \
             return retval; \
         } \
@@ -49,7 +49,7 @@ and is generally unsafe for production-use for the user */
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
-        if (cond) { \
+        if (!(cond)) { \
             if (err != NULL) *err = err_code; \
             (*baseout) = (base); \
             return retsize; \

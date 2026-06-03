@@ -49,14 +49,21 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
     } \
 } while(0);
 #define tmp_cleanup(tmp, ret_stat, chosen_freed) do { \
-    chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : tmp.limbs; \
+    chosen_freed = (_lib_crt_eq((ret_stat), CRINT_SUCCESS)) ? NULL : (tmp).limbs; \
     free(chosen_freed); /* Safe nop even on chosen_freed = NULL since ANSI-C */ \
-    tmp.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? tmp.limbs : 0; \
-    CHOOSE_OPTION((tmp.n), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.n), (0)); \
-    CHOOSE_OPTION((tmp.cap), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.cap), (0)); \
-    CHOOSE_OPTION((tmp.sign), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.sign), (0)); \
-    CHOOSE_OPTION((tmp.poisoned), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.poisoned), (0)); \
+    (tmp).limbs = (_lib_crt_eq((ret_stat), CRINT_SUCCESS)) ? (tmp).limbs : 0; \
+    CHOOSE_OPTION(((tmp).n), (_lib_crt_eq((ret_stat), CRINT_SUCCESS)), ((tmp).n), (0)); \
+    CHOOSE_OPTION(((tmp).cap), (_lib_crt_eq((ret_stat), CRINT_SUCCESS)), ((tmp).cap), (0)); \
+    CHOOSE_OPTION(((tmp).sign), (_lib_crt_eq((ret_stat), CRINT_SUCCESS)), ((tmp).sign), (0)); \
+    CHOOSE_OPTION(((tmp).poisoned), (_lib_crt_eq((ret_stat), CRINT_SUCCESS)), ((tmp).poisoned), (0)); \
     chosen_freed = 0; \
+} while(0);
+#define mask_ret(ret, mask, ret_stat, chosen_freed) do { \
+    chosen_freed = (_lib_crt_eq((ret_stat), CRINT_SUCCESS)) ? NULL : (ret)->limbs; \
+    free(chosen_freed); /* Safe nop even on chosen_freed = NULL since ANSI-C */ \
+    (ret)->limbs = (_lib_crt_eq((ret_stat), CRINT_SUCCESS)) ? (ret)->limbs : 0; \
+    (ret)->n &= (mask); (ret)->cap &= (mask); (ret)->sign &= (mask); \
+    (ret)->poisoned = (_lib_crt_eq((ret_stat), CRINT_POISON) | _lib_crt_eq((ret_stat), CRINT_ERR_DOMAIN)); \
 } while(0);
 
 

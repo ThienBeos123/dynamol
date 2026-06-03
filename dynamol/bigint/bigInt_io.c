@@ -73,6 +73,7 @@ static inline void _ASCII_COLUMN__(limb_t val, char* c) {
 
 //todo ======================================= 1. CONSTRUCTIONS ======================================= *//
 dnml_status bigInt_strinit(bigInt *x, const char* str) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(*str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -146,6 +147,7 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -208,6 +210,7 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(!len || *str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -282,6 +285,7 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -1152,6 +1156,7 @@ size_t bigInt_get_sizebsa(
 }
 /* Default String --> BigInt */ /* Grows */
 dnml_status bigInt_get_str(bigInt *x, const char *str) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(*str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -1214,6 +1219,7 @@ dnml_status bigInt_get_str(bigInt *x, const char *str) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -1266,6 +1272,7 @@ dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(!len || *str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -1329,6 +1336,7 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -1383,6 +1391,7 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
 }
 /* Truncative String --> BigInt */ /* Truncates */
 dnml_status bigInt_tget_str(bigInt *x, const char *str) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(*str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -1447,6 +1456,7 @@ dnml_status bigInt_tget_str(bigInt *x, const char *str) {
     else return STR_SUCCESS;
 }
 dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -1501,6 +1511,7 @@ dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
     else return STR_SUCCESS;
 }
 dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(!len || *str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -1567,6 +1578,7 @@ dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
     else return STR_SUCCESS;
 }
 dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -1625,6 +1637,7 @@ dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
 }
 /* Safe String --> BigInt */ /* Return an Error */
 dnml_status bigInt_sget_str(bigInt *x, const char *str) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(*str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -1687,6 +1700,7 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -1740,6 +1754,7 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) { 
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(!(!len || *str == '\0'), str_empty, io_cleanup, STR_EMPTY);
@@ -1804,6 +1819,7 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
     return STR_SUCCESS;
 }
 dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), state_contract, clear_arena_io, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, io_cleanup, STR_NULL);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
@@ -2697,6 +2713,7 @@ dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool upper
 }
 /* --------- Standard Stream (stdin) INPUT ---------  */
 dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     //* Whitespace & Sign *//
     uint16_t current_char = _fskip_whitespace__(stdin); uint8_t sign = 1;
@@ -2747,6 +2764,7 @@ dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocat
     return STR_SUCCESS;
 }
 dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     //* Whitespace, Sign, & Leading zeros *//
@@ -2788,6 +2806,7 @@ dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocat
     return STR_SUCCESS;
 }
 dnml_status bigInt_sscan(bigInt *x) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     dnml_arena *_DASI_SGET_ARENA = _USE_ARENA();
     test_assert(!(_DASI_SGET_ARENA->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
@@ -2846,6 +2865,7 @@ dnml_status bigInt_sscan(bigInt *x) {
     tmp_limbs = NULL; return STR_SUCCESS;
 }
 dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     dnml_arena *_DASI_SGETB_ARENA = _USE_ARENA();
@@ -2894,6 +2914,7 @@ dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
     tmp_limbs = NULL; return STR_SUCCESS;
 }
 dnml_status bigInt_tscan(bigInt *x) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     dnml_arena *_DASI_TGET_ARENA = _USE_ARENA();
     test_assert(!(_DASI_TGET_ARENA->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
@@ -2952,6 +2973,7 @@ dnml_status bigInt_tscan(bigInt *x) {
     tmp_limbs = NULL; return ret;
 }
 dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     dnml_arena *_DASI_TGETB_ARENA = _USE_ARENA();
@@ -3001,6 +3023,7 @@ dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
 }
 /* --------- Custom Stream INPUT ---------  */
 dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN); clearerr(stream);
     /* Whitespace */ uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != EOF && isspace(curr_char)) 
@@ -3073,6 +3096,7 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
     return STR_SUCCESS;
 }
 dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     clearerr(stream);
@@ -3144,6 +3168,7 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
     return STR_SUCCESS;
 }
 dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     dnml_arena *_DASI_FSGET = _USE_ARENA();
     test_assert(!(_DASI_FSGET->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
@@ -3223,6 +3248,7 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
     tmp_limbs = NULL; return STR_SUCCESS;
 }
 dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     clearerr(stream); dnml_arena *_DASI_FSGETB = _USE_ARENA();
@@ -3300,6 +3326,7 @@ dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
     tmp_limbs = NULL; return STR_SUCCESS;
 }
 dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN); clearerr(stream);
     dnml_arena *_DASI_FSGET = _USE_ARENA();
     test_assert(!(_DASI_FSGET->poisoined), arena_poison_oom, io_cleanup, DNML_ALLOC_OOM);
@@ -3380,6 +3407,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
     tmp_limbs = NULL; return ret;
 }
 dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena_io, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), storage_inval, clear_arena_io, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, io_cleanup, STR_INVALID_BASE);
     clearerr(stream); dnml_arena *_DASI_FSGETB = _USE_ARENA();
