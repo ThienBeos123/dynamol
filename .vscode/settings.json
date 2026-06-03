@@ -2,16 +2,19 @@
     "explicitFolding.rules": {
         "c": [
             { "begin": "{", "end": "}" },
+            { "begin": "(", "end": ")" },
             { "begin": "`", "end": "`" },
             { "foldLastLine": true }
         ],
         "cpp": [
             { "begin": "{", "end": "}" },
+            { "begin": "(", "end": ")" },
             { "begin": "`", "end": "`" },
             { "foldLastLine": true }
         ],
         "javascript": [
             { "begin": "{", "end": "}" },
+            { "begin": "(", "end": ")" },
             { "begin": "`", "end": "`" },
             { "foldLastLine": true }
         ], 

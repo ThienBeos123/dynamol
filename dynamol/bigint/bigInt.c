@@ -1955,10 +1955,10 @@ dnml_status bigInt_mut_add(bigInt *x, const bigInt y) {
 
             bigInt temp_sum = { .limbs = tmp_limbs, .cap = x->n, .n = 0, .sign = 1 };
             if (comp_res > 0) { 
-                __BIGINT_MAGSUB__(&temp_sum, x, &y, &err_check); 
+                __BIGINT_MAGSUB__(&temp_sum, x, &y, &err_check);
                 arena_alloc_oom(err_check, _DASI_ADD_ARENA); temp_sum.sign = x->sign; 
             } else {
-                __BIGINT_MAGSUB__(&temp_sum, x, &y, &err_check); 
+                __BIGINT_MAGSUB__(&temp_sum, &y, x, &err_check); 
                 arena_alloc_oom(err_check, _DASI_ADD_ARENA); temp_sum.sign = y.sign;
             } err_check = bigInt_mut_ocopy(x, temp_sum); ocopy_check(err_check, _DASI_ADD_ARENA);
             arena_reset(_DASI_ADD_ARENA, tmp_mark); _DASI_ADD_ARENA = NULL;
@@ -1984,7 +1984,7 @@ dnml_status bigInt_mut_sub(bigInt *x, const bigInt y) {
                 __BIGINT_MAGSUB__(&temp_diff, x, &y, &err_check);
                 arena_alloc_oom(err_check, _DASI_SUB_ARENA); temp_diff.sign = x->sign;
             } else {
-                __BIGINT_MAGSUB__(&temp_diff, x, &y, &err_check);
+                __BIGINT_MAGSUB__(&temp_diff, &y, x, &err_check);
                 arena_alloc_oom(err_check, _DASI_SUB_ARENA); temp_diff.sign = -x->sign; 
             } err_check = bigInt_mut_ocopy(x, temp_diff); ocopy_check(err_check, _DASI_SUB_ARENA);
             arena_reset(_DASI_SUB_ARENA, tmp_mark); _DASI_SUB_ARENA = NULL;

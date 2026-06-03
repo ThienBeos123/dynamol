@@ -19,7 +19,11 @@
 #include "../../util/crt_util.h"
 #include "crint_algo_core.h"
 
+
 #define FAKE_BUF_CAP 128 /* Constant tweaked to specific use case */
+//! ANY MANUL TWEAKS TO THIS CONSTANT MACRO MUST SATISFY THE FOLLOWING:
+//  1. THE CONSTANT VALUE IS A POWER OF 2 (TO PREVENT DIVISION INACURRACY IN PARTS OF THE CODE)
+//  2. THE CONSTANT VALUE MUST BE ABLE TO AT LEAST BE DIVISBLE BY 4 INTO A Z+ INTEGER
 
 
 //? ============================= COMMON !TEST! ASSERT ERRORS CATALOG ============================= ?//
@@ -43,6 +47,16 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
         if (_lib_crt_neq((ptr_t)err, (ptr_t)NULL)) *err = err_code; \
         cleanup; return __CRINT_ERRVAL__(); \
     } \
+} while(0);
+#define tmp_cleanup(tmp, ret_stat, chosen_freed) do { \
+    chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : tmp.limbs; \
+    free(chosen_freed); /* Safe nop even on chosen_freed = NULL since ANSI-C */ \
+    tmp.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? tmp.limbs : 0; \
+    CHOOSE_OPTION((tmp.n), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.n), (0)); \
+    CHOOSE_OPTION((tmp.cap), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.cap), (0)); \
+    CHOOSE_OPTION((tmp.sign), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.sign), (0)); \
+    CHOOSE_OPTION((tmp.poisoned), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (tmp.poisoned), (0)); \
+    chosen_freed = 0; \
 } while(0);
 
 
