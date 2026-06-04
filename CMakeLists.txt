@@ -1,22 +1,29 @@
 cmake_minimum_required(VERSION 4.3)
-project(lib-dnml LANGUAGES C ASM)
+ project(lib-dnml VERSION 1.0.0 LANGUAGES C ASM)
 
 # Set C standard (Updated to crisp C23)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
-# Set compiler flags for suppressing warnings during development
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-
-# HARDWARE ARCHITECTURE
-# CMakeLists.txt
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-    add_compile_options(-march=armv8-a)    # Baseline for all ARM64
+# HARDWARE ARCHITECTURE (Fixed for cross-platform toolchains and compilers)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
+    # Only apply -march flags if using a compiler that supports GCC/Clang syntax
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        add_compile_options(-march=armv8-a)
+    endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64")
-    add_compile_options(-march=rv64i)      # Baseline for all RISC-V
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-    add_compile_options(-march=x86-64)     # Baseline for all x86-64
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        add_compile_options(-march=rv64i)
+    endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        add_compile_options(-march=x86-64)
+    elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+        add_compile_options(/arch:AVX2) # or your chosen default baseline for Windows x64
+    endif()
 endif()
 
 # Add include directories globally
@@ -141,30 +148,66 @@ add_library(dnml_core STATIC
     drypto/crypt_int/crint_bitops.c
     drypto/crypt_int/crint_num_theory.c
 )
+add_library(dnml::dnml_core ALIAS dnml_core)
 
 # Extra commands for clearer debugging and cleaning up
 target_compile_options(dnml_core PUBLIC
     # Add this to prevent GCC/Clang flags pollution into MSVC Build
-    $<$<CXX_COMPILER_ID:GNU,AppleClang>:
+    $<$<C_COMPILER_ID:GNU,AppleClang,Clang>:
         -fsanitize=address,undefined -fno-omit-frame-pointer -g
         -Wall -Wextra -pedantic
     >
-    # Additional Clang flags for an even more concise build
-    $<$<CXX_COMPILER_ID:Clang>:
-        -fsanitize=address,undefined -fno-omit-frame-pointer -g
-        -Wall -Wextra -pedantic -Weverything
-    >
     # Add this to prevent MSVC flags pollution in GCC/Clang build
-    $<$<CXX_COMPILER_ID:MSVC>:
-        /W4 /permissive- /fsanitize=address
-    >
+    $<$<C_COMPILER_ID:MSVC>: /W4 /permissive- >
 )
 
 # Pass include path properties cleanly down to linking sub-targets
 target_include_directories(dnml_core
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+# Install/export package so downstream subprojects can use find_package(dnml_core)
+set(DNML_CORE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/dnml_core")
+
+install(TARGETS dnml_core
+    EXPORT dnml_coreTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
+install(EXPORT dnml_coreTargets
+    FILE dnml_coreTargets.cmake
+    NAMESPACE dnml::
+    DESTINATION ${DNML_CORE_CONFIG_INSTALL_DIR}
+)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/dnml_coreConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/dnml_coreConfig.cmake"
+    INSTALL_DESTINATION "${DNML_CORE_CONFIG_INSTALL_DIR}"
+    NO_SET_AND_CHECK_MACRO
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/dnml_coreConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/dnml_coreConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/dnml_coreConfigVersion.cmake"
+    DESTINATION "${DNML_CORE_CONFIG_INSTALL_DIR}"
 )
 
 # 3. LINK TO THE TEST FOLDER
