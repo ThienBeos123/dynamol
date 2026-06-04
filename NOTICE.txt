@@ -1,0 +1,7 @@
+lib-dnml
+Copyright (C) 2026 @ThienBeos123
+
+This product includes software developed by @ThienBeos123 (https://github.com/ThienBeos123/lib-dnml).
+
+This product includes software developed at
+The Apache Software Foundation (http://apache.org).
