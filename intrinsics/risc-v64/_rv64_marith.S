@@ -51,7 +51,7 @@ asm_text_section
 .type       _rv64_modinv64, @function
 
 /* ------- 64 BIT MODULAR INVERSE OF MODULO 2^64 -------
-* uint64_t _rv64_modinv64(uint64_t x) 
+* uint64_t _rv64_modinv64(uint64_t x)
 * arg: a0: uint64_t x   (64 BIT)
 * ret: a0: x^-1 mod(2^64)
 */
@@ -70,7 +70,7 @@ _rv64_modinv64:
     ld t1, 0(t0) // res = *res_adress
 
     // General Formula: res *= 2 - x * res
-    // Iteration 1: 
+    // Iteration 1:
     mv t0, 2 // t0 = 2
     mv t2, t1 // t2 = t1/res
     mul t2, t2, a0 // t2 = res * x
@@ -78,7 +78,7 @@ _rv64_modinv64:
     mul t1, t1, t0 // t1 = res * (2 - (res * x)
     // ---> res *= 2 - (x * res)
 
-    // Iteration 2: 
+    // Iteration 2:
     mv t0, 2 // t0 = 2
     mv t2, t1 // t2 = t1/res
     mul t2, t2, a0 // t2 = res * x
@@ -86,7 +86,7 @@ _rv64_modinv64:
     mul t1, t1, t0 // t1 = res * (2 - (res * x)
     // ---> res *= 2 - (x * res)
 
-    // Iteration 3: 
+    // Iteration 3:
     mv t0, 2 // t0 = 2
     mv t2, t1 // t2 = t1/res
     mul t2, t2, a0 // t2 = res * x

@@ -137,7 +137,7 @@ int main(void) {
             res = _rv64_bswap64(input);
             total_tests++; if (res == expected) passed_tests++;
             else printf("[FAIL] _rv64_bswap64       | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);
-            
+
             res = _rv64_bswap64_port(input);
             total_tests++; if (res == expected) passed_tests++;
             else printf("[FAIL] _rv64_bswap64_port  | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);

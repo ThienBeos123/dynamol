@@ -99,7 +99,7 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
     else if (!x->n) { __BIGINT_INTERNAL_COPY__(res, y);  res->sign = -y->sign; }
     else if (x->sign == y->sign) {
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(x, y);
-        if (!comp_res) __BIGINT_INTERNAL_ZSET__(x);
+        if (!comp_res) __BIGINT_INTERNAL_ZSET__(res);
         else {
             if (comp_res > 0) { __BIGINT_SUB_WB__(res, x, y); res->sign = x->sign; }
             else { __BIGINT_SUB_WB__(res, x, y); res->sign = -x->sign; }
@@ -112,13 +112,13 @@ void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 
 
 //* =============== ADDITION + SUBTRACTION CONSTANT ENGINE =============== *//
-dnml_status __CRINT_ADD_WC__(crint *res, const crint *a, const crint *b) {
+dnml_status __CRINT_ADD_WC__(crint *res, crint *a, crint *b) {
     // Static Analysis
-    crint_poison(a); crint_poison(b); 
+    crint_poison(a); crint_poison(b);
     crint_poison(res); DNML_TEST_ASSERT(
         (res->cap >= crtmax(a->n, b->n) + 1),
-        "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b"
-        " (-Eadd_insufficient_cap)", {}
+        "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b (-Eadd_insufficient_cap)",
+        { __CRINT_IFREE__(res); __CRINT_IFREE__(a); __CRINT_IFREE__(b); }
     ); // Main Algorithms
     size_t max = crtmax(a->n, b->n); uint64_t carry = 0;
     for (size_t i = 0; _lib_crt_lt(i, max); ++i) {
@@ -134,12 +134,12 @@ dnml_status __CRINT_ADD_WC__(crint *res, const crint *a, const crint *b) {
     __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
 }
-dnml_status __CRINT_SUB_WC__(crint *res, const crint *a, const crint *b) {
-    crint_poison(a); crint_poison(b); 
+dnml_status __CRINT_SUB_WC__(crint *res, crint *a, crint *b) {
+    crint_poison(a); crint_poison(b);
     crint_poison(res); DNML_TEST_ASSERT(
         (__CRINT_INTERNAL_CMP__(a, b) != -1),
-        "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
-        " (-Esub_underflow)", {}
+        "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend (-Esub_underflow)", 
+        { __CRINT_IFREE__(res); __CRINT_IFREE__(a); __CRINT_IFREE__(b); }
     ); // Main Algorithms
     uint64_t borrow = 0;
     for (size_t i = 0; _lib_crt_lt(i, a->n); ++i) {

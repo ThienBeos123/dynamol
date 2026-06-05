@@ -42,11 +42,11 @@ void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t srcl
     for (size_t i = 0; i < opsize; ++i) {
         uint8_t curr, src_curr; size_t index;
         CHOOSE_OPTION((curr), (i >= len), (p[i]), (p[len - 1]));
-        CHOOSE_OPTION((curr), (i >= srclen), (ps[i]), (0));
+        CHOOSE_OPTION((src_curr), (i >= srclen), (ps[i]), (0));
         CHOOSE_OPTION((index), (i >= len), (i), (len - 1))
         CHOOSE_OPTION((p[index]),
-            ((i >= start) & (i <= end) & 
-            (!noop) & (i < len)), 
+            ((i >= start) & (i <= end) &
+            (!noop) & (i < len)),
             (src_curr), (curr)
         ); // clang-format off
         curr = 0; src_curr = 0; index = 0;
@@ -66,8 +66,8 @@ void __libdnml_smemwipe_u64(uint64_t *buf, size_t len, size_t start, size_t end,
     instart = 0; inend = 0; buf = 0; len = 0; start = 0; end = 0; noop = 0; // clang-format off
 }
 void __libdnml_smemcpy_u64(
-    uint64_t *dst, uint64_t *src, 
-    size_t len, size_t srclen, 
+    uint64_t *dst, uint64_t *src,
+    size_t len, size_t srclen,
     size_t start, size_t end, bool noop
 ) {
     size_t instart = start * U64_BYTES;

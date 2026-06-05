@@ -147,7 +147,7 @@ _x86w64_pcnt64s:
     movabs rdx, 0x0101010101010101  ; Load multiplier mask
     imul rax, rdx                   ; rax = rax * 0x01... (sums all bytes into MSB)
     shr rax, 56                     ; Shift the accumulated total to lowest 8 bits
-    /* ------ POST-OPERATION REGISTER CLEARANCE ------ */ 
+    /* ------ POST-OPERATION REGISTER CLEARANCE ------ */
     mov rcx, 0 ; function arguments
     mov rdx, 0 ; function arguments
     ret

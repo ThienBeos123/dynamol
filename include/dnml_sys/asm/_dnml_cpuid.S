@@ -20,7 +20,7 @@ limitations under the License.
 #if __x86_64__
 
 
-/* 
+/*
 This file is reserved for:
 +) x86_64 Architecture
 +) System-V ABI (Unix-based + BSDs)

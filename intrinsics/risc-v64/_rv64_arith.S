@@ -42,11 +42,11 @@ asm_text_section
 
 /* ------- 64 BIT ADDITION WITH CARRY -------
 * uint64_t _rv64_add64c(uint64_t a, uint64_t b, uint8_t *carry)
-* arg: 
+* arg:
 *   a0: uint64_t a       (64 BIT)
 *   a1: uint64_t b       (64 BIT)
 *   a2: uint8_t *carry   (8  BIT)
-* ret: 
+* ret:
 *   a0: (a + b + *carry) mod(2^64)
 *   a2: boolean - 1/0
 */
@@ -54,7 +54,7 @@ _rv64_add64c:
     ld t0, 0(a2) // Load *carry into t0
     add a3, a0, a1 // sum = a + b
     sltu t1, a3, a0 // ab_carry = (sum < a);
-    
+
     add a0, a3, t0 // final = sum + *carry
     sltu t0, a0, a3 // final_carry = (final < sum)
 
@@ -71,11 +71,11 @@ _rv64_add64c:
 
 /* ------- 64 BIT SUBTRACTION WITH BORROW -------
 * uint64_t _rv64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow)
-* arg: 
+* arg:
 *   a0: uint64_t a       (64 BIT)
 *   a1: uint64_t b       (64 BIT)
 *   a2: uint8_t *borrow  (8  BIT)
-* ret: 
+* ret:
 *   a0: (a - b - *borrow) mod(2^64)
 *   a2: boolean - 1/0
 */
@@ -103,7 +103,7 @@ _rv64_sub64b:
 
 
 /* ------- 64 BIT WIDE MULTIPLICATION --> 128 BIT PRODUCT -------
-* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   a0: uint64_t a ----> (64 BIT)
 *   a1: uint64_t b ----> (64 BIT)
@@ -125,7 +125,7 @@ _rv64_wmul128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - PERFORMANCE-BASED -------
-* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   a0: uint64_t lo ----> (64 BIT)
 *   a1: uint64_t hi ----> (64 BIT)
@@ -138,7 +138,7 @@ _rv64_wmul128:
 */
 _rv64_wdiv128:
     bgeu a1, a2, .overflow
-    /* Main Divisions + Returns */ 
+    /* Main Divisions + Returns */
     ld t0, 64 // Loop Counter - i
     ld t1, x0 // Quotient - q
 .div_loop:
@@ -228,7 +228,7 @@ _rv64_crt_wdiv128:
         - t5 -- LOOP COUNTER (i)        - a0 - q (RESULT QUOTIENT)
     * UNMODIFIABLE VARIALBES/REGISTERS LIST:
         - a3 -- *rem    |   - a4 -- *ovf
-    */ 
+    */
     // Loop Configurations
     li a0, x0 // a0 = q (quotient accumulator)
     li t5, 64 // a5 = Loop counter (i = 64 down to 1)
@@ -259,7 +259,7 @@ _rv64_crt_wdiv128:
 
 
     /* =========== 5. Final Output Selections =========== */
-    // If overflowed (t0 == 1): return UINT64_MAX. Else: return q. 
+    // If overflowed (t0 == 1): return UINT64_MAX. Else: return q.
     // If overflowed (t0 == 1): *rhat = 0. Else: *rhat = final accumulated chosen_hi (x9).
     li t6, -1 // UINT64_MAX
     neg t1, t0 // If t0 == 1 -> t1 = 0xFFFFFFFFFFFFFFFF (BITMASK)

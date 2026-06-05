@@ -112,7 +112,7 @@ _rv64_clz64c:
         - U64 a0: x             -- (THE INPUT)
         - U64 a1: is_zero_mask  -- ~(x | (-x)) >> 63;
         - U64 a2: n             -- (temporary result holder)
-        - U64 a3: mask          -- DEFINED LATER 
+        - U64 a3: mask          -- DEFINED LATER
     */
 
     // Step 1: mask = -((int64_t)!(x >> 32)); n += mask & 32; x <<= mask & 32;
@@ -215,7 +215,7 @@ _rv64_ctz64c:
         - U64 a0: x             -- (THE INPUT)
         - U64 a1: is_zero_mask  -- ~(x | (-x)) >> 63;
         - U64 a2: n             -- (temporary result holder)
-        - U64 a3: mask          -- DEFINED LATER 
+        - U64 a3: mask          -- DEFINED LATER
         - U64 a4: lowest_bit    -- (x & -x)
     */
 
@@ -260,7 +260,7 @@ _rv64_ctz64c:
     sll a4, a4, a3 // lowest_bit <<= mask & 2
 
     // Step 7: return (uint8_t)(ctz_val ^ (is_zero_mask & (ctz_val ^ U64_BITS)));
-    ld t0, 63 
+    ld t0, 63
     sub a2, t0, a2 // uint64_t ctz_val = 63 - n
     xori t0, a2, 64 // t0 = ctz_val ^ U64_BITS
     and t0, a1, t0 // t0 = is_zero_mask & (ctz_val ^ U64_BITS)
@@ -361,7 +361,7 @@ _rv64_pcnt64_port:
 .all_zero:
     ld a0, 64
     ret
-/* Bit-manipulation Constants */ 
+/* Bit-manipulation Constants */
 .align 3
 .mask_55: .quad 0x5555555555555555
 .mask_33: .quad 0x3333333333333333

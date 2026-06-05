@@ -20,7 +20,7 @@ limitations under the License.
 
 
 size_t __BITCOUNT___(size_t digit_count, uint8_t base) {
-    if (base = 10)          return digit_count * log2_10;
+    if (base == 10)          return digit_count * log2_10;
     else if (base == 16)    return digit_count * log2_16;
     else if (base == 2)     return digit_count * log2_2;
     else if (base == 8)     return digit_count * log2_8;
@@ -40,12 +40,12 @@ uint64_t __MAG_I64__(int64_t val) {
 }
 
 
-static inline uint8_t _mul_will_overflow(uint64_t mul1, uint64_t mul2) { 
+static inline uint8_t _mul_will_overflow(uint64_t mul1, uint64_t mul2) {
     return (mul2 && mul1 > UINT64_MAX / mul2);
 }
 
 
-uint64_t _stou64(const char *buf, int buflen) {
+uint64_t _stou64(const char *buf, size_t buflen) {
     if (!buflen || !buf) return 0;
     uint64_t res = 0;
     for (size_t i = 0; i < buflen; ++i) {

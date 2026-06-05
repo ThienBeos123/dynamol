@@ -34,11 +34,11 @@ size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size) {
     // Paddings & Low-level Arenas
     size_t mul_divmod_size = max(
         __BIGINT_MUL_WS__(anumerator_size, n_size), max(
-            __BIGINT_MUL_WS__(aaslimbs_size, prelimbs_size), 
+            __BIGINT_MUL_WS__(aaslimbs_size, prelimbs_size),
             __BIGINT_DIV_WS__(numlimbs_size, n_size)
         )
-    ); return numlimbs_size + prelimbs_size + tmp_size 
-              + aaslimbs_size + anumerator_size 
+    ); return numlimbs_size + prelimbs_size + tmp_size
+              + aaslimbs_size + anumerator_size
               + acopy_size + additional_size + mul_divmod_size;
 }
 size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size) {
@@ -79,7 +79,7 @@ void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx b
     memcpy(anumer.limbs, &anumer.limbs[n->n - 1], remlimbs * U64_BYTES);
     limb_t *acopy_limbs = scratch_alloc(&barett_ctx, a->n, &end_stat); mod_endstat(end_stat, err_check);
     DNML_TEST_ASSERT(
-        !(end_stat == DARENA_OVERFLOW), 
+        !(end_stat == DARENA_OVERFLOW),
         "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
         { scratch_clear(&barett_ctx); scratch_destruct(&barett_ctx); }
     );
@@ -92,14 +92,14 @@ void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx b
     } else {
         limb_t *final_limb = scratch_alloc(&barett_ctx, remlimbs, &err_check); mod_endstat(end_stat, err_check);
         DNML_TEST_ASSERT(
-            !(end_stat == DARENA_OVERFLOW), 
+            !(end_stat == DARENA_OVERFLOW),
             "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
             { scratch_clear(&barett_ctx); scratch_destruct(&barett_ctx); }
         );
         bigInt final_res = {.limbs = final_limb, .n = 0, .cap = remlimbs, .sign = 1};
         __BIGINT_MUL_DISPATCH__(&anumer, n, &final_res, barett_ctx);
-        __BIGINT_SUB_WB__(&a_copy, &a_copy, &final_res); 
-    } 
+        __BIGINT_SUB_WB__(&a_copy, &a_copy, &final_res);
+    }
     while (__BIGINT_INTERNAL_COMP__(&a_copy, n) >= 0) __BIGINT_SUB_WB__(&a_copy, &a_copy, n);
     __BIGINT_INTERNAL_COPY__(rem, &a_copy); scratch_reset(&barett_ctx, barett_mark);
 }

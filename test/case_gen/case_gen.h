@@ -50,13 +50,13 @@ typedef enum {
     CASE_ZERO,  // n = 0, sign = 1 (zero)
     CASE_ONE,   // limbs[0] = 1, n = 1, sign = 1
     CASE_RANDOM, // COMPLETELY RANDOM ON EVERY LIMB
-    
+
     // EDGE CASES: LIMB PATTERNS
     CASE_MAX, // All limbs = 0xFFFFFFFFFFFFFFFF (max value)
     CASE_ALT,  // Limbs alternate 0x5555... and 0xAAAA...
     CASE_MSB, // All limbs have MSB = 1 (0x8000... and variants)
     CASE_LSB, // All limbs have LSB = 1 (odd values)
-    
+
     // POWER CASES: BASE-SPECIFIC
     CASE_PO8,      // Value = 8^K (powers of octal base)
     CASE_PO10,     // Value = 10^K (powers of decimal base)
@@ -65,9 +65,9 @@ typedef enum {
     // Automatic tracking of case-counts
     BIGINT_CASE_COUNT
 } bi_cases;
-typedef struct { 
+typedef struct {
     uint8_t low_qbound, high_qbound;
-    float low_pbound, high_pbound; 
+    float low_pbound, high_pbound;
 } case_prange;
 
 //* MAIN CONFIG STRUCT *//
@@ -92,7 +92,7 @@ void bigen_write(bigInt *buf, bi_rand_mod *config);
 typedef enum { WHITESPACE, LEADING_ZEROS, SIGNS, BASE_PREFIX } str_areas;
 typedef enum { STR_CLEAN_MODE, STR_STANDARD_MODE, STR_FAULTY_MODE, STR_GMODE_CNT} str_gen_mode;
 typedef struct {
-    float chance; 
+    float chance;
     uint8_t low_qbound; uint8_t high_qbound; // Quantitative Bounds
     float low_pbound; float high_pbound; // Probability Bounds
 } component_prob_t;
@@ -103,7 +103,7 @@ typedef struct {
     bool whitespace; bool lzeros;
     bool sign; bool bprefix; bool junk;
     bool inval_digit; bool early_null;
-    
+
     // Numerical amounts configuration
     uint8_t wscount; uint8_t lzcount;
     bool mixed_sign; bool mixed_bp; size_t bprefix_cnt;

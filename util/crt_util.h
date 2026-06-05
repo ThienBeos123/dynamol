@@ -52,6 +52,9 @@ size_t __clamp_size(size_t cap, size_t insize);
 
 
 /* crt_bnum_util.c */
+dnml_status __CRINT_IFREE__(crint *x);
+dnml_status __CRINT_INEW__(crint *x);
+dnml_status __CRINT_INEWS__(crint *x, size_t n);
 dnml_status __CRINT_TRIM_LZ__(crint *x);
 int8_t __CRINT_INTERNAL_CMP__(crint *x, crint *y);
 dnml_status __CRINT_INTERNAL_RLSHIFT__(crint *x, size_t len, size_t limb_cnt);

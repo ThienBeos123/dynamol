@@ -14,7 +14,7 @@ include_directories(
 # local install tree at ../../build/install so users can do "cmake .." inside
 # test/low/build without needing an absolute path.
 list(APPEND CMAKE_PREFIX_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../build/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build/dist"
 )
 
 if(NOT TARGET dnml::dnml_core)

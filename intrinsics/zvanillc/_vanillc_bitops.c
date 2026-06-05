@@ -52,15 +52,15 @@ uint8_t _cintrin_ctz64(uint64_t x) {
 // 64 bit Byte Swapping
 uint64_t _cintrin_bswap64(uint64_t x) {
     // Stage 1: Swap adjacent 8-bit bytes
-    // Mask isolates bytes 0, 2, 4, 6. 
+    // Mask isolates bytes 0, 2, 4, 6.
     // Shifting grabs bytes 1, 3, 5, 7.
-    x = ((x >> 8)  & UINT64_C(0x00FF00FF00FF00FF)) | 
+    x = ((x >> 8)  & UINT64_C(0x00FF00FF00FF00FF)) |
         ((x & UINT64_C(0x00FF00FF00FF00FF)) << 8);
 
     // Stage 2: Swap adjacent 16-bit words
     // Mask isolates bytes [0,1] and [4,5].
     // Shifting grabs bytes [2,3] and [6,7].
-    x = ((x >> 16) & UINT64_C(0x0000FFFF0000FFFF)) | 
+    x = ((x >> 16) & UINT64_C(0x0000FFFF0000FFFF)) |
         ((x & UINT64_C(0x0000FFFF0000FFFF)) << 16);
 
     // Stage 3: Swap the 32-bit halves (No mask required!)

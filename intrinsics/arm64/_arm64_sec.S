@@ -40,7 +40,7 @@ FUNC_SIZE(ASM_SYM(arm64_hw_trng))
 .p2align    2
 
 
-// Uses hardware DRBG, in which it alos utilizes hardware entropy, 
+// Uses hardware DRBG, in which it alos utilizes hardware entropy,
 // to seed entropy to the user swiftly
 /* ----- HARDWRE DETERMINISTIC RANDOM BIT GENERATOR -----
 * uint64_t _arm64_hw_drbg(int *err)

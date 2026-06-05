@@ -133,30 +133,30 @@ _rv64_hw_cstrng:
     srli  a2, t1, 48 // a2 = Cleaned Sample 1 entropy bits
 
     // ------ SAMPLE 2 (Bits [16:31]) ------
-    csrrw t1, 0x015, x0     
-    srli  t2, t1, 30        
-    xori  t2, t2, 2         
-    or    t0, t0, t2        
+    csrrw t1, 0x015, x0
+    srli  t2, t1, 30
+    xori  t2, t2, 2
+    or    t0, t0, t2
     // Save and scrub raw data chunk safely
     slli  t1, t1, 48
-    srli  t1, t1, 32        
+    srli  t1, t1, 32
     or    a2, a2, t1 // a2 |= Sample 2 shifted to bits [16:31]
 
     // ------ SAMPLE 3 (Bits [32:47]) ------
-    csrrw t1, 0x015, x0     
-    srli  t2, t1, 30        
-    xori  t2, t2, 2         
-    or    t0, t0, t2        
+    csrrw t1, 0x015, x0
+    srli  t2, t1, 30
+    xori  t2, t2, 2
+    or    t0, t0, t2
     // Save and scrub raw data chunk safely
     slli  t1, t1, 48
-    srli  t1, t1, 16        
+    srli  t1, t1, 16
     or    a2, a2, t1 // a2 |= Sample 3 shifted to bits [32:47]
 
     // ------ SAMPLE 4 (Bits [48:63]) ------
-    csrrw t1, 0x015, x0     
-    srli  t2, t1, 30        
-    xori  t2, t2, 2         
-    or    t0, t0, t2        
+    csrrw t1, 0x015, x0
+    srli  t2, t1, 30
+    xori  t2, t2, 2
+    or    t0, t0, t2
     // Save and scrub raw data chunk safely
     slli t1, t1, 48 // Shifts directly to [48:63] region boundary
     or   a2, a2, t1 // a2 now contains full 64-bit compiled pool
@@ -180,13 +180,13 @@ _rv64_hw_cstrng:
     // We check the status traits of our last recorded sample in t2 (before it was flipped):
     // Re-extract true OPST raw bits from the last execution snapshot
     srli  t4, t1, 30        // Fetch the original un-flipped status of Sample 4
-    
+
     // Branchless classification mapping:
     // If raw OPST == 1 (WAIT), we return 1.
     // If raw OPST == 3 (DEAD) or 0 (BIST processing state faults), we pass 2.
     andi  t5, t4, 1         // t5 = 1 if OPST is odd (WAIT/DEAD), 0 if even (BIST)
     srli  t6, t4, 1         // t6 = 1 if OPST is 2 or 3 (ES16/DEAD), 0 if 0 or 1 (BIST/WAIT)
-    
+
     // Synthesize mapped value: (t5 | (t6 << 1)) inside an arithmetic threshold evaluation
     // Alternatively, a clean, robust default fallback for generic cryptographic failure:
     // Set err code directly to 1 if it was a WAIT condition, otherwise default to 2.

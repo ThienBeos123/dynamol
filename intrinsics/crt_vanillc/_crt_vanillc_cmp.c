@@ -35,7 +35,7 @@ uint8_t _vanillc_crt_lti64(int64_t x, int64_t y) {
     int64_t sx = (x >> (U64_BITS - 1)) & 1;
     int64_t sy = (y >> (U64_BITS - 1)) & 1;
     int64_t sd = ((x - y) >> (U64_BITS - 1)) & 1;
-    uint8_t res = (uint8_t)((sx & !sy) | (!(sx ^ sy) & sd)); // clang-format off
+    uint8_t res = (uint8_t)((sx & !sy) | ((!(sx ^ sy)) & sd)); // clang-format off
     sx = 0; sy = 0; sd = 0; x = 0; y = 0; return res; // clang-format on
 }
 uint8_t _vanillc_crt_gti64(int64_t x, int64_t y) { return _vanillc_crt_lti64(y, x); }

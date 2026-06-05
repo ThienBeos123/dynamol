@@ -49,7 +49,7 @@ uint64_t _crtintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     uint64_t second_mul = a_low * b_high;
     uint64_t third_mul = a_high * b_low;
     uint64_t fourth_mul = a_high * b_high;
-    
+
     // Lower Half Calculation
     uint64_t mid = second_mul + third_mul;
     uint64_t mid_carry = (_vanillc_crt_lt(mid, second_mul)); // Handles mid overflow (0 <= mid < 2^65)
@@ -58,13 +58,13 @@ uint64_t _crtintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     /* Lower half of a bit is attained by the formula:  Res % 2^64 = low
     *   +) (a x b % 2^64) = (first_mul + mid * 2^32 + fourth_mul * 2^64) % 2^64
     *                     = (first_mul + mid * 2^32) % 2^64 (1)
-    * 
+    *
     *   +) mid                      = mid_low + mid_high * 2^32
     *      mid * 2^32               = mid_low * 2^32 + mid_high * 2^64
     *      (mid * 2^32) % 2^64      = (mid_low * 2^32 + mid_high * 2^64) % 2^64
-    *      (mid * 2^32) % 2^64      = mid_low * 2^32                                
+    *      (mid * 2^32) % 2^64      = mid_low * 2^32
     *                               = mid_low << 32 (2)
-    * 
+    *
     * ----> (a x b % 2^64)      = first_mul + mid_low * 2^32
     * ----> (a x b) lower bits  = first_mul + mid_low * 2^32
     */
@@ -76,14 +76,14 @@ uint64_t _crtintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     /* Higher half of a bit is attained by the formula:  floor(Res / 2^64) = high
     *   +) floor(a x b / 2^64) = floor((first_mul + mid * 2^32 + fourth_mul * 2^64) / 2^64)
     *                          = floor((first_mul / 2^64) + (mid * 2^-32) + fourth_mul)
-    * 
+    *
     *   +) mid                  = mid_low + mid_high * 2^32
     *      mid * 2^-32          = (mid_low + mid_high * 2^32) / 2^32
     *      mid * 2^-32          = (mid_low / 2^32) + mid_high
     *      floor(mid * 2^-32)   = floor((mid_low / 2^32) + mid_high)
     *      floor(mid * 2^-32)   = floor({0 <= mid_low / 2^32 < 1} + mid_high)  (0 <= mid_low < 2^32)
     *      floor(mid * 2^-32)   = mid_high
-    * 
+    *
     *   -----> floor(a x b / 2^64) = floor(first_mul / 2^64) + mid_high + fourth_mul
     *                              = mid_high + fourth_mul
     */
@@ -113,6 +113,6 @@ uint64_t _crtintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rh
     }
     uint64_t ret_quotient = _vanillc_crt_select(overflow_flag, (UINT64_MAX), (q));
     *rhat = _vanillc_crt_select(overflow_flag, (0), (chosen_hi)); // clang-format off
-    overflow_flag = 0; q = 0; fake_hi = 0; fake_lo = 0; chosen_lo = 0; chosen_hi = 0; 
+    overflow_flag = 0; q = 0; fake_hi = 0; fake_lo = 0; chosen_lo = 0; chosen_hi = 0;
     lo = 0; hi = 0; div = 0; rhat = 0; overflowed = 0; return ret_quotient; // clang-format on
 }

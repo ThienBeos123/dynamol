@@ -43,7 +43,7 @@ uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
 }
 uint64_t __CRT_SUB_U64__(uint64_t a, uint64_t b, uint8_t *borrow) {
     *borrow = !!(*borrow);
-    #if (__compiler_gcc || __compiler_clang) 
+    #if (__compiler_gcc || __compiler_clang)
         // Clang / GCC --> Always used
         uint64_t diff;
         *borrow =  __builtin_sub_overflow(a, b, &diff);
@@ -68,14 +68,14 @@ uint64_t __CRT_MUL_U64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #endif
 }
 uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
-    if (hi >= div) { 
-        if (_DNML_DEBUG_MODE) { 
+    if (hi >= div) {
+        if (_DNML_DEBUG_MODE) {
             fputs("Division Error - Can't contain full quotient in 64 bit", stderr);
             abort();
         } else { *rhat = 0; return 0; }
-    } 
+    }
     #if __HAS_int128__ // GCC / Clang
-        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo; 
+        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo;
         *rhat = (uint64_t)(dividend % div);
         return (uint64_t)(dividend / div);
     #elif __compiler_msvc // MSVC
@@ -108,7 +108,7 @@ uint8_t __CRT_CLZ_UI64__(uint64_t x) {
 }
 uint8_t __CRT_CTZ_UI64__(uint64_t x) {
     // The actual code
-    #if (__compiler_gcc || __compiler_clang) 
+    #if (__compiler_gcc || __compiler_clang)
         return __builtin_ctzll(x);
     #elif __compilter_msvc
         return _CountTrailingZeros64(x);
@@ -126,8 +126,8 @@ uint64_t __CRT_BSWAP_UI64__(uint64_t x) {
         return (*_libdnml_crt_gbitops_ftable.bswap64)(x);
     #endif
 }
-uint8_t __CRT_PCNT_UI64__(uint64_t x) { 
-    if (!x) return 0; 
+uint8_t __CRT_PCNT_UI64__(uint64_t x) {
+    if (!x) return 0;
     else if (!(x ^ UINT64_MAX)) return U64_BITS;
     #if (__compiler_gcc || __compiler_clang)
         return __builtin_popcountll(x);
@@ -200,8 +200,8 @@ typedef void (*halt_func_t)(void);
 static void __INTERNAL_MEMCPY_STRICT__(void *buf, const void *src, size_t len) {}
 static void __INTERNAL_MEMWIPE_STRICT__(void *buf, size_t len) {}
 static int __internal_write_seed(
-    void *buf, size_t len, int retry_max, 
-    rng_func_t hw_rng, halt_func_t hw_halt, 
+    void *buf, size_t len, int retry_max,
+    rng_func_t hw_rng, halt_func_t hw_halt,
     size_t *written
 ) {
     uint8_t* p = (uint8_t*)buf;
@@ -222,7 +222,7 @@ static int __internal_write_seed(
         uint8_t is_ok = (_lib_crt_eq(err, 0));
         // If a fatal error occurs anywhere, permanently latch global_status to -2
         global_status = (global_status & ~is_fatal) | (-2 & is_fatal);
-        
+
 
         // ------------ RETRIES TRACKING ------------
         // If retry_exceed && global_status != -2, latch to -1
@@ -243,7 +243,7 @@ static int __internal_write_seed(
 
         // ------------ FAULT MASKING & HIDING ------------
         // 1. Copy data into a local staging variable to guarantee 100% uniform code tracking
-        // 2. We execute a full 8-byte transfer into a temporary buffer, then conditionally 
+        // 2. We execute a full 8-byte transfer into a temporary buffer, then conditionally
         //    commit bytes into the real destination stream to eliminate memcpy timing variances.
         uint64_t staging_val = block;
         uint8_t staging_bytes[8]; __INTERNAL_MEMCPY_STRICT__(staging_bytes, &staging_val, 8);
@@ -262,8 +262,8 @@ static int __internal_write_seed(
         rem -= active_bytes; *written += active_bytes;
         (hw_halt)(); // ALWAYS DO A HALT TO ENSURE NO SIGNIFICANT TIMING VARIANCE
         /* ==== MANDATORY "PER-ITERATION" VARIABLE CLEANUP ==== */ // clang-format off
-        err = 0; block = 0; is_fatal = 0; is_wait = 0; is_ok = 0; retry_exceed = 0; 
-        has_space = 0; exec_valid = 0; write_enabled = 0; write_amounts = 0; active_bytes = 0; 
+        err = 0; block = 0; is_fatal = 0; is_wait = 0; is_ok = 0; retry_exceed = 0;
+        has_space = 0; exec_valid = 0; write_enabled = 0; write_amounts = 0; active_bytes = 0;
         staging_val = 0; __INTERNAL_MEMWIPE_STRICT__(staging_bytes, 8); // clang-format on
     }
     /* ==== MANDATORY "POST-OPERATION" VARIABLE CLEANUP ==== */ // clang-format off
@@ -382,7 +382,7 @@ static int ___ENTROPY_CSDARWIN(void *buf, size_t len, int retry_max, size_t *wri
     for (size_t i = 0; _lib_crt_lt(i, loop_limit); ++i) {
         // Process in chunks (getentropy has 256 byte limit)
         size_t n = _lib_crt_select((remain > 256), 256, remain);
-        int ret = getentropy(ucbuf, n); global_status |= (ret); 
+        int ret = getentropy(ucbuf, n); global_status |= (ret);
         n &= (-!(ret)); // ret == 0 --> n STAYS
         ucbuf += n; (*written) += n; remain -= n;
     }
@@ -428,7 +428,8 @@ static int ___ENTROPY_CSWIN64(void *buf, size_t len, size_t *written) { //todo U
     BCryptCloseAlgorithmProvider(alg_handle, 0); // Close provider
     if (!BCRYPT_SUCCESS(status)) { errno = EIO; return -1; } // Check for failure
     *written = len; return 0; // Success (can't truly track BCryptGenRandom write)
-
+#else
+    *written = 0; return -1;
 #endif
 }
 // Cryptographical Helpers
@@ -505,5 +506,5 @@ int __GET_ENTROPY_PQC(void *buf, size_t len) { //todo UNFINISHED
             ((uint8_t*)buf)[processed + i] *= (pool_hw[i] & 1) ? pool_hw[i] : pool_hw [i] - 1; // Mul by odd
         } processed += chunk; hw_write = 0; os_write = 0; chunk = 0;
     } __INTERNAL_MEMWIPE_STRICT__(pool_os, 512); __INTERNAL_MEMWIPE_STRICT__(pool_hw, 512);
-    processed = 0; os_write = 0; os_write = 0; hw_write = 0;
+    processed = 0; os_write = 0; os_write = 0; hw_write = 0; return 0;
 }

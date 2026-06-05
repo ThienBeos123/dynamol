@@ -43,11 +43,11 @@ FUNC_SIZE(ASM_SYM(arm64_crt_wdiv128))
 
 /* ------- 64 BIT ADDITION WITH CARRY -------
 * uint64_t _arm64_add64c(uint64_t a, uint64_t b, uint8_t *carry)
-* arg: 
+* arg:
 *   x0: uint64_t a       (64 BIT)
 *   x1: uint64_t b       (64 BIT)
 *   x2: uint8_t *carry   (8  BIT)
-* ret: 
+* ret:
 *   x0: (a + b + *carry) mod(2^64)
 *   x2: boolean - 1/0
 */
@@ -69,11 +69,11 @@ ASM_SYM(arm64_add64c):
 
 /* ------- 64 BIT SUBTRACTION WITH BORROW -------
 * uint64_t _arm64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow)
-* arg: 
+* arg:
 *   x0: uint64_t a       (64 BIT)
 *   x1: uint64_t b       (64 BIT)
 *   x2: uint8_t *borrow  (8  BIT)
-* ret: 
+* ret:
 *   x0: (a - b - *borrow) mod(2^64)
 *   x2: boolean - 1/0
 */
@@ -97,7 +97,7 @@ ASM_SYM(arm64_sub64b):
 
 
 /* ------- 64 BIT WIDE MULTIPLICATION --> 128 BIT PRODUCT -------
-* uint64_t _arm64_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _arm64_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   x0: uint64_t a ----> (64 BIT)
 *   x1: uint64_t b ----> (64 BIT)
@@ -122,7 +122,7 @@ ASM_SYM(arm64_wmul128):
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - PERFORMANCE-BASED -------
-* uint64_t _arm64_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed) 
+* uint64_t _arm64_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed)
 * arg:
 *   x0: uint64_t lo ----> (64 BIT)
 *   x1: uint64_t hi ----> (64 BIT)
@@ -180,7 +180,7 @@ ASM_SYM(arm64_wdiv128):
     movn x0, #0 // return UINT64_MAX
     // if (overflow != NULL) *overflow = 1
     cbz x4, .done_overflow
-    mov x8, #1 
+    mov x8, #1
     str x8, [x4] // *x4 = x8/1
     ret
 .done_overflow:
@@ -227,7 +227,7 @@ ASM_SYM(arm64_crt_wdiv128):
     * UNMODIFIABLE VARIALBES/REGISTERS LIST:
         - x3 -- *rem
         - x4 -- *ovf
-    */ 
+    */
     // Loop Configurations
     mov   x10, xzr // q = 0
     mov   x11, #64 // i = 64 -- Loop counter

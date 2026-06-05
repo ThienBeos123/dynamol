@@ -41,7 +41,7 @@ uint64_t __ADD_UI64__(uint64_t a, uint64_t b, uint8_t *carry) {
 }
 uint64_t __SUB_UI64__(uint64_t a, uint64_t b, uint8_t *borrow) {
     *borrow = (*borrow) ? 1 : 0;
-    #if (__compiler_gcc || __compiler_clang) 
+    #if (__compiler_gcc || __compiler_clang)
         // Clang / GCC --> Always used
         uint64_t diff;
         *borrow =  __builtin_sub_overflow(a, b, &diff);
@@ -66,18 +66,23 @@ uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #endif
 }
 uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
-    if (hi >= div) { 
-        if (_DNML_DEBUG_MODE) { 
+    if (hi >= div) {
+        if (_DNML_DEBUG_MODE) {
             fputs("Division Error - Can't contain full quotient in 64 bit", stderr);
             abort();
-        } else { *rhat = 0; return 0; }
-    } 
+        } else { *rhat = 0; *overflowed = 1; return 0; }
+    }
     #if __HAS_int128__ // GCC / Clang
-        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo; 
+        if (hi >= div && overflowed != NULL) *overflowed = 1;
+        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo;
         *rhat = (uint64_t)(dividend % div);
-        return (uint64_t)(dividend / div);
+        *rhat = (hi >= div) ? hi % div : *rhat;
+        return (hi >= div) ? (uint64_t)(dividend / div) : UINT64_MAX;
     #elif __compiler_msvc // MSVC
-        return _udiv128(hi, lo, div, rhat);
+        if (hi >= div && overflowed != NULL) *overflowed = 1;
+        uint64_t ret = _udiv128(hi, lo, div, rhat);
+        *rhat = (hi >= div) ? hi % div : *rhat;
+        return (hi >= div) ? UINT64_MAX : ret;
     #else // Unknown Compiler
         #if !(__ARCH_X86_64__)
             *rhat = _libdnml_gbitops_ftable.clz64(div);
@@ -85,7 +90,7 @@ uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *r
         return (*_libdnml_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
     #endif
 }
-uint64_t __MODINV_UI64__(uint64_t x) { 
+uint64_t __MODINV_UI64__(uint64_t x) {
     if (!(x & 1)) return 0;
     return (*_libdnml_gmarith_ftable.modinv64)(x);
 }
@@ -146,7 +151,7 @@ uint8_t __CLZ_UI64__(uint64_t x) {
 uint8_t __CTZ_UI64__(uint64_t x) {
     if (!x) return U64_BITS;
     // The actual code
-    #if (__compiler_gcc || __compiler_clang) 
+    #if (__compiler_gcc || __compiler_clang)
         return __builtin_ctzll(x);
     #elif __compilter_msvc
         return _CountTrailingZeros64(x);
@@ -164,8 +169,8 @@ uint64_t __BSWAP_UI64__(uint64_t x) {
         return (*_libdnml_gbitops_ftable.bswap64)(x);
     #endif
 }
-uint8_t __PCNT_UI64__(uint64_t x) { 
-    if (!x) return 0; 
+uint8_t __PCNT_UI64__(uint64_t x) {
+    if (!x) return 0;
     else if (x== UINT64_MAX) return U64_BITS;
     #if (__compiler_gcc || __compiler_clang)
         return __builtin_popcountll(x);
@@ -196,7 +201,7 @@ int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *
             block = (*_libdnml_ghw_ftable.hw_drbg)(&err);
             if (err == 2) return -2; // FATAL ERROR IN HARDWARE (for RV64)
             if (retry_cnt > retry_max) return -1;
-            if (!err) { *(uint64_t*)p = block; p += 8; rem -= 8; break; } 
+            if (!err) { *(uint64_t*)p = block; p += 8; rem -= 8; break; }
             ++retry_cnt; (*_libdnml_ghw_ftable.hw_shalt)();
         } (*written) += 8; // 8 bytes filled
     }
@@ -207,10 +212,10 @@ int __CPU_DBRG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *
             block = (*_libdnml_ghw_ftable.hw_drbg)(&err);
             if (err == 2) return -2; // FATAL ERROR IN HARDWARE (for RV64)
             if (retry_cnt > retry_max) return -1;
-            if (!err) { 
+            if (!err) {
                 if (!crypt) memcpy(p, &block, rem);
                 else __MEMCPY_STRICT__(p, &block, rem);
-                break; 
+                break;
             } ++retry_cnt; (*_libdnml_ghw_ftable.hw_shalt)();
         } (*written) += rem; // The remaining are filled in
     } return 0;
@@ -220,15 +225,15 @@ int __CPU_TRNG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *
     unsigned char *p = (unsigned char *)buf;
     size_t rem = len; int retry_cnt = 0;
     // Filling in 64-bit chunks / 8-byte chunks
-    while (rem >= 8) { 
+    while (rem >= 8) {
         uint64_t block; int err = 0;
         while (1) {
             block = (*_libdnml_ghw_ftable.hw_trng)(&err);
             if (err == 2) return -2; // FATAL ERROR IN HARDWARE (for RV64)
             if (retry_cnt > retry_max) return -1;
-            if (!err) { *(uint64_t*)p = block; p += 8; rem -= 8; break; } 
+            if (!err) { *(uint64_t*)p = block; p += 8; rem -= 8; break; }
             ++retry_cnt; (*_libdnml_ghw_ftable.hw_halt)();
-        } (*written) += 8; // 8 bytes filled 
+        } (*written) += 8; // 8 bytes filled
     }
     // Handle the remaining odd blocks
     if (rem) {
@@ -246,8 +251,8 @@ int __CPU_TRNG_SEED__(void *buf, size_t len, int retry_max, bool crypt, size_t *
     } return 0;
 }
 /* Hardware-Interactive Functionalities */
-void __CPU_FULL_HALT__(void) { (*_libdnml_ghw_ftable.hw_halt); }
-void __CPU_SHALLOW_HALT__(void) { (*_libdnml_ghw_ftable.hw_shalt); }
+void __CPU_FULL_HALT__(void) { (*_libdnml_ghw_ftable.hw_halt)(); }
+void __CPU_SHALLOW_HALT__(void) { (*_libdnml_ghw_ftable.hw_shalt)(); }
 
 
 
@@ -274,7 +279,7 @@ static int ___ENTROPY_URANDOM(void *buf, size_t len, int retry_max, size_t *writ
         ssize_t n = read(fd, p + readed, len - readed);
         if (n < 0) {
             // Signal interruption --> Retry
-            if (errno = EINTR) {
+            if (errno == EINTR) {
                 if (retry_cnt > retry_max) return -1;
                 ++retry_cnt; continue;
             }
@@ -331,7 +336,7 @@ static int ___ENTROPY_DARWIN(void *buf, size_t len, int retry_max, size_t *writt
             // EPERM: Permssion denied (Sandbox restrictions)
             // EACCES: Access denied (Sandbox restrictions)
             return ___ENTROPY_URANDOM(buf, len, retry_max, written);
-        } 
+        }
         return -1;
     }
     return 0;
@@ -376,7 +381,8 @@ static int ___ENTROPY_WIN64(void *buf, size_t len, size_t *written) { // Windows
     BCryptCloseAlgorithmProvider(alg_handle, 0); // Close provider
     if (!BCRYPT_SUCCESS(status)) { errno = EIO; return -1; } // Check for failure
     *written = len; return 0; // Success (can't truly track BCryptGenRandom write)
-
+#else
+    return -1;
 #endif
 }
 // Cryptographical Helpers
@@ -424,4 +430,3 @@ void __GET_ENTROPY_FAST(void* buf, size_t len) {
     }
 }
 void __GET_ENTROPY_STD(void *buf, size_t len) {}
-
