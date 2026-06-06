@@ -20,17 +20,18 @@ limitations under the License.
 #if __ARCH_RVI64__
 
 asm_rodata_section
-.align      12
-.globl _debruijin_clz:
-    .quad 63,  0, 58,  1, 59, 47, 53,  2, 60, 39, 48, 27, 54, 33, 42,  3
-    .quad 61, 51, 37, 40, 49, 18, 28, 20, 55, 30, 34, 11, 43, 14, 22,  4
-    .quad 62, 57, 46, 52, 38, 26, 32, 41, 50, 36, 17, 19, 29, 10, 13, 21
-    .quad 56, 45, 25, 31, 35, 16,  9, 12, 44, 24, 15,  8, 23,  7,  6,  5
-.globl _debruijin_ctz:
-    .quad 0,  1,  2, 53,  3,  7, 54, 27,  4, 38, 41,  8, 34, 55, 48, 28
-    .quad 62,  5, 39, 46, 44, 42, 22,  9, 24, 35, 59, 56, 49, 18, 29, 11
-    .quad 63, 52,  6, 26, 37, 40, 33, 47, 61, 45, 43, 21, 23, 58, 17, 10
-    .quad 51, 25, 36, 32, 60, 44, 57, 16, 50, 31, 15, 14, 13, 12, 50, 30
+.align      3
+_debruijin_clz:
+    .byte 63, 62, 15, 61, 6,  14, 35, 60, 2,  5,  13, 21, 25, 34, 46, 59, 1
+    .byte 8,  4,  27, 10, 12, 20, 41, 18, 24, 30, 33, 39, 45, 51, 58, 0
+    .byte 16, 7,  36, 3,  22, 26, 47, 9,  28, 11, 42, 19, 31, 40, 52, 17 
+    .byte 37, 23, 48, 29, 43, 32, 53, 38, 49, 44, 54, 50, 55, 56, 57
+
+_debruijin_ctz:
+    .byte 0,  1,  48, 2,  57, 49, 28, 3,  61, 58, 50, 42, 38, 29, 17, 4, 62
+    .byte 55, 59, 36, 53, 51, 43, 22, 45, 39, 33, 30, 24, 18, 12, 5, 63 
+    .byte 47, 56, 27, 60, 41, 37, 16, 54, 35, 52, 21, 44, 32, 23, 11, 46
+    .byte 26, 40, 15, 34, 20, 31, 10, 25, 14, 19, 9,  13, 8,  7,  6
 
 
 
@@ -62,40 +63,32 @@ asm_text_section
 * ret: a0: clz(x) ------> (8  BIT)
 */
 _rv64_clz64p:
-    beqz a0, .all_zero // if (!x) return 64;
-    // Smear bits to the right to fill all positions bellow highest bit;
-    // x |= x >> 1;
+    beq  a0, zero, .all_zero // Safeguard check
+    // Bit distribution sequence
+    // x |= x >> (1 -> 2 -> 4 -> 8 -> 16 -> 32)
     srli t0, a0, 1
     or a0, a0, t0
-    // x |= x >> 2
     srli t0, a0, 2
     or a0, a0, t0
-
-    // x |= x >> 4;
     srli t0, a0, 4
     or a0, a0, t0
-    // x |= x >> 8
     srli t0, a0, 8
     or a0, a0, t0
-
-    // x |= x >> 16;
     srli t0, a0, 16
     or a0, a0, t0
-    // x |= x >> 32
     srli t0, a0, 32
     or a0, a0, t0
-
-    // Calculating the Magic De-brujin Index
-    ld t0, 0x07C4ACDDFFB40F2D
-    mul a0, a0, t0
+    // Getting the De-Brujin Table Adress
+    // Full formula = (((x >> 1) + 1) * 0x03F79D71B4CB0A89) >> 58
+    li t1, 0x03F79D71B4CB0A89 // Magic De-Brujin Constant
+    srli a0, a0, 1
+    addi a0, a0, 1
+    mul  a0, a0, t1
     srli a0, a0, 58
-
-    // Accessing the De Brujin's Table constant
-    la t1, _debruijin_clz
-    slli a0, a0, 3 // Mul by 8 to match the 64-bit alignment
-    add t0, t1, a0 // t0 = base_adress + (index * 8)
-    ld t1, 0(t0) // t1 = *t0
-    ld a0, 0(t0) // return *t0 (a0 = *t0)
+    // Acessing the adress inside the _deburjin_clz table
+    la t1, _debruijin_clz // Get the base adress of the table's page
+    add t1, t1, a0 // adress = base_add + index
+    ld a0, 0(t1) // No need for srli/slli alignments because we store them as individual bytes
     ret
 /* ------- COUNT LEADING ZERO 64 BIT - CRYPTOGRAPHICALLY-SECURED -------
 * uint8_t _rv64_clz64c(uint64_t x)
@@ -103,76 +96,67 @@ _rv64_clz64p:
 * ret: a0: clz(x) ------> (8  BIT)
 */
 _rv64_clz64c:
-    sub a1, x0, a0 // a1 = (-x)
-    or a1, a0, a1 // a1 |= x (a0)
-    xori a1, a1, -1 // ~a10 (== a10 ^ 0xFFFFFFFFFFFFFFFF)
-    srli a1, a1, 63 // a1 >>= 63 63
-    ld a2, 0 // Set a2 to 0 for clearance
-    /* Variables register list from now on:
-        - U64 a0: x             -- (THE INPUT)
-        - U64 a1: is_zero_mask  -- ~(x | (-x)) >> 63;
-        - U64 a2: n             -- (temporary result holder)
-        - U64 a3: mask          -- DEFINED LATER
-    */
+    /* REGISTER VARIABLES: t0 --> count, t1 --> is_zero */
+    li t0, 0 // Set t0 = 0
+    seqz t1, a0 // See if x == 0 (is_zero condition)
+    /* Binary Search Iterations */
+    // Iteration 1: 32 BITS
+    andi t2, a0, 0xFFFFFFFF00000000 // x & 0xFFFFFFFF00000000
+    seqz t2, t2 // !(x & 0xFFFFFFFF00000000)
+    neg t2, t2 // If t2 == 1 (bit was 0) ---> t2 = UINT64_MAX
+    andi t2, t2, 32 // If bit was 0 ---> t2 = 32 | else ---> t2 = 0
+    add t0, t0, t2 // count += !(x & 0xFFFFFFFF00000000) ? 32 : 0;
+    sll a0, a0, t2 // x <<= !(x & 0xFFFFFFFF00000000) ? 32 : 0
+    // Iteration 2: 16 BITS
+    andi t2, a0, 0xFFFF000000000000
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 16
+    add t0, t0, t2
+    sll a0, a0, t2
 
-    // Step 1: mask = -((int64_t)!(x >> 32)); n += mask & 32; x <<= mask & 32;
-    srli a3, a0, 32 // a3 = x >> 32
-    seqz a3, a3 // !(a3) --> !(x >> 32)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 32 // mask &= 32
-    add a2, a2, a3 // n += mask & 32
-    sll a0, a0, a3 // x <<= mask & 32
+    // Iteration 3: 8 BITS
+    andi t2, a0, 0xFF00000000000000
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 8
+    add t0, t0, t2
+    sll a0, a0, t2
+    // Iteration 4: 4 BITS
+    andi t2, a0, 0xF000000000000000
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 4
+    add t0, t0, t2
+    sll a0, a0, t2
 
-    // Step 2: mask = -((int64_t)!(x >> 48)); n += mask & 16; x <<= mask & 16;
-    srli a3, a0, 48 // a3 = x >> 48
-    seqz a3, a3 // !(a3) --> !(x >> 48)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 16 // mask &= 16
-    add a2, a2, a3 // n += mask & 16
-    sll a0, a0, a3 // x <<= mask & 16
+    // Iteration 5: 2 BITS
+    andi t2, a0, 0xC000000000000000
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 2
+    add t0, t0, t2
+    sll a0, a0, t2
+    // Iteration 6: 1 BIT --- MSB
+    andi t2, a0, 0x8000000000000000
+    seqz t2, t2
+    add t0, t0, t2
 
-    // Step 3: mask = -((int64_t)!(x >> 56)); n += mask & 8;  x <<= mask & 8;
-    srli a3, a0, 56 // a3 = x >> 56
-    seqz a3, a3 // !(a3) --> !(x >> 56)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 8 // mask &= 8
-    add a2, a2, a3 // n += mask & 8
-    sll a0, a0, a3 // x <<= mask & 8
-
-    // Step 4: mask = -((int64_t)!(x >> 60)); n += mask & 4;  x <<= mask & 4;
-    srli a3, a0, 60 // a3 = x >> 60
-    seqz a3, a3 // !(a3) --> !(x >> 60)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 4 // mask &= 4
-    add a2, a2, a3 // n += mask & 4
-    sll a0, a0, a3 // x <<= mask & 4
-
-    // Step 5: mask = -((int64_t)!(x >> 62)); n += mask & 2;  x <<= mask & 2;
-    srli a3, a0, 62 // a3 = x >> 62
-    seqz a3, a3 // !(a3) --> !(x >> 62)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 2 // mask &= 2
-    add a2, a2, a3 // n += mask & 2
-    sll a0, a0, a3 // x <<= mask & 2
-
-    // Step 6: mask = -((int64_t)!(x >> 63)); n += mask & 1;
-    srli a3, a0, 63 // a3 = x >> 63
-    seqz a3, a3 // !(a3) --> !(x >> 63)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 1 // mask &= 1
-    add a2, a2, a3 // n += mask & 1
-    // Step 7: return (uint8_t)(n ^ (is_zero_mask & (n ^ U64_BITS)));
-    xori t0, a2, 64 // t0 = n ^ U64_BITS
-    and t0, a1, t0 // t0 = is_zero_mask & (n ^ U64_BITS)
-    xor t0, a2, t0 // t0 = n ^ (is_zero_mask & (n ^ U64_BITS));
-    mv a0, t0 // return t0 via a0 = t0
-    // ----- Aggressive Temporary Registers Clearance -----
-    ld a1, x0 // Zero out the general-purpose register a1
-    ld a2, x0 // Zero out the general-purpose register a2
-    ld a3, x0 // Zero out the general-purpose register a3
-    ld t0, x0 // Zero out the temporary register t0
+    // Final return Selection:
+    // C-version: return _vanillc_crt_select(is_zero, 64, count);
+    // Code is basically copy and pasted from "_rv64_crt_select"
+    // to maintain leaf-function status + prevent exploitable function call overhead
+    neg t1, t1 // Masking (1 --> 0xFFFF..., 0 --> 0)
+    andi t1, t1, 64 // First choice (64)
+    not t3, t1 // Inverting the mask (~mask)
+    and t3, t3, t0 // Second choice (count)
+    or a0, t1, t3 // Return t1 | t3 ((64 & mask) | (count & ~mask))
+    /* ------- REGISTER CLEARANCE ------- */
+    li t0, 0
+    li t1, 0
+    li t2, 0
+    li t3, 0
     ret
-
 
 
 
@@ -184,19 +168,17 @@ _rv64_clz64c:
 * ret: a0: ctz(x) ------> (8  BIT)
 */
 _rv64_ctz64p:
-    // Calculating the Magic De-brujin Index
-    // index = (x & -x) * 0x022FDD63CC95386DULL >> 58;
-    sub t0, x0, a0 // t0 = (-x)
-    and a0, a0, t0
-    ld t0, 0x022FDD63CC95386D
-    mul a0, a0, t0
+    beq a0, zero, .ctz_zero   // Safeguard check
+    // Full Index formula: ((x & -x) * 0x03F79D71B4CB0A89) >> 58
+    neg t0, a0 // -x
+    and a0, a0, t0 // x & -x
+    li t1, 0x03F79D71B4CB0A89
+    mul a0, a0, t1
     srli a0, a0, 58
-
-    // Accessing the De Brujin's Table constant
-    la t1, _debruijin_ctz
-    slli a0, a0, 3 // Mul by 8 to match the 64-bit alignment
-    add t0, t1, a0 // t0 = base_adress + (index * 8)
-    ld a0, 0(t0) // return *t0 (a0 = *t0)
+    // Acessing the adress inside the _deburjin_clz table
+    la t1, _debruijin_ctz // Getting the base adress of the table's page
+    add t1, t1, a0 // Adress = Base_Adress + Index
+    ld a0, 0(t1) // Load into a0 (return) immeditely
     ret
 /* ------- COUNT TRAILING ZERO 64 BIT - CRYPTOGRAPHICALLY-SECURED -------
 * uint8_t _rv64_ctz64c(uint64_t x)
@@ -204,76 +186,66 @@ _rv64_ctz64p:
 * ret: a0: ctz(x) ------> (8  BIT)
 */
 _rv64_ctz64c:
-    sub a1, x0, a0 // a1 = (-x)
-    or a1, a0, a1 // a1 |= x (a0)
-    xori a1, a1, -1 // ~a10 (== a10 ^ 0xFFFFFFFFFFFFFFFF)
-    srli a1, a1, 63 // a1 >>= 63
-    ld a2, 0 // Set a2 to 0 for clearance
-    sub a4, x0, a0 // a4 = (-x)
-    and a4, a0, a4 // a4 &= x --> (x & (-x))
-    /* Variables register list from now on:
-        - U64 a0: x             -- (THE INPUT)
-        - U64 a1: is_zero_mask  -- ~(x | (-x)) >> 63;
-        - U64 a2: n             -- (temporary result holder)
-        - U64 a3: mask          -- DEFINED LATER
-        - U64 a4: lowest_bit    -- (x & -x)
-    */
+    /* REGISTER VARIABLES: t0 --> count, t1 --> is_zero */
+    li t0, 0 // Set t0 = 0
+    seqz t1, a0 // See if x == 0 (is_zero condition)
+    /* Binary Search Iterations */
+    // Iteration 1: 32 BITS
+    andi t2, a0, 0x00000000FFFFFFFF // x & 0x00000000FFFFFFFF
+    seqz t2, t2 // !(x & 0x00000000FFFFFFFF)
+    neg t2, t2 // If t2 == 1 (bit was 0) ---> t2 = UINT64_MAX
+    andi t2, t2, 32 // If bit was 0 ---> t2 = 32 | else ---> t2 = 0
+    add t0, t0, t2 // count += !(x & 0x00000000FFFFFFFF) ? 32 : 0;
+    srl a0, a0, t2 // x <<= !(x & 0x00000000FFFFFFFF) ? 32 : 0
+    // Iteration 2: 16 BITS
+    andi t2, a0, 0x000000000000FFFF
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 16
+    add t0, t0, t2
+    srl a0, a0, t2
 
-    // Step 1: mask = -((int64_t)!(lowest_bit >> 32)); n += mask & 32; lowest_bit <<= mask & 32;
-    srli a3, a4, 32 // a3 = lowest_bit >> 32
-    seqz a3, a3 // !(a3) --> !(x >> 32)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 32 // mask &= 32
-    add a2, a2, a3 // n += mask & 32
-    sll a4, a4, a3 // lowest_bit <<= mask & 32
+    // Iteration 3: 8 BITS
+    andi t2, a0, 0x00000000000000FF
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 8
+    add t0, t0, t2
+    srl a0, a0, t2
+    // Iteration 4: 4 BITS
+    andi t2, a0, 0x000000000000000F
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 4
+    add t0, t0, t2
+    srl a0, a0, t2
 
-    // Step 2: mask = -((int64_t)!(lowest_bit >> 48)); n += mask & 16; lowest_bit <<= mask & 16;
-    srli a3, a4, 48 // a3 = lowest_bit >> 48
-    seqz a3, a3 // !(a3) --> !(x >> 48)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 16 // mask &= 16
-    add a2, a2, a3 // n += mask & 16
-    sll a4, a4, a3 // lowest_bit <<= mask & 16
+    // Iteration 5: 2 BITS
+    andi t2, a0, 0x0000000000000003
+    seqz t2, t2
+    neg t2, t2
+    andi t2, t2, 2
+    add t0, t0, t2
+    srl a0, a0, t2
+    // Iteration 6: 1 BIT --- MSB
+    andi t2, a0, 0x0000000000000001
+    seqz t2, t2
+    add t0, t0, t2
 
-    // Step 3: mask = -((int64_t)!(x >> 56)); n += mask & 8;  x <<= mask & 8;
-    srli a3, a4, 56 // a3 = lowest_bit >> 56
-    seqz a3, a3 // !(a3) --> !(x >> 56)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 8 // mask &= 8
-    add a2, a2, a3 // n += mask & 8
-    sll a4, a4, a3 // lowest_bit <<= mask & 8
-
-    // Step 4: mask = -((int64_t)!(x >> 60)); n += mask & 4;  x <<= mask & 4;
-    srli a3, a4, 60 // a3 = lowest_bit >> 60
-    seqz a3, a3 // !(a3) --> !(x >> 60)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 4 // mask &= 4
-    add a2, a2, a3 // n += mask & 4
-    sll a4, a4, a3 // lowest_bit <<= mask & 4
-
-    // Step 5: mask = -((int64_t)!(x >> 62)); n += mask & 2;  x <<= mask & 2;
-    srli a3, a4, 62 // a3 = lowest_bit >> 62
-    seqz a3, a3 // !(a3) --> !(x >> 62)
-    sub a3, x0, a3 // -((int64_t)(...a3...))
-    andi a3, a3, 2 // mask &= 2
-    add a2, a2, a3 // n += mask & 2
-    sll a4, a4, a3 // lowest_bit <<= mask & 2
-
-    // Step 7: return (uint8_t)(ctz_val ^ (is_zero_mask & (ctz_val ^ U64_BITS)));
-    ld t0, 63
-    sub a2, t0, a2 // uint64_t ctz_val = 63 - n
-    xori t0, a2, 64 // t0 = ctz_val ^ U64_BITS
-    and t0, a1, t0 // t0 = is_zero_mask & (ctz_val ^ U64_BITS)
-    xor t0, a2, t0 // t0 = ctz_val ^ (is_zero_mask & (ctz_val ^ U64_BITS));
-    mv a0, t0 // return t0 via a0 = t0
-    // ----- Aggressive Temporary Registers Clearance -----
-    ld a1, x0 // Zero out the general-purpose register a1
-    ld a2, x0 // Zero out the general-purpose register a2
-    ld a3, x0 // Zero out the general-purpose register a3
-    ld a4, x0 // Zero out the general-purpose register a4
-    ld t0, x0 // Zero out the temporary register t0
-    ret
-
+    // Final return Selection:
+    // C-version: return _vanillc_crt_select(is_zero, 64, count);
+    // Code is basically copy and pasted from "_rv64_crt_select"
+    // to maintain leaf-function status + prevent exploitable function call overhead
+    neg t1, t1 // Masking (1 --> 0xFFFF..., 0 --> 0)
+    andi t1, t1, 64 // First choice (64)
+    not t3, t1 // Inverting the mask (~mask)
+    and t3, t3, t0 // Second choice (count)
+    or a0, t1, t3 // Return t1 | t3 ((64 & mask) | (count & ~mask))
+    /* ------- REGISTER CLEARANCE ------- */
+    li t0, 0
+    li t1, 0
+    li t2, 0
+    li t3, 0
     ret
 
 

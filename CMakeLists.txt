@@ -28,60 +28,60 @@ endif()
 
 # Define the primary static library target
 add_library(dnml_core STATIC
-    # System & Character tables
+    # 2. System Assembly files
     include/dnml_sys/__hwcaps.c
     include/char_table.c
 
-    # Core Primitives & Intrinsics
+    # 3. Mathematical Intrinsic Operations Files
     intrinsics/intrin_base.c
     intrinsics/intrinsics.c
     intrinsics/crt_intrin.c
-
-    # Vanilla Fallbacks
+    # 3a. VANILLA C Intrinsics Files
     intrinsics/zvanillc/_vanillc_arith.c
     intrinsics/zvanillc/_vanillc_bitops.c
     intrinsics/zvanillc/_vanillc_marith.c
     intrinsics/zvanillc/_vanillc_misc.c
+    # 3b. VANILLA C Crypto Intrinsics Files
     intrinsics/crt_vanillc/_crt_vanillc_alg.c
     intrinsics/crt_vanillc/_crt_vanillc_arith.c
     intrinsics/crt_vanillc/_crt_vanillc_bitops.c
     intrinsics/crt_vanillc/_crt_vanillc_cmp.c
 
-    # Utilities
+    # 4a. Utility Files - PERFORMANCE-BASED
     util/perf_util/bigNum_utils.c
     util/perf_util/misc_utils.c
     util/perf_util/str_parse.c
     util/perf_util/rng_util.c
+    # 4b. Utility Files - CRYPTOGRAPY-BASED
     util/crt_util/crt_bnum_util.c
     util/crt_util/crt_misc_util.c
-
-    # Algorithmic layers
+    
     calc_algo/algo_base/add_sub.c
+    # 5a. Calculational Algorithms Files - PERF-BASED
     calc_algo/perf_based/mul.c
     calc_algo/perf_based/div.c
     calc_algo/perf_based/mod.c
     calc_algo/perf_based/mod_op.c
     calc_algo/perf_based/num_theory.c
     calc_algo/perf_based/pow_root.c
-
-    # Constant-time layers
+    # 5b. Calculational Algorithms Files - CRYPTO-BASED
     calc_algo/crt_based/crt_mul.c
     calc_algo/crt_based/crt_div.c
     calc_algo/crt_based/crt_mod.c
     calc_algo/crt_based/crt_modop.c
     calc_algo/crt_based/crt_num_theory.c
 
-    # High-level engine implementations
-    dynamol/_dynamol_arena.c
+    # 1a. Main Module Files - Dynamol
     dynamol/bigint/bigInt.c
     dynamol/bigint/bigInt_io.c
+    # 1b. Main Module Files - Drypto
     drypto/crypt_int/crint_core.c
     drypto/crypt_int/crint_arith.c
     drypto/crypt_int/crint_bitops.c
     drypto/crypt_int/crint_num_theory.c
 )
 
-# CONDITIONAL ARCHITECTURE ASSEMBLY COMPILATION
+# ------------ CPU-ARCH ASSEMBLY COMPILATION ------------
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
     if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
         target_sources(dnml_core PRIVATE
@@ -123,7 +123,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
     )
 endif()
 
-# TARGET INCLUDE DIRECTORIES MAPPING
+# -------- TARGET INCLUDE DIRECTORIES MAPPING --------
 # 1. PRIVATE: Used strictly to resolve #include <...> safely inside this project repository.
 # 2. INTERFACE: Exposed strictly to downstream consumers using the installed package tree folder structure.
 target_include_directories(dnml_core
@@ -155,6 +155,7 @@ target_include_directories(dnml_core
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> # Allows downstreams to find <dnml/libdnml.h> safely
 )
 
+# ------- Compiler Flags -------
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     target_compile_options(dnml_core PRIVATE 
         -Wall -Wextra -Wpedantic -Werror
@@ -185,7 +186,6 @@ endif()
 # Create an alias target matching your installation namespace layout.
 # This prevents find_package from crashing downstream internal tests.
 add_library(dnml::dnml_core ALIAS dnml_core)
-# INSTALLATION RULES MAPPING
 install(TARGETS dnml_core
     EXPORT dnml_coreTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -204,6 +204,12 @@ install(EXPORT dnml_coreTargets
     FILE dnml_coreTargets.cmake
     NAMESPACE dnml::
     DESTINATION ${DNML_CORE_CONFIG_INSTALL_DIR}
+)
+
+# Create a build-tree export file as well, so the root build directory can be used directly
+export(EXPORT dnml_coreTargets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/dnml_coreTargets.cmake"
+    NAMESPACE dnml::
 )
 
 # Define a standard export package template directly within the build script

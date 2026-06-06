@@ -30,73 +30,73 @@ typedef struct { uint64_t input; uint64_t expected; } bswap_case;
 typedef struct { uint64_t input; uint8_t clz; uint8_t ctz; uint8_t pcnt; } other_case;
 bswap_case bswap_cases[60] = {
     // --- Base 30 Cases ---
-    {0x0000000000000000ULL, 0x0000000000000000ULL}, {0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL},
-    {0x0123456789ABCDEFULL, 0xEFCDAB8967452301ULL}, {0xEFCDAB8967452301ULL, 0x0123456789ABCDEFULL},
-    {0xAA55AA55AA55AA55ULL, 0x55AA55AA55AA55AAULL}, {0x55AA55AA55AA55AAULL, 0xAA55AA55AA55AA55ULL},
-    {0x00000000000000FFULL, 0xFF00000000000000ULL}, {0xFF00000000000000ULL, 0x00000000000000FFULL},
-    {0x000000000000FF00ULL, 0x00FF000000000000ULL}, {0x00FF000000000000ULL, 0x000000000000FF00ULL},
-    {0x0000000000FF0000ULL, 0x0000FF0000000000ULL}, {0x0000FF0000000000ULL, 0x0000000000FF0000ULL},
-    {0x00000000FF000000ULL, 0x000000FF00000000ULL}, {0x000000FF00000000ULL, 0x00000000FF000000ULL},
-    {0x1122334455667788ULL, 0x8877665544332211ULL}, {0x8877665544332211ULL, 0x1122334455667788ULL},
-    {0xDEADC0DEDEADC0DEULL, 0xDEC0ADDEDEC0ADDEULL}, {0x00F000F000F000F0ULL, 0xF000F000F000F000ULL},
-    {0xF000F000F000F000ULL, 0x00F000F000F000F0ULL}, {0x1234567890ABCDEFULL, 0xEFCDAB9078563412ULL},
-    {0x1000000000000001ULL, 0x0100000000000010ULL}, {0x0001000000001000ULL, 0x0010000000000100ULL},
-    {0xFFFFFF0000000000ULL, 0x0000000000FFFFFFULL}, {0x0000000000FFFFFFULL, 0xFFFFFF0000000000ULL},
-    {0xCCCCCCCCCCCCCCCCULL, 0xCCCCCCCCCCCCCCCCULL}, {0x3333333333333333ULL, 0x3333333333333333ULL},
-    {0x0102030405060708ULL, 0x0807060504030201ULL}, {0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0F0F0F0F0FULL},
-    {0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0F0F0F0F0ULL}, {0xABCDEF0123456789ULL, 0x8967452301EFCDABULL},
+    {UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000)}, {UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF)},
+    {UINT64_C(0x0123456789ABCDEF), UINT64_C(0xEFCDAB8967452301)}, {UINT64_C(0xEFCDAB8967452301), UINT64_C(0x0123456789ABCDEF)},
+    {UINT64_C(0xAA55AA55AA55AA55), UINT64_C(0x55AA55AA55AA55AA)}, {UINT64_C(0x55AA55AA55AA55AA), UINT64_C(0xAA55AA55AA55AA55)},
+    {UINT64_C(0x00000000000000FF), UINT64_C(0xFF00000000000000)}, {UINT64_C(0xFF00000000000000), UINT64_C(0x00000000000000FF)},
+    {UINT64_C(0x000000000000FF00), UINT64_C(0x00FF000000000000)}, {UINT64_C(0x00FF000000000000), UINT64_C(0x000000000000FF00)},
+    {UINT64_C(0x0000000000FF0000), UINT64_C(0x0000FF0000000000)}, {UINT64_C(0x0000FF0000000000), UINT64_C(0x0000000000FF0000)},
+    {UINT64_C(0x00000000FF000000), UINT64_C(0x000000FF00000000)}, {UINT64_C(0x000000FF00000000), UINT64_C(0x00000000FF000000)},
+    {UINT64_C(0x1122334455667788), UINT64_C(0x8877665544332211)}, {UINT64_C(0x8877665544332211), UINT64_C(0x1122334455667788)},
+    {UINT64_C(0xDEADC0DEDEADC0DE), UINT64_C(0xDEC0ADDEDEC0ADDE)}, {UINT64_C(0x00F000F000F000F0), UINT64_C(0xF000F000F000F000)},
+    {UINT64_C(0xF000F000F000F000), UINT64_C(0x00F000F000F000F0)}, {UINT64_C(0x1234567890ABCDEF), UINT64_C(0xEFCDAB9078563412)},
+    {UINT64_C(0x1000000000000001), UINT64_C(0x0100000000000010)}, {UINT64_C(0x0001000000001000), UINT64_C(0x0010000000000100)},
+    {UINT64_C(0xFFFFFF0000000000), UINT64_C(0x0000000000FFFFFF)}, {UINT64_C(0x0000000000FFFFFF), UINT64_C(0xFFFFFF0000000000)},
+    {UINT64_C(0xCCCCCCCCCCCCCCCC), UINT64_C(0xCCCCCCCCCCCCCCCC)}, {UINT64_C(0x3333333333333333), UINT64_C(0x3333333333333333)},
+    {UINT64_C(0x0102030405060708), UINT64_C(0x0807060504030201)}, {UINT64_C(0x0F0F0F0F0F0F0F0F), UINT64_C(0x0F0F0F0F0F0F0F0F)},
+    {UINT64_C(0xF0F0F0F0F0F0F0F0), UINT64_C(0xF0F0F0F0F0F0F0F0)}, {UINT64_C(0xABCDEF0123456789), UINT64_C(0x8967452301EFCDAB)},
 
     // --- Extra 30 Cases ---
-    {0x0000000000000001ULL, 0x0100000000000000ULL}, {0x8000000000000000ULL, 0x0000000000000080ULL},
-    {0x0000000000000100ULL, 0x0001000000000000ULL}, {0x0000000000010000ULL, 0x0000010000000000ULL},
-    {0x0000000000100000ULL, 0x0000100000000000ULL}, {0x0000000001000000ULL, 0x0000000100000000ULL},
-    {0x0000000010000000ULL, 0x0000001000000000ULL}, {0x0000000100000000ULL, 0x0000000001000000ULL},
-    {0x0000001000000000ULL, 0x0000000010000000ULL}, {0x0000010000000000ULL, 0x0000000000010000ULL},
-    {0x0000100000000000ULL, 0x0000000000100000ULL}, {0x0001000000000000ULL, 0x0000000000000100ULL},
-    {0x0010000000000000ULL, 0x0000000000001000ULL}, {0x0100000000000000ULL, 0x0000000000000001ULL},
-    {0xA5A5A5A5A5A5A5A5ULL, 0xA5A5A5A5A5A5A5A5ULL}, {0x5A5A5A5A5A5A5A5AULL, 0x5A5A5A5A5A5A5A5AULL},
-    {0x1234567812345678ULL, 0x7856341278563412ULL}, {0x8765432187654321ULL, 0x2143658721436587ULL},
-    {0x0011223344556677ULL, 0x7766554433221100ULL}, {0x7766554433221100ULL, 0x0011223344556677ULL},
-    {0x9999999999999999ULL, 0x9999999999999999ULL}, {0x6666666666666666ULL, 0x6666666666666666ULL},
-    {0xBD2394F01A4E7C35ULL, 0x357C4E1AF09423BDULL}, {0x357C4E1AF09423BDULL, 0xBD2394F01A4E7C35ULL},
-    {0xFFFFFFFFFFFFFF00ULL, 0x00FFFFFFFFFFFFFFULL}, {0x00FFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFF00ULL},
-    {0x7F7F7F7F7F7F7F7FULL, 0x7F7F7F7F7F7F7F7FULL}, {0xE0E0E0E0E0E0E0E0ULL, 0xE0E0E0E0E0E0E0E0ULL},
-    {0x0707070707070707ULL, 0x0707070707070707ULL}, {0xDEADBEEFFEEDFACEULL, 0xCEFAEDFECEBEADDEULL}
+    {UINT64_C(0x0000000000000001), UINT64_C(0x0100000000000000)}, {UINT64_C(0x8000000000000000), UINT64_C(0x0000000000000080)},
+    {UINT64_C(0x0000000000000100), UINT64_C(0x0001000000000000)}, {UINT64_C(0x0000000000010000), UINT64_C(0x0000010000000000)},
+    {UINT64_C(0x0000000000100000), UINT64_C(0x0000100000000000)}, {UINT64_C(0x0000000001000000), UINT64_C(0x0000000100000000)},
+    {UINT64_C(0x0000000010000000), UINT64_C(0x0000001000000000)}, {UINT64_C(0x0000000100000000), UINT64_C(0x0000000001000000)},
+    {UINT64_C(0x0000001000000000), UINT64_C(0x0000000010000000)}, {UINT64_C(0x0000010000000000), UINT64_C(0x0000000000010000)},
+    {UINT64_C(0x0000100000000000), UINT64_C(0x0000000000100000)}, {UINT64_C(0x0001000000000000), UINT64_C(0x0000000000000100)},
+    {UINT64_C(0x0010000000000000), UINT64_C(0x0000000000001000)}, {UINT64_C(0x0100000000000000), UINT64_C(0x0000000000000001)},
+    {UINT64_C(0xA5A5A5A5A5A5A5A5), UINT64_C(0xA5A5A5A5A5A5A5A5)}, {UINT64_C(0x5A5A5A5A5A5A5A5A), UINT64_C(0x5A5A5A5A5A5A5A5A)},
+    {UINT64_C(0x1234567812345678), UINT64_C(0x7856341278563412)}, {UINT64_C(0x8765432187654321), UINT64_C(0x2143658721436587)},
+    {UINT64_C(0x0011223344556677), UINT64_C(0x7766554433221100)}, {UINT64_C(0x7766554433221100), UINT64_C(0x0011223344556677)},
+    {UINT64_C(0x9999999999999999), UINT64_C(0x9999999999999999)}, {UINT64_C(0x6666666666666666), UINT64_C(0x6666666666666666)},
+    {UINT64_C(0xBD2394F01A4E7C35), UINT64_C(0x357C4E1AF09423BD)}, {UINT64_C(0x357C4E1AF09423BD), UINT64_C(0xBD2394F01A4E7C35)},
+    {UINT64_C(0xFFFFFFFFFFFFFF00), UINT64_C(0x00FFFFFFFFFFFFFF)}, {UINT64_C(0x00FFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFF00)},                              
+    {UINT64_C(0x7F7F7F7F7F7F7F7F), UINT64_C(0x7F7F7F7F7F7F7F7F)}, {UINT64_C(0xE0E0E0E0E0E0E0E0), UINT64_C(0xE0E0E0E0E0E0E0E0)},
+    {UINT64_C(0x0707070707070707), UINT64_C(0x0707070707070707)}, {UINT64_C(0xDEADBEEFFEEDFACE), UINT64_C(0xCEFAEDFEEFBEADDE)}                               
 };
 other_case other_cases[60] = {
     // --- Base 30 Cases ---
-    {0x0000000000000000ULL, 64, 64, 0},  {0xFFFFFFFFFFFFFFFFULL, 0,  0,  64},
-    {0x0000000000000001ULL, 63, 0,  1},  {0x8000000000000000ULL, 0,  63, 1},
-    {0x00000000FFFFFFFFULL, 32, 0,  32}, {0xFFFFFFFF00000000ULL, 0,  32, 32},
-    {0x0000FFFFFFFF0000ULL, 16, 16, 32}, {0x000000000000000FULL, 60, 0,  4},
-    {0xF000000000000000ULL, 0,  60, 4},  {0x5555555555555555ULL, 1,  0,  32},
-    {0xAAAAAAAAAAAAAAAAULL, 0,  1,  32}, {0x0000000080000000ULL, 32, 31, 1},
-    {0x0000000100000000ULL, 31, 32, 1},  {0x7FFFFFFFFFFFFFFFULL, 1,  0,  63},
-    {0xFFFFFFFFFFFFFFFEULL, 0,  1,  63}, {0x8000000000000001ULL, 0,  0,  2},
-    {0x4000000000000002ULL, 1,  1,  2},  {0x2000000000000004ULL, 2,  2,  2},
-    {0x1000000000000008ULL, 3,  3,  2},  {0x0800000000000010ULL, 4,  4,  2},
-    {0x0400000000000020ULL, 5,  5,  2},  {0x0200000000000040ULL, 6,  6,  2},
-    {0x0100000000000080ULL, 7,  7,  2},  {0x000000000000FF00ULL, 48, 8,  8},
-    {0x00FF000000000000ULL, 8,  48, 8},  {0x0000000007E00000ULL, 37, 21, 6},
-    {0x0123456789ABCDEFULL, 7,  0,  32}, {0xFEDCBA9876543210ULL, 0,  4,  32},
-    {0x00000003C0000000ULL, 30, 30, 4},  {0x0000000000000007ULL, 61, 0,  3},
+    {UINT64_C(0x0000000000000000), 64, 64, 0},  {UINT64_C(0xFFFFFFFFFFFFFFFF), 0,  0,  64},
+    {UINT64_C(0x0000000000000001), 63, 0,  1},  {UINT64_C(0x8000000000000000), 0,  63, 1},
+    {UINT64_C(0x00000000FFFFFFFF), 32, 0,  32}, {UINT64_C(0xFFFFFFFF00000000), 0,  32, 32},
+    {UINT64_C(0x0000FFFFFFFF0000), 16, 16, 32}, {UINT64_C(0x000000000000000F), 60, 0,  4},
+    {UINT64_C(0xF000000000000000), 0,  60, 4},  {UINT64_C(0x5555555555555555), 1,  0,  32},
+    {UINT64_C(0xAAAAAAAAAAAAAAAA), 0,  1,  32}, {UINT64_C(0x0000000080000000), 32, 31, 1},
+    {UINT64_C(0x0000000100000000), 31, 32, 1},  {UINT64_C(0x7FFFFFFFFFFFFFFF), 1,  0,  63},
+    {UINT64_C(0xFFFFFFFFFFFFFFFE), 0,  1,  63}, {UINT64_C(0x8000000000000001), 0,  0,  2},
+    {UINT64_C(0x4000000000000002), 1,  1,  2},  {UINT64_C(0x2000000000000004), 2,  2,  2},
+    {UINT64_C(0x1000000000000008), 3,  3,  2},  {UINT64_C(0x0800000000000010), 4,  4,  2},
+    {UINT64_C(0x0400000000000020), 5,  5,  2},  {UINT64_C(0x0200000000000040), 6,  6,  2},
+    {UINT64_C(0x0100000000000080), 7,  7,  2},  {UINT64_C(0x000000000000FF00), 48, 8,  8},
+    {UINT64_C(0x00FF000000000000), 8,  48, 8},  {UINT64_C(0x0000000007E00000), 37, 21, 6},
+    {UINT64_C(0x0123456789ABCDEF), 7,  0,  32}, {UINT64_C(0xFEDCBA9876543210), 0,  4,  32},
+    {UINT64_C(0x00000003C0000000), 30, 30, 4},  {UINT64_C(0x0000000000000007), 61, 0,  3},
 
     // --- Extra 30 Cases ---
-    {0x0000000000000010ULL, 60, 4,  1},  {0x0000000000000100ULL, 56, 8,  1},
-    {0x0000000000001000ULL, 52, 12, 1},  {0x0000000000010000ULL, 48, 16, 1},
-    {0x0000000000100000ULL, 44, 20, 1},  {0x0000000001000000ULL, 40, 24, 1},
-    {0x0000000010000000ULL, 36, 28, 1},  {0x0000000100000000ULL, 31, 32, 1},
-    {0x0000001000000000ULL, 27, 36, 1},  {0x0000010000000000ULL, 23, 40, 1},
-    {0x0000100000000000ULL, 19, 44, 1},  {0x0001000000000000ULL, 15, 48, 1},
-    {0x0010000000000000ULL, 11, 52, 1},  {0x0100000000000000ULL, 7,  56, 1},
-    {0x1000000000000000ULL, 3,  60, 1},  {0x0000000000000002ULL, 62, 1,  1},
-    {0x0000000000000004ULL, 61, 2,  1},  {0x0000000000000008ULL, 60, 3,  1},
-    {0x3000000000000000ULL, 2,  60, 2},  {0x6000000000000000ULL, 1,  61, 2},
-    {0x0000000000000003ULL, 62, 0,  2},  {0x0000000000000006ULL, 61, 1,  2},
-    {0x000000000000000CULL, 60, 2,  2},  {0x0000000000000018ULL, 59, 3,  2},
-    {0x000F000000000000ULL, 12, 48, 4},  {0x00F0000000000000ULL, 8,  52, 4},
-    {0x0F00000000000000ULL, 4,  56, 4},  {0xFF00000000000000ULL, 0,  56, 8},
-    {0x8000000000000001ULL, 0,  0,  2},  {0xC000000000000003ULL, 0,  0,  4}
+    {UINT64_C(0x0000000000000010), 59, 4,  1},  {UINT64_C(0x0000000000000100), 55, 8,  1},
+    {UINT64_C(0x0000000000001000), 51, 12, 1},  {UINT64_C(0x0000000000010000), 47, 16, 1},
+    {UINT64_C(0x0000000000100000), 43, 20, 1},  {UINT64_C(0x0000000001000000), 39, 24, 1},
+    {UINT64_C(0x0000000010000000), 35, 28, 1},  {UINT64_C(0x0000000100000000), 31, 32, 1},
+    {UINT64_C(0x0000001000000000), 27, 36, 1},  {UINT64_C(0x0000010000000000), 23, 40, 1},
+    {UINT64_C(0x0000100000000000), 19, 44, 1},  {UINT64_C(0x0001000000000000), 15, 48, 1},
+    {UINT64_C(0x0010000000000000), 11, 52, 1},  {UINT64_C(0x0100000000000000), 7,  56, 1},
+    {UINT64_C(0x1000000000000000), 3,  60, 1},  {UINT64_C(0x0000000000000002), 62, 1,  1},
+    {UINT64_C(0x0000000000000004), 61, 2,  1},  {UINT64_C(0x0000000000000008), 60, 3,  1},
+    {UINT64_C(0x3000000000000000), 2,  60, 2},  {UINT64_C(0x6000000000000000), 1,  61, 2},
+    {UINT64_C(0x0000000000000003), 62, 0,  2},  {UINT64_C(0x0000000000000006), 61, 1,  2},
+    {UINT64_C(0x000000000000000C), 60, 2,  2},  {UINT64_C(0x0000000000000018), 59, 3,  2},
+    {UINT64_C(0x000F000000000000), 12, 48, 4},  {UINT64_C(0x00F0000000000000), 8,  52, 4},
+    {UINT64_C(0x0F00000000000000), 4,  56, 4},  {UINT64_C(0xFF00000000000000), 0,  56, 8},
+    {UINT64_C(0x8000000000000001), 0,  0,  2},  {UINT64_C(0xC000000000000003), 0,  0,  4}
 };
 
 // ==========================================================
@@ -106,7 +106,7 @@ int main(void) {
     int total_tests = 0, passed_tests = 0;
     printf("=========================================================\n");
     printf("            RUNNING INTEGRATED UNIT TESTS                \n");
-    printf("=========================================================\n\n");
+    printf("=========================================================\n");
     // ------------------------------------------------------
     // 1. TEST BSWAP64 VARIANTS
     // ------------------------------------------------------
@@ -118,29 +118,29 @@ int main(void) {
         // Verify crt_vanillc
         res = _crtintrin_bswap64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_bswap64 | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);
+        else printf("[FAIL] _crtintrin_bswap64 | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
         // Verify zvanillc
         res = _cintrin_bswap64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_bswap64    | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);
+        else printf("[FAIL] _cintrin_bswap64    | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
 
         // Target Specific Hardware / ABI Layer Dispatches
         #if __ARCH_ARM64__
             res = _arm64_bswap64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_bswap64      | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);
+            else printf("[FAIL] _arm64_bswap64      | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
         #elif __ARCH_X86_64__
             res = _x86_bswap64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_bswap64        | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);
+            else printf("[FAIL] _x86_bswap64        | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
         #elif __ARCH_RVI64__
             res = _rv64_bswap64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_bswap64       | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_bswap64       | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
 
             res = _rv64_bswap64_port(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_bswap64_port  | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_bswap64_port  | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
         #endif
     }
 
@@ -155,36 +155,36 @@ int main(void) {
 
         res = _crtintrin_clz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_clz64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+        else printf("[FAIL] _crtintrin_clz64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
         res = _cintrin_clz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_clz64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+        else printf("[FAIL] _cintrin_clz64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
         #if __ARCH_ARM64__
             res = _arm64_clz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_clz64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _arm64_clz64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #elif __ARCH_X86_64__
             res = _x86_clz64e(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_clz64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _x86_clz64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _x86_clz64s(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_clz64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _x86_clz64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #elif __ARCH_RVI64__
             res = _rv64_clz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_clz64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_clz64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _rv64_clz64p(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_clz64p        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_clz64p        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _rv64_clz64c(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_clz64c        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_clz64c        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #endif
     }
 
@@ -199,36 +199,36 @@ int main(void) {
 
         res = _crtintrin_ctz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_ctz64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+        else printf("[FAIL] _crtintrin_ctz64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
         res = _cintrin_ctz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_ctz64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+        else printf("[FAIL] _cintrin_ctz64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
         #if __ARCH_ARM64__
             res = _arm64_ctz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_ctz64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _arm64_ctz64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #elif __ARCH_X86_64__
             res = _x86_ctz64e(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_ctz64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _x86_ctz64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _x86_ctz64s(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_ctz64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _x86_ctz64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #elif __ARCH_RVI64__
             res = _rv64_ctz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_ctz64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_ctz64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _rv64_ctz64p(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_ctz64p        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_ctz64p        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _rv64_ctz64c(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_ctz64c        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_ctz64c        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #endif
     }
 
@@ -243,32 +243,32 @@ int main(void) {
 
         res = _crtintrin_pcnt64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_pcnt64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+        else printf("[FAIL] _crtintrin_pcnt64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
         res = _cintrin_pcnt64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_pcnt64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+        else printf("[FAIL] _cintrin_pcnt64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
         #if __ARCH_ARM64__
             res = _arm64_pcnt64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_pcnt64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _arm64_pcnt64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #elif __ARCH_X86_64__
             res = _x86_pcnt64e(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_pcnt64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _x86_pcnt64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _x86_pcnt64s(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_pcnt64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _x86_pcnt64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #elif __ARCH_RVI64__
             res = _rv64_pcnt64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_pcnt64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_pcnt64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
 
             res = _rv64_pcnt64_port(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_pcnt64_port    | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i, input, expected, res);
+            else printf("[FAIL] _rv64_pcnt64_port    | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
         #endif
     }
 

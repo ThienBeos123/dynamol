@@ -23,7 +23,7 @@ limitations under the License.
 
 #define U64_BITS ((sizeof(uint64_t)) * CHAR_BIT)
 
-uint8_t crt_lt(uint64_t x, uint64_t y) { return (((x >> 63) ^ 1) & (y >> 63)) | (~((x >> 63) ^ (y >> 63)) & ((x - y) >> 63)); }
+uint8_t crt_lt(uint64_t x, uint64_t y) { return (((x >> 63) ^ 1) & (y >> 63)) | (~((x >> 63) ^ (y >> 63)) & ((x - y) >> 63)); }  
 uint8_t crt_gt(uint64_t x, uint64_t y) { return crt_lt(y, x); }
 uint8_t crt_eq(uint64_t x, uint64_t y) { return ~((x ^ y) | (-(x ^ y))) >> 63; }
 
