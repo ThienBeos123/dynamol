@@ -52,17 +52,18 @@ FUNC_SIZE(ASM_SYM(arm64_crt_wdiv128))
 *   x2: boolean - 1/0
 */
 ASM_SYM(arm64_add64c):
-    ldr x3, [x2] // Load *carry into register x3
-    cmp x3, #1   // Sets the C flag to 1 (NO-BORROW) if carry = 1
+    ldrb w3, [x2] // Load *carry into register x3
+    and  w3, w3, #1
+    cmp  w3, #1
 
     // 1. Add a = a + b + carry
     // -----> x0 = x0 + x1 + C_flag
     // 2. Set carry flag (Automatic by ADCS)
     adcs x0, x0, x1
     adc x3, xzr, xzr
-    str x3, [x2]
+    strb w3, [x2]
     mov x1, #0 // Register clearance
-    mov x3, #0 // Register clearance
+    mov w3, #0 // Register clearance
     ret
 
 
@@ -78,8 +79,8 @@ ASM_SYM(arm64_add64c):
 *   x2: boolean - 1/0
 */
 ASM_SYM(arm64_sub64b):
-    ldr x3, [x2] // Load *carry into register x3
-    and x3, x3, #1 // Force x3 to be strictly 0 or 1
+    ldrb w3, [x2] // Load *carry into register x3
+    and w3, w3, #1 // Force x3 to be strictly 0 or 1
     // - Sets the C flag inversely relative to x3
     // +) x3 = 1 (BORROW) --> 0 - 1 = -1 (UNDERFLOWS) ---> C_flag = 0
     // +) x3 = 0 (NO BORROW) -> 0 - 0 = 0 (NORMAL) ------> C_flag = 1
@@ -88,10 +89,10 @@ ASM_SYM(arm64_sub64b):
     // 1. Subtract a = a - b - carry
     // ---------> x0 = x0 - x1 - C_flag
     sbcs x0, x0, x1
-    cset x3, cc
-    str x3, [x2]
+    cset w3, cc
+    strb w3, [x2]
     mov x1, #0 // Register clearance
-    mov x3, #0 // Register clearance
+    mov w3, #0 // Register clearance
     ret
 
 

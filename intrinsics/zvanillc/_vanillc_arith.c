@@ -38,9 +38,9 @@ uint64_t _cintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
 //  +) Mutate the high 64 bit as a parameter
 uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     // Seperate a and b into 2 different halves
-    uint64_t mask = (1ULL << 32) - 1;
-    uint64_t a_low = a & mask;        uint64_t b_low = b & mask; // Extract the 32 lower bits
-    uint64_t a_high = a >> 32;        uint64_t b_high = b >> 32; // Extract the 32 upper bits
+    uint64_t mask = (UINT64_C(1) << 32) - 1;
+    uint64_t a_low = a & mask; uint64_t b_low = b & mask; // Extract the 32 lower bits
+    uint64_t a_high = a >> 32; uint64_t b_high = b >> 32; // Extract the 32 upper bits
 
     uint64_t first_mul = a_low * b_low;
     uint64_t second_mul = a_low * b_high;

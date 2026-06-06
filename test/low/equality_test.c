@@ -295,39 +295,39 @@ int main(void) {
             res = _arm64_crt_ispos(x);
             total_tests++; if (res == ispos_exp) passed_tests++;
             else printf(
-              "[FAIL] _arm64_crt_ispos    | Case %zu | x = 0x%016" PRIX64 
+              "[FAIL] _arm64_crt_ispos    | Case %3zu | x = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, ispos_exp, res
             );
             res = _arm64_crt_isneg(x);
             total_tests++; if (res == isneg_exp) passed_tests++;
             else printf(
-              "[FAIL] _arm64_crt_isneg    | Case %zu | x = 0x%016" PRIX64 
+              "[FAIL] _arm64_crt_isneg    | Case %3zu | x = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, isneg_exp, res
             );
         #elif __ARCH_RVI64__
             res = _rv64_crt_ispos(x);
             total_tests++; if (res == ispos_exp) passed_tests++;
             else printf(
-              "[FAIL] _rv64_crt_ispos     | Case %zu | x = 0x%016" PRIX64 
+              "[FAIL] _rv64_crt_ispos     | Case %3zu | x = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, ispos_exp, res
             );
             res = _rv64_crt_isneg(x);
             total_tests++; if (res == isneg_exp) passed_tests++;
             else printf(
-              "[FAIL] _rv64_crt_isneg     | Case %zu | x = 0x%016" PRIX64 
+              "[FAIL] _rv64_crt_isneg     | Case %3zu | x = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, isneg_exp, res
             );
         #elif __ARCH_X86_64__
             res = _x86_crt_ispos(x);
             total_tests++; if (res == ispos_exp) passed_tests++;
             else printf(
-              "[FAIL] _x86_crt_ispos      | Case %zu | x = 0x%016" PRIX64 
+              "[FAIL] _x86_crt_ispos      | Case %3zu | x = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, ispos_exp, res
             );
             res = _x86_crt_isneg(x);
             total_tests++; if (res == isneg_exp) passed_tests++;
             else printf(
-              "[FAIL] _x86_crt_isneg      | Case %zu | x = 0x%016" PRIX64 
+              "[FAIL] _x86_crt_isneg      | Case %3zu | x = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, isneg_exp, res
             );
         #endif
@@ -336,14 +336,14 @@ int main(void) {
         res = _vanillc_crt_ispos(x);
         total_tests++; if (res == ispos_exp) passed_tests++;
         else printf(
-          "[FAIL] _vanillc_crt_ispos  | Case %zu | x = 0x%016" PRIX64 
+          "[FAIL] _vanillc_crt_ispos  | Case %3zu | x = 0x%016" PRIX64 
           " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, ispos_exp, res
         );
 
         res = _vanillc_crt_isneg(x);
         total_tests++; if (res == isneg_exp) passed_tests++;
         else printf(
-          "[FAIL] _vanillc_crt_isneg  | Case %zu | x = 0x%016" PRIX64 
+          "[FAIL] _vanillc_crt_isneg  | Case %3zu | x = 0x%016" PRIX64 
           " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, (uint64_t)x, isneg_exp, res
         );
     }
@@ -361,39 +361,39 @@ int main(void) {
             res = _arm64_crt_eq(x, y);
             total_tests++; if (res == eq_exp) passed_tests++;
             else printf(
-              "[FAIL] _arm64_crt_eq       | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+              "[FAIL] _arm64_crt_eq       | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, eq_exp, res
             );
             res = _arm64_crt_neq(x, y);
             total_tests++; if (res == neq_exp) passed_tests++;
             else printf(
-              "[FAIL] _arm64_crt_neq      | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+              "[FAIL] _arm64_crt_neq      | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, neq_exp, res
             );
         #elif __ARCH_RVI64__
             res = _rv64_crt_eq(x, y);
             total_tests++; if (res == eq_exp) passed_tests++;
             else printf(
-              "[FAIL] _rv64_crt_eq        | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+              "[FAIL] _rv64_crt_eq        | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, eq_exp, res
             );
             res = _rv64_crt_neq(x, y);
             total_tests++; if (res == neq_exp) passed_tests++;
             else printf(
-              "[FAIL] _rv64_crt_neq       | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+              "[FAIL] _rv64_crt_neq       | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, neq_exp, res
             );
         #elif __ARCH_X86_64__
             res = _x86_crt_eq(x, y);
             total_tests++; if (res == eq_exp) passed_tests++;
             else printf(
-              "[FAIL] _x86_crt_eq         | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+              "[FAIL] _x86_crt_eq         | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, eq_exp, res
             );
             res = _x86_crt_neq(x, y);
             total_tests++; if (res == neq_exp) passed_tests++;
             else printf(
-              "[FAIL] _x86_crt_neq        | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+              "[FAIL] _x86_crt_neq        | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
               " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, neq_exp, res
             );
         #endif
@@ -402,14 +402,14 @@ int main(void) {
         res = _vanillc_crt_eq(x, y);
         total_tests++; if (res == eq_exp) passed_tests++;
         else printf(
-          "[FAIL] _vanillc_crt_eq     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+          "[FAIL] _vanillc_crt_eq     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
           " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, eq_exp, res
         );
 
         res = _vanillc_crt_neq(x, y);
         total_tests++; if (res == neq_exp) passed_tests++;
         else printf(
-          "[FAIL] _vanillc_crt_neq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+          "[FAIL] _vanillc_crt_neq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
           " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, neq_exp, res
         );
     }
@@ -428,21 +428,21 @@ int main(void) {
             res = _arm64_crt_select(cond, a, b);
             total_tests++; if (res == select_exp) passed_tests++;
             else printf(
-                "[FAIL] _arm64_crt_select   | Case %zu | c = %" PRIu8 
+                "[FAIL] _arm64_crt_select   | Case %3zu | c = %" PRIu8 
                 " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n", i+1, cond, select_exp, res
             );
         #elif __ARCH_RVI64__
             res = _rv64_crt_select(cond, a, b);
             total_tests++; if (res == select_exp) passed_tests++;
             else printf(
-                "[FAIL] _rv64_crt_select    | Case %zu | c = %" PRIu8 
+                "[FAIL] _rv64_crt_select    | Case %3zu | c = %" PRIu8 
                 " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n", i+1, cond, select_exp, res
             );
         #elif __ARCH_X86_64__
             res = _x86_crt_select(cond, a, b);
             total_tests++; if (res == select_exp) passed_tests++;
             else printf(
-                "[FAIL] _x86_crt_select     | Case %zu | c = %" PRIu8 
+                "[FAIL] _x86_crt_select     | Case %3zu | c = %" PRIu8 
                 " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n", i+1, cond, select_exp, res
             );
         #endif
@@ -451,7 +451,7 @@ int main(void) {
         res = _vanillc_crt_select(cond, a, b);
         total_tests++; if (res == select_exp) passed_tests++;
         else printf(
-            "[FAIL] _vanillc_crt_select | Case %zu | c = %" PRIu8 
+            "[FAIL] _vanillc_crt_select | Case %3zu | c = %" PRIu8 
             " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n", i+1, cond, select_exp, res
         );
     }
@@ -462,9 +462,9 @@ int main(void) {
     printf("\n==============================================================================\n");
     printf("TEST SUITE EXECUTION SUMMARY\n");
     printf("==============================================================================\n");
-    printf("Total Internal Evaluations Run : %zu\n", total_tests);
-    printf("Total Mathematical Assertions Passed: %zu\n", passed_tests);
-    printf("Total Execution Operational Window  : %lf ns\n", elapsed_time);
+    printf("Total Internal Evaluations Run : %3zu\n", total_tests);
+    printf("Total Mathematical Assertions Passed: %3zu\n", passed_tests);
+    printf("Total Execution Operational Window  : %lf ms\n", elapsed_time);
     printf("==============================================================================\n");
 
     return (passed_tests == total_tests) ? 0 : 1;

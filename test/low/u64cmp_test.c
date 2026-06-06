@@ -145,46 +145,46 @@ int main(void) {
             res = _arm64_crt_lt(x, y);
             total_tests++; if (res == lt_exp) passed_tests++;
             else printf(
-                "[FAIL] _arm64_crt_lt       | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _arm64_crt_lt       | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, lt_exp, res
             );
             res = _vanillc_crt_lt(x, y);
             total_tests++; if (res == lt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_lt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_lt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, lt_exp, res
             );
         #elif __ARCH_X86_64__
             res = _x86_crt_lt(x, y);
             total_tests++; if (res == lt_exp) passed_tests++;
             else printf(
-                "[FAIL] _x86_crt_lt         | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _x86_crt_lt         | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, lt_exp, res
             );
             res = _vanillc_crt_lt(x, y);
             total_tests++; if (res == lt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_lt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_lt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, lt_exp, res
             );
         #elif __ARCH_RVI64__
             res = _rv64_crt_lt(x, y);
             total_tests++; if (res == lt_exp) passed_tests++;
             else printf(
-                "[FAIL] _rv64_crt_lt        | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _rv64_crt_lt        | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, lt_exp, res
             );
             res = _vanillc_crt_lt(x, y);
             total_tests++; if (res == lt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_lt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_lt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, lt_exp, res
             );
         #else
             res = _vanillc_crt_lt(x, y);
             total_tests++; if (res == lt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_lt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_lt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, lt_exp, res
             );
         #endif
@@ -199,46 +199,46 @@ int main(void) {
             res = _arm64_crt_gt(x, y);
             total_tests++; if (res == gt_exp) passed_tests++;
             else printf(
-                "[FAIL] _arm64_crt_gt       | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _arm64_crt_gt       | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, gt_exp, res
             );
             res = _vanillc_crt_gt(x, y);
             total_tests++; if (res == gt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_gt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_gt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, gt_exp, res
             );
         #elif __ARCH_X86_64__
             res = _x86_crt_gt(x, y);
             total_tests++; if (res == gt_exp) passed_tests++;
             else printf(
-                "[FAIL] _x86_crt_gt         | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _x86_crt_gt         | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, gt_exp, res
             );
             res = _vanillc_crt_gt(x, y);
             total_tests++; if (res == gt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_gt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_gt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, gt_exp, res
             );
         #elif __ARCH_RVI64__
             res = _rv64_crt_gt(x, y);
             total_tests++; if (res == gt_exp) passed_tests++;
             else printf(
-                "[FAIL] _rv64_crt_gt        | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _rv64_crt_gt        | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, gt_exp, res
             );
             res = _vanillc_crt_gt(x, y);
             total_tests++; if (res == gt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_gt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_gt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, gt_exp, res
             );
         #else
             res = _vanillc_crt_gt(x, y);
             total_tests++; if (res == gt_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_gt     | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_gt     | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, gt_exp, res
             );
         #endif
@@ -253,46 +253,46 @@ int main(void) {
             res = _arm64_crt_leq(x, y);
             total_tests++; if (res == leq_exp) passed_tests++;
             else printf(
-                "[FAIL] _arm64_crt_leq      | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _arm64_crt_leq      | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, leq_exp, res
             );
             res = _vanillc_crt_leq(x, y);
             total_tests++; if (res == leq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_leq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_leq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, leq_exp, res
             );
         #elif __ARCH_X86_64__
             res = _x86_crt_leq(x, y);
             total_tests++; if (res == leq_exp) passed_tests++;
             else printf(
-                "[FAIL] _x86_crt_leq        | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _x86_crt_leq        | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, leq_exp, res
             );
             res = _vanillc_crt_leq(x, y);
             total_tests++; if (res == leq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_leq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_leq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, leq_exp, res
             );
         #elif __ARCH_RVI64__
             res = _rv64_crt_leq(x, y);
             total_tests++; if (res == leq_exp) passed_tests++;
             else printf(
-                "[FAIL] _rv64_crt_leq       | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _rv64_crt_leq       | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, leq_exp, res
             );
             res = _vanillc_crt_leq(x, y);
             total_tests++; if (res == leq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_leq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_leq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, leq_exp, res
             );
         #else
             res = _vanillc_crt_leq(x, y);
             total_tests++; if (res == leq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_leq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_leq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, leq_exp, res
             );
         #endif
@@ -307,46 +307,46 @@ int main(void) {
             res = _arm64_crt_geq(x, y);
             total_tests++; if (res == geq_exp) passed_tests++;
             else printf(
-                "[FAIL] _arm64_crt_geq      | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _arm64_crt_geq      | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, geq_exp, res
             );
             res = _vanillc_crt_geq(x, y);
             total_tests++; if (res == geq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_geq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_geq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, geq_exp, res
             );
         #elif __ARCH_X86_64__
             res = _x86_crt_geq(x, y);
             total_tests++; if (res == geq_exp) passed_tests++;
             else printf(
-                "[FAIL] _x86_crt_geq        | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _x86_crt_geq        | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, geq_exp, res
             );
             res = _vanillc_crt_geq(x, y);
             total_tests++; if (res == geq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_geq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_geq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, geq_exp, res
             );
         #elif __ARCH_RVI64__
             res = _rv64_crt_geq(x, y);
             total_tests++; if (res == geq_exp) passed_tests++;
             else printf(
-                "[FAIL] _rv64_crt_geq       | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _rv64_crt_geq       | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, geq_exp, res
             );
             res = _vanillc_crt_geq(x, y);
             total_tests++; if (res == geq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_geq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_geq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, geq_exp, res
             );
         #else
             res = _vanillc_crt_geq(x, y);
             total_tests++; if (res == geq_exp) passed_tests++;
             else printf(
-                "[FAIL] _vanillc_crt_geq    | Case %zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
+                "[FAIL] _vanillc_crt_geq    | Case %3zu | x = 0x%016" PRIX64 " y = 0x%016" PRIX64 
                 " | Exp: %" PRIu8 " | Got: %" PRIu8 "\n", i+1, x, y, geq_exp, res
             );
         #endif
@@ -356,9 +356,9 @@ int main(void) {
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
     printf("\n=============== Test Summary ===============\n");
-    printf("Total tests: %zu\n", total_tests);
-    printf("Passed: %zu\n", passed_tests);
+    printf("Total tests: %3zu\n", total_tests);
+    printf("Passed: %3zu\n", passed_tests);
     printf("Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
-    printf("Total Runtime: %lf\n", elapsed_time);
+    printf("Total Runtime: %lf ms\n", elapsed_time);
     return (passed_tests == total_tests) ? 0 : 1;
 }

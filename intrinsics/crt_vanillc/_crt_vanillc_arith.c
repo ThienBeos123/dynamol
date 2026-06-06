@@ -22,17 +22,17 @@ limitations under the License.
 // 64 bit Addition with Carry-over
 uint64_t _crtintrin_add64c(uint64_t a, uint64_t b, uint8_t *carry) {
     uint64_t sum = a + b; uint8_t ab_carry = (_vanillc_crt_lt(sum, a));
-    a = sum + *carry; uint8_t final_carry = (_vanillc_crt_lt(sum, *carry));
+    a = sum + *carry; uint8_t final_carry = (_vanillc_crt_lt(a, sum));
     *carry = ab_carry | final_carry; // clang-format off
-    sum = 0; ab_carry = 0; final_carry = 0; a = 0; b = 0; carry = 0; return a; // clang-format on
+    sum = 0; ab_carry = 0; final_carry = 0; b = 0; carry = 0; return a; // clang-format on
 }
 
 // 64 bit Subtraction with Borrow-over
 uint64_t _crtintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
-    uint64_t diff = a - b; uint8_t ab_borrow = (diff > a);
-    a = diff - *borrow; uint8_t final_borrow = (a > diff);
+    uint64_t diff = a - b; uint8_t ab_borrow = (_vanillc_crt_gt(diff, a));
+    a = diff - *borrow; uint8_t final_borrow = (_vanillc_crt_gt(a, diff));
     *borrow = ab_borrow | final_borrow; diff = 0; // clang-format off
-    ab_borrow = 0; final_borrow = 0; a = 0; b = 0; borrow = 0; return a; // clang-format on
+    ab_borrow = 0; final_borrow = 0; b = 0; borrow = 0; return a; // clang-format on
 }
 
 
@@ -41,9 +41,9 @@ uint64_t _crtintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
 //  +) Mutate the high 64 bit as a parameter
 uint64_t _crtintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     // Seperate a and b into 2 different halves
-    uint64_t mask = (1ULL << 32) - 1;
-    uint64_t a_low = a & mask, b_low = b & mask; // Extract the 32 lower bits
-    uint64_t a_high = a >> 3, b_high = b >> 32; // Extract the 32 upper bits
+    uint64_t mask = (UINT64_C(1) << 32) - 1;
+    uint64_t a_low = a & mask; uint64_t b_low = b & mask; // Extract the 32 lower bits
+    uint64_t a_high = a >> 32; uint64_t b_high = b >> 32; // Extract the 32 upper bits
 
     uint64_t first_mul = a_low * b_low;
     uint64_t second_mul = a_low * b_high;
