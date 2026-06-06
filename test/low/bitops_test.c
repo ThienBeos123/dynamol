@@ -28,7 +28,7 @@ limitations under the License.
 // ==========================================================
 typedef struct { uint64_t input; uint64_t expected; } bswap_case;
 typedef struct { uint64_t input; uint8_t clz; uint8_t ctz; uint8_t pcnt; } other_case;
-bswap_case bswap_cases[60] = {
+static const bswap_case bswap_cases[60] = {
     // --- Base 30 Cases ---
     {UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000)}, {UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF)},
     {UINT64_C(0x0123456789ABCDEF), UINT64_C(0xEFCDAB8967452301)}, {UINT64_C(0xEFCDAB8967452301), UINT64_C(0x0123456789ABCDEF)},
@@ -63,7 +63,7 @@ bswap_case bswap_cases[60] = {
     {UINT64_C(0x7F7F7F7F7F7F7F7F), UINT64_C(0x7F7F7F7F7F7F7F7F)}, {UINT64_C(0xE0E0E0E0E0E0E0E0), UINT64_C(0xE0E0E0E0E0E0E0E0)},
     {UINT64_C(0x0707070707070707), UINT64_C(0x0707070707070707)}, {UINT64_C(0xDEADBEEFFEEDFACE), UINT64_C(0xCEFAEDFEEFBEADDE)}                               
 };
-other_case other_cases[60] = {
+static const other_case other_cases[60] = {
     // --- Base 30 Cases ---
     {UINT64_C(0x0000000000000000), 64, 64, 0},  {UINT64_C(0xFFFFFFFFFFFFFFFF), 0,  0,  64},
     {UINT64_C(0x0000000000000001), 63, 0,  1},  {UINT64_C(0x8000000000000000), 0,  63, 1},
@@ -104,8 +104,10 @@ other_case other_cases[60] = {
 // ==========================================================
 int main(void) {
     int total_tests = 0, passed_tests = 0;
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     printf("=========================================================\n");
-    printf("            RUNNING INTEGRATED UNIT TESTS                \n");
+    printf("        RUNNING INTEGRATED UNIT TESTS - BITOPS           \n");
     printf("=========================================================\n");
     // ------------------------------------------------------
     // 1. TEST BSWAP64 VARIANTS
@@ -118,29 +120,53 @@ int main(void) {
         // Verify crt_vanillc
         res = _crtintrin_bswap64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_bswap64 | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
+        else printf(
+            "[FAIL] _crtintrin_bswap64 | Case %d | Input: 0x%016" PRIX64 
+            " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n",
+            i + 1, input, expected, res
+        );
         // Verify zvanillc
         res = _cintrin_bswap64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_bswap64    | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
+        else printf(
+            "[FAIL] _cintrin_bswap64    | Case %d | Input: 0x%016" PRIX64 
+            " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n",
+            i + 1, input, expected, res
+        );
 
         // Target Specific Hardware / ABI Layer Dispatches
         #if __ARCH_ARM64__
             res = _arm64_bswap64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_bswap64      | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
+            else printf(
+                "[FAIL] _arm64_bswap64      | Case %d | Input: 0x%016" PRIX64 
+                " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n",
+                i + 1, input, expected, res
+            );
         #elif __ARCH_X86_64__
             res = _x86_bswap64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_bswap64        | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
+            else printf(
+                "[FAIL] _x86_bswap64        | Case %d | Input: 0x%016" PRIX64 
+                " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n",
+                i + 1, input, expected, res
+            );
         #elif __ARCH_RVI64__
             res = _rv64_bswap64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_bswap64       | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
+            else printf(
+                "[FAIL] _rv64_bswap64       | Case %d | Input: 0x%016" PRIX64 
+                " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n",
+                i + 1, input, expected, res
+            );
 
             res = _rv64_bswap64_port(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_bswap64_port  | Case %d | Input: 0x%016llx | Exp: 0x%016llx | Got: 0x%016llx\n", i + 1, input, expected, res);
+            else printf(
+                "[FAIL] _rv64_bswap64_port  | Case %d | Input: 0x%016" PRIX64 
+                " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n",
+                i + 1, input, expected, res
+            );
         #endif
     }
 
@@ -155,36 +181,60 @@ int main(void) {
 
         res = _crtintrin_clz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_clz64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+        else printf("[FAIL] _crtintrin_clz64   "
+            "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+            i + 1, input, expected, res
+        );
 
         res = _cintrin_clz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_clz64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+        else printf("[FAIL] _cintrin_clz64      "
+            "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+            i + 1, input, expected, res
+        );
 
         #if __ARCH_ARM64__
             res = _arm64_clz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_clz64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _arm64_clz64        "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #elif __ARCH_X86_64__
             res = _x86_clz64e(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_clz64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _x86_clz64e         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _x86_clz64s(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_clz64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _x86_clz64s         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #elif __ARCH_RVI64__
             res = _rv64_clz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_clz64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_clz64         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _rv64_clz64p(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_clz64p        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_clz64p        "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _rv64_clz64c(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_clz64c        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_clz64c        "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #endif
     }
 
@@ -199,36 +249,60 @@ int main(void) {
 
         res = _crtintrin_ctz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_ctz64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+        else printf("[FAIL] _crtintrin_ctz64   "
+            "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+            i + 1, input, expected, res
+        );
 
         res = _cintrin_ctz64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_ctz64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+        else printf("[FAIL] _cintrin_ctz64      "
+            "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+            i + 1, input, expected, res
+        );
 
         #if __ARCH_ARM64__
             res = _arm64_ctz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_ctz64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _arm64_ctz64        "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #elif __ARCH_X86_64__
             res = _x86_ctz64e(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_ctz64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _x86_ctz64e         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _x86_ctz64s(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_ctz64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _x86_ctz64s         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #elif __ARCH_RVI64__
             res = _rv64_ctz64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_ctz64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_ctz64         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _rv64_ctz64p(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_ctz64p        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_ctz64p        "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _rv64_ctz64c(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_ctz64c        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_ctz64c        "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #endif
     }
 
@@ -243,38 +317,67 @@ int main(void) {
 
         res = _crtintrin_pcnt64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _crtintrin_pcnt64   | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+        else printf("[FAIL] _crtintrin_pcnt64   "
+            "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+            i + 1, input, expected, res
+        );
 
         res = _cintrin_pcnt64(input);
         total_tests++; if (res == expected) passed_tests++;
-        else printf("[FAIL] _cintrin_pcnt64      | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+        else printf("[FAIL] _cintrin_pcnt64      "
+            "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+            i + 1, input, expected, res
+        );
 
         #if __ARCH_ARM64__
             res = _arm64_pcnt64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _arm64_pcnt64        | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _arm64_pcnt64        "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #elif __ARCH_X86_64__
             res = _x86_pcnt64e(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_pcnt64e         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _x86_pcnt64e         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _x86_pcnt64s(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _x86_pcnt64s         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _x86_pcnt64s         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #elif __ARCH_RVI64__
             res = _rv64_pcnt64(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_pcnt64         | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_pcnt64         "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
 
             res = _rv64_pcnt64_port(input);
             total_tests++; if (res == expected) passed_tests++;
-            else printf("[FAIL] _rv64_pcnt64_port    | Case %d | Input: 0x%016llx | Exp: %u | Got: %u\n", i + 1, input, expected, res);
+            else printf("[FAIL] _rv64_pcnt64_port    "
+                "| Case %d | Input: 0x%016" PRIX64 " | Exp: %u | Got: %u\n", 
+                i + 1, input, expected, res
+            );
         #endif
     }
 
     // Summary output block
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("Execution time: %.9f seconds\n", elapsed_time);
     printf("=========================================================\n");
-    printf("SUMMARY: Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
+    printf("TEST SUMMARY:\n");
+    printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
+    printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
+    printf("+) Total Runtime: %lf\n", elapsed_time);
     printf("=========================================================\n");
+
+
     return (passed_tests == total_tests) ? 0 : 1;
 }

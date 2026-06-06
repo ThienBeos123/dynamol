@@ -44,7 +44,7 @@ asm_text_section
 */
 _x86sv_crt_ispos:
     test rdi, rdi ; Test if positive
-    sets al ; Set sign
+    setg al ; Set if > 0
     movzx rax, al ; Zero extension
     mov rdi, 0 # Register Clearance
     ret
@@ -57,7 +57,7 @@ _x86sv_crt_ispos:
 */
 _x86sv_crt_isneg:
     test rdi, rdi ; Test if negative
-    setns al ; Set if NEGATIVE sign
+    sets al ; Set if sign
     movzx rax, al ; Zero extension
     mov rdi, 0 # Register Clearance
     ret

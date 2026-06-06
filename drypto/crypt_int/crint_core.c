@@ -660,7 +660,7 @@ bool crint_lequal_i64(crint x, int64_t val, dnml_status *err) {
     uint64_t mag_val = __CRT_MAG_I64__(val);
     /* if (!x.n) return (val >= 0) ? 1 : 0 */
     // Check 1: if (!x.n && val >= 0) return true
-    CHOOSE_OPTION((curr), ((!x.n) & (_lib_crt_ispos(val))), (1), (0));
+    CHOOSE_OPTION((curr), ((!x.n) & (_lib_crt_ispos(val) | !val)), (1), (0));
     CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
     // Check 2: if (!x.n && val < 0) return false
     CHOOSE_OPTION((curr), ((!x.n) & (_lib_crt_isneg(val))), (0), (1));
@@ -717,7 +717,7 @@ bool crint_mequal_i64(crint x, int64_t val, dnml_status *err) {
     CHOOSE_OPTION((curr), ((!x.n) & (_lib_crt_leqi64(val, 0))), (1), (0));
     CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
     // Check 2: if (!x.n && val > 0) return false
-    CHOOSE_OPTION((curr), ((!x.n) & (_lib_crt_geqi64(val, 0))), (0), (1));
+    CHOOSE_OPTION((curr), ((!x.n) & (_lib_crt_ispos(val))), (0), (1));
     CHOOSE_OPTION((ret), ((!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
 
     /* if (val_sign != x.sign) return (x.sign > val_sign); */
@@ -989,7 +989,7 @@ bool crint_less(crint x, crint y, dnml_status *err) {
     /* return (a.sign == 1) ? __CRINT_MAGCMP__(&x, &y) < 0 : __CRINT_MAGCMP__(&x, &y) > 0; */
     int8_t mag_ret = __CRINT_MAGCMP__(&x, &y);
     // Check 7+8: return (a.sign == 1 && mag_ret < 0);
-    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, 1)) & (_lib_crt_ispos(mag_ret))), (0), (1));
+    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, 1)) & (_lib_crt_ispos(mag_ret) | !mag_ret)), (0), (1));
     CHOOSE_OPTION((ret), ((!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
     CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, 1)) & _lib_crt_isneg(mag_ret)), (1), (0));
     CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
@@ -1049,7 +1049,7 @@ bool crint_more(crint x, crint y, dnml_status *err) {
     CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, 1)) & (mag_ret)), (1), (0));
     CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
     // Check 9+10: return (a.sign == -1 && mag_ret < 0);
-    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, -1)) & _lib_crt_geqi64(mag_ret, 0)), (0), (1));
+    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, -1)) & (_lib_crt_ispos(mag_ret) | !mag_ret)), (0), (1));
     CHOOSE_OPTION((ret), ((!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
     CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, -1)) & _lib_crt_isneg(mag_ret)), (1), (0));
     CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
@@ -1106,7 +1106,7 @@ bool crint_lequal(crint x, crint y, dnml_status *err) {
     // Check 9+10: return (a.sign == -1 && mag_ret >= 0);
     CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, -1)) & _lib_crt_isneg(mag_ret)), (0), (1));
     CHOOSE_OPTION((ret), ((!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
-    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, -1)) & (_lib_crt_ispos(mag_ret))), (1), (0));
+    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, -1)) & (_lib_crt_ispos(mag_ret) | !mag_ret)), (1), (0));
     CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
     /* Post-operation Aggresive Cleanup */
     if (_lib_crt_neq((ptr_t)(err), (ptr_t)(NULL))) *err = ret_stat;
@@ -1154,7 +1154,7 @@ bool crint_mequal(crint x, crint y, dnml_status *err) {
     // Check 7+8: return (a.sign == 1 && mag_ret >= 0);
     CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, 1)) & _lib_crt_isneg(mag_ret)), (0), (1));
     CHOOSE_OPTION((ret), ((!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
-    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, 1)) & (_lib_crt_ispos(mag_ret))), (1), (0));
+    CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, 1)) & (_lib_crt_ispos(mag_ret) | !mag_ret)), (1), (0));
     CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
     // Check 9+10: return (a.sign == -1 && mag_ret <= 0);
     CHOOSE_OPTION((curr), ((_lib_crt_eq(x.sign, -1)) & (_lib_crt_gti64(mag_ret, 0))), (0), (1));

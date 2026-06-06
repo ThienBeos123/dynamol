@@ -50,6 +50,9 @@ asm_text_section
 _rv64_crt_ispos:
     srli a0, a0, 63
     xori a0, a0, 1
+    snez t0, a0
+    and a0, t0
+    li t0, 0 // Register clearance
     ret
 
 
@@ -103,6 +106,7 @@ _rv64_crt_neq:
 * ret: EITHER a1 OR a2
 */
 _rv64_crt_select:
+    snez a0, a0 // !!(a0)
     neg t0, a0 // Masking (1 --> 0xFFFF..., 0 --> 0)
     and t1, a1, t0 // First choice (a & mask)
     not t2, t0 // Inverting the mask (~mask)
