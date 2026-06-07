@@ -26,7 +26,7 @@ endif()
 add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
 add_link_options(-fsanitize=address,undefined)
 
-# Define your isolated test runners
+# Define isolated test runners
 add_executable(bitops_test      bitops_test.c)
 add_executable(equality_test    equality_test.c)
 add_executable(i64cmp_test      i64cmp_test.c)
@@ -35,7 +35,7 @@ add_executable(arith_test       arith_test.c)
 add_executable(div_test         div_test.c)
 add_executable(top_lvl_marith   top_lvl_marith.c)
 
-# BIND THEM: Link the root library to your test runners.
+# BIND THEM: Link the root library to test runners.
 target_link_libraries(bitops_test       PRIVATE dnml::dnml_core)
 target_link_libraries(equality_test     PRIVATE dnml::dnml_core)
 target_link_libraries(i64cmp_test       PRIVATE dnml::dnml_core)
