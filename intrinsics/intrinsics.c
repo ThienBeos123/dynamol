@@ -95,34 +95,26 @@ uint64_t __MODINV_UI64__(uint64_t x) {
     return (*_libdnml_gmarith_ftable.modinv64)(x);
 }
 uint64_t __MODMUL_UI64__(uint64_t a, uint64_t b, uint64_t mod) {
-    uint64_t hi, lo;
-    lo = __MUL_UI64__(a, b, &hi);
+    uint64_t hi, lo = __MUL_UI64__(a, b, &hi);
     #if __HAS_int128__
         return (uint64_t)(((unsigned __int128)hi << 64 | lo) % mod);
     #else
-        if (hi == 0) return lo % mod;
+        if (!hi) return lo % mod;
         uint64_t rem = hi % mod;
-        for (uinit8_t i = 63; i != -1; --i) {
-            rem = (rem >= mod - rem) ?
-                    rem - (mod - rem) :
-                    rem + rem;
-            if ((lo >> i) & 1) {
-                ++rem;
-                if (rem >= mod) rem -= mod;
-            }
-        }
+        for (uint8_t i = 0; i < 64; ++i) {
+            rem = (rem >= mod - rem) ? rem - (mod - rem) : rem + rem;
+            if ((lo >> i) & 1) { ++rem; if (rem >= mod) rem -= mod; }
+        } return rem;
     #endif
 }
 uint64_t __MODEXP_UI64__(uint64_t base, uint64_t exp, uint64_t mod) {
     if (mod == 1) return 0;
-    if (exp == 0) return 1;
+    if (!exp) return 1;
     if (exp == 1) return base;
-    base %= mod;
-    uint64_t res = 1;
+    base %= mod; uint64_t res = 1;
     while (exp > 0) {
         if (exp & 1) res = __MODMUL_UI64__(res, base, mod);
-        base = __MODMUL_UI64__(base, base, mod);
-        exp >>= 1;
+        base = __MODMUL_UI64__(base, base, mod); exp >>= 1;
     } return res;
 }
 

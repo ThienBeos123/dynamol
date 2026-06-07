@@ -394,7 +394,7 @@ int main(void) {
         #endif
     }
     // 2. TEST SUBTRACTION WITH BORROW (SUB64B)
-    printf("\n--- Testing SUB64B Architectures ---\n");
+    printf("--- Testing SUB64B Architectures ---\n");
     for (int i = 0; i < 100; i++) {
         uint64_t a = sub_cases[i].a;
         uint64_t b = sub_cases[i].b;
@@ -461,7 +461,7 @@ int main(void) {
         #endif
     }
     // 3. TEST WIDE MULTIPLICATION (WMUL128)
-    printf("\n--- Testing WMUL128 Architectures ---\n");
+    printf("--- Testing WMUL128 Architectures ---\n");
     for (int i = 0; i < 46; i++) {
         uint64_t a = wmul_cases[i].a;
         uint64_t b = wmul_cases[i].b;
@@ -526,7 +526,7 @@ int main(void) {
         #endif
     }
     // 4. TEST MODULAR INVERSE (MODINV64)
-    printf("\n--- Testing MODINV64 Architectures ---\n");
+    printf("--- Testing MODINV64 Architectures ---\n");
     for (int i = 0; i < 14; i++) {
         uint64_t input = modinv_cases[i].in;
         uint64_t expected = modinv_cases[i].out;

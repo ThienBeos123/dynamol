@@ -174,7 +174,7 @@ int main(void) {
 
 
     // 1. TEST WIDE DIVISION - PERFORMANCE-BASED
-    printf("\n--- Testing WDIV128 (CRYPTO) Architectures ---\n");
+    printf("--- Testing WDIV128 (CRYPTO) Architectures ---\n");
     for (int i = 0; i < 32; i++) {
         uint64_t lo = crt_cases[i].lo;
         uint64_t hi = crt_cases[i].hi; 

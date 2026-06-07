@@ -14,7 +14,7 @@
 6. [Function Sorting and File Structure](#6-function-sorting-and-file-structure)
 
 ---
-
+<!-- ---------------------------------------------------------------------------------------- -->
 ## 1. Language and Compiler Standards
 
 - **C99 minimum**, C11+ preferred
@@ -24,8 +24,11 @@
 - `__int128` is permitted only when `__SIZEOF_INT128__` is `1/true`, and preferrably dispatched to also have alternative portable fallback on `#define __SIZEOF_INT128__ 0`
 - VLAs are **forbidden** in all files outside of Dynamol (timing variance, C17+ optionality)
 
----
 
+
+
+---
+<!-- ---------------------------------------------------------------------------------------- -->
 ## 2. Naming Conventions
 
 ### Functions
@@ -62,8 +65,12 @@
 | Low-level headers  | `__name.h`              | `__arm64_conn__.h`    | /intrinsics        |
 | Intrinsic source   | `_arch_abi_module.S/.c` | `_x86_sysv_arith.S`   | /intrinsics        |
 
----
 
+
+
+
+---
+<!-- ---------------------------------------------------------------------------------------- -->
 ## 3. Error Handling
 
 ### Two-Tier System
@@ -104,8 +111,12 @@ CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS)))
 
 > **Note:** In Dynamol, all of the above may early return without constant-time concerns.
 
----
 
+
+
+
+---
+<!-- ---------------------------------------------------------------------------------------- -->
 ## 4. Memory Management
 
 ### Ownership Rules
@@ -143,8 +154,12 @@ size_t mark = arena_mark(_ARENA);
 arena_reset(_ARENA, mark);
 ```
 
----
 
+
+
+
+---
+<!-- ---------------------------------------------------------------------------------------- -->
 ## 5. Formatting and Code Style
 
 See `.clang-format` for automated enforcement. Column limit: **130 characters**.
@@ -212,8 +227,12 @@ for (size_t i = 0; _lib_crt_lt(i, x->cap); ++i) {
 *  continued here */                     // Multi-line explanatory note
 ```
 
----
 
+
+
+
+---
+<!-- ---------------------------------------------------------------------------------------- -->
 ## 6. Function Sorting and File Structure
 
 Source files are divided into clearly labelled sections with section headers.
@@ -252,3 +271,46 @@ Section headers use the standard format:
   §2  Bitwise operations       (CLZ, CTZ, POPCOUNT)
   §3  Wide operations          (128-bit add, sub, etc.)
 ```
+
+
+
+
+---
+<!-- ---------------------------------------------------------------------------------------- -->
+## 7. Algorithmic Side Note
+This section details side-notes of some algorithmic and coding styles and patterns that is useful for programmatical safety, for the C programming language, despite its exceptional capability for performance and optimizations, is notoriosly unsafe and lenient, leading ot unexpected behaviors.
+
+### Loop declarations
+Loops are one of the most fundamental part of programming as a whole, in which it lets the user repeats repetitve tasks without copy and pasting code. However, with the wrong bounds checking and iteration incrementation/decrementation, it is one of the largest, yet hidden, source of bugs in the lib-dnml codebase. One mistake regarding iterators (often times named simply as a variable i) of unsigned types are bounds checking on a decrementing loop, often times written like this. 
+
+```c
+for (size_t i = TOP_BOUNDS - 1; i >= 0; --i) {
+    // code over here ...
+}
+```
+
+For cases where incrementing iterators would still yield the loop counts, it is the much preferred style, often written like this:
+
+```c
+for (size_t i = 0; i < TOP_BOUNDS; ++i) {
+    // code over here ...
+}
+```
+
+This is for the decrementing style only works for iterator of signed types, since sign types can go below zero and successfully trigger the exit condition of going below zero. However, for unsigned types, such conditions can't happen, due to how on iterations i, where `i == 0`, decrementing `i` would lead to unsigned integer wrap-around to the maximum value of the type's size. This would lead to a loose, endless loop. However, for cases in which it is absolutely necessary to use an unsigned integer type for the loop iterator, where the loop trajectory is descending (when iterating backwards through a string, for instance), the loop should be written like this:
+
+```c
+for (size_t i = TOP_BOUNDS - 1; i != (size_t)-1; --i) {
+    // code over here ...
+}
+```
+
+This works for the reason that if the beginning iterator value is one less than the TOP_BOUNDS, in which the TOP_BOUNDS value is the maximum value of the unsigned integer type, then upon wrapping around into the maximum value of the unsigned integer type, the value would trigger the exit condition + it would not match any value within the correct range bounds. However, for cases where the loop bounds is proven to fit sufficiently in the range of the signed integer type of `int64_t (2^63 - 1)`, then it is still preferred for the loop iterator to be of type int64_t and written like this for ease of readability:
+
+```c
+// WON'T CAUSE INFINITE RUNTIME SINCE SIGNED INTEGERS CAN BE CHECKED IF THEY GO BELOW ZERO
+for (int64_t i = TOP_BOUNDS - 1; i >= 0; --i) {
+    // code over here ...
+}
+```
+

@@ -350,7 +350,7 @@ int main(void) {
     /* ---------------------------------------------------------------------- */
     /* 2. EQUALITY TESTS (eq, neq)                                            */
     /* ---------------------------------------------------------------------- */
-    printf("\n--- Testing EQ/NEG Architectures ---\n");
+    printf("--- Testing EQ/NEG Architectures ---\n");
     for (size_t i = 0; i < 100; i++) {
         uint64_t x = equality_bank[i].x; uint64_t y = equality_bank[i].y;
         uint8_t eq_exp = equality_bank[i].eq_exp;
@@ -416,7 +416,7 @@ int main(void) {
     /* ---------------------------------------------------------------------- */
     /* 3. SELECTION TESTS (select)                                            */
     /* ---------------------------------------------------------------------- */
-    printf("\n--- Testing SELECT Architectures ---\n");
+    printf("--- Testing SELECT Architectures ---\n");
     for (size_t i = 0; i < 100; i++) {
         uint8_t cond = selection_bank[i].cond;
         uint64_t a = selection_bank[i].a;

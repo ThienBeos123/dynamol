@@ -190,7 +190,7 @@ int main(void) {
         #endif
     }
     /* =============== Test: x > y =============== */
-    printf("\n--- Testing GTI64 (>) Architectures ---\n");
+    printf("--- Testing GTI64 (>) Architectures ---\n");
     for (size_t i = 0; i < 100; ++i) {
         int64_t x = global_bank[i].x;
         int64_t y = global_bank[i].y;
@@ -244,7 +244,7 @@ int main(void) {
         #endif
     }
     /* =============== Test: x <= y =============== */
-    printf("\n--- Testing LEQI64 (<=) Architectures ---\n");
+    printf("--- Testing LEQI64 (<=) Architectures ---\n");
     for (size_t i = 0; i < 100; ++i) {
         int64_t x = global_bank[i].x;
         int64_t y = global_bank[i].y;
@@ -298,7 +298,7 @@ int main(void) {
         #endif
     }
     /* =============== Test: x >= y =============== */
-    printf("\n--- Testing GEQ (>=) Architectures ---\n");
+    printf("--- Testing GEQ (>=) Architectures ---\n");
     for (size_t i = 0; i < 100; ++i) {
         int64_t x = global_bank[i].x;
         int64_t y = global_bank[i].y;
