@@ -32,29 +32,29 @@ size_t _actual_len(const char *str, size_t buflen, size_t *actual_len) {
 }
 uint16_t _fskip_whitespace__(FILE *stream) {
     uint16_t c;
-    while ((c = fgetc(stream)) != EOF && isspace(c));
+    while ((c = fgetc(stream)) != (uint16_t)EOF && isspace(c));
     return c;
 }
 size_t _skip_whitespace(const char *str, size_t len, size_t *pos) {
     size_t total_whitespace = 0;
-    while ((*pos < len || str[*pos] != '\0') && isspace(str[*pos])) { 
+    while ((*pos < len || str[*pos] != '\0') && isspace(str[*pos])) {
         (*pos)++; ++total_whitespace;
     } return total_whitespace;
 }
 size_t _skip_leading_zeros(const char *str, size_t len, size_t *pos) {
     size_t lzeros = 0;
-    while ( str[*pos] == '0' 
-        && (pos < len || str[*pos] != '\0')
+    while ( str[*pos] == '0'
+        && (*pos < len || str[*pos] != '\0')
     ) { (*pos)++; ++lzeros; } return lzeros;
 }
-uint8_t _is_valid_digit__(uint16_t *curr_char) { 
-    return (*curr_char != EOF && !isspace(*curr_char)); 
+uint8_t _is_valid_digit__(uint16_t *curr_char) {
+    return (*curr_char != (uint16_t)EOF && !isspace(*curr_char));
 }
 
 /* ----------------------- */
 /* --- Normal variants --- */
 /* ----------------------- */
-/* _arbit_bprefix ret: 
+/* _arbit_bprefix ret:
 * 0 (SUCESS)
 ! 1 ---> OVERFLOW
 ! 2 ---> END OF STRING
@@ -74,15 +74,15 @@ uint8_t _arbit_bprefix(const char *str, size_t *curr_pos, uint8_t *base) {
     else if (str[*curr_pos] != '}' || !isdigit(str[*curr_pos])) return 3;
     else if (str[*curr_pos] == '}') { *base = (uint8_t)(tmp_base); return 0; }
     tmp_base += (uint16_t)('0' + str[*curr_pos]); (*curr_pos)++;
-    
+
     if (str[*curr_pos] != '}') return 3;
     if (tmp_base > UINT8_MAX) return 1;
     *base = (uint8_t)(tmp_base); return 0;
 }
-uint8_t _sign_handle_(const char *str, size_t *curr_pos, uint8_t *sign) {
+uint8_t _sign_handle_(const char *str, size_t *curr_pos, int8_t *sign) {
     *sign = 1;
-    if (str[*curr_pos] == '-') { 
-        *sign = -1; (*curr_pos)++; 
+    if (str[*curr_pos] == '-') {
+        *sign = -1; (*curr_pos)++;
         // In this case, the string is "-\null"
         if (str[*curr_pos] == '\0') return 3;
     }
@@ -148,7 +148,7 @@ uint8_t _prefix_handle_(const char *str, size_t *curr_pos, uint8_t *base) {
 /* --------------------- */
 /* --- Nlen variants --- */
 /* --------------------- */
-/* _arbit_bprefix_nlen ret: 
+/* _arbit_bprefix_nlen ret:
 * 0 (SUCESS)
 ! 1 ---> OVERFLOW
 ! 2 ---> END OF STRING
@@ -172,12 +172,12 @@ uint8_t _arbit_bprefix_nlen(const char *str, size_t *curr_pos, uint8_t *base, si
     if (str[*curr_pos] != '}') return 3;
     if (tmp_base > UINT8_MAX) return 1;
     *base = (uint8_t)(tmp_base); return 0;
-    
+
 }
-uint8_t _sign_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *sign, size_t len) {
+uint8_t _sign_handle_nlen_(const char *str, size_t *curr_pos, int8_t *sign, size_t len) {
     *sign = 1;
-    if (str[*curr_pos] == '-') { 
-        *sign = -1; (*curr_pos)++; 
+    if (str[*curr_pos] == '-') {
+        *sign = -1; (*curr_pos)++;
         // In this case, the string is "-\null" or ended as "-"
         if (*curr_pos == len || str[*curr_pos] == '\0') return 3;
     }
@@ -188,6 +188,7 @@ uint8_t _sign_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *sign, siz
     }
     // This case forces the next character to be 0->9 for the prefix/a decimal
     else if (str[*curr_pos] && !isdigit(str[*curr_pos])) return 4;
+    return 0;
 }
 /* _prefix_handle_nlen_ ret:
 * 0: Short End (Valid)
@@ -239,6 +240,7 @@ uint8_t _prefix_handle_nlen_(const char *str, size_t *curr_pos, uint8_t *base, s
             }
         }
     } else return 1;
+    return 1;
 }
 
 /* ----------------------------- */
@@ -258,7 +260,7 @@ uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char
     else { // The string is currently "0..."
         (*curr_char) = fgetc(stream);
         // The string currently is either "0\null or ERROR"
-        if (*curr_char == EOF) return (ferror(stream) ? 4 : 0);
+        if (*curr_char == (uint16_t)EOF) return (ferror(stream) ? 4 : 0);
         else if (isdigit(*curr_char)) { // The string currently is "0(numerical)" (eg: 0942)
             (*curr_char) = fgetc(stream); // A leading zero --> Decimal
             return 1;
@@ -279,10 +281,10 @@ uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char
                 case '{': { uint16_t tmp = 0;
                     for (uint8_t i = 0; i < 3 && tmp; i++) {
                         (*curr_char) = fgetc(stream);
-                        if (*curr_char == EOF) return (ferror(stream) ? 4 : 3);
+                        if (*curr_char == (uint16_t)EOF) return (ferror(stream) ? 4 : 3);
                         // The numerical segment handling
                         if (!i) { if (!isdigit(*curr_char)) return 2; }
-                        else { 
+                        else {
                             if (*curr_char == '}') return 1;
                             else if (!isdigit(*curr_char)) return 2;
                         } tmp *= 10; tmp += (uint16_t)(*curr_char - '0');
@@ -295,5 +297,5 @@ uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char
                 default:    return 2; break;
             }
         }
-    }
+    } return 1;
 }

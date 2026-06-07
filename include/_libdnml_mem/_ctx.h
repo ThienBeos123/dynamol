@@ -44,7 +44,7 @@ typedef struct calc_ctx {
     void *(*alloc)(void *state, size_t size, dnml_status *err);
     size_t (*mark)(void *state);
     void (*reset)(void *state, size_t mark);
-    void (*clear)(void *state); /* Mostly for debugging */ 
+    void (*clear)(void *state); /* Mostly for debugging */
     void (*destruct)(void *state); /* Mostly for debugging */
     void *state;
 } calc_ctx;

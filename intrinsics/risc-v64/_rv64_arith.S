@@ -42,11 +42,11 @@ asm_text_section
 
 /* ------- 64 BIT ADDITION WITH CARRY -------
 * uint64_t _rv64_add64c(uint64_t a, uint64_t b, uint8_t *carry)
-* arg: 
+* arg:
 *   a0: uint64_t a       (64 BIT)
 *   a1: uint64_t b       (64 BIT)
 *   a2: uint8_t *carry   (8  BIT)
-* ret: 
+* ret:
 *   a0: (a + b + *carry) mod(2^64)
 *   a2: boolean - 1/0
 */
@@ -54,7 +54,7 @@ _rv64_add64c:
     ld t0, 0(a2) // Load *carry into t0
     add a3, a0, a1 // sum = a + b
     sltu t1, a3, a0 // ab_carry = (sum < a);
-    
+
     add a0, a3, t0 // final = sum + *carry
     sltu t0, a0, a3 // final_carry = (final < sum)
 
@@ -71,11 +71,11 @@ _rv64_add64c:
 
 /* ------- 64 BIT SUBTRACTION WITH BORROW -------
 * uint64_t _rv64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow)
-* arg: 
+* arg:
 *   a0: uint64_t a       (64 BIT)
 *   a1: uint64_t b       (64 BIT)
 *   a2: uint8_t *borrow  (8  BIT)
-* ret: 
+* ret:
 *   a0: (a - b - *borrow) mod(2^64)
 *   a2: boolean - 1/0
 */
@@ -103,7 +103,7 @@ _rv64_sub64b:
 
 
 /* ------- 64 BIT WIDE MULTIPLICATION --> 128 BIT PRODUCT -------
-* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   a0: uint64_t a ----> (64 BIT)
 *   a1: uint64_t b ----> (64 BIT)
@@ -125,7 +125,7 @@ _rv64_wmul128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - PERFORMANCE-BASED -------
-* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _rv64_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   a0: uint64_t lo ----> (64 BIT)
 *   a1: uint64_t hi ----> (64 BIT)
@@ -137,40 +137,85 @@ _rv64_wmul128:
 *   a3 - rhat: ([lo:hi] % div)
 */
 _rv64_wdiv128:
-    bgeu a1, a2, .overflow
-    /* Main Divisions + Returns */ 
-    ld t0, 64 // Loop Counter - i
+    /* Early Returns */
+    beqz a2, .div_zero // if (!div)
+    or t0, a0, a1 // if (!lo && !hi)
+    beqz t0, .zero_dend
+    beqz a1, .zero_hi // if (!hi)
+    bgeu a1, a2, .overflow // if (hi >= div)
+
+    /* Main Divisions + Returns */
+    ld t0, 0 // Loop Counter (i)
     ld t1, x0 // Quotient - q
 .div_loop:
-    slli t2, a1, 1              // t2 = a1 << 1  (hi << 1)
-    srli t3, a0, 63             // t3 = a0 >> t0 (lo >> 63) MSB extraction
-    or  a1, t2, t3              // a1 (hi) becomes the updated tesst_rem
-    slli a0, a0, 1              // a0 = a0 << 1 (shift 'lo' left)
+    // Early, high bits overflow check
+    srli a6, a1, 63 // t6 = hi >> 63 (Isolate the MSB)
+
+    // Normal, 128-bit dividend shifting routine
+    slli t2, a1, 1 // t2 = a1 << 1  (hi << 1)
+    srli t3, a0, 63 // lo >> 63 (Getting the current MSB)
+    andi t3, t3, 1 // (lo >> 63) & 1 (Isolate the ith bit)
+    or  t4, t2, t3 // a1 (hi) becomes the updated tesst_rem
+    slli a0, a0, 1 // lo <<= 1; (moving to the next bit)
 
     // 2. Shift our accumulated quotient left by 1 to make room for the next bit
-    slli t1, t1, 1 // Shift left ig idk what to say else more
-    bltu a1, a2, .skip_sub // Compare test/rem/hi (a1) with divisor (a2)
-    // If test_rem/hi < div, current quotient bit is 0 --> skip subtraction
+    slli t1, t1, 1 // q <<= 1
+    sltu a5, t4, a2 // Compare test_rem (a1) with divisor (a2) (<)
+    xori a5, a5, 1 // Inverting a5 into the condition of (>=)
+    or a5, a5, a6 // hi_overflow || test_rem >= div
+    beqz a5, .skip_sub // if (!hi_overflow && !(test_rem >= div))
 
     // 3. If remainder >= divisor: Subtract divisior + set quotient bit to 1
-    sub a1, a1, a2 // a1 -= a2 (hi -= div)
+    sub a1, t4, a2 // a1 = test_rem - div
     ori t1, t1, 1 // Set lowest bit of quotient to 1
-    addi t0, t0, -1 // Decrement loop counter
-    bnez t0, .div_loop // Repeat until all 64 bits are processed
+    addiw t0, t0, 1 // Increment loop counter
+    bltu t0, 64 .div_loop // (i < 64) -- loop bound
+    // Subtraction path
+    sd a1, 0(a3) // *rhat = hi
+    mv a0, t1 // a0 = q (return q)
+    beq a4, x0, .done // if (overflowed != NULL) *overflowed = 0
+    sb x0, 0(a4) // *overflowed = 0
     ret
 .skip_sub:
-    addi t0, t0, -1 // Decrement loop counter
-    bnez t0, .div_loop // Repeat until all 64 bits are processed
+    mv a1, t4 // hi = test_rem
+    addiw t0, t0, 1 // Increment loop counter
+    bltu t0, 64 .div_loop // (i < 64) -- loop bound
     // ---- Normal Return Path ----
     sd a1, 0(a3) // *rhat = hi
     mv a0, t1 // a0 = q (return q)
     beq a4, x0, .done // if (overflowed != NULL) *overflowed = 0
     sb x0, 0(a4) // *overflowed = 0
     ret
+
+/* Early return blocks */
+.zero_dend:
+    sd x0, 0(a3) // *rhat = 0
+    li a0, 0 // return 0
+    // if (overflow != NULL) *overflow = 1
+    beq a4, x0, .done_overflow
+    sb x0, 0(a4) // *overflowed = 0
+    ret
+.zero_hi:
+    // *rhat = lo % div
+    remu t0, a0, a2
+    divu a0, a0, a2 // return lo / div
+    sd t0, 0(a3) // *rhat = t0
+    // if (overflow != NULL) *overflow = 1
+    beq a4, x0, .done_overflow
+    sb x0, 0(a4) // *overflowed = 1
+    ret
 .done:
     ret
 
 /* Overflow handling blocks */
+.div_zero:
+    sd x0, 0(a3) // *rhat = 0
+    ld a0, -1 // return UINT64_MAX
+    // if (overflow != NULL) *overflow = 1
+    beq a4, x0, .done_overflow
+    ld t0, 1 // Load the value of 1 into t0
+    sb t0, 0(a4) // *overflowed = 1
+    ret
 .overflow:
     // *rhat = hi % div
     remu t0, a1, a2
@@ -202,8 +247,10 @@ _rv64_wdiv128:
 */
 _rv64_crt_wdiv128:
     // =========== 1. Determine Overflow Flag & Write to Memory ===========
-    sltu t0, a1, a2 // Set to t0 if a1 < a2
+    seqz t1, a2 // Set 1 to t1 if a2 (div) == 0
+    sltu t0, a1, a2 // Set 1 to t0 if a1 (hi) < a2 (div)
     xori t0, t0, 1 // Flip t0 to a1 >= a2
+    or t0, t0, t1 // t0 |= t1
     sb t0, 0(a4) // *ovf = overflow_flag
     // --- 2. Setup Saturated / Fake Input Options ---
     ld a5, 1
@@ -228,24 +275,32 @@ _rv64_crt_wdiv128:
         - t5 -- LOOP COUNTER (i)        - a0 - q (RESULT QUOTIENT)
     * UNMODIFIABLE VARIALBES/REGISTERS LIST:
         - a3 -- *rem    |   - a4 -- *ovf
-    */ 
+    */
     // Loop Configurations
     li a0, x0 // a0 = q (quotient accumulator)
-    li t5, 64 // a5 = Loop counter (i = 64 down to 1)
+    li t5, 0 // a5 = Loop counter (incremental)
 
 .crt_div_loop:
+    // Early high bit overflow check
+    srli a7, a1, 63 // t6 = hi >> 63 (Isolate the MSB)
+    andi a7, a7, 1 // Explicitly isolating the LSB
+
+    // Normal, 128-bit dividend shifting routine
     slli a0, a0, 1 // q <<= 1
     // test_rem = (chosen_hi << 1) | ((chosen_lo >> i) & 1)
     // In this implementation, we operate directly onto x9 (chosen_hi)
     slli t4, t4, 1 // chosen_hi <<= 1
-    srli t1, t3, 63 // Extract bit 63 from chosen_lo
+    srli t1, t3, 63 // Extract bit 63 from chosen_lo (MSB)
+    andi t1, t1, 1 // (chosen_lo >> 63) & 1 (Isolating the MSB)
     or t4, t4, t1 // t4 (chosen_hi) |= t1 (lo >> 63)
-    slli t3, t3, 1 // Shift chosen_lo (<<= 1) left for the next iteration
+    slli t3, t3, 1 // chosen_lo <<= 1 (moving to the next bit)
+
 
     /* --- Quotient & Remainder value manipulation --- */
     sltu t6, t4, a2 // t6 = (chosen_hi < div)?
     xori t6, t6, 1 // t6 = (chosen_hi >= div)?
-    neg t6, t6 // mask = -(chosen_hi >= div) --> -1 (UINT64_MAX) | 0
+    or t6, t6, a7 // t6 |= a7 (hi_overflow | chosen_hi >= div)
+    neg t6, t6 // mask = -(t6_cond) --> -1 (UINT64_MAX) | 0
     /* -------- Quotient Calculations -------- */
     andi t1, t6, 1 // t1 = 1 & mask
     or a0, a0, t1 // q |= (1 & mask)
@@ -253,17 +308,17 @@ _rv64_crt_wdiv128:
     and t1, a2, t6 // t1 = div & mask
     sub t4, t4, t1 // chosen_hi (hi) -= (div & mask)
 
-    // Decreasing the loop counter
-    addi t5, t5, -1 // Decrement loop counter
-    bnez t5, .crt_div_loop // Looping back to the start of .crt_div_loop
+    // Incrementing the loop counter
+    addiw t5, t5, 1 // Incrementing loop counter
+    bltu t5, 64 .crt_div_loop // (i < 64) -- loop bound
 
 
     /* =========== 5. Final Output Selections =========== */
-    // If overflowed (t0 == 1): return UINT64_MAX. Else: return q. 
+    // If overflowed (t0 == 1): return UINT64_MAX. Else: return q.
     // If overflowed (t0 == 1): *rhat = 0. Else: *rhat = final accumulated chosen_hi (x9).
     li t6, -1 // UINT64_MAX
     neg t1, t0 // If t0 == 1 -> t1 = 0xFFFFFFFFFFFFFFFF (BITMASK)
-    not t2, t1 // t2 = ~(t1) --> 0xFFFFFFFFFFFFFFFF --> 0x000000000000000
+    not t2, t1 // t2 = ~(t1) --> 0xFFFFFFFFFFFFFFFF --> 0x000000000000000 (INVERSE BITMASK)
     // ---- Quotient RETURNS ----
     and t6, t6, t1 // Only keep on OVERFLOW (t1 = 0xFFF..)
     and a0, a0, t2 // Only keep on NON-OVERFLOW (t2 = 0xFFF..)

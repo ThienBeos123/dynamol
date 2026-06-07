@@ -39,11 +39,11 @@ asm_text_section
 
 /* ------- 64 BIT ADDITION WITH CARRY -------
 * uint64_t _x86sv_add64c(uint64_t a, uint64_t b, uint8_t *carry)
-* arg: 
+* arg:
 *   rdi: uint64_t a       (64 BIT)
 *   rsi: uint64_t b       (64 BIT)
 *   rdx: uint8_t *carry   (64 BIT ADRESS)
-* ret: 
+* ret:
 *   rax: (a + b + *carry) mod(2^64)
 *   rdx: boolean - 1/0
 */
@@ -60,7 +60,7 @@ _x86sv_add64c:
     movzx rax, al ; Zero-extends al into rcx
     mov [rdx], rax ; *carry/*rdx = rax
     mov rax, rdi ; return rdi
-    /* ----- Memory / Register Clearance ----- */ 
+    /* ----- Memory / Register Clearance ----- */
     mov rdi, 0
     mov rsi, 0
     ret
@@ -68,11 +68,11 @@ _x86sv_add64c:
 
 /* ------- 64 BIT SUBTRACTION WITH BORROW -------
 * uint64_t _x86sv_sub64b(uint64_t a, uint64_t b, uint8_t *borrow)
-* arg: 
+* arg:
 *   rdi: uint64_t a       (64 BIT)
 *   rsi: uint64_t b       (64 BIT)
 *   rdx: uint8_t *borrow  (64 BIT ADRESS)
-* ret: 
+* ret:
 *   rax: (a - b - *borrow) mod(2^64)
 *   rdx: boolean - 1/0
 */
@@ -87,14 +87,14 @@ _x86sv_sub64b:
     movzx rax, al ; Zero-extends al into rax
     mov [rdx], rax ; *carry/*rdi = rax
     mov rax, rdi ; return rdi
-    /* ----- Memory / Register Clearance ----- */     
+    /* ----- Memory / Register Clearance ----- */
     mov rdi, 0
     mov rsi, 0
     ret
 
 
 /* ------- 64 BIT WIDE MULTIPLICATION --> 128 BIT PRODUCT -------
-* uint64_t _x86sv_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _x86sv_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   rdi: uint64_t a ----> (64 BIT)
 *   rsi: uint64_t b ----> (64 BIT)
@@ -109,7 +109,7 @@ _x86sv_wmul128:
     mul rsi ; rax * rsi --> stored in [rdx:rax]
     mov [rcx], rdx ; *rcx = rdx (the high 64 bit)
     mov rdx, rcx ; rdx = rcx (return the original adress to rdx)
-    /* ----- Memory / Register Clearance ----- */ 
+    /* ----- Memory / Register Clearance ----- */
     mov rdi, 0
     mov rsi, 0
     mov rcx, 0
@@ -117,7 +117,7 @@ _x86sv_wmul128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - PERFORMANCE-BASED -------
-* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed) 
+* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed)
 * arg:
 *   rdi: uint64_t lo ----> (64 BIT)
 *   rsi: uint64_t hi ----> (64 BIT)
@@ -130,10 +130,21 @@ _x86sv_wmul128:
 * pre-conditions: hi/rsi < div
 */
 _x86sv_wdiv128:
+    /* Early Returns  */
+    test rdx, rdx
+    jz .zero_div // if (!div)
+    // if (!lo && !hi)
+    mov r9, rdi
+    or  r9, rsi
+    jz .zero_dend
+    // if (!hi)
+    test rsi, rsi
+    jz .zero_hi
+    // if (hi >= div)
     cmp rsi, rdx
-    ja .overflow
+    jae .overflow
 
-    ; Division + Returns
+    /* Division + Returns */
     mov r9, rdx ; r9 = div
     mov rdx, rsi ; rdx = hi
     mov rax, rdi ; rax = lo
@@ -145,18 +156,51 @@ _x86sv_wdiv128:
     .jz .done
     mov byte [r8], 0
     ret
+
+/* Early Return Blocks */
+.zero_dend:
+    mov rdx, 0
+    mov [rcx], rdx // *rhat = 0
+    mov rax, 0 // return 0
+    ; if (overflow != NULL) *overflow = 1
+    test r8, r8
+    .jz .done
+    mov byte [r8], 0
+    ret
+.zero_hi:
+    mov rax, rdi
+    mov r9,  rdx
+    xor rdx, rdx
+    div r9 // lo / div
+    ; rax = quot | rdx = rem
+    mov [rcx], rdx // *rhat = lo % div
+    // return is already in RAX
+    ; if (overflow != NULL) *overflow = 1
+    test r8, r8
+    .jz .done_overflow
+    mov byte [r8], 0
+    ret
 .done:
     ret
-    
+
 /* Overflow hanndling blocks */
+.zero_div:
+    mov rdx, 0
+    mov [rcx], rdx // *rhat = 0
+    mov rax, -1 // return UINT64_MAX
+    ; if (overflow != NULL) *overflow = 1
+    test r8, r8
+    .jz .done_overflow
+    mov byte [r8], 1
+    ret
 .overflow:
     mov rax, rsi
     mov r9,  rdx
     xor rdx, rdx
     div r9
     ; rax = quot | rdx = rem
-    mov [rcx], rdx
-    mov rax, -1
+    mov [rcx], rdx // *rhat = hi % div
+    mov rax, -1 // return UINT64_MAX
     ; if (overflow != NULL) *overflow = 1
     test r8, r8
     .jz .done_overflow
@@ -168,7 +212,7 @@ _x86sv_wdiv128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - CRYTOGRAPHY-BASED -------
-* uint64_t _x86sv_crt_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *ovf) 
+* uint64_t _x86sv_crt_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *ovf)
 * arg:
 *   rdi: uint64_t lo ----> (64 BIT)
 *   rsi: uint64_t hi ----> (64 BIT)
@@ -182,8 +226,13 @@ _x86sv_wdiv128:
 */
 _x86sv_crt_wdiv128:
     ; --- 1. Evaluate Overflow State ---
+    xor r9, r9 ; Clear the r9 register
+    xor r10, r10 ; Clear the r10 register
+    test rdx, rdx ; RDX (div) == 0?
+    setz r10b ; r10b = 1 if div == 0
     cmp rsi, rdx ; Compare hi (RSI) with div (RDX)
     setae r9b ; r9b = 1 if hi >= div, else 0 (overflow flag)
+    or r9b, r10b ; overflow_flag
 
     ; --- 2. Neutralize Hardware Divide Errors ---
     ; If hi >= div, the CPU will fault. We use conditional moves to feed
@@ -218,13 +267,13 @@ _x86sv_crt_wdiv128:
 
     ; --- 5. Optional Pointer Safety Check for *overflowed ---
     ; If the user passed NULL (0) for R8, we skip writing to it.
-    ; While this utilizes a jump, it is totally safe for cryptography/constant-time 
-    ; security because pointer presence is an execution environment property, 
+    ; While this utilizes a jump, it is totally safe for cryptography/constant-time
+    ; security because pointer presence is an execution environment property,
     ; completely independent of secret mathematical data keys.
     test r8, r8
     jz .crt_done
     mov [r8], r9b ; *overflowed = overflow_flag
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
+    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */
     mov rdi, 0 # Function parameter / argument
     mov rsi, 0 # Function parameter / argument
     mov rdx, 0 # Function parameter / argument
@@ -236,7 +285,7 @@ _x86sv_crt_wdiv128:
     mov r13, 0
     mov r14, 0
 .crt_done:
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
+    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */
     mov rdi, 0 # Function parameter / argument
     mov rsi, 0 # Function parameter / argument
     mov rdx, 0 # Function parameter / argument

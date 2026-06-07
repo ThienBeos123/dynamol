@@ -23,9 +23,9 @@ limitations under the License.
 *       +) Key component configuration entirely dictates
 *          the numerical amounts configuration, or, more precisely,
 *          numerical amounts configuration is automatically not set
-*          and MUST NOT be touched if "key components configuration" 
+*          and MUST NOT be touched if "key components configuration"
 *          of such components are FALSE / NOT set to TRUE
-*       
+*
 *       +) Any early implementation may accept the use of simpler &
 *          less cryptographically-secured combination of srand(time(NULL))
 *          and rand() by ANSI-C <stdlib.h>, though TRNG/HWRNG-seeded entropy
@@ -34,10 +34,10 @@ limitations under the License.
 *       +) Regarding entropy collection via TRNG/HWRNG, it is generally
 *          preferred to use lib-dnml's OS-dispatched entropy collector family -
 *          _GET_ENTROPY_*() - for cross-platform compatibility and
-*          stability of usage from the library's standardization. 
+*          stability of usage from the library's standardization.
 *          However, early prototypes may use OS-specific entropy
 *          harvest ONLY for prototyping of functionality and reliability,
-*          BUT final implementation must use the general function like _GET_ENTROPY_FAST() 
+*          BUT final implementation must use the general function like _GET_ENTROPY_FAST()
 *          or another specialized entropy-collection function that supports
 *          at least the dispatching of MacOS, Linux, AND Windows (64 bit).
 *
@@ -48,8 +48,8 @@ limitations under the License.
 *
 *       +) It is expected that any buffer regarding the containment of a randomly-
 *          generated numerical-string instance from str_casegen.c / strgen_write()
-*          must be initialized with the size of 512 BYTES. Additionally, it is preferred 
-*          for the container/buffer of the randomly-generated numerical string to be newly 
+*          must be initialized with the size of 512 BYTES. Additionally, it is preferred
+*          for the container/buffer of the randomly-generated numerical string to be newly
 *          initialized (whether stack, arena, or heap) AND/OR empty
 */
 
@@ -57,7 +57,7 @@ limitations under the License.
 const component_prob_t prob_matrix[STR_GMODE_CNT][8] = {
     [ STR_CLEAN_MODE ] = {
         {5.2f, 1, 1}, {0, 0, 0},
-        {50.0f, 1, 1, 0.0f, 0.0f}, // Signs 
+        {50.0f, 1, 1, 0.0f, 0.0f}, // Signs
         {50.0f, 1, 1, 0.0f, 0.0f}, // Base-prefix
         {0.0f, 0, 0, 0.0f, 0.0f}, // Junk
         {0.0f, 0, 0, 0.0f, 0.0f}, // Invalid Digits
@@ -97,7 +97,7 @@ uint8_t junk_pool_size = 0;
 static inline bool __is_junk(uint8_t curr_pos, uint8_t base, uint8_t drift) {
     for (int d = 1; d < drift; d++) {
         /*       Boundary Check           Within Base - Valid Digit        */
-        if ((curr_pos - d >= 0 && _VALUE_LOOKUP_SEN_[curr_pos - d] < base) 
+        if ((curr_pos - d >= 0 && _VALUE_LOOKUP_SEN_[curr_pos - d] < base)
         || (curr_pos + d <= 255 && _VALUE_LOOKUP_SEN_[curr_pos + d] < base)) return false;
     } return true;
 }
@@ -124,7 +124,7 @@ static void __prep_junk_pool(uint8_t base, uint8_t drift, xoshiro256_state *stat
 static inline char __get_inval_digit(uint8_t base, uint8_t drift, xoshiro256_state *state) {
     uint8_t dr = (xoshiro256pp_next(state) % drift);
     return (base - 1 + dr >= 64) ?
-        _DIGIT_SEN_[base - 1] + dr : 
+        _DIGIT_SEN_[base - 1] + dr :
         _DIGIT_SEN_[base - 1 + dr];
 }
 static inline char __get_junk(xoshiro256_state *state) {
@@ -179,8 +179,8 @@ SLV _strgen_rseed_quant(str_rand_mod* config, bool bprefix) {
     curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
     config->mixed_sign = (config->sign) ? ((curr_roll < mixed_sign_prob) ? true : false) : false;
     if (!bprefix) {
-        float mixed_bprefix_prob = __rng_frange(&config->base_state, 
-            prob_matrix[i][3].low_pbound, 
+        float mixed_bprefix_prob = __rng_frange(&config->base_state,
+            prob_matrix[i][3].low_pbound,
             prob_matrix[i][3].high_pbound
         ); curr_roll = (float)(fmodf(__froll(&config->base_state), 100));
         config->mixed_bp = (config->bprefix) ? ((curr_roll < mixed_sign_prob) ? true : false) : false;
@@ -191,21 +191,21 @@ SLV _strgen_rseed_quant(str_rand_mod* config, bool bprefix) {
     prob_matrix[i][6].low_pbound, prob_matrix[i][6].high_pbound) : 0;
 
     // ------ 3. Junk Seeding ------
-    config->junk_chance = (config->junk) ? __rng_frange(&config->base_state, 
+    config->junk_chance = (config->junk) ? __rng_frange(&config->base_state,
     prob_matrix[i][4].low_pbound, prob_matrix[i][4].high_pbound) : 0;
     config->max_junk_cnt = (config->junk) ? __rng_range(&config->base_state,
     prob_matrix[i][4].low_qbound, prob_matrix[i][4].high_qbound) : 0;
     config->junk_drift = (config->junk) ? __rng_range(&config->base_state,
     drift_vector[i][2], drift_vector[i][3]) : 0;
-    
+
     // ------ 4. Invalid Digit Seeding ------
     config->inval_digit_cnt = (config->inval_digit) ? __rng_range(&config->base_state,
     prob_matrix[i][5].low_qbound, prob_matrix[i][5].high_qbound) : 0;
     config->init_inval_chance = (config->inval_digit) ? min(
-        __rng_frange(&config->base_state, prob_matrix[i][5].low_pbound, prob_matrix[i][5].high_pbound), 
+        __rng_frange(&config->base_state, prob_matrix[i][5].low_pbound, prob_matrix[i][5].high_pbound),
         (float)(config->inval_digit_cnt / config->str_len)
     ) : 0;
-    config->inval_digit_drift = (config->inval_digit) ? 
+    config->inval_digit_drift = (config->inval_digit) ?
     __rng_range(&config->base_state, drift_vector[i][0], drift_vector[i][1]) : 0;
 
 }
@@ -233,7 +233,7 @@ SLV _strgen_bias_shuffle(str_rand_mod *config, str_areas *order) {
 }
 // Write Helpers
 STV _strgen_write_ws_(char *buf, size_t len, str_rand_mod* config, size_t *cursor, bool *term) {
-    if (!config->whitespace) return; 
+    if (!config->whitespace) return;
     float enull_roll;
     for (size_t i = 0; i < config->wscount; ++i) {
         if (*cursor >= config->str_len) { *term = true; return; }
@@ -247,7 +247,7 @@ STV _strgen_write_sign_(char *buf, size_t len, str_rand_mod* config, size_t *cur
     if (!config->sign) return;
     if (*cursor >= config->str_len) { *term = true; return; }
     float enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
-    if (config->early_null && enull_roll < config->enull_chance) { 
+    if (config->early_null && enull_roll < config->enull_chance) {
         buf[*cursor] = '\0'; *term = true; return;
     } int8_t sign = (__rng_range(&config->base_state, 1, 2) == 1) ? 1 : -1;
     buf[*cursor] = (sign == 1) ? '+' : '-'; (*cursor)++;
@@ -255,7 +255,7 @@ STV _strgen_write_sign_(char *buf, size_t len, str_rand_mod* config, size_t *cur
     if (config->mixed_sign) {
         if (*cursor >= config->str_len) { *term = true; return; }
         enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
-        if (config->early_null && enull_roll < config->enull_chance) { 
+        if (config->early_null && enull_roll < config->enull_chance) {
             buf[*cursor] = '\0'; *term = true; return;
         } buf[*cursor] = (sign == 1) ? '-' : '+'; (*cursor)++;
     }
@@ -275,26 +275,26 @@ STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *
     if (!config->bprefix) return;
     if (*cursor >= config->str_len) { *term = true; return; }
     float enull_roll = (float)(fmodf(__froll(&config->base_state), 100));
-    if (config->early_null && enull_roll < config->enull_chance) { 
+    if (config->early_null && enull_roll < config->enull_chance) {
         buf[*cursor] = '\0'; *term = true; return;
     } uint8_t upsub = (__rng_range(&config->base_state, 1, 10) == 1) ? 32 : 0;
     buf[*cursor] = '0'; (*cursor)++;
     switch (config->base) {
         case 2: {
             if (*cursor >= config->str_len) { *term = true; return; }
-            if (config->early_null && enull_roll < config->enull_chance) { 
+            if (config->early_null && enull_roll < config->enull_chance) {
                 buf[*cursor] = '\0'; *term = true; return;
             } buf[*cursor] = 'b' - upsub; (*cursor)++; break;
         }
         case 8: {
             if (*cursor >= config->str_len) { *term = true; return; }
-            if (config->early_null && enull_roll < config->enull_chance) { 
+            if (config->early_null && enull_roll < config->enull_chance) {
                 buf[*cursor] = '\0'; *term = true; return;
             } buf[*cursor] = 'o' - upsub; (*cursor)++; break;
         }
         case 16: {
             if (*cursor >= config->str_len) { *term = true; return; }
-            if (config->early_null && enull_roll < config->enull_chance) { 
+            if (config->early_null && enull_roll < config->enull_chance) {
                 buf[*cursor] = '\0'; *term = true; return;
             } buf[*cursor] = 'x' - upsub; (*cursor)++; break;
         }
@@ -302,18 +302,18 @@ STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *
         default: {
             uint8_t tmp = config->base;
             if (*cursor >= config->str_len) { *term = true; return; }
-            if (config->early_null && enull_roll < config->enull_chance) { 
+            if (config->early_null && enull_roll < config->enull_chance) {
                 buf[*cursor] = '\0'; *term = true; return;
             } buf[*cursor] = '{'; (*cursor)++;
             while (tmp) {
                 if (*cursor >= config->str_len) { *term = true; return; }
-                if (config->early_null && enull_roll < config->enull_chance) { 
+                if (config->early_null && enull_roll < config->enull_chance) {
                     buf[*cursor] = '\0'; *term = true; return;
-                } buf[*cursor] = '0' - (tmp % 10); 
-                (*cursor)++; 
+                } buf[*cursor] = '0' - (tmp % 10);
+                (*cursor)++;
             }
             if (*cursor >= config->str_len) { *term = true; return; }
-            if (config->early_null && enull_roll < config->enull_chance) { 
+            if (config->early_null && enull_roll < config->enull_chance) {
                 buf[*cursor] = '\0'; *term = true; return;
             } buf[*cursor] = '}'; (*cursor)++;
         } break;
@@ -323,43 +323,43 @@ STV _strgen_write_bprefix_(char *buf, size_t len, str_rand_mod* config, size_t *
             uint8_t rand_base = __rng_range(&config->base_state, 1, 64),
             upsub = (__rng_range(&config->base_state, 1, 10) == 1) ? 32 : 0;
             if (*cursor >= config->str_len) { *term = true; return; }
-            if (config->early_null && enull_roll < config->enull_chance) { 
+            if (config->early_null && enull_roll < config->enull_chance) {
                 buf[*cursor] = '\0'; *term = true; return;
             } buf[*cursor] = '0'; (*cursor)++;
             switch (rand_base) {
                 case 2: {
                     if (*cursor >= config->str_len) { *term = true; return; }
-                    if (config->early_null && enull_roll < config->enull_chance) { 
+                    if (config->early_null && enull_roll < config->enull_chance) {
                         buf[*cursor] = '\0'; *term = true; return;
                     } buf[*cursor] = 'b' - upsub; (*cursor)++; break;
                 }
                 case 8: {
                     if (*cursor >= config->str_len) { *term = true; return; }
-                    if (config->early_null && enull_roll < config->enull_chance) { 
+                    if (config->early_null && enull_roll < config->enull_chance) {
                         buf[*cursor] = '\0'; *term = true; return;
                     } buf[*cursor] = 'o' - upsub; (*cursor)++; break;
                 }
                 case 16: {
                     if (*cursor >= config->str_len) { *term = true; return; }
-                    if (config->early_null && enull_roll < config->enull_chance) { 
+                    if (config->early_null && enull_roll < config->enull_chance) {
                         buf[*cursor] = '\0'; *term = true; return;
                     } buf[*cursor] = 'x' - upsub; (*cursor)++; break;
                 }
                 case 10: break;
                 default: {
                     if (*cursor >= config->str_len) { *term = true; return; }
-                    if (config->early_null && enull_roll < config->enull_chance) { 
+                    if (config->early_null && enull_roll < config->enull_chance) {
                         buf[*cursor] = '\0'; *term = true; return;
                     } buf[*cursor] = '{'; (*cursor)++;
                     while (rand_base) {
                         if (*cursor >= config->str_len) { *term = true; return; }
-                        if (config->early_null && enull_roll < config->enull_chance) { 
+                        if (config->early_null && enull_roll < config->enull_chance) {
                             buf[*cursor] = '\0'; *term = true; return;
-                        } buf[*cursor] = '0' - (rand_base % 10); 
-                        (*cursor)++; 
+                        } buf[*cursor] = '0' - (rand_base % 10);
+                        (*cursor)++;
                     }
                     if (*cursor >= config->str_len) { *term = true; return; }
-                    if (config->early_null && enull_roll < config->enull_chance) { 
+                    if (config->early_null && enull_roll < config->enull_chance) {
                         buf[*cursor] = '\0'; *term = true; return;
                     } buf[*cursor] = '}'; (*cursor)++;
                 } break;
@@ -382,8 +382,8 @@ STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *curs
             inval_roll = (float)(fmodf(__froll(&config->base_state), 100));
             if (inval_roll < config->init_inval_chance) {
                 buf[*cursor] = __get_inval_digit(
-                    config->base, 
-                    config->inval_digit_drift, 
+                    config->base,
+                    config->inval_digit_drift,
                     &config->base_state
                 ); config->inval_digit_cnt--;
                 size_t digit_left = (config->str_len - *cursor - 1);
@@ -399,7 +399,7 @@ STV _strgen_write_num_(char *buf, size_t len, str_rand_mod* config, size_t *curs
                 config->max_junk_cnt--; (*cursor)++;
                 continue;
             }
-        } buf[*cursor] = __get_valdigit(config->base, &config->base_state); 
+        } buf[*cursor] = __get_valdigit(config->base, &config->base_state);
         (*cursor)++;
     }
 }

@@ -40,11 +40,11 @@ asm_text_section
 
 /* ------- 64 BIT ADDITION WITH CARRY -------
 * uint64_t _x86w64_add64c(uint64_t a, uint64_t b, uint8_t *carry)
-* arg: 
+* arg:
 *   rcx: uint64_t a       (64 BIT)
 *   rdx: uint64_t b       (64 BIT)
 *   r8:  uint8_t *carry   (8  BIT)
-* ret: 
+* ret:
 *   rax: (a + b + *carry) mod(2^64)
 *   r8:  boolean - 1/0
 */
@@ -69,11 +69,11 @@ _x86w64_add64c:
 
 /* ------- 64 BIT SUBTRACTION WITH BORROW -------
 * uint64_t _x86w64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow)
-* arg: 
+* arg:
 *   rcx: uint64_t a       (64 BIT)
 *   rdx: uint64_t b       (64 BIT)
 *   r8:  uint8_t *borrow  (8  BIT)
-* ret: 
+* ret:
 *   rax: (a - b - *borrow) mod(2^64)
 *   r8:  boolean - 1/0
 */
@@ -95,7 +95,7 @@ _x86w64_sub64b:
 
 
 /* ------- 64 BIT WIDE MULTIPLICATION --> 128 BIT PRODUCT -------
-* uint64_t _x86w64_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _x86w64_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   rcx: uint64_t a ----> (64 BIT)
 *   rdx: uint64_t b ----> (64 BIT)
@@ -115,7 +115,7 @@ _x86w64_wmul128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - PERFORMANCE-BASED -------
-* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed) 
+* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed)
 * arg:
 *   rcx:        uint64_t lo ----> (64 BIT)
 *   rdx:        uint64_t hi ----> (64 BIT)
@@ -128,8 +128,19 @@ _x86w64_wmul128:
 * pre-conditions: hi/rdx < div
 */
 _x86w64_wdiv128:
+    /* Early Returns  */
+    test r8, r8
+    jz .zero_div // if (!div)
+    // if (!lo && !hi)
+    mov r9, rcx
+    or  r9, rdx
+    jz .zero_dend
+    // if (!hi)
+    test rdx, rdx
+    jz .zero_hi
+    // if (hi >= div)
     cmp rdx, r8
-    ja .overflow
+    jae .overflow
 
     ; Divison + Returns
     mov rax, rcx ; rax = lo
@@ -142,10 +153,45 @@ _x86w64_wdiv128:
     jz .done
     mov byte [r10], 0
     ret
+
+/* Early Return Blocks */
+.zero_dend:
+    mov rdx, 0
+    mov [r9], rdx // *rhat = 0
+    mov rax, 0 // return 0
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done
+    mov byte [r10], 0
+    ret
+.zero_hi:
+    mov rax, rcx
+    xor rdx, rdx
+    div r8 // lo / div
+    ; rax = quot | rdx = rem
+    mov [r9], rdx // *rhat = lo % div
+    // return is already in RAX
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done_overflow
+    mov byte [r10], 0
+    ret
 .done:
     ret
 
-/* Overflow handling blocs */
+/* Overflow hanndling blocks */
+.zero_div:
+    mov rdx, 0
+    mov [r9], rdx // *rhat = 0
+    mov rax, -1 // return UINT64_MAX
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done_overflow
+    mov byte [r10], 1
+    ret
 .overflow:
     mov rax, rdx
     xor rdx, rdx
@@ -165,7 +211,7 @@ _x86w64_wdiv128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - CRYPTOGRAPHY-BASED -------
-* uint64_t _x86w64_crt_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *ovf) 
+* uint64_t _x86w64_crt_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *ovf)
 * arg:
 *   rcx:        uint64_t lo ----> (64 BIT)
 *   rdx:        uint64_t hi ----> (64 BIT)
@@ -179,8 +225,13 @@ _x86w64_wdiv128:
 */
 _x86w64_crt_wdiv128:
     ; --- 1. Evaluate Overflow State ---
+    xor rax, rax ; Clear the rax register
+    xor rbx, rbx ; Clear the rbx register
+    test r8, r8 ; R8 (div) == 0?
+    setz al ; al = 1 IF div == 0
     cmp rdx, r8 ; Compare hi (RDX) with div (R8)
-    setae bl ; r9b = 1 if hi >= div, else 0 (overflow flag)
+    setae bl ; bl = 1 if hi >= div, else 0 (overflow flag)
+    or bl, al ; overflow_flag
 
     ; --- 2. Neutralize Hardware Divide Errors ---
     ; If hi >= div, the CPU will fault. We use conditional moves to feed
@@ -215,14 +266,14 @@ _x86w64_crt_wdiv128:
 
     ; --- 5. Optional Pointer Safety Check for *overflowed ---
     ; If the user passed NULL (0) for R8, we skip writing to it.
-    ; While this utilizes a jump, it is totally safe for cryptography/constant-time 
-    ; security because pointer presence is an execution environment property, 
+    ; While this utilizes a jump, it is totally safe for cryptography/constant-time
+    ; security because pointer presence is an execution environment property,
     ; completely independent of secret mathematical data keys.
     mov r10, [rsp + 40]
     test r10, r10
     jz .crt_done
     mov [r10], bl ; *overflowed = overflow_flag
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
+    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */
     mov rcx, 0 ; Parameters / Arguments
     mov rdx, 0 ; Parameters / Arguments
     mov r8, 0 ; Parameters / Arguments
@@ -233,7 +284,7 @@ _x86w64_crt_wdiv128:
     mov rsi, 0
     mov rdi, 0
 .crt_done:
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
+    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */
     mov rcx, 0 ; Parameters / Arguments
     mov rdx, 0 ; Parameters / Arguments
     mov r8, 0 ; Parameters / Arguments

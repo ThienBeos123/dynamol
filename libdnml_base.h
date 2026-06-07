@@ -67,7 +67,7 @@ static inline void _libdnml_cleanup(void) {}
         do { if (!_libdnml_cinit()) { \
             fprintf(stderr, "[libdnml] dnml_init() not called\n"); \
             abort(); \
-        }} while(0) 
+        }} while(0)
 #else
     #define _LIBDNML_AUTOCHECK()
 #endif

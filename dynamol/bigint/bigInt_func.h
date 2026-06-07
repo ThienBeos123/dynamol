@@ -32,30 +32,17 @@ limitations under the License.
 #include "../../intrinsics/intrinsics.h"
 #include "../../calc_algo/perf_calc.h"
 #include "../../util/util.h"
+#include "../_dynamol_arena.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define io_cleanup { arena_clear(&___DASI_IO_ARENA_); arena_destruct(&___DASI_IO_ARENA_); }
-
 //? ======================= COMMON !TEST! ASSERT ERRORS CATALOG ====================== ?//
 // Invariant Enforcement
-#define input_null "INput Error: Input BigInt is impossible to access due to being a NULL pointer (-Ebigint_null)"
-#define full_contract "Validation Error: Input BigInt violates the full invariant contract (-Ebigint_inval)"
-#define state_contract "Validation Error: Input BigInt violates contract's state invariants (-Ebigint_sinval)"
-#define storage_inval "Validation Error: Input BigInt violates contract's storage invariants (-EbigInt_err_store_in)"
-#define aliased_limbs "Validation Error: Input BigInts contain aliased limb pointers (-Ebigint_alias_limb)"
-// Unexpected/UB Handling
-#define arena_oom "CRITICAL ERROR: Arena initliaizationf failed due to OOM (-Ealloc_arena_oom)"
-#define alloc_oom "CRITICAL ERROR: Heap-Allocation Failure - OOM (-Ealloc_oom)"
-#define inval_cap "Reserve Capacity Calculation/Assumptions incorrect (-Ereserve_incorrect)"
-#define arena_poison_oom "Arena Poisoned: Arena Re-allocation witnessed an OOM error (-Earena_poison)"
-// String Format Handling
-#define str_null "String Format Error: Input string pointer is null (-Estr_null)"
-#define str_empty "String Format Error: Input string is empty (-Estr_empty)"
-#define str_inval_base "String Format Error: Input base-parameter is invalid (-Estr_inval_base)"
-#define stream_err "File Error: Input stream witnessed an inexplicable error (-Efile_ferror)"
+#define bi_full_contract "Validation Error: Input BigInt violates the full invariant contract (-Ebigint_inval)"
+#define bi_state_contract "Validation Error: Input BigInt violates contract's state invariants (-Ebigint_sinval)"
+#define bi_storage_inval "Validation Error: Input BigInt violates contract's storage invariants (-EbigInt_err_store_in)"
+#define bi_aliased_limbs "Validation Error: Input BigInts contain aliased limb pointers (-Ebigint_alias_limb)"
 
 
 
@@ -68,25 +55,6 @@ extern "C" {
         }, DNML_ALLOC_OOM \
     ); \
 } while(0);
-#define arena_poisoined(arena_name) do { \
-    test_assert( \
-        /* Static Analysis - Assert Parameters */ \
-        (!((arena_name)->poisoined)), alloc_oom, { \
-            arena_clear((arena_name)); arena_destruct((arena_name)); \
-            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, DNML_ALLOC_OOM /* Error Returns Parameters */ \
-    ) \
-} while(0);
-#define arena_alloc_oom(err_check, arena_name) do { \
-    test_assert( \
-        /* Static Analysis - Assert Parameters */ \
-        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
-            arena_clear((arena_name)); arena_destruct((arena_name)); \
-            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, DNML_ALLOC_OOM /* Error Returns Parameters */ \
-    ); \
-} while(0);
-
 
 /* Mutative Macros */
 #define heap_alloc_oom_void(err_check, err) do { \
@@ -103,24 +71,6 @@ extern "C" {
         }, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() \
     ); \
 } while(0);
-#define arena_poison_mut(arena_name, err) do { \
-    test_assert_mut( \
-        /* Static Analysis - Assert Parameters */ \
-        (!((arena_name)->poisoined)), alloc_oom, { \
-            arena_clear((arena_name)); arena_destruct((arena_name)); \
-            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
-    ) \
-} while(0);
-#define arena_alloc_oom_mut(err_check, arena_name, err) do { \
-    test_assert_mut( \
-        /* Static Analysis - Assert Parameters */ \
-        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
-            arena_clear((arena_name)); arena_destruct((arena_name)); \
-            arena_clear(&___DASI_LOWLVL_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-        }, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
-    ); \
-} while(0);
 #define func_ret_oom(err) { *(err) = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
 #define ocopy_check(err_check, arena_name) do { \
     DNML_TEST_ASSERT( \
@@ -130,14 +80,10 @@ extern "C" {
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_); \
         } \
     ); \
-} while(0); 
+} while(0);
 
 /* General Macros */
-#define clear_arena do { \
-    arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
-    arena_destruct(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_LOWLVL_ARENA_); \
-} while (0);
-#define clear_arena_io do { arena_clear(&___DASI_IO_ARENA_); arena_destruct(&___DASI_IO_ARENA_); } while(0);
+#define clear_arena do { _cleanup_dynamol(); } while (0);
 #define mut_gret(err, err_code, ret) do { \
     if ((err) != NULL) *(err) = err_code; return ret; \
 } while(0)
@@ -299,7 +245,7 @@ bool bigInt_mequal(const bigInt a, const bigInt b, dnml_status *err);
 *       +) Fast Paths
 *       +) Normalization
 *       +) Illegal Operation
-*   - They are designed to improve performance by implementing fast paths, 
+*   - They are designed to improve performance by implementing fast paths,
 *     decrease boilerplate, and provide safe, public, surface-level interface for bigInt operations
 *   - These function are included in two different sections below:
 *       +) MUTATIVE ARITHMETIC      ---> In-place mutation of a variable                (Eg: x += 1     )
@@ -432,8 +378,8 @@ dnml_status bigInt_resize(bigInt *x, size_t k);
 dnml_status bigInt_reserve(bigInt *x, size_t k);
 dnml_status bigInt_shrink(bigInt *x, size_t k);
 dnml_status bigInt_reset(bigInt *x);
-bool bigInt_validate(bigInt x);
-bool bigInt_pvalidate(bigInt *x);
+bool bigInt_validate(const bigInt x);
+bool bigInt_pvalidate(const bigInt *x);
 
 
 
@@ -456,8 +402,8 @@ dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *wri
 dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *written);
 dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written);
 dnml_status bigInt_tto_strf(
-    char* str, size_t len, 
-    const bigInt x, uint8_t base, 
+    char* str, size_t len,
+    const bigInt x, uint8_t base,
     bool uppercase, size_t *written
 );
 /* Safe BigInt --> String */
@@ -466,8 +412,8 @@ dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *writ
 dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *written);
 dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written);
 dnml_status bigInt_to_strf(
-    char* str, size_t len, 
-    const bigInt x, uint8_t base, 
+    char* str, size_t len,
+    const bigInt x, uint8_t base,
     bool uppercase, size_t *written
 );
 //* -------------------------- BigInt Conversions -------------------------- *//
@@ -479,13 +425,13 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
 size_t bigInt_get_size(const char *str, size_t len, uint8_t *baseout, dnml_status *err);
 size_t bigInt_get_sizeb(const char *str, size_t len, uint8_t base, dnml_status *err);
 size_t bigInt_get_sizesa(
-    const char *str, size_t len, 
-    uint8_t *baseout, size_t bisize, 
+    const char *str, size_t len,
+    uint8_t *baseout, size_t bisize,
     dnml_status *err
 );
 size_t bigInt_get_sizebsa(
-    const char *str, size_t len, 
-    uint8_t base, size_t bisize, 
+    const char *str, size_t len,
+    uint8_t base, size_t bisize,
     dnml_status *err
 );
 /* Default String --> BigInt */
@@ -562,7 +508,7 @@ dnml_status bigInt_deserialize(bigInt *x, const char* str, size_t len);
 //* -------------------- GENERAL UTILITIES --------------------- */
 dnml_status bigInt_limb_dump(FILE *stream, const bigInt x);
 dnml_status bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase);
-dnml_status bigInt_bindump(FILE *stream, const bigInt x); 
+dnml_status bigInt_bindump(FILE *stream, const bigInt x);
 dnml_status bigInt_info(FILE *stream, const bigInt x);
 
 

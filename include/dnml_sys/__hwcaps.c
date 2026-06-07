@@ -48,7 +48,7 @@ static void ___rv64_legLINUX_detcaps(void) {
         char curr_block[256];
         while (fgets(curr_block, sizeof(curr_block), f)) {
             if (strncmp(curr_block, "isa", 3) == 0) {
-                libdnml_rv64_caps.rv64_zbb = 
+                libdnml_rv64_caps.rv64_zbb =
                     strstr(curr_block, "_zbb") != NULL ||
                     strstr(curr_block, "zbb")  != NULL;
                 libdnml_rv64_caps.rv64_zba = strstr(curr_block, "_zba") != NULL;
@@ -77,7 +77,7 @@ void __DNML_DETRV64_HWCAPS(void) {
 #elif __OS_BSD__
     ___rv64_BSD_detcaps();
 #else // Bare metal, Embedded systems
-    // Users are forced to manually set 
+    // Users are forced to manually set
     // the _DNMLEMB_RISCV_ZBB flag
     libdnml_rv64_caps.rv64_zbb = _DNML_BARE_RISCV_ZBB;
     libdnml_rv64_caps.rv64_zba = _DNML_BARE_RISCV_ZBA;
@@ -118,7 +118,7 @@ static inline void ___x86_WINdetcaps_secex(void) {
 }
 // x86_64 Extension detections -- SYSTEM-V / Any others
 static inline void ___x86_Pdetcaps_secex(void) {
-#if __ARCH_X86_64__ && (ON_ANY_OTHER)
+#if __ARCH_X86_64__ && (defined(__OS_LINUX__) || defined(__OS_MACOS__) || defined(__OS_IOS__) || defined(__OS_BSD__))
     unsigned int det_registers[4] = {0};
     /* RDRAND Detection */ __sysv_get_cpuid(1, 0, det_registers);
     libdnml_x64_caps.x86_rdrand = (det_registers[2] & dnml_bit_RDRAND) != 0;
@@ -127,7 +127,7 @@ static inline void ___x86_Pdetcaps_secex(void) {
 #endif
 }
 static inline void ___x86_Pdetcaps_simdex(void) {
-#if __ARCH_X86_64__ && (ON_ANY_OTHER)
+#if __ARCH_X86_64__ && (defined(__OS_LINUX__) || defined(__OS_MACOS__) || defined(__OS_IOS__) || defined(__OS_BSD__))
     unsigned int det_registers[4] = {0};
     // SSE4.2 Detection
     __sysv_get_cpuid(1, 0, det_registers);
@@ -135,7 +135,7 @@ static inline void ___x86_Pdetcaps_simdex(void) {
 #endif
 }
 static inline void ___x86_Pdetcaps_bitex(void) {
-#if __ARCH_X86_64__ && (ON_ANY_OTHER)
+#if __ARCH_X86_64__ && (defined(__OS_LINUX__) || defined(__OS_MACOS__) || defined(__OS_IOS__) || defined(__OS_BSD__))
     unsigned int det_registers[4] = {0};
     unsigned int max_instruct = 0;
     max_instruct = __sysv_cpu_maxl();

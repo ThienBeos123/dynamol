@@ -19,13 +19,13 @@ limitations under the License.
 #include "crt_mul.h"
 
 /* CRYPTINT ALGORITHMS */
-dnml_status __CRINT_SCHOOLBOOK__(const crint *a, const crint *b, crint *res) {
+dnml_status __CRINT_SCHOOLBOOK__(crint *a, crint *b, crint *res) {
     // Static Analysis
-    crint_poison(a); crint_poison(b); 
+    crint_poison(a); crint_poison(b);
     crint_poison(res); DNML_TEST_ASSERT(
         (_lib_crt_geq(res->cap, a->n + b->n)),
-        "Insufficient Product Capacity: Capacity insatisfactory for a * b "
-        "(-Emul_insufficient_cap)", {}
+        "Insufficient Product Capacity: Capacity insatisfactory for a * b (-Emul_insufficient_cap)", 
+        {__CRINT_IFREE__(a);__CRINT_IFREE__(b);__CRINT_IFREE__(res); }
     ); // Main Algorithms
     __libdnml_smemset_u64(res->limbs, 0, res->cap, (size_t)0, (size_t)res->cap, false);
     for (size_t i = 0; _lib_crt_lt(i, a->n); ++i) {
@@ -40,9 +40,9 @@ dnml_status __CRINT_SCHOOLBOOK__(const crint *a, const crint *b, crint *res) {
     __libdnml_smemset_u64(res->limbs, 0, res->cap, res->n, res->cap - 1, false);
     return CRINT_SUCCESS;
 }
-dnml_status __CRINT_NTT__(const crint *a, const crint *b, crint *res) {}
-dnml_status __CRINT_MUL_DISP__(const crint *a, const crint *b, crint *res) {
-    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) 
+dnml_status __CRINT_NTT__(crint *a, crint *b, crint *res) { return CRINT_SUCCESS; }
+dnml_status __CRINT_MUL_DISP__(crint *a, crint *b, crint *res) {
+    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK)
         return __CRINT_SCHOOLBOOK__(a, b, res);
     else return __CRINT_NTT__(a, b, res);
 }

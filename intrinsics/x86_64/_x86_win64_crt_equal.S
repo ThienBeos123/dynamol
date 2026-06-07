@@ -45,7 +45,7 @@ asm_text_section
 */
 _x86w64_crt_ispos:
     test rdx, rdx ; Test if positive
-    sets al ; Set sign
+    setg al ; Set if > 0
     movzx rax, al
     mov rdx, 0 ; register clearance
     ret
@@ -58,7 +58,7 @@ _x86w64_crt_ispos:
 */
 _x86w64_crt_isneg:
     test rdx, rdx ; Test if negative
-    setns al ; Set if NEGATIVE sign
+    sets al ; Set if sign
     movzx rax, al
     mov rdx, 0 ; register clearance
     ret

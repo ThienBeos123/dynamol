@@ -23,9 +23,9 @@ limitations under the License.
 *       +) Key component configuration entirely dictates
 *          the numerical amounts configuration, or, more precisely,
 *          numerical amounts configuration is automatically not set
-*          and MUST NOT be touched if "key components configuration" 
+*          and MUST NOT be touched if "key components configuration"
 *          of such components are FALSE / NOT set to TRUE
-*       
+*
 *       +) Any early implementation may accept the use of simpler &
 *          less cryptographically-secured combination of srand(time(NULL))
 *          and rand() by ANSI-C <stdlib.h>, though TRNG/HWRNG-seeded entropy
@@ -34,22 +34,22 @@ limitations under the License.
 *       +) Regarding entropy collection via TRNG/HWRNG, it is generally
 *          preferred to use lib-dnml's OS-dispatched entropy collector family -
 *          _GET_ENTROPY_*() - for cross-platform compatibility and
-*          stability of usage from the library's standardization. 
+*          stability of usage from the library's standardization.
 *          However, early prototypes may use OS-specific entropy
 *          harvest ONLY for prototyping of functionality and reliability,
-*          BUT final implementation must use the general function like _GET_ENTROPY_FAST() 
+*          BUT final implementation must use the general function like _GET_ENTROPY_FAST()
 *          or another specialized entropy-collection function that supports
 *          at least the dispatching of MacOS, Linux, AND Windows (64 bit).
 *
 *   - Note 2 - bi_casegen.c SPECIFIC
-*       +) It is expected that any usage of bi_casegen.c (subsequently through case_gen.h) 
+*       +) It is expected that any usage of bi_casegen.c (subsequently through case_gen.h)
 *          must first use the function strgen_init_sesh() to initialize a string generation
 *          instance with satisfactory, entropy-filled base-state for our simple PRNG.
 *
 *       +) It is expected that any buffer regarding the containment of a randomly-
 *          generated numerical-string instance from bi_casegen.c / bigen_write()
-*          must be initialized with the size of 48 limbs. Additionally, it is preferred 
-*          for the container/buffer of the randomly-generated numerical string to be 
+*          must be initialized with the size of 48 limbs. Additionally, it is preferred
+*          for the container/buffer of the randomly-generated numerical string to be
 *          newly initialized (whether stack, arena, or heap) AND/OR empty
 */
 
@@ -83,9 +83,9 @@ const float cap_case_pmatrix[BIGEN_CNT][BICAP_CASE_COUNT] = {
     [ BI_RAND_GEN ] = { 10.6, 8.8, 11.5, 31.7, 37.4 },
 };
 const case_prange ccase_variant_matrix[BIGEN_CNT][BICAP_CASE_COUNT] = {
-    // The probabilistic bounds in QUARTERLY_SPARSE & HALF_SPRASE are the bounds for 
-    // the generation of the "initial-chance" that a limb would qualify to be filled. 
-    // The "initial-chance will grow/diminish dynamically based on the amount of limbs 
+    // The probabilistic bounds in QUARTERLY_SPARSE & HALF_SPRASE are the bounds for
+    // the generation of the "initial-chance" that a limb would qualify to be filled.
+    // The "initial-chance will grow/diminish dynamically based on the amount of limbs
     // left needed to be filled, ensuring that the target (n/4, n/2) is hit.
     [ BI_CLEAN_GEN ] = {
         [ SINGULAR_LIMB ] = { 0, 1, 0.5f, 0.0f }, // The "probabilist upper-bound" in NOT used
@@ -197,7 +197,7 @@ static void _alloc_spectrum(bi_rand_mod *config) {
 static inline void _rseed_cap_metadata(bi_rand_mod *config) {
     if (!config->cap) { config->len = 0; return; }
     config->cap_case = __roulette_wheel_select(
-        cap_case_pmatrix[config->mod_gen_mode], 
+        cap_case_pmatrix[config->mod_gen_mode],
         &config->state
     );
     switch(config->cap_case) {
@@ -255,7 +255,7 @@ static inline uint64_t _biwrite_msb(bi_rand_mod *config) {
 }
 static inline uint64_t _biwrite_lsb(bi_rand_mod *config) {
     uint8_t shift = (uint8_t)__rng_skrange(
-        &config->state, 0, 63, 
+        &config->state, 0, 63,
         __data_shift_skew(config->mod_gen_mode)
     ); return 1 << shift;
 }
@@ -280,7 +280,7 @@ void bigen_write(bigInt *buf, bi_rand_mod *config) {
     // Setup
     config->mod_gen_mode = _bigen_roll_gmode(&config->state);
     config->cap = __rng_skrange(
-        &config->state, 0, bigen_len(), 
+        &config->state, 0, bigen_len(),
         cap_skewness_vector[config->mod_gen_mode]
     ); size_t i = 0;
     _rseed_cap_metadata(config); _alloc_spectrum(config);
@@ -293,8 +293,8 @@ void bigen_write(bigInt *buf, bi_rand_mod *config) {
             // Small/Random Cases
             case CASE_ZERO: { if (i == config->len - 1) continue; buf->limbs[i] = 0; } break;
             case CASE_ONE: { buf->limbs[i] = 1; } break;
-            case CASE_RANDOM: { 
-                uint64_t rand_num = xoshiro256pp_next(&config->state); 
+            case CASE_RANDOM: {
+                uint64_t rand_num = xoshiro256pp_next(&config->state);
                 if (!rand_num && i == config->len - 1) continue;
                 buf->limbs[i] = rand_num;
             } break;

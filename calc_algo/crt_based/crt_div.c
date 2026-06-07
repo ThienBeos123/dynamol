@@ -19,12 +19,12 @@ limitations under the License.
 #include "crt_div.h"
 
 /* CRYPTINT ALGORITHMS */
-dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, crint *rem) {
+dnml_status __CRINT_SHORT_DIVISION__(crint *a, uint64_t b, crint *quot, crint *rem) {
     // Static Analysis
-    crint_poison(a); crint_poison(quot); 
+    crint_poison(a); crint_poison(quot);
     crint_poison(rem); DNML_TEST_ASSERT((b),
-        "Mathematical Undefinindness: Division by 0 "
-        "(-Ediv_by_zero)", {}
+        "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)",
+        { __CRINT_IFREE__(rem); __CRINT_IFREE__(quot); __CRINT_IFREE__(a); }
     );
     DNML_TEST_ASSERT((quot->cap >= a->n),
         "Insufficient Quotient Capacity: Capacity unsatisfactory for a / b "
@@ -39,8 +39,8 @@ dnml_status __CRINT_SHORT_DIVISION__(const crint *a, uint64_t b, crint *quot, cr
     __CRINT_TRIM_LZ__(rem); CHOOSE_OPTION((quot->sign), (!(quot->n)), (1), (quot->sign));
     rem->limbs[0] = remainder; rem->n = !!(rem); rem->sign = 1; return CRINT_SUCCESS;
 }
-dnml_status __CRINT_NEWTON_RECP__(const crint *dend, const crint *div, crint *quot, crint *rem) {}
-dnml_status __CRINT_DIV_DISP__(const crint *a, const crint *b, crint *quot, crint *rem) {
+dnml_status __CRINT_NEWTON_RECP__(crint *dend, crint *div, crint *quot, crint *rem) { return CRINT_SUCCESS; }
+dnml_status __CRINT_DIV_DISP__(crint *a, crint *b, crint *quot, crint *rem) {
     if (b->n < BIGINT_SHORT) return __CRINT_SHORT_DIVISION__(a, b->limbs[0], quot, rem);
     else return __CRINT_NEWTON_RECP__(a, b, quot, rem);
 }

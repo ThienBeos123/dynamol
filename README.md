@@ -84,11 +84,8 @@ int main(void) {
 ## Build & Installation
 After the acquisition of the source code, have a look at INSTALLATION.md for detailed instructions at building, compiling, and integrating lib-dnml into your projects. For more platform-specific instructions:
 
-* [Instruction for UNIX-like Platforms](/doc/UNIX-BUILD.md)
-* [Instruction for Windows](/doc/WIN64-BUILD.md)
-* [Instruction for Androids](/doc/ANDROID-BUILD.md)
-* [Instruction for iOS](/doc/IOS-BUILD.md)
-* [Instruction for BSD-based platforms](/doc/BSD-BUILD.md)
+* [Instruction for developers](/doc/DEV-BUILD.md)
+* [Instruction for downloader/users](/doc/USER-BUILD.md)
 
 
 ## Documentation

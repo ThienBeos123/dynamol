@@ -36,7 +36,7 @@ asm_text_section
 
 
 
-; Uses hardware DRBG, in which it alos utilizes hardware entropy, 
+; Uses hardware DRBG, in which it alos utilizes hardware entropy,
 ; to seed entropy to the user swiftly
 /* ----- HARDWRE DETERMINISTIC RANDOM BIT GENERATOR -----
 * uint64_t _x86sv_hw_drbg(int *err)

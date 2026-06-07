@@ -50,7 +50,7 @@ FUNC_SIZE(ASM_SYM(arm64_crt_select))
 */
 ASM_SYM(arm64_crt_ispos):
     lsr x0, x0, #63
-    eor x0, x0, #1 
+    eor x0, x0, #1
     ret
 
 

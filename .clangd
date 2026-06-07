@@ -6,6 +6,21 @@ Diagnostics:
     Remove:
       - readability-*
       - bugprone-*
+      - bugprone-unused-*
+      - misc-unused-*
+      - performance-no-int-to-ptr
+      - performance-enum-size
 
   # 2. Manage native clangd include warnings separately
   UnusedIncludes: None
+  Suppress:
+    - unused-function
+    - unused-variable 
+    - unused-parameter 
+    - unused-but-set-variable
+
+CompileFlags:
+    Add:
+      - Wno-unused
+      - Wno-misleading-indentation
+      - Wno-bitwise-instead-of-logical

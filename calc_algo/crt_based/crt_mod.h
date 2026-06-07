@@ -36,9 +36,9 @@ limitations under the License.
 extern "C" {
 #endif
 /* CRYPTINT ALGORITHMS */
-dnml_status __CRINT_BARETT_REDC__(const crint *dend, const crint *mod, crint *rem);
+dnml_status __CRINT_BARETT_REDC__(crint *dend, crint *mod, crint *rem);
 dnml_status __CRINT_MONT_REDC__(crint *t, mont_ctx mredc_ctx, crint *rem);
-dnml_status __CRINT_MOD_DISP__(const crint *dend, const crint *mod, crint *rem, crint *tmp_quot);
+dnml_status __CRINT_MOD_DISP__(crint *dend, crint *mod, crint *rem, crint *tmp_quot);
 #ifdef __cplusplus
 }
 #endif
