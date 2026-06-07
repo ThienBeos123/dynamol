@@ -128,8 +128,19 @@ _x86w64_wmul128:
 * pre-conditions: hi/rdx < div
 */
 _x86w64_wdiv128:
+    /* Early Returns  */
+    test r8, r8
+    jz .zero_div // if (!div)
+    // if (!lo && !hi)
+    mov r9, rcx
+    or  r9, rdx
+    jz .zero_dend
+    // if (!hi)
+    test rdx, rdx
+    jz .zero_hi
+    // if (hi >= div)
     cmp rdx, r8
-    ja .overflow
+    jae .overflow
 
     ; Divison + Returns
     mov rax, rcx ; rax = lo
@@ -142,10 +153,45 @@ _x86w64_wdiv128:
     jz .done
     mov byte [r10], 0
     ret
+
+/* Early Return Blocks */
+.zero_dend:
+    mov rdx, 0
+    mov [r9], rdx // *rhat = 0
+    mov rax, 0 // return 0
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done
+    mov byte [r10], 0
+    ret
+.zero_hi:
+    mov rax, rcx
+    xor rdx, rdx
+    div r8 // lo / div
+    ; rax = quot | rdx = rem
+    mov [r9], rdx // *rhat = lo % div
+    // return is already in RAX
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done_overflow
+    mov byte [r10], 0
+    ret
 .done:
     ret
 
-/* Overflow handling blocs */
+/* Overflow hanndling blocks */
+.zero_div:
+    mov rdx, 0
+    mov [r9], rdx // *rhat = 0
+    mov rax, -1 // return UINT64_MAX
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done_overflow
+    mov byte [r10], 1
+    ret
 .overflow:
     mov rax, rdx
     xor rdx, rdx
@@ -179,8 +225,13 @@ _x86w64_wdiv128:
 */
 _x86w64_crt_wdiv128:
     ; --- 1. Evaluate Overflow State ---
+    xor rax, rax ; Clear the rax register
+    xor rbx, rbx ; Clear the rbx register
+    test r8, r8 ; R8 (div) == 0?
+    setz al ; al = 1 IF div == 0
     cmp rdx, r8 ; Compare hi (RDX) with div (R8)
-    setae bl ; r9b = 1 if hi >= div, else 0 (overflow flag)
+    setae bl ; bl = 1 if hi >= div, else 0 (overflow flag)
+    or bl, al ; overflow_flag
 
     ; --- 2. Neutralize Hardware Divide Errors ---
     ; If hi >= div, the CPU will fault. We use conditional moves to feed

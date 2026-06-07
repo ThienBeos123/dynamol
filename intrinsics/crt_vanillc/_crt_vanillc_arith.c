@@ -101,15 +101,17 @@ uint64_t _crtintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
 //  +) Mutates the 64 bit remainder parameter - rhat
 //  +) Preconditions: hi < div
 uint64_t _crtintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
-    uint8_t overflow_flag = (_vanillc_crt_geq(hi, div)); *overflowed = overflow_flag;
+    uint8_t overflow_flag = (!div | _vanillc_crt_geq(hi, div)); *overflowed = overflow_flag;
     uint64_t q = 0, fake_hi = 1, fake_lo = UINT64_C(0x1928356720912386);
-    uint64_t chosen_lo = _vanillc_crt_select(overflow_flag, lo, fake_lo);
-    uint64_t chosen_hi = _vanillc_crt_select(overflow_flag, hi, fake_hi);
-    for (int i = U64_BITS - 1; _vanillc_crt_geqi64(i, 0); --i) {
-        q <<= 1; uint64_t test_rem = (chosen_hi << 1) | ((chosen_lo >> i) & 1);
-        uint64_t mask = _vanillc_crt_select((_vanillc_crt_geq(test_rem, div)), UINT64_MAX, 0);
-        q |= (1 & mask); hi = test_rem - (div & mask);
-        test_rem = 0; mask = 0;
+    uint64_t chosen_lo = _vanillc_crt_select(overflow_flag, fake_lo, lo);
+    uint64_t chosen_hi = _vanillc_crt_select(overflow_flag, fake_hi, hi);
+    for (size_t i = 0; _vanillc_crt_lt(i, U64_BITS); ++i) {
+        uint8_t hi_overflow = (chosen_hi >> 63) & 1;
+        uint64_t test_rem = (chosen_hi << 1) | ((chosen_lo >> 63) & 1);
+        q <<= 1; chosen_lo <<= 1;
+        uint64_t mask = _vanillc_crt_select((hi_overflow | _vanillc_crt_geq(test_rem, div)), UINT64_MAX, 0);
+        q |= (1 & mask); chosen_hi = test_rem - (div & mask);
+        test_rem = 0; mask = 0; hi_overflow = 0;
     }
     uint64_t ret_quotient = _vanillc_crt_select(overflow_flag, (UINT64_MAX), (q));
     *rhat = _vanillc_crt_select(overflow_flag, (0), (chosen_hi)); // clang-format off

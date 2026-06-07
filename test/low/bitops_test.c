@@ -376,7 +376,5 @@ int main(void) {
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time);
     printf("=========================================================\n");
-
-
     return (passed_tests == total_tests) ? 0 : 1;
 }

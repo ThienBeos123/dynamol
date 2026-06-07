@@ -130,10 +130,21 @@ _x86sv_wmul128:
 * pre-conditions: hi/rsi < div
 */
 _x86sv_wdiv128:
+    /* Early Returns  */
+    test rdx, rdx
+    jz .zero_div // if (!div)
+    // if (!lo && !hi)
+    mov r9, rdi
+    or  r9, rsi
+    jz .zero_dend
+    // if (!hi)
+    test rsi, rsi
+    jz .zero_hi
+    // if (hi >= div)
     cmp rsi, rdx
-    ja .overflow
+    jae .overflow
 
-    ; Division + Returns
+    /* Division + Returns */
     mov r9, rdx ; r9 = div
     mov rdx, rsi ; rdx = hi
     mov rax, rdi ; rax = lo
@@ -145,18 +156,51 @@ _x86sv_wdiv128:
     .jz .done
     mov byte [r8], 0
     ret
+
+/* Early Return Blocks */
+.zero_dend:
+    mov rdx, 0
+    mov [rcx], rdx // *rhat = 0
+    mov rax, 0 // return 0
+    ; if (overflow != NULL) *overflow = 1
+    test r8, r8
+    .jz .done
+    mov byte [r8], 0
+    ret
+.zero_hi:
+    mov rax, rdi
+    mov r9,  rdx
+    xor rdx, rdx
+    div r9 // lo / div
+    ; rax = quot | rdx = rem
+    mov [rcx], rdx // *rhat = lo % div
+    // return is already in RAX
+    ; if (overflow != NULL) *overflow = 1
+    test r8, r8
+    .jz .done_overflow
+    mov byte [r8], 0
+    ret
 .done:
     ret
 
 /* Overflow hanndling blocks */
+.zero_div:
+    mov rdx, 0
+    mov [rcx], rdx // *rhat = 0
+    mov rax, -1 // return UINT64_MAX
+    ; if (overflow != NULL) *overflow = 1
+    test r8, r8
+    .jz .done_overflow
+    mov byte [r8], 1
+    ret
 .overflow:
     mov rax, rsi
     mov r9,  rdx
     xor rdx, rdx
     div r9
     ; rax = quot | rdx = rem
-    mov [rcx], rdx
-    mov rax, -1
+    mov [rcx], rdx // *rhat = hi % div
+    mov rax, -1 // return UINT64_MAX
     ; if (overflow != NULL) *overflow = 1
     test r8, r8
     .jz .done_overflow
@@ -182,8 +226,13 @@ _x86sv_wdiv128:
 */
 _x86sv_crt_wdiv128:
     ; --- 1. Evaluate Overflow State ---
+    xor r9, r9 ; Clear the r9 register
+    xor r10, r10 ; Clear the r10 register
+    test rdx, rdx ; RDX (div) == 0?
+    setz r10b ; r10b = 1 if div == 0
     cmp rsi, rdx ; Compare hi (RSI) with div (RDX)
     setae r9b ; r9b = 1 if hi >= div, else 0 (overflow flag)
+    or r9b, r10b ; overflow_flag
 
     ; --- 2. Neutralize Hardware Divide Errors ---
     ; If hi >= div, the CPU will fault. We use conditional moves to feed

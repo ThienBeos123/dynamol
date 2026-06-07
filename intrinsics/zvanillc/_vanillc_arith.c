@@ -95,17 +95,20 @@ uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
 //  +) Mutates the 64 bit remainder parameter - rhat
 //  +) Preconditions: hi < div
 uint64_t _cintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
+    if (!div) { *rhat = 0; if (overflowed != NULL) *overflowed = 1; return UINT64_MAX; }
+    if (!lo && !hi) { *rhat = 0; if (overflowed != NULL) *overflowed = 0; return 0; }
+    if (!hi) { *rhat = lo % div; if (overflowed != NULL) *overflowed = 0; return lo / div; }
     if (hi >= div) {
-        if (overflowed) *overflowed = 1;
+        if (overflowed != NULL) *overflowed = 1;
         *rhat = hi % div; return UINT64_MAX;
     }
     /* Normal Operations here */
     uint64_t q = 0;
-    for (int i = U64_BITS - 1; i >= 0; --i) {
-        q <<= 1;
-        uint64_t test_rem = (hi << 1) | ((lo >> i) & 1);
-        if (test_rem >= div) { q |= 1; hi = test_rem - div; }
-        else hi = test_rem;
-    }
-    *rhat = hi; *overflowed = 0; return q;
+    for (size_t i = 0; i < U64_BITS; ++i) {
+        uint8_t hi_overflow = (hi >> 63);
+        uint64_t test_rem = (hi << 1) | ((lo >> 63) & 1);
+        q <<= 1; lo <<= 1;
+        if (hi_overflow || test_rem >= div) { q |= 1; hi = test_rem - div; }
+        else { hi = test_rem; }
+    } *rhat = hi; *overflowed = 0; return q;
 }
