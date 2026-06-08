@@ -38,7 +38,6 @@ limitations under the License.
 
 //* ======================================== CONSTRUCTORS & DESTRUCTOR ======================================= */
 void bigInt_free(bigInt *x) {
-    if (x->limbs == NULL) return;
     free(x->limbs); x->limbs = NULL;
     x->n = 0; x->cap = 0; x->sign = 0;
 }

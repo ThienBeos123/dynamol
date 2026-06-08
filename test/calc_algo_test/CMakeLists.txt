@@ -25,24 +25,24 @@ endif()
 add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
 add_link_options(-fsanitize=address,undefined)
 
-# Define isolated test runners
-add_executable(add_sub_test         add_sub_test.c)
-add_executable(algo_gcd_test        algo_gcd_test.c)
-add_executable(algo_mod_test        algo_mod_test.c)
-add_executable(algo_prime_test      algo_prime_test.c)
-add_executable(crt_div_test         crt_div_test.c)
-add_executable(crt_modop_test       crt_modop_test.c)
-add_executable(crt_mul_test         crt_mul_test.c)
-add_executable(perf_div_test        perf_div_test.c)
-add_executable(perf_modop_test      perf_modop_test.c)
-add_executable(perf_mul_test        perf_mul_test.c)
-add_executable(perf_pow_root_test   perf_pow_root_test.c)
-
-# BIND THEM: Link the root library to test runners.
+# /algo_base
+add_executable(add_sub_test         algo_base/add_sub_test.c)
+add_executable(algo_gcd_test        algo_base/algo_gcd_test.c)
+add_executable(algo_mod_test        algo_base/algo_mod_test.c)
+add_executable(algo_prime_test      algo_base/algo_prime_test.c)
 target_link_libraries(add_sub_test         PRIVATE dnml::dnml_core)
 target_link_libraries(algo_gcd_test        PRIVATE dnml::dnml_core)
 target_link_libraries(algo_mod_test        PRIVATE dnml::dnml_core)
 target_link_libraries(algo_prime_test      PRIVATE dnml::dnml_core)
+
+# /int_algo
+add_executable(crt_div_test         int_algo/crt_div_test.c)
+add_executable(crt_modop_test       int_algo/crt_modop_test.c)
+add_executable(crt_mul_test         int_algo/crt_mul_test.c)
+add_executable(perf_div_test        int_algo/perf_div_test.c)
+add_executable(perf_modop_test      int_algo/perf_modop_test.c)
+add_executable(perf_mul_test        int_algo/perf_mul_test.c)
+add_executable(perf_pow_root_test   int_algo/perf_pow_root_test.c)
 target_link_libraries(crt_div_test         PRIVATE dnml::dnml_core)
 target_link_libraries(crt_modop_test       PRIVATE dnml::dnml_core)
 target_link_libraries(crt_mul_test         PRIVATE dnml::dnml_core)

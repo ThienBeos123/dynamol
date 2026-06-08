@@ -124,4 +124,4 @@ Contributors must either:
 
 Before testing such refactored features
 
-### For more details, please have a look at [TEST_CONDUCT.md](test/TEST_CONDUCT.md)
+### For more details, please have a look at the [README.md](test/README.md) at the directory [`/test`](test/README.md)

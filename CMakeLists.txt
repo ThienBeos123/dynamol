@@ -265,10 +265,11 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libdnml_core.pc"
 # ==============================================================================
 # We define a global indicator to tell subdirectories that dnml_core is internal
 set(DNML_INTERNAL_BUILD ON)
-add_subdirectory(test/low)
-add_subdirectory(test/calc)
-add_subdirectory(test/io/bigint)
-add_subdirectory(test/io/bigfloat)
-add_subdirectory(test/main_math/bigint)
-add_subdirectory(test/main_math/bigfloat)
-add_subdirectory(test/main_math/crint)
+add_subdirectory(test/intrin_test)
+add_subdirectory(test/util_test)
+add_subdirectory(test/calc_algo_test)
+add_subdirectory(test/io_test/bigint)
+add_subdirectory(test/io_test/bigfloat)
+add_subdirectory(test/main_test/bigint)
+add_subdirectory(test/main_test/bigfloat)
+add_subdirectory(test/main_test/crint)

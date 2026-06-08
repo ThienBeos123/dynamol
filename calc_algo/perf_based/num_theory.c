@@ -84,11 +84,8 @@ void __BIGINT_LEHMER__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx l
 void __BIGINT_HALF__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx half_ctx) {}
 void __BIGINT_GCD_DISPATCH__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx gcd_ctx) {
     size_t op_size = min(u->n, v->n);
-    __BIGINT_INTERNAL_ENSCAP__(res, op_size);
-    if (u->n == 1 && v->n == 1) {
-        res->limbs[0] = __BIGINT_EUCLID__(u->limbs[0], v->limbs[0]);
-        res->n        = 1;
-    } else if (op_size <= BIGINT_STEIN) __BIGINT_STEIN__(res, u, v, gcd_ctx);
+    if (u->n == 1 && v->n == 1) { res->limbs[0] = __BIGINT_EUCLID__(u->limbs[0], v->limbs[0]); res->n = 1; }
+    else if (op_size <= BIGINT_STEIN) __BIGINT_STEIN__(res, u, v, gcd_ctx);
     else if (op_size <= BIGINT_LEHMER) __BIGINT_LEHMER__(res, u, v, gcd_ctx);
     else __BIGINT_HALF__(res, u, v, gcd_ctx);
 }

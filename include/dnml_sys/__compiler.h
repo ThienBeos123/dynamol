@@ -82,14 +82,15 @@ limitations under the License.
 
 
 /* Inline and Restrict */
-#if __compiler_msvc
-    #define inline __forceinline
-    #define restrict __restrict
-#elif (__compiler_clang || __compiler_gcc)
-    /* Do not redefine the C keyword inline; use standard inline semantics. */
-    #define restrict __restrict__
+#if defined(__compiler_clang) || defined(__compiler_gcc)
+    #define NO_INLINE __attribute__((noinline))
+    #define FORCE_INLINE inline __attribute__((always_inline))
+#elif defined(__compiler_msvc)
+    #define NO_INLINE __declspec(noinline)
+    #define FORCE_INLINE __forceinline
 #else
-    #define restrict
+    #define NO_INLINE
+    #define FORCE_INLINE
 #endif
 
 /* Count Leading Zeros - CLZ */

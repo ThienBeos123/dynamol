@@ -20,7 +20,7 @@ limitations under the License.
 
 
 /* crt_mem_util*/
-void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop) {
+NO_INLINE void __libdnml_memset_strict(volatile void *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop) {
     uint8_t *p = (uint8_t*)buf;
     for (size_t i = 0; i < len; ++i) { uint8_t curr = p[i];
         /* p[i] = (i >= start && i <= end) ? val : curr; */
@@ -28,7 +28,7 @@ void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, s
         curr = 0; // clang-format off
     } p = 0; buf = 0; val = 0; len = 0; start = 0; end = 0; noop = 0; // clang-format on
 }
-void __libdnml_memwipe_strict(void *buf, size_t len, size_t start, size_t end, bool noop) {
+NO_INLINE void __libdnml_memwipe_strict(volatile void *buf, size_t len, size_t start, size_t end, bool noop) {
     uint8_t *p = (uint8_t*)buf;
     for (size_t i = 0; i < len; ++i) { uint8_t curr = p[i];
         /* p[i] = (i >= start && i <= end) ? val : curr; */
@@ -36,7 +36,11 @@ void __libdnml_memwipe_strict(void *buf, size_t len, size_t start, size_t end, b
         curr = 0; // clang-format off
     } p = 0; buf = 0; len = 0; start = 0; end = 0; noop = 0; // clang-format on
 }
-void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t srclen, size_t start, size_t end, bool noop) {
+NO_INLINE void __libdnml_memcpy_strict(
+    volatile void *buf, const void* src, 
+    size_t len, size_t srclen, 
+    size_t start, size_t end, bool noop
+) {
     uint8_t *p = (uint8_t*)buf; uint8_t *ps = (uint8_t*)src;
     size_t opsize = crtmax(len, srclen);
     for (size_t i = 0; i < opsize; ++i) {
@@ -53,20 +57,20 @@ void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t srcl
     } opsize = 0; p = 0; ps = 0; buf = 0; src = 0;
     len = 0; len = 0; srclen = 0; start = 0; end = 0; noop = 0; // clang-format on
 }
-void __libdnml_smemset_u64(uint64_t *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop) {
+NO_INLINE void __libdnml_smemset_u64(volatile uint64_t *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop) {
     size_t instart = start * U64_BYTES;
     size_t inend; CHOOSE_OPTION((inend), (end), ((end - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
     __libdnml_memset_strict(buf, val, len * U64_BYTES, instart, inend, noop); // clang-format off
     instart = 0; inend = 0; buf = 0; val = 0; len = 0; start = 0; end = 0; noop = 0; // clang-format on
 }
-void __libdnml_smemwipe_u64(uint64_t *buf, size_t len, size_t start, size_t end, bool noop) {
+NO_INLINE void __libdnml_smemwipe_u64(volatile uint64_t *buf, size_t len, size_t start, size_t end, bool noop) {
     size_t instart = start * U64_BYTES;
     size_t inend; CHOOSE_OPTION((inend), (end), ((end - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
     __libdnml_memwipe_strict(buf, len * U64_BYTES, instart, inend, noop); // clang-format on
     instart = 0; inend = 0; buf = 0; len = 0; start = 0; end = 0; noop = 0; // clang-format off
 }
-void __libdnml_smemcpy_u64(
-    uint64_t *dst, uint64_t *src,
+NO_INLINE void __libdnml_smemcpy_u64(
+    volatile uint64_t *dst, uint64_t *src,
     size_t len, size_t srclen,
     size_t start, size_t end, bool noop
 ) {

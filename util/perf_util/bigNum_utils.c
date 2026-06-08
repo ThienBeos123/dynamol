@@ -20,39 +20,11 @@ limitations under the License.
 
 const uint64_t inv3 = 0xAAAAAAAAAAAAAAABULL;
 
-/* Constructors and Destructors */
-dnml_status __BIGINT_INTERNAL_EMPINIT__(bigInt *x) {
-    limb_t *__BUFFER_P = malloc(sizeof(uint64_t));
-    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
-    x->limbs = __BUFFER_P; x->n = 0;
-    x->cap = 1; x->sign = 1; return BIGINT_SUCCESS;
-}
-dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k) {
-    limb_t *__BUFFER_P = malloc(k * sizeof(uint64_t));
-    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
-    x->limbs = __BUFFER_P; x->n = 0;
-    x->cap = k; x->sign = 1; return BIGINT_SUCCESS;
-}
-dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k) {
-    if (x->cap > k) return BIGINT_SUCCESS;
-    size_t new_cap = x->cap ? x->cap : 1;
-    while (new_cap < k) new_cap *= 2;
-    uint64_t *__BUFFER_P = realloc(x->limbs, new_cap * sizeof(uint64_t));
-    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
-    x->limbs = __BUFFER_P; x->cap = new_cap;
-    return BIGINT_SUCCESS;
-}
-dnml_status __BIGINT_INTERNAL_REALLOC__(bigInt *x, size_t k) {
-    uint64_t *__BUFFER_P = realloc(x->limbs, k * sizeof(uint64_t));
-    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
-    x->limbs = __BUFFER_P; x->cap = k; return BIGINT_SUCCESS;
-}
+/* Safety & State Utilities */
 void __BIGINT_INTERNAL_FREE__(bigInt *x) {
     if (x->limbs != NULL) free(x->limbs);
     x->n = 1; x->cap = 0; x->sign = 0;
 }
-
-/* Safety Utilities */
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity */
     if (x == NULL) return 0;
     /* State Validation */
@@ -85,62 +57,43 @@ bigInt __BIGINT_ERROR_VALUE__(void) {
 
 /* General Utilities */
 void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source) {
-    if (source->n == 0) { __BIGINT_INTERNAL_ZSET__(dst); return; }
+    if (!source->n) { __BIGINT_INTERNAL_ZSET__(dst); return; }
     memcpy(dst->limbs, source->limbs, source->n * U64_BYTES);
-    dst->n = source->n;
-    dst->sign = source->sign;
+    dst->n = source->n; /**/ dst->sign = source->sign;
 }
-void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) {
-    while (x->n > 0 && x->limbs[x->n - 1] == 0) --x->n;
-}
-void __BIGINT_INTERNAL_ZSET__(bigInt *x) {
-    x->n    = 0;
-    x->sign = 1;
-}
-void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y) {
-    bigInt tmp = *x; /* -----> */ *x = *y; /* -----> */ *y = tmp;
-}
+void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) { while (x->n && x->limbs[x->n - 1] == 0) --(x->n); }
+void __BIGINT_INTERNAL_ZSET__(bigInt *x) { x->n = 0; x->sign = 1; }
+void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y) { bigInt tmp = *x; *x = *y; *y = tmp; }
 size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
     size_t first_few_bits = (x->n - 1) * BIGINT_LIMBS_BITS;
     size_t bits_per_digit;
-    if (base == 10)         bits_per_digit = (size_t)(log2_10) + 1;
-    else if (base == 2)     bits_per_digit = log2_2;
-    else if (base == 16)    bits_per_digit = log2_16;
-    else if (base == 8)     bits_per_digit = log2_8;
-    else                    bits_per_digit = log(8) / log(2);
+    if (base == 10) bits_per_digit = (size_t)(log2_10) + 1;
+    else if (base == 2) bits_per_digit = log2_2;
+    else if (base == 16) bits_per_digit = log2_16;
+    else if (base == 8) bits_per_digit = log2_8;
+    else bits_per_digit = log(8) / log(2);
 
     size_t total_digits = (size_t)(first_few_bits / bits_per_digit);
     size_t last_limb = x->limbs[x->n - 1];
     if (base == 2) total_digits += BIGINT_LIMBS_BITS - __CLZ_UI64__(last_limb);
     else if (!(base & 1)) {
         uint8_t shift = __CTZ_UI64__(base);
-        while (last_limb) {
-            ++total_digits;
-            last_limb >>= shift;
-        }
-    } else {
-        while (last_limb) {
-            ++total_digits;
-            last_limb /= base;
-        }
-    } return total_digits;
+        while (last_limb) { ++total_digits; last_limb >>= shift; }
+    } else while (last_limb) { ++total_digits; last_limb /= base; }
+    return total_digits;
 }
-size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) {
-    return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1;
-}
-size_t __BIGINT_LIMBS_NEEDED__(size_t bits) {
-    return (size_t)(bits / BIGINT_LIMBS_BITS) + 1;
-}
+size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) { return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1; }
+size_t __BIGINT_LIMBS_NEEDED__(size_t bits) { return (size_t)(bits / BIGINT_LIMBS_BITS) + 1; }
 uint8_t __BIGINT_WILL_OVERFLOW__(const bigInt *x, uint64_t threshold) {
     return (x->n == x->cap && x->limbs[x->n - 1] > threshold);
 }
 size_t __BIGINT_CTZ__(const bigInt *x) {
     size_t total_tz = 0, i = 0;
     uint8_t current_tz = U64_BITS;
-    while (current_tz == U64_BITS) {
+    while (current_tz == U64_BITS && i < x->n) {
         current_tz = __CTZ_UI64__(x->limbs[i]);
         total_tz += current_tz; ++i;
-    } return total_tz;
+    } return total_tz + __CTZ_UI64__(x->limbs[(i < x->n ? i : x->n - 1)]);
 }
 
 /* Internal Arithmetic */
@@ -152,14 +105,16 @@ int8_t __BIGINT_INTERNAL_COMP__(const bigInt *x, const bigInt *y) {
 }
 uint8_t __BIGINT_IS_EVEN__(const bigInt *x) { return !(x->limbs[0] & 1); }
 void __BIGINT_INTERNAL_ADD_UI64__(bigInt *x, uint64_t val) {
-    if (val == 0) return;
+    if (!val) return;
+    DNML_TEST_ASSERT(x->cap >= x->n + 1, 
+        "Internal Additio Error: Utility failed due to "
+        "insufficient sum capacity", {}
+    );
     uint64_t carry = val;
     for (size_t i = 0; (carry && i < x->n) ; ++i) {
         uint8_t u8_carry = (uint8_t)carry;
         x->limbs[i] = __ADD_UI64__(x->limbs[i], carry, &u8_carry);
-    }
-    if (carry) { __BIGINT_INTERNAL_ENSCAP__(x, x->n + 1);
-                 x->limbs[x->n++] = carry; }
+    } if (carry) x->limbs[x->n++] = carry;
 }
 void __BIGINT_INTERNAL_MUL_UI64__(bigInt *x, uint64_t val) {
     if (val == 0) __BIGINT_INTERNAL_ZSET__(x);
@@ -185,25 +140,22 @@ void __BIGINT_DIV3__(bigInt *a) {
     } __BIGINT_INTERNAL_TRIM_LZ__(a);
 }
 uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
-    if (val == 1) return 0;
-    else if (val == 2) {
-        uint64_t remainder = (x->limbs[0] & 1);
-        __BIGINT_INTERNAL_LSHIFT__(x, 1);
-        return remainder;
-    } else if (!(val & 1)) { uint8_t n = __CTZ_UI64__(val);
-        uint64_t remainder = (x->limbs[0] & ((1ULL << n) - 1));
+    uint64_t remainder;
+    if (val == 1) remainder = 0;
+    else if (val == 2) { remainder = (x->limbs[0] & 1); __BIGINT_INTERNAL_LSHIFT__(x, 1); }
+    else if (!(val & 1)) { 
+        uint8_t n = __CTZ_UI64__(val);
+        remainder = (x->limbs[0] & ((1ULL << n) - 1));
         __BIGINT_INTERNAL_RSHIFT__(x, n);
-        return remainder;
     } else {
-        uint64_t remainder = 0; uint8_t overflow_check;
+        remainder = 0; uint8_t ovf_check;
         for (size_t i = x->n - 1; i != (size_t)-1; --i) {
-            x->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &overflow_check);
-            DNML_TEST_ASSERT(overflow_check, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
+            x->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &ovf_check);
+            DNML_TEST_ASSERT(ovf_check, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
         }
         __BIGINT_INTERNAL_TRIM_LZ__(x);
-        if (x->n == 0) x->sign = 1;
-        return remainder;
-    }
+        if (!x->n) x->sign = 1;
+    } return remainder;
 }
 void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) {
     if (!k) return;

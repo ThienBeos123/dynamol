@@ -1205,7 +1205,7 @@ dnml_status bigInt_get_str(bigInt *x, const char *str) {
     dnml_status err_check; size_t d = strlen(&str[curr_pos]);
     size_t bits = __BITCOUNT___(d - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_reserve(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_STRING_ARENA);
     limb_t *tmp_limbs = arena_galloc(_DASI_GET_STRING_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1257,7 +1257,7 @@ dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
     dnml_status err_check; size_t d = strlen(&str[curr_pos]);
     size_t bits = __BITCOUNT___(d - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_reserve(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_BASE_ARENA);
     limb_t *tmp_limbs = arena_galloc(_DASI_GET_BASE_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1322,7 +1322,7 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
     size_t true_len = 0; _actual_len(str, len, &true_len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_reserve(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_STRNLEN_ARENA);
     limb_t *tmp_limbs = arena_galloc(_DASI_GET_STRNLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1376,7 +1376,7 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
     size_t true_len = 0; _actual_len(str, len, &true_len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
-    if (__BIGINT_INTERNAL_ENSCAP__(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_reserve(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     size_t tmp_mark = arena_mark(_DASI_GET_BASENLEN_ARENA);
     limb_t *tmp_limbs = arena_galloc(_DASI_GET_BASENLEN_ARENA, cap * U64_BYTES, &err_check);
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -2744,19 +2744,17 @@ dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocat
 
     //* Main accumulator loop *//
     uint64_t threshold; uint8_t index_lookup, numerical_val; bigInt tmp_buf;
-    if (__BIGINT_INTERNAL_LINIT__(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_snew(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     while (_is_valid_digit__(&current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :
             _VALUE_LOOKUP_SEN_[index_lookup];
         threshold = (UINT64_MAX - numerical_val) / base;
-        if (numerical_val >= base) {
-            __BIGINT_INTERNAL_FREE__(&tmp_buf);
-            return STR_INVALID_DIGIT;
-        } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
+        if (numerical_val >= base) { bigInt_free(&tmp_buf); return STR_INVALID_DIGIT; } 
+        if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
             // Grows geometrically internally anyways
-            if (__BIGINT_INTERNAL_ENSCAP__(&tmp_buf, tmp_buf.n + 1) == DNML_ALLOC_OOM) {
+            if (bigInt_reserve(&tmp_buf, tmp_buf.n + 1) == DNML_ALLOC_OOM) {
                 return DNML_ALLOC_OOM; // No need to free any resources, no resources are even allocated
             }
         }
@@ -2765,7 +2763,7 @@ dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocat
         current_char = getchar();
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    __BIGINT_INTERNAL_FREE__(&tmp_buf);
+    bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
 dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocated Temporary
@@ -2786,19 +2784,17 @@ dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocat
 
     //* Main accumulator loop *//
     uint64_t threshold; uint8_t index_lookup, numerical_val; bigInt tmp_buf;
-    if (__BIGINT_INTERNAL_LINIT__(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_snew(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     while (_is_valid_digit__(&current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :
             _VALUE_LOOKUP_SEN_[index_lookup];
         threshold = (UINT64_MAX - numerical_val) / base;
-        if (numerical_val >= base) {
-            __BIGINT_INTERNAL_FREE__(&tmp_buf);
-            return STR_INVALID_DIGIT;
-        } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
+        if (numerical_val >= base) { bigInt_free(&tmp_buf); return STR_INVALID_DIGIT; }
+        if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
             // Grows geometrically internally anyways
-            if (__BIGINT_INTERNAL_ENSCAP__(&tmp_buf, tmp_buf.n + 1) == DNML_ALLOC_OOM) {
+            if (bigInt_reserve(&tmp_buf, tmp_buf.n + 1) == DNML_ALLOC_OOM) {
                 return DNML_ALLOC_OOM; // No resources were allocated
             }
         }
@@ -2807,7 +2803,7 @@ dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocat
         current_char = getchar();
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    __BIGINT_INTERNAL_FREE__(&tmp_buf);
+    bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
 dnml_status bigInt_sscan(bigInt *x) {
@@ -3062,7 +3058,7 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
     uint64_t threshold; size_t i = 0, parse_res;
     uint8_t index_lookup, numerical_val, end = 0;
     bigInt tmp_buf;
-    if (__BIGINT_INTERNAL_LINIT__(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_snew(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     while (!end) {
         parse_res = fread(___DASI_IO_CHUNKBUF_, sizeof(char), ___DASI_IO_BUFSIZE, stream);
         //* THE ACTUAL ACCUMALATION
@@ -3078,9 +3074,9 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
                     _VALUE_LOOKUP_INSEN_[index_lookup] :
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
-                if (numerical_val >= base) { __BIGINT_INTERNAL_FREE__(&tmp_buf); return STR_INVALID_DIGIT; }
+                if (numerical_val >= base) { bigInt_free(&tmp_buf); return STR_INVALID_DIGIT; }
                 if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
-                    if (__BIGINT_INTERNAL_ENSCAP__(&tmp_buf, tmp_buf.cap + 5) == DNML_ALLOC_OOM) {
+                    if (bigInt_reserve(&tmp_buf, tmp_buf.cap + 5) == DNML_ALLOC_OOM) {
                         return DNML_ALLOC_OOM; // No resources were allocated
                     }
                 }
@@ -3090,14 +3086,12 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
         }
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
-            if (ferror(stream)) {
-                __BIGINT_INTERNAL_FREE__(&tmp_buf);
-                return FILE_ERR_PARSE;
-            } else if (feof(stream)) end = 1;
+            if (ferror(stream)) { bigInt_free(&tmp_buf); return FILE_ERR_PARSE; }
+            else if (feof(stream)) end = 1;
         }
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    __BIGINT_INTERNAL_FREE__(&tmp_buf);
+    bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
 dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap-allocated Temporary
@@ -3134,7 +3128,7 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
     uint8_t index_lookup, numerical_val, end = 0;
     size_t parse_res, i = 0; uint64_t threshold;
     bigInt tmp_buf;
-    if (__BIGINT_INTERNAL_LINIT__(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
+    if (bigInt_snew(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     while (!end) {
         parse_res = fread(___DASI_IO_CHUNKBUF_, sizeof(char), ___DASI_IO_BUFSIZE, stream);
         //* THE ACTUAL ACCUMALATION
@@ -3150,9 +3144,9 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
                     _VALUE_LOOKUP_INSEN_[index_lookup] :
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
-                if (numerical_val >= base) { __BIGINT_INTERNAL_FREE__(&tmp_buf); return STR_INVALID_DIGIT; }
+                if (numerical_val >= base) { bigInt_free(&tmp_buf); return STR_INVALID_DIGIT; }
                 if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
-                    if (__BIGINT_INTERNAL_ENSCAP__(&tmp_buf, tmp_buf.cap + 5) == DNML_ALLOC_OOM) {
+                    if (bigInt_reserve(&tmp_buf, tmp_buf.cap + 5) == DNML_ALLOC_OOM) {
                         return DNML_ALLOC_OOM; // No resources were allocated
                     }
                 }
@@ -3162,14 +3156,12 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
         }
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
-            if (ferror(stream)) {
-                __BIGINT_INTERNAL_FREE__(&tmp_buf);
-                return FILE_ERR_PARSE;
-            } else if (feof(stream)) end = 1;
+            if (ferror(stream)) { bigInt_free(&tmp_buf); return FILE_ERR_PARSE; }
+            else if (feof(stream)) end = 1;
         }
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    __BIGINT_INTERNAL_FREE__(&tmp_buf);
+    bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
 dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
