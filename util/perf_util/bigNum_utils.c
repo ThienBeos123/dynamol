@@ -57,7 +57,7 @@ bigInt __BIGINT_ERROR_VALUE__(void) {
 
 /* General Utilities */
 void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source) {
-    if (!source->n) { __BIGINT_INTERNAL_ZSET__(dst); return; }
+    if (source->limbs == NULL || !source->n) { __BIGINT_INTERNAL_ZSET__(dst); return; }
     memcpy(dst->limbs, source->limbs, source->n * U64_BYTES);
     dst->n = source->n; /**/ dst->sign = source->sign;
 }
@@ -65,35 +65,41 @@ void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) { while (x->n && x->limbs[x->n - 1] 
 void __BIGINT_INTERNAL_ZSET__(bigInt *x) { x->n = 0; x->sign = 1; }
 void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y) { bigInt tmp = *x; *x = *y; *y = tmp; }
 size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
-    size_t first_few_bits = (x->n - 1) * BIGINT_LIMBS_BITS;
-    size_t bits_per_digit;
-    if (base == 10) bits_per_digit = (size_t)(log2_10) + 1;
-    else if (base == 2) bits_per_digit = log2_2;
-    else if (base == 16) bits_per_digit = log2_16;
-    else if (base == 8) bits_per_digit = log2_8;
-    else bits_per_digit = log(8) / log(2);
-
-    size_t total_digits = (size_t)(first_few_bits / bits_per_digit);
-    size_t last_limb = x->limbs[x->n - 1];
-    if (base == 2) total_digits += BIGINT_LIMBS_BITS - __CLZ_UI64__(last_limb);
-    else if (!(base & 1)) {
-        uint8_t shift = __CTZ_UI64__(base);
-        while (last_limb) { ++total_digits; last_limb >>= shift; }
-    } else while (last_limb) { ++total_digits; last_limb /= base; }
-    return total_digits;
+    if (!x->n || (x->n == 1 && x->limbs[0] == 0)) return 0; 
+    size_t leading_bits = BIGINT_LIMBS_BITS - __CLZ_UI64__(x->limbs[x->n - 1]);
+    size_t total_bits = (x->n - 1) * BIGINT_LIMBS_BITS + leading_bits;
+    // 2. Handle pure powers of 2 exactly using integer math
+    // (base & (base - 1)) == 0 checks if 'base' is a power of 2
+    if (base > 1 && (base & (base - 1)) == 0) {
+        uint8_t bits_per_digit = __CTZ_UI64__(base); // equivalent to log2(base)
+        return (total_bits + bits_per_digit - 1) / bits_per_digit;
+    }
+    // 3. Handle arbitrary bases (like 10) using high-precision log
+    // Approximate using the top limb + the second top limb for 128-bit precision approximation
+    long double top_val = x->limbs[x->n - 1];
+    if (x->n > 1) { // Normalize the second-highest limb into the fractional part
+        top_val += (long double)x->limbs[x->n - 2] / (long double)(UINT64_MAX) + 1; 
+    }
+    long double total_log2 = log2l(top_val) + (long double)(x->n - 1) * BIGINT_LIMBS_BITS;
+    long double bits_per_digit = log2l(base);
+    return (size_t)(total_log2 / bits_per_digit) + 1;
 }
 size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) { return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1; }
-size_t __BIGINT_LIMBS_NEEDED__(size_t bits) { return (size_t)(bits / BIGINT_LIMBS_BITS) + 1; }
+size_t __BIGINT_LIMBS_NEEDED__(size_t bits) { 
+    if (!bits) return 0;
+    return (size_t)((bits + BIGINT_LIMBS_BITS - 1) / BIGINT_LIMBS_BITS);
+}
 uint8_t __BIGINT_WILL_OVERFLOW__(const bigInt *x, uint64_t threshold) {
+    if (x->n == 0) return 0; // Would never underflow if x == 0;
     return (x->n == x->cap && x->limbs[x->n - 1] > threshold);
 }
 size_t __BIGINT_CTZ__(const bigInt *x) {
-    size_t total_tz = 0, i = 0;
-    uint8_t current_tz = U64_BITS;
-    while (current_tz == U64_BITS && i < x->n) {
-        current_tz = __CTZ_UI64__(x->limbs[i]);
-        total_tz += current_tz; ++i;
-    } return total_tz + __CTZ_UI64__(x->limbs[(i < x->n ? i : x->n - 1)]);
+    if (!x->n) return 0;
+    size_t total_tz = 0;
+    for (size_t i = 0; i < x->n; ++i) {
+        if (x->limbs[i] != 0) return total_tz + __CTZ_UI64__(x->limbs[i]);
+        total_tz += U64_BITS; 
+    } return total_tz;
 }
 
 /* Internal Arithmetic */
