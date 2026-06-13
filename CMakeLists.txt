@@ -72,6 +72,7 @@ add_library(dnml_core STATIC
     calc_algo/crt_based/crt_num_theory.c
 
     # 1a. Main Module Files - Dynamol
+    dynamol/_dynamol_arena.c
     dynamol/bigint/bigInt.c
     dynamol/bigint/bigInt_io.c
     # 1b. Main Module Files - Drypto

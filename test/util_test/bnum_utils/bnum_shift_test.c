@@ -22,10 +22,7 @@ limitations under the License.
 // Memory Management and Algorithmic core
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
+#include "../../../libdnml_base.h"
 typedef struct { const bigInt in; size_t k; const bigInt exp; } shift_case_t;
 /* ========== STATIC LIMB DATA REGISTRY ========== */
 static const limb_t limbs_c1[1]   = {1};
@@ -220,6 +217,7 @@ static const shift_case_t lshift_cases[60] = {
 };
 
 int main(void) {
+    _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
     limb_t *ret_buf = (limb_t *)malloc(96 * sizeof(limb_t)); 
@@ -265,5 +263,5 @@ int main(void) {
     printf("+) Success rate: %.2f%%\n", (total_tests > 0) ? ((passed_tests * 100.0) / total_tests) : 0.0);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
     printf("=========================================================\n");
-    return (passed_tests == total_tests) ? 0 : 1;
+    _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

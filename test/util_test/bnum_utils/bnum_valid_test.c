@@ -24,6 +24,7 @@ limitations under the License.
 // Memory Management and Algorithmic core
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
+#include "../../../libdnml_base.h"
 typedef struct { bigInt x; uint8_t valid, pvalid, svalid; } case_t;
 /* Memory-backed limbs for arithmetic/storage validation */
 static limb_t case_51[1] = { UINT64_C(0x0000000000000001) };
@@ -124,6 +125,7 @@ static const case_t cases[] = {
 };
 
 int main(void) {
+    _libdnml_init();
     int num_cases = sizeof(cases) / sizeof(case_t);
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
@@ -174,5 +176,5 @@ int main(void) {
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
     printf("=========================================================\n");
-    return (passed_tests == total_tests) ? 0 : 1;
+    _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

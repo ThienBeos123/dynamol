@@ -16,7 +16,8 @@ limitations under the License.
 
 #include <include.h>
 #include <_libdnml_config/numeric_config.h>
-#include <../../intrinsics/intrinsics.h>
+#include "../../intrinsics/intrinsics.h"
+#include "../../libdnml_base.h"
 typedef struct { uint64_t a; uint64_t b; uint64_t mod; uint64_t expected; } modmul_case_t;
 typedef struct { uint64_t base; uint64_t exp; uint64_t mod; uint64_t expected; } modexp_case_t;
 
@@ -90,8 +91,8 @@ static const modexp_case_t modexp_cases[] = {
 
 
 int main(void) {
-    struct timespec start, end;
-    int passed_tests = 0;
+    _libdnml_init();
+    struct timespec start, end; int passed_tests = 0;
     int total_tests = 60; // 30 cases * 2 operations
     clock_gettime(CLOCK_MONOTONIC, &start);
     printf("====================================================================\n");
@@ -127,5 +128,5 @@ int main(void) {
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0); // Converting to milliseconds
     printf("=========================================================\n");
-    return (passed_tests == total_tests) ? 0 : 1;
+    _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

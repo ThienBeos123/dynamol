@@ -69,7 +69,7 @@ uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
 //* --------------------------------------------------------------------------------------- *//
 //*                                    SINGLE-LIMB ARITHMETIC                               *//
 //* --------------------------------------------------------------------------------------- *//
-uint64_t __CRT_ADD_UI64__(uint64_t a, uint64_t b, uint8_t *carry) {
+uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
     unsigned long long carry_io = !!(*carry);
     #if __compiler_clang
         unsigned long long result = __builtin_addcll(a, b, carry_io, &carry_io); // clang-format off
@@ -110,26 +110,7 @@ uint64_t __CRT_MUL_U64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #endif
 }
 uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
-    #if __HAS_int128__ // GCC / Clang
-        if (overflowed != NULL) *overflowed = (hi >= div);
-        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo;
-        *rhat = (uint64_t)(dividend % div); // Temporarily hold modulo regardless of ovf state
-        lo = (uint64_t)(dividend / div); // Temporary holder of quotient
-        uint64_t curr_rhat = *rhat; *rhat = _lib_crt_select(hi >= div, 0, curr_rhat); // clang-format off
-        dividend = 0; curr_rhat = 0; lo = 0; div = 0; rhat = 0; overflowed = 0; 
-        return _lib_crt_select(hi >= div, UINT64_MAX, lo); // clang-format on
-    #elif __compiler_msvc // MSVC
-        if (overflowed != NULL) *overflowed = (hi >= div);
-        uint64_t quot = _lib_crt_select(hi >= div, _udiv128(1, 0, 256, rhat), _udiv128(hi, lo, div, rhat));;
-        uint64_t curr_rhat = *rhat; *rhat = _lib_crt_select(hi >= div, 0, curr_rhat); // clang-format off
-        curr_rhat = 0; lo = 0; hi = 0; div = 0; rhat = 0; overflowed = 0; 
-        return _lib_crt_select(hi >= div, UINT64_MAX, quot); // clang-format on
-    #else // Unknown Compiler
-        #if !(__ARCH_X86_64__)
-            *rhat = _libdnml_crt_gbitops_ftable.clz64(div);
-        #endif
-        return (*_libdnml_crt_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
-    #endif
+    return (*_libdnml_crt_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
 }
 
 

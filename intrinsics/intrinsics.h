@@ -158,6 +158,7 @@ void _libdnml_fill_crt_garith(void);
 void _libdnml_fill_crt_galg(void);
 void _libdnml_fill_crt_gcmp(void);
 void _libdnml_fill_crt_gsec(void);
+void __dnml_crtifunc_cleanup(void);
 
 
 

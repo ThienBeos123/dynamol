@@ -138,7 +138,6 @@ static const arith_carry_case add_cases[100] = {
     ADD_P(100, 0x0000010000000000, 0x0000010000000000, 1, 0x0000020000000001, 0)
     #undef ADD_P
 };
-
 static const arith_carry_case sub_cases[100] = {
     // 1-20: Zero and Basic Edge Boundaries
     {UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000), 0, UINT64_C(0x0000000000000000), 0},
@@ -245,7 +244,6 @@ static const arith_carry_case sub_cases[100] = {
     SUB_P(100, 0x0000020000000000, 0x0000010000000000, 1, 0x000000FFFFFFFFFF, 0)
     #undef SUB_P
 };
-
 static const wmul_case wmul_cases[46] = {
     // 1-20: Classic Boundaries and Identity Elements
     {UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000)},
@@ -296,8 +294,8 @@ static const wmul_case wmul_cases[46] = {
     WMUL_P(44, 0x0000000000080000, 0x0000000000080000, 0x0000004000000000, 0x0000000000000000),
     WMUL_P(45, 0x0000000001000000, 0x0000000001000000, 0x0001000000000000, 0x0000000000000000),
     WMUL_P(46, 0x0000000002000000, 0x0000000002000000, 0x0004000000000000, 0x0000000000000000),
+    #undef WMUL_P
 };
-
 static const modinv_case modinv_cases[14] = {
     // 1-10: Standard Odd Inverses
     {UINT64_C(0x0000000000000001), UINT64_C(0x0000000000000001)},
@@ -329,15 +327,11 @@ int main(void) {
     // 1. TEST ADDITION WITH CARRY (ADD64C)
     printf("--- Testing ADD64C Architectures ---\n");
     for (int i = 0; i < 100; i++) {
-        uint64_t a = add_cases[i].a;
-        uint64_t b = add_cases[i].b;
+        uint64_t a = add_cases[i].a, b = add_cases[i].b;
         uint8_t cin = add_cases[i].carry;
         uint64_t exp_res = add_cases[i].res;
         uint8_t exp_cout = add_cases[i].out_carry;
-
-        uint64_t res;
-        uint8_t cout;
-
+        uint64_t res; uint8_t cout;
         // Portable _crtintrin baseline
         cout = cin;
         res = _crtintrin_add64c(a, b, &cout);
@@ -348,7 +342,6 @@ int main(void) {
             "| Exp: 0x%016" PRIX64 " C: %u | Got: 0x%016" PRIX64 " C: %u\n", 
             i + 1, a, b, cin, exp_res, exp_cout, res, cout
         );
-
         // Portable _cintrin baseline
         cout = cin;
         res = _cintrin_add64c(a, b, &cout);
@@ -396,15 +389,11 @@ int main(void) {
     // 2. TEST SUBTRACTION WITH BORROW (SUB64B)
     printf("--- Testing SUB64B Architectures ---\n");
     for (int i = 0; i < 100; i++) {
-        uint64_t a = sub_cases[i].a;
-        uint64_t b = sub_cases[i].b;
+        uint64_t a = sub_cases[i].a, b = sub_cases[i].b;
         uint8_t bin = sub_cases[i].carry; // struct definition reuse mapping
         uint64_t exp_res = sub_cases[i].res;
         uint8_t exp_bout = sub_cases[i].out_carry;
-
-        uint64_t res;
-        uint8_t bout;
-
+        uint64_t res; uint8_t bout;
         // Portable _crtintrin baseline
         bout = bin;
         res = _crtintrin_sub64b(a, b, &bout);
@@ -415,7 +404,6 @@ int main(void) {
             "| Exp: 0x%016" PRIX64 " B: %u | Got: 0x%016" PRIX64 " B: %u\n", 
             i + 1, a, b, bin, exp_res, exp_bout, res, bout
         );
-
         // Portable _cintrin baseline
         bout = bin;
         res = _cintrin_sub64b(a, b, &bout);
@@ -463,13 +451,9 @@ int main(void) {
     // 3. TEST WIDE MULTIPLICATION (WMUL128)
     printf("--- Testing WMUL128 Architectures ---\n");
     for (int i = 0; i < 46; i++) {
-        uint64_t a = wmul_cases[i].a;
-        uint64_t b = wmul_cases[i].b;
-        uint64_t exp_lo = wmul_cases[i].lo;
-        uint64_t exp_hi = wmul_cases[i].hi;
-
+        uint64_t a = wmul_cases[i].a, b = wmul_cases[i].b;
+        uint64_t exp_lo = wmul_cases[i].lo, exp_hi = wmul_cases[i].hi;
         uint64_t res_lo, res_hi;
-
         // Portable _crtintrin baseline
         res_hi = 0;
         res_lo = _crtintrin_wmul128(a, b, &res_hi);
@@ -479,8 +463,8 @@ int main(void) {
             "[FAIL] _crtintrin_wmul128 | Case %3d | A: 0x%016" PRIX64 " B: 0x%016" PRIX64 
             " | Exp: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 
             " | Got: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 "\n", 
-            i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi);
-
+            i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi
+        );
         // Portable _cintrin baseline
         res_hi = 0;
         res_lo = _cintrin_wmul128(a, b, &res_hi);
@@ -490,7 +474,8 @@ int main(void) {
             "[FAIL] _cintrin_wmul128   | Case %3d | A: 0x%016" PRIX64 " B: 0x%016" PRIX64 
             " | Exp: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 
             " | Got: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 "\n", 
-            i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi);
+            i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi
+        );
 
         // Architecture Dispatches
         #if __ARCH_ARM64__
@@ -502,7 +487,8 @@ int main(void) {
                 "[FAIL] _arm64_wmul128     | Case %3d | A: 0x%016" PRIX64 " B: 0x%016" PRIX64 
                 " | Exp: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 
                 " | Got: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 "\n", 
-                i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi);
+                i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi
+            );
         #elif __ARCH_X86_64__
             res_hi = 0;
             res_lo = _x86_wmul128(a, b, &res_hi);
@@ -512,7 +498,8 @@ int main(void) {
                 "[FAIL] _x86_wmul128       | Case %3d | A: 0x%016" PRIX64 " B: 0x%016" PRIX64 
                 " | Exp: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 
                 " | Got: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 "\n", 
-                i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi);
+                i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi
+            );
         #elif __ARCH_RVI64__
             res_hi = 0;
             res_lo = _rv64_wmul128(a, b, &res_hi);
@@ -522,7 +509,8 @@ int main(void) {
                 "[FAIL] _rv64_wmul128      | Case %3d | A: 0x%016" PRIX64 " B: 0x%016" PRIX64 
                 " | Exp: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 
                 " | Got: Lo = 0x%016" PRIX64 " Hi = 0x%016" PRIX64 "\n", 
-                i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi);
+                i + 1, a, b, exp_lo, exp_hi, res_lo, res_hi
+            );
         #endif
     }
     // 4. TEST MODULAR INVERSE (MODINV64)
@@ -530,9 +518,7 @@ int main(void) {
     for (int i = 0; i < 14; i++) {
         uint64_t input = modinv_cases[i].in;
         uint64_t expected = modinv_cases[i].out;
-
         uint64_t res;
-
         // Portable _cintrin implementation (Note: modinv64 does not have a _crtintrin flavor)
         res = _cintrin_modinv64(input);
         total_tests++;
@@ -541,7 +527,6 @@ int main(void) {
             "[FAIL] _cintrin_modinv64   | Case %3d | Input: 0x%016" PRIX64 
             " | Exp: 0x%016" PRIX64 " | Got: 0x%016" PRIX64 "\n", i + 1, input, expected, res
         );
-
         // Architecture Dispatches
         #if __ARCH_ARM64__
             res = _arm64_modinv64(input);

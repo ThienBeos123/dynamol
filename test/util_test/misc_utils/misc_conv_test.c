@@ -25,9 +25,10 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
 #include "../../../util/crt_util.h"
+#include "../../../libdnml_base.h"
 
 
-int main(void) {
+int main(void) { _libdnml_init();
     // code here ...
-    return 0;
+    _libdnml_cleanup(); return 0;
 }

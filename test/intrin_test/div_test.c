@@ -97,19 +97,6 @@ static const wdiv_case_t crt_cases[32] = {
 };
 
 
-/*
-// Portable _crtintrin baseline
-quot = _crtintrin_wdiv128(lo, hi, div, &rem, &ovf_check); total_tests++;
-if (quot == exp_quot && rem == exp_rem && ovf_check == exp_ovf) passed_tests++;
-else printf(
-    "[FAIL] _crtintrin_wdiv128 "ylw"|"esc" Case %3d "ylw"|"esc" Lo: 0x%016" PRIX64 " Hi: 0x%016" PRIX64 " Div: 0x%016" PRIX64
-    " "ylw"|||"esc" Equot: 0x%016" PRIX64 " Erem: 0x%016" PRIX64 " Eovf: %1" PRIu8
-    " "ylw"|||"esc" Oquot: 0x%016" PRIX64 " Orem: 0x%016" PRIX64 " Oovf: %1" PRIu8 "\n", 
-    i, lo, hi, div, exp_quot, exp_rem, exp_ovf, quot, rem, ovf_check
-);
-*/
-
-
 int main(void) {
     struct timespec start, end;
     int total_tests = 0; int passed_tests = 0;
@@ -126,7 +113,7 @@ int main(void) {
         uint64_t exp_quot = perf_cases[i].quot;
         uint64_t exp_rem = perf_cases[i].rem;
         uint8_t exp_ovf = perf_cases[i].ovf_flag;
-        uint64_t quot; uint64_t rem; uint8_t ovf_check;
+        uint64_t quot; uint64_t rem; uint8_t ovf_check = 0;
 
         // Portable _cintrin baseline
         quot = _cintrin_wdiv128(lo, hi, div, &rem, &ovf_check); total_tests++;
@@ -179,7 +166,7 @@ int main(void) {
         uint64_t exp_quot = crt_cases[i].quot;
         uint64_t exp_rem = crt_cases[i].rem;
         uint8_t exp_ovf = crt_cases[i].ovf_flag;
-        uint64_t quot; uint64_t rem; uint8_t ovf_check;
+        uint64_t quot; uint64_t rem; uint8_t ovf_check = 0;
 
         // Portable _cintrin baseline
         quot = _crtintrin_wdiv128(lo, hi, div, &rem, &ovf_check); total_tests++;

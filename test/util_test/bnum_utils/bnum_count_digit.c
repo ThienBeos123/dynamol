@@ -24,6 +24,7 @@ limitations under the License.
 // Memory Management and Algorithmic core
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
+#include "../../../libdnml_base.h"
 typedef struct { const bigInt x; uint8_t base; size_t out; } countdb_case_t;
 typedef struct { size_t lcnt; uint8_t base; size_t out; } maxcdb_case_t;
 typedef struct { const bigInt x; size_t out; } ctz_case_t;
@@ -231,6 +232,7 @@ static const ctz_case_t ctz_cases[70] = {
 };
 
 int main(void) {
+    _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -280,5 +282,5 @@ int main(void) {
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
     printf("=========================================================\n");
-    return (passed_tests == total_tests) ? 0 : 1;
+    _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

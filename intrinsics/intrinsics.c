@@ -70,17 +70,22 @@ uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi) {
 }
 uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
     #if __HAS_int128__ // GCC / Clang
+        if (!div) { *rhat = 0; if (overflowed != NULL) *overflowed = 1; return UINT64_MAX; }
+        if (!lo && !hi) { *rhat = 0; if (overflowed != NULL) *overflowed = 0; return 0; }
+        if (!hi) { *rhat = lo % div; if (overflowed != NULL) *overflowed = 0; return lo / div; }
         if (hi >= div) { if (overflowed != NULL) *overflowed = 1; *rhat = hi % div; return UINT64_MAX; }
-        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo;
+        if (overflowed != NULL) *overflowed = 0;
+        uint128 dividend = ((uint128)(hi) << U64_BITS) | (uint128)(lo);
         *rhat = (uint64_t)(dividend % div);
         return (uint64_t)(dividend / div);
     #elif __compiler_msvc // MSVC
+        if (!div) { *rhat = 0; if (overflowed != NULL) *overflowed = 1; return UINT64_MAX; }
+        if (!lo && !hi) { *rhat = 0; if (overflowed != NULL) *overflowed = 0; return 0; }
+        if (!hi) { *rhat = lo % div; if (overflowed != NULL) *overflowed = 0; return lo / div; }
         if (hi >= div) { if (overflowed != NULL) *overflowed = 1; *rhat = hi % div; return UINT64_MAX; }
+        if (overflowed != NULL) *overflowed = 0;
         return _udiv128(hi, lo, div, rhat);
     #else // Unknown Compiler
-        #if !(__ARCH_X86_64__)
-            *rhat = _libdnml_gbitops_ftable.clz64(div);
-        #endif
         return (*_libdnml_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
     #endif
 }

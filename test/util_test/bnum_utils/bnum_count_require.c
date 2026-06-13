@@ -24,6 +24,7 @@ limitations under the License.
 // Memory Management and Algorithmic core
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
+#include "../../../libdnml_base.h"
 typedef struct { size_t bits; size_t limb_out; } limbs_needed_case;
 typedef struct { const bigInt x; uint64_t threshold; uint8_t out; } will_overflow_case;
 /* ========== GLOBAL ARRAY OF LIMBS_NEEDED CASES ========== */
@@ -96,6 +97,7 @@ static const will_overflow_case global_wocases[40] = {
 
 
 int main(void) {
+    _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -138,6 +140,5 @@ int main(void) {
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
     printf("=========================================================\n");
-    return (passed_tests == total_tests) ? 0 : 1;
-    return 0;
+    _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }
