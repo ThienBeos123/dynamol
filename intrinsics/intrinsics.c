@@ -17,6 +17,7 @@ limitations under the License.
 
 
 #include "intrinsics.h"
+#include <stdint.h>
 
 
 
@@ -24,31 +25,33 @@ limitations under the License.
 //*                                    SINGLE-LIMB ARITHMETIC                               *//
 //* --------------------------------------------------------------------------------------- *//
 uint64_t __ADD_UI64__(uint64_t a, uint64_t b, uint8_t *carry) {
-    *carry = (*carry) ? 1 : 0;
-    #if __compiler_clang // Clang --> Always used
-        return __builtin_addcll(a, b, *carry, (unsigned long long*)carry);
-    #elif __compiler_gcc // GCC --> Always used
+    unsigned long long carry_io = !!(*carry);
+    #if __compiler_clang
+        unsigned long long result = __builtin_addcll(a, b, carry_io, &carry_io);
+        *carry = (uint8_t)carry_io; return result;
+    #elif __compiler_gcc
         uint64_t sum;
-        *carry = __builtin_uaddll_overflow(a, b, &sum);
-        return sum;
-    #elif __compiler_msvc // MSVC --> Only on x86_64
+        uint8_t c1 = __builtin_uaddll_overflow(a, b, &sum);
+        uint8_t c2 = __builtin_uaddll_overflow(sum, (uint64_t)carry_io, &sum);
+        *carry = c1 | c2; return sum;
+    #elif __compiler_msvc
         uint64_t sum;
-        *carry = _addcarry_u64((*carry) ? 1 : 0, a, b,  &sum)
+        *carry = _addcarry_u64(!!(*carry), a, b, &sum);
         return sum;
     #else
         return (*_libdnml_garith_ftable.add64c)(a, b, carry);
     #endif
 }
 uint64_t __SUB_UI64__(uint64_t a, uint64_t b, uint8_t *borrow) {
-    *borrow = (*borrow) ? 1 : 0;
+    *borrow = !!(*borrow);
     #if (__compiler_gcc || __compiler_clang)
-        // Clang / GCC --> Always used
         uint64_t diff;
-        *borrow =  __builtin_sub_overflow(a, b, &diff);
-        return diff;
+        uint8_t b1 = __builtin_sub_overflow(a, b, &diff);
+        uint8_t b2 = __builtin_sub_overflow(diff, (uint64_t)*borrow, &diff);
+        *borrow = b1 | b2; return diff;
     #elif __compiler_msvc // MSVC --> Only on x86_64
         uint64_t diff;
-        *borrow = _subborrow_u64((*borrow) ? 1 : 0, a, b, &diff);
+        *borrow = _subborrow_u64(!!(*borrow), a, b, &diff);
         return diff;
     #else
         return (*_libdnml_garith_ftable.sub64b)(a, b, borrow);
@@ -66,23 +69,14 @@ uint64_t __MUL_UI64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #endif
 }
 uint64_t __DIV_HELPER_UI64__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
-    if (hi >= div) {
-        if (_DNML_DEBUG_MODE) {
-            fputs("Division Error - Can't contain full quotient in 64 bit", stderr);
-            abort();
-        } else { *rhat = 0; *overflowed = 1; return 0; }
-    }
     #if __HAS_int128__ // GCC / Clang
-        if (hi >= div && overflowed != NULL) *overflowed = 1;
+        if (hi >= div) { if (overflowed != NULL) *overflowed = 1; *rhat = hi % div; return UINT64_MAX; }
         uint128 dividend = ((uint128)(hi) << U64_BITS) | lo;
         *rhat = (uint64_t)(dividend % div);
-        *rhat = (hi >= div) ? hi % div : *rhat;
-        return (hi >= div) ? (uint64_t)(dividend / div) : UINT64_MAX;
+        return (uint64_t)(dividend / div);
     #elif __compiler_msvc // MSVC
-        if (hi >= div && overflowed != NULL) *overflowed = 1;
-        uint64_t ret = _udiv128(hi, lo, div, rhat);
-        *rhat = (hi >= div) ? hi % div : *rhat;
-        return (hi >= div) ? UINT64_MAX : ret;
+        if (hi >= div) { if (overflowed != NULL) *overflowed = 1; *rhat = hi % div; return UINT64_MAX; }
+        return _udiv128(hi, lo, div, rhat);
     #else // Unknown Compiler
         #if !(__ARCH_X86_64__)
             *rhat = _libdnml_gbitops_ftable.clz64(div);

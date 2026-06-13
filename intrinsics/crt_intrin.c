@@ -17,7 +17,51 @@ limitations under the License.
 
 
 #include "intrinsics.h"
-
+//* --------------------------------------------------------------------------------------- *//
+//*                                        COMPARISON ARIT                                  *//
+//* --------------------------------------------------------------------------------------- *//
+// Standard U64 Comparisons
+uint8_t _lib_crt_lt(uint64_t x, uint64_t y) {
+    return (*_libdnml_crt_cmp_ftable.lt_func)(x, y);
+}
+uint8_t _lib_crt_gt(uint64_t x, uint64_t y) {
+    return (*_libdnml_crt_cmp_ftable.gt_func)(x, y);
+}
+uint8_t _lib_crt_leq(uint64_t x, uint64_t y) {
+    return (*_libdnml_crt_cmp_ftable.leq_func)(x, y);
+}
+uint8_t _lib_crt_geq(uint64_t x, uint64_t y) {
+    return (*_libdnml_crt_cmp_ftable.geq_func)(x, y);
+}
+// SIGNED I64 Comparisons
+uint8_t _lib_crt_lti64(int64_t x, int64_t y) {
+    return (*_libdnml_crt_cmp_ftable.lti64_func)(x, y);
+}
+uint8_t _lib_crt_gti64(int64_t x, int64_t y) {
+    return (*_libdnml_crt_cmp_ftable.gti64_func)(x, y);
+}
+uint8_t _lib_crt_leqi64(int64_t x, int64_t y) {
+    return (*_libdnml_crt_cmp_ftable.leqi64_func)(x, y);
+}
+uint8_t _lib_crt_geqi64(int64_t x, int64_t y) {
+    return (*_libdnml_crt_cmp_ftable.geqi64_func)(x, y);
+}
+// Equality
+uint8_t _lib_crt_ispos(int64_t x) {
+    return (*_libdnml_crt_cmp_ftable.is_pos)(x);
+}
+uint8_t _lib_crt_isneg(int64_t x) {
+    return (*_libdnml_crt_cmp_ftable.is_neg)(x);
+}
+uint8_t _lib_crt_neq(uint64_t x, uint64_t y) {
+    return (*_libdnml_crt_cmp_ftable.eq_func)(x, y);
+}
+uint8_t _lib_crt_eq(uint64_t x, uint64_t y) {
+    return (*_libdnml_crt_cmp_ftable.neq_func)(x, y);
+}
+uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
+    return (*_libdnml_crt_cmp_ftable.select_fn)(cond, a, b);
+}
 
 
 
@@ -25,18 +69,18 @@ limitations under the License.
 //* --------------------------------------------------------------------------------------- *//
 //*                                    SINGLE-LIMB ARITHMETIC                               *//
 //* --------------------------------------------------------------------------------------- *//
-uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
-    *carry = !!(*carry);
-    #if __compiler_clang // Clang --> Always used
-        return __builtin_addcll(a, b, *carry, (unsigned long long*)carry);
-    #elif __compiler_gcc // GCC --> Always used
+uint64_t __CRT_ADD_UI64__(uint64_t a, uint64_t b, uint8_t *carry) {
+    unsigned long long carry_io = !!(*carry);
+    #if __compiler_clang
+        unsigned long long result = __builtin_addcll(a, b, carry_io, &carry_io); // clang-format off
+        *carry = (uint8_t)carry_io; carry_io = 0; a = 0; b = 0; carry = 0; return result; // clang-format on
+    #elif __compiler_gcc
         uint64_t sum;
-        *carry = __builtin_uaddll_overflow(a, b, &sum);
-        return sum;
-    #elif __compiler_msvc // MSVC --> Only on x86_64
-        uint64_t sum;
-        *carry = _addcarry_u64((*carry) ? 1 : 0, a, b,  &sum)
-        return sum;
+        uint8_t c1 = __builtin_uaddll_overflow(a, b, &sum);
+        uint8_t c2 = __builtin_uaddll_overflow(sum, (uint64_t)carry_io, &sum); // clang-format off
+        *carry = c1 | c2; carry_io = 0; c1 = 0; c2 = 0; a = 0; b = 0; carry = 0;; return sum; // clang-format on
+    #elif __compiler_msvc
+        uint64_t sum; *carry = _addcarry_u64(!!(*carry) a, b, &sum); return sum;
     #else
         return (*_libdnml_crt_garith_ftable.add64c)(a, b, carry);
     #endif
@@ -44,14 +88,12 @@ uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
 uint64_t __CRT_SUB_U64__(uint64_t a, uint64_t b, uint8_t *borrow) {
     *borrow = !!(*borrow);
     #if (__compiler_gcc || __compiler_clang)
-        // Clang / GCC --> Always used
         uint64_t diff;
-        *borrow =  __builtin_sub_overflow(a, b, &diff);
-        return diff;
-    #elif __compiler_msvc // MSVC --> Only on x86_64
-        uint64_t diff;
-        *borrow = _subborrow_u64((*borrow) ? 1 : 0, a, b, &diff);
-        return diff;
+        uint8_t b1 = __builtin_sub_overflow(a, b, &diff);
+        uint8_t b2 = __builtin_sub_overflow(diff, (uint64_t)*borrow, &diff); // clang-format off
+        *borrow = b1 | b2; b1 = 0; b2 = 0; a = 0; b = 0; borrow = 0; return diff; // clang-format on
+    #elif __compiler_msvc
+        uint64_t diff; *borrow = _subborrow_u64(!!(*borrow), a, b, &diff); return diff;
     #else
         return (*_libdnml_crt_garith_ftable.sub64b)(a, b, borrow);
     #endif
@@ -59,8 +101,8 @@ uint64_t __CRT_SUB_U64__(uint64_t a, uint64_t b, uint8_t *borrow) {
 uint64_t __CRT_MUL_U64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #if __HAS_int128__ // GCC / Clang --> ALWAYS USED
         uint128 res = ((uint128)a) * ((uint128)b);
-        *hi = (uint64_t)(res >> U64_BITS);
-        return (uint64_t)res;
+        *hi = (uint64_t)(res >> U64_BITS); 
+        a = 0; b = 0; hi = 0; return (uint64_t)res;
     #elif __compiler_msvc // MSVC - Only on x86/ARM64
         return _umul128(a, b, hi);
     #else
@@ -68,18 +110,20 @@ uint64_t __CRT_MUL_U64__(uint64_t a, uint64_t b, uint64_t *hi) {
     #endif
 }
 uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
-    if (hi >= div) {
-        if (_DNML_DEBUG_MODE) {
-            fputs("Division Error - Can't contain full quotient in 64 bit", stderr);
-            abort();
-        } else { *rhat = 0; return 0; }
-    }
     #if __HAS_int128__ // GCC / Clang
+        if (overflowed != NULL) *overflowed = (hi >= div);
         uint128 dividend = ((uint128)(hi) << U64_BITS) | lo;
-        *rhat = (uint64_t)(dividend % div);
-        return (uint64_t)(dividend / div);
+        *rhat = (uint64_t)(dividend % div); // Temporarily hold modulo regardless of ovf state
+        lo = (uint64_t)(dividend / div); // Temporary holder of quotient
+        uint64_t curr_rhat = *rhat; *rhat = _lib_crt_select(hi >= div, 0, curr_rhat); // clang-format off
+        dividend = 0; curr_rhat = 0; lo = 0; div = 0; rhat = 0; overflowed = 0; 
+        return _lib_crt_select(hi >= div, UINT64_MAX, lo); // clang-format on
     #elif __compiler_msvc // MSVC
-        return _udiv128(hi, lo, div, rhat);
+        if (overflowed != NULL) *overflowed = (hi >= div);
+        uint64_t quot = _lib_crt_select(hi >= div, _udiv128(1, 0, 256, rhat), _udiv128(hi, lo, div, rhat));;
+        uint64_t curr_rhat = *rhat; *rhat = _lib_crt_select(hi >= div, 0, curr_rhat); // clang-format off
+        curr_rhat = 0; lo = 0; hi = 0; div = 0; rhat = 0; overflowed = 0; 
+        return _lib_crt_select(hi >= div, UINT64_MAX, quot); // clang-format on
     #else // Unknown Compiler
         #if !(__ARCH_X86_64__)
             *rhat = _libdnml_crt_gbitops_ftable.clz64(div);
@@ -136,55 +180,6 @@ uint8_t __CRT_PCNT_UI64__(uint64_t x) {
     #else
         return (*_libdnml_crt_gbitops_ftable.pcnt64)(x);
     #endif
-}
-
-
-
-
-//* --------------------------------------------------------------------------------------- *//
-//*                                        COMPARISON ARIT                                  *//
-//* --------------------------------------------------------------------------------------- *//
-// Standard U64 Comparisons
-uint8_t _lib_crt_lt(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.lt_func)(x, y);
-}
-uint8_t _lib_crt_gt(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.gt_func)(x, y);
-}
-uint8_t _lib_crt_leq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.leq_func)(x, y);
-}
-uint8_t _lib_crt_geq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.geq_func)(x, y);
-}
-// SIGNED I64 Comparisons
-uint8_t _lib_crt_lti64(int64_t x, int64_t y) {
-    return (*_libdnml_crt_cmp_ftable.lti64_func)(x, y);
-}
-uint8_t _lib_crt_gti64(int64_t x, int64_t y) {
-    return (*_libdnml_crt_cmp_ftable.gti64_func)(x, y);
-}
-uint8_t _lib_crt_leqi64(int64_t x, int64_t y) {
-    return (*_libdnml_crt_cmp_ftable.leqi64_func)(x, y);
-}
-uint8_t _lib_crt_geqi64(int64_t x, int64_t y) {
-    return (*_libdnml_crt_cmp_ftable.geqi64_func)(x, y);
-}
-// Equality
-uint8_t _lib_crt_ispos(int64_t x) {
-    return (*_libdnml_crt_cmp_ftable.is_pos)(x);
-}
-uint8_t _lib_crt_isneg(int64_t x) {
-    return (*_libdnml_crt_cmp_ftable.is_neg)(x);
-}
-uint8_t _lib_crt_neq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.eq_func)(x, y);
-}
-uint8_t _lib_crt_eq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.neq_func)(x, y);
-}
-uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
-    return (*_libdnml_crt_cmp_ftable.select_fn)(cond, a, b);
 }
 
 

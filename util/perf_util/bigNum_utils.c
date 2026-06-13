@@ -17,8 +17,10 @@ limitations under the License.
 
 
 #include "../util.h"
+#include "intrinsics.h"
+#include <stdint.h>
 
-const uint64_t inv3 = 0xAAAAAAAAAAAAAAABULL;
+const uint64_t inv3 = UINT64_C(0xAAAAAAAAAAAAAAAB);
 
 /* Safety & State Utilities */
 void __BIGINT_INTERNAL_FREE__(bigInt *x) {
@@ -111,76 +113,85 @@ int8_t __BIGINT_INTERNAL_COMP__(const bigInt *x, const bigInt *y) {
 }
 uint8_t __BIGINT_IS_EVEN__(const bigInt *x) { return !(x->limbs[0] & 1); }
 void __BIGINT_INTERNAL_ADD_UI64__(bigInt *x, uint64_t val) {
-    if (!val) return;
-    DNML_TEST_ASSERT(x->cap >= x->n + 1, 
-        "Internal Additio Error: Utility failed due to "
-        "insufficient sum capacity", {}
-    );
+    if (!val) return; // Fast path
+    DNML_TEST_ASSERT(x->cap >= x->n + 1, "Internal Addition Error: Utility failed due to insufficient sum capacity", {});
     uint64_t carry = val;
-    for (size_t i = 0; (carry && i < x->n) ; ++i) {
-        uint8_t u8_carry = (uint8_t)carry;
-        x->limbs[i] = __ADD_UI64__(x->limbs[i], carry, &u8_carry);
-    } if (carry) x->limbs[x->n++] = carry;
+    for (size_t i = 0; i < x->n && carry; ++i) { uint8_t u8_carry = 0;
+        x->limbs[i] = __ADD_UI64__(x->limbs[i], carry, &u8_carry); carry = (uint64_t)u8_carry;
+    } if (carry) x->limbs[x->n++] = carry; // Fnish up carry propagation
 }
 void __BIGINT_INTERNAL_MUL_UI64__(bigInt *x, uint64_t val) {
-    if (val == 0) __BIGINT_INTERNAL_ZSET__(x);
+    if (val == 1) return; // Fast path
+    if (val == 0) { __BIGINT_INTERNAL_ZSET__(x); return; }
     if (val == 2) __BIGINT_INTERNAL_LSHIFT__(x, 1);
-    else if (!(val & 1)) __BIGINT_INTERNAL_LSHIFT__(x, __CTZ_UI64__(val));
-    else if (val != 1) {
+    else if (__IS_2POW__(val)) __BIGINT_INTERNAL_LSHIFT__(x, __CTZ_UI64__(val));
+    else {
         uint64_t carry = 0;
         for (size_t i = 0; i < x->n; ++i) {
-            uint64_t high, low = __MUL_UI64__(x->limbs[i], val, &high);
-            uint64_t sum = x->limbs[i] + low + carry;
-            carry = high + (sum < low) + (sum < carry);
+            uint64_t high; uint64_t low = __MUL_UI64__(x->limbs[i], val, &high);
+            uint64_t sum = low + carry;
+            carry = high + (sum < low);
             x->limbs[i] = sum;
-        } if (carry) { x->limbs[x->n] = carry; x->n += 1; }
+        }  if (carry) x->limbs[x->n++] = carry;
     }
 }
-void __BIGINT_DIV3__(bigInt *a) {
-    uint64_t carry = 0, borrow, q, t;
-    for (size_t i = 0; i < a->n; ++i) {
-        t = a->limbs[i] - carry;
-        borrow = (a->limbs[i] < carry) ? 1 : 0;
-        q = __MUL_UI64__(t, inv3, &carry);
-        a->limbs[i] = q; carry += borrow;
-    } __BIGINT_INTERNAL_TRIM_LZ__(a);
+void __BIGINT_DIV3__(bigInt *x) {
+    if (!x->n) return; uint64_t r = 0;
+    for (size_t i = x->n; i > 0; i--) {
+        size_t idx = i - 1; uint64_t a = x->limbs[idx];
+        uint64_t high; __MUL_UI64__(a, inv3, &high);
+        uint64_t qa = high >> 1; uint64_t ra = a - qa * 3;
+        uint64_t sum_r = r + ra; uint64_t flag = (sum_r >= 3);
+        // Store the new limb quotient digit
+        // 0x5555555555555555ULL is floor(2^64 / 3)
+        x->limbs[idx] = qa + r * UINT64_C(0x5555555555555555) + flag;
+        r = sum_r - (flag ? 3 : 0);
+    } __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
 }
 uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
-    uint64_t remainder;
-    if (val == 1) remainder = 0;
-    else if (val == 2) { remainder = (x->limbs[0] & 1); __BIGINT_INTERNAL_LSHIFT__(x, 1); }
-    else if (!(val & 1)) { 
+    if (val == 1 || !x->n) return 0; uint64_t remainder = 0;
+    if (val == 2) { remainder = (x->limbs[0] & 1); __BIGINT_INTERNAL_RSHIFT__(x, 1); }
+    else if (__IS_2POW__(val)) {
         uint8_t n = __CTZ_UI64__(val);
-        remainder = (x->limbs[0] & ((1ULL << n) - 1));
+        remainder = (x->limbs[0] & ((UINT64_C(1) << n) - 1));
         __BIGINT_INTERNAL_RSHIFT__(x, n);
-    } else {
-        remainder = 0; uint8_t ovf_check;
-        for (size_t i = x->n - 1; i != (size_t)-1; --i) {
-            x->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &ovf_check);
-            DNML_TEST_ASSERT(ovf_check, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
-        }
-        __BIGINT_INTERNAL_TRIM_LZ__(x);
-        if (!x->n) x->sign = 1;
+    } else { 
+        uint8_t ovf_check = 0;
+        for (size_t i = x->n; i > 0; --i) {
+            x->limbs[i - 1] = __DIV_HELPER_UI64__(x->limbs[i - 1], remainder, val, &remainder, &ovf_check);
+            DNML_TEST_ASSERT(!(ovf_check), "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
+        } __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
     } return remainder;
 }
 void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) {
     if (!k) return;
-    uint64_t discarded_bits = 0;
-    for (size_t i = 0; i < x->n; ++i) {
-        uint64_t positioned_bits = discarded_bits << (U64_BITS - k);
-        discarded_bits = x->limbs[i] & ((1U << k) - 1);
-        x->limbs[i] = (x->limbs[i] >> k) | positioned_bits;
+    uint64_t carry_in = 0; 
+    for (size_t i = x->n; i > 0; --i) { size_t idx = i - 1;
+        uint64_t next_carry = x->limbs[idx] & ((UINT64_C(1) << k) - 1);
+        x->limbs[idx] = (x->limbs[idx] >> k) | (carry_in << (U64_BITS - k));
+        carry_in = next_carry;
     } __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k) {
-    if (!k) return;
-    uint64_t discarded_bits = 0;
+    if (!k) return; uint64_t discarded_bits = 0;
     for (size_t i = 0; i < x->n; ++i) {
         uint64_t previous_dbits = discarded_bits;
-        uint64_t iso_mask = (1U << k) - 1;
-        discarded_bits = x->limbs[i] & (iso_mask << (U64_BITS - k));
+        uint64_t iso_mask = (UINT64_C(1) << k) - 1;
+        discarded_bits = (x->limbs[i] >> (U64_BITS - k)) & iso_mask;
         x->limbs[i] = (x->limbs[i] << k) | previous_dbits;
-    } __BIGINT_INTERNAL_TRIM_LZ__(x);
+    } if (discarded_bits) x->limbs[x->n++] = discarded_bits;
+    __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
-void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs) {}
-void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs) {}
+void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs) {
+    if (klimbs >= x->n) { __BIGINT_INTERNAL_ZSET__(x); return; }
+    memcpy(x->limbs, (x->limbs + klimbs), (x->n - klimbs) * U64_BYTES);
+    x->n -= klimbs; __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+}
+void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs) {
+    if (klimbs >= x->cap) { __BIGINT_INTERNAL_ZSET__(x); return; }
+    if (x->n == 0) return;
+    size_t moved = (x->n + klimbs > x->cap) ? x->cap - klimbs : x->n;
+    memmove(x->limbs + klimbs, x->limbs, moved * U64_BYTES);
+    x->n = (x->n + klimbs > x->cap) ? x->cap : x->n + klimbs;
+    __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+}

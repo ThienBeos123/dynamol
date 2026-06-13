@@ -34,9 +34,9 @@ and is generally unsafe for production-use for the user */
 #define DNML_TEST_ASSERT(condition, message, cleanup_code) do { \
     if (!(condition)) { \
         cleanup_code; \
-        fprintf(stderr, "  - [FATAL] Assertion Failed: (%s)", #condition); \
-        fprintf(stderr, "    Function %s(): %s\n", __func__, message); \
-        fprintf(stderr, "     File: %s | Line: %d\n", __FILE__, __LINE__); \
+        fprintf(stderr, "\033[0;31m- [FATAL] Assertion Failed: (%s)\033[0m\n", #condition); \
+        fprintf(stderr, "\033[0;31m  Function %s(): %s\033[0m\n", __func__, message); \
+        fprintf(stderr, "\033[0;31m  File: %s | Line: %d\033[0m\n", __FILE__, __LINE__); \
         exit(EXIT_FAILURE); \
     } \
 } while (0)

@@ -100,9 +100,9 @@ int main(void) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     limb_t *l_buf = (limb_t *)malloc(12 * sizeof(limb_t));
-    printf("===================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM DIGIT/TZ UTILITIES     \n");
-    printf("===================================================================\n");
+    printf("========================================================================\n");
+    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM COUNT REQUIRE UTILITIES     \n");
+    printf("========================================================================\n");
     printf("---- __BIGINT_LIMBS_NEEDED__ -----\n");
     for (int i = 0; i < 100; i++) { total_tests++;
         size_t res = __BIGINT_LIMBS_NEEDED__(global_lncases[i].bits);
