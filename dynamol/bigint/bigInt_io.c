@@ -72,7 +72,7 @@ size_t _finval_charb(const char *str, size_t len, uint8_t base) {
 }
 static inline void _ASCII_COLUMN__(limb_t val, char* c) {
     uint8_t *p = (uint8_t*)&val;
-    for (uint8_t i = 7; i != (uint8_t)-1; --i) {
+    for (int8_t i = 7; i > 0; --i) {
         c[i] = (*p >= 32 && *p <= 126) ? (char)(*p) : '.';
         ++p;
     }
@@ -2496,17 +2496,14 @@ dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
         } else if (base == 2) {
             uint64_t tmp_copy = x.limbs[0];
             uint8_t len = __BASEN_DCOUNT__(tmp_copy, 2); char c[len];
-            for (uint8_t i = len - 1; i != (uint8_t)-1 && tmp_copy > 0; --i) {
-                c[i] = (tmp_copy & 1) ? '1' : '0';
-                tmp_copy >>= 1;
+            for (int16_t i = len - 1; i > 0 && tmp_copy > 0; --i) {
+                c[i] = (tmp_copy & 1) ? '1' : '0'; tmp_copy >>= 1;
             } printf("%s0b%.*s\n", (x.sign == -1) ? "-" : "", len, c);
         } else {
             uint64_t tmp_copy = x.limbs[0];
             uint8_t len = __BASEN_DCOUNT__(tmp_copy, base); char c[len];
-            for (uint8_t i = len - 1; i != (uint8_t)-1 && tmp_copy > 0; --i) {
-                c[i] = (base <= 16) ?
-                    _DIGIT_INSEN_[tmp_copy % base] :
-                    _DIGIT_SEN_[tmp_copy & base];
+            for (int16_t i = len - 1; i > 0 && tmp_copy > 0; --i) {
+                c[i] = (base <= 16) ? _DIGIT_INSEN_[tmp_copy % base] : _DIGIT_SEN_[tmp_copy & base]; 
                 tmp_copy /= base;
             }
             if (base == 64) printf("%s0,%.*s\n", (x.sign == -1) ? "-" : "", len, c);
@@ -2656,16 +2653,15 @@ dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool upper
         } else if (base == 2) {
             uint64_t tmp_copy = x.limbs[0];
             uint8_t len = __BASEN_DCOUNT__(tmp_copy, 2); char c[len];
-            for (uint8_t i = len - 1; i != (uint8_t)-1 && tmp_copy > 0; --i) {
+            for (int16_t i = len - 1; i > 0 && tmp_copy > 0; --i) {
                 c[i] = (tmp_copy & 1) ? '1' : '0';
                 tmp_copy >>= 1;
             } fprintf(stream, "%s0b%.*s\n", (x.sign == -1) ? "-" : "", len, c);
         } else {
             uint64_t tmp_copy = x.limbs[0]; uint8_t add_val = (uppercase) ? 16 : 0,
             len = __BASEN_DCOUNT__(tmp_copy, base); char c[len];
-            for (uint8_t i = len - 1; i != (uint8_t)-1 && tmp_copy > 0; --i) {
-                c[i] = _DIGIT_INSEN_[tmp_copy % base + add_val];
-                tmp_copy /= base;
+            for (int16_t i = len - 1; i > 0 && tmp_copy > 0; --i) {
+                c[i] = _DIGIT_INSEN_[tmp_copy % base + add_val]; tmp_copy /= base;
             }
             if (base == 64) fprintf(stream, "%s0,%.*s\n", (x.sign == -1) ? "-" : "", len, c);
             else fprintf(stream, "%s0{%" PRIu8 "}%.*s\n", (x.sign == -1) ? "-" : "", base, len, c);
@@ -3545,7 +3541,7 @@ dnml_status bigInt_bindump(FILE *stream, const bigInt x) {
     for (size_t i = 0; i < x.cap; ++i) {
         temp_val = x.limbs[i];
         // Format the value to be fixed-width
-        for (uint8_t i = 63; i != (uint8_t)-1; --i) {
+        for (int8_t i = 63; i > 0; --i) {
             d[i] = (temp_val & 1) ? '1' : '0';
             temp_val >>= 1;
         }

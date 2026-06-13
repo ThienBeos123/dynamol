@@ -23,10 +23,7 @@ limitations under the License.
 #include "../../intrinsics/x86_64/__x86_conn__.h"
 #include "../../intrinsics/risc-v64/__rv64_conn__.h"
 // Case Struct
-typedef struct {
-    uint64_t lo, hi; uint64_t div;
-    uint64_t quot, rem; uint8_t ovf_flag;
-} wdiv_case_t;
+typedef struct {uint64_t lo, hi; uint64_t div; uint64_t quot, rem; uint8_t ovf_flag; } wdiv_case_t;
 #define ylw "\033[1;33m"
 #define esc "\033[0m"
 

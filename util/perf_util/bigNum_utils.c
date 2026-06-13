@@ -163,22 +163,21 @@ uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
         } __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
     } return remainder;
 }
-void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) {
+void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) { // Assumes k < 64
     if (!k) return;
     uint64_t carry_in = 0; 
-    for (size_t i = x->n; i > 0; --i) { size_t idx = i - 1;
-        uint64_t next_carry = x->limbs[idx] & ((UINT64_C(1) << k) - 1);
-        x->limbs[idx] = (x->limbs[idx] >> k) | (carry_in << (U64_BITS - k));
+    for (size_t i = x->n; i > 0; --i) {
+        uint64_t next_carry = x->limbs[i - 1] & ((UINT64_C(1) << k) - 1);
+        x->limbs[i - 1] = (x->limbs[i - 1] >> k) | (carry_in << (U64_BITS - k));
         carry_in = next_carry;
     } __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
-void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k) {
+void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k) { // Assumes k < 64
     if (!k) return; uint64_t discarded_bits = 0;
     for (size_t i = 0; i < x->n; ++i) {
-        uint64_t previous_dbits = discarded_bits;
+        x->limbs[i] = (x->limbs[i] << k) | discarded_bits;
         uint64_t iso_mask = (UINT64_C(1) << k) - 1;
         discarded_bits = (x->limbs[i] >> (U64_BITS - k)) & iso_mask;
-        x->limbs[i] = (x->limbs[i] << k) | previous_dbits;
     } if (discarded_bits) x->limbs[x->n++] = discarded_bits;
     __BIGINT_INTERNAL_TRIM_LZ__(x);
 }

@@ -68,16 +68,16 @@ crint crint_rshift(crint x, size_t k, dnml_status *err) {
     );
 
     limb_t fake_dst; limb_t *dst;
-    uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS))), discarded_bits = 0;
+    uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS))), carry_in = 0;
     dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : x.limbs;
     size_t end; CHOOSE_OPTION((end), (x.n), (x.n - 1), (0));
     __libdnml_smemcpy_u64(dst, x.limbs, x.n, x.n, 0, end, (!(_lib_crt_eq(ret_stat, CRINT_SUCCESS))));
     __CRINT_INTERNAL_RLSHIFT__(&res, x.n, limb_shift & mask); res.n = x.n - limb_shift;
-    for (size_t i = res.n - 1; _lib_crt_neq(i, -1); --i) { /* Individual Bit Shift Loops */
-        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i] : &fake_dst;
-        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
-        *dst = (x.limbs[i] >> bshift) | positioned_bits; positioned_bits = 0; // Clearance
-        discarded_bits = x.limbs[i] & ((UINT64_C(1) << bshift) - 1);
+    for (size_t i = res.n; i > 0; --i) {
+        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i - 1] : &fake_dst;
+        uint64_t next_carry = x.limbs[i - 1] & ((UINT64_C(1) << k) - 1);
+        *dst = (x.limbs[i - 1] >> k) | (carry_in << (U64_BITS - k)); 
+        carry_in = next_carry;
     }
     /* Normalization (with faking tricks) */
     res.n &= mask; res.sign = x.sign & mask;
@@ -93,7 +93,7 @@ crint crint_rshift(crint x, size_t k, dnml_status *err) {
     res.poisoned = (_lib_crt_neq(ret_stat, CRINT_SUCCESS));
     /* Aggresive, Post-oepration Cleanup */ // clang-format off
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; ret_stat = 0; new_stat = 0; limb_shift = 0;
-    bshift = 0; end = 0; fake_dst = 0; dst = 0; mask = 0; discarded_bits = 0; norm_crint = 0;
+    bshift = 0; end = 0; fake_dst = 0; dst = 0; mask = 0; carry_in = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; pbv_crint_clear(x); k = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
@@ -119,7 +119,7 @@ crint crint_lshift(crint x, size_t k, dnml_status *err) {
     for (size_t i = 0; _lib_crt_lt(i, x.n); ++i) { /* Individual Bit Shift Loops */
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i] : &fake_dst;
         *dst = (x.limbs[i] << k) | discarded_bits; uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
-        discarded_bits = x.limbs[i] & (iso_mask << (U64_BITS - bshift)); iso_mask = 0;
+        discarded_bits = (x.limbs[i] >> (U64_BITS - bshift)) & iso_mask; iso_mask = 0;
     }
     /* Normalization (with faking tricks) */
     res.n = x.n & mask; res.sign = x.sign & mask;
@@ -215,25 +215,26 @@ dnml_status crint_mut_rshift(crint *x, size_t k) {
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
 
     __CRINT_INTERNAL_RLSHIFT__(x, x->n, limb_shift & mask); x->n -= limb_shift & mask;
-    limb_t fake_dst; limb_t* dst; uint64_t discarded_bits = 0;
-    for (size_t i = x->cap - 1; _lib_crt_neq(i, -1); --i) { /* Individual Bits Loop */
-        size_t index; CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
-        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i] : &fake_dst;
+    limb_t fake_dst; limb_t* dst; uint64_t carry_in = 0;
+    for (size_t i = x->cap; i > 0; --i) {
+        size_t index; CHOOSE_OPTION((index), (_lib_crt_lt(i - 1, x->n)), (i - 1), (0));
+        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i - 1] : &fake_dst;
         /* Pre-calculations - Ensure Constant Time */
-        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
+        uint64_t positioned_bits = (carry_in << (U64_BITS - bshift));
         uint64_t dbit_calc = x->limbs[index] & ((UINT64_C(1) << bshift) - 1);
         uint64_t dst_val = (x->limbs[index] >> bshift) | positioned_bits;
+        uint64_t curr_dval = *dst;
         /* Actual Assignment + Per Iteration Cleanup */
-        CHOOSE_OPTION((discarded_bits), (_lib_crt_lt(i, x->n)), (dbit_calc), (discarded_bits));
-        CHOOSE_OPTION((*dst), (_lib_crt_lt(i, x->n)), (dst_val), (*dst));
-        index = 0; positioned_bits = 0; dbit_calc = 0; dst_val = 0;
+        CHOOSE_OPTION((carry_in), (_lib_crt_lt(i - 1, x->n)), (dbit_calc), (carry_in));
+        CHOOSE_OPTION((*dst), (_lib_crt_lt(i - 1, x->n)), (dst_val), (curr_dval));
+        index = 0; positioned_bits = 0; dbit_calc = 0; dst_val = 0; curr_dval = 0;
     }
     limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
     crint_normalize(norm_crint);
     /* Aggrestive, Post-operation Cleanup */ // clang-format off
-    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; discarded_bits = 0; norm_crint = 0;
+    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; carry_in = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized. n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; k = 0; return ret_stat; // clang-format on
 }
@@ -255,7 +256,7 @@ dnml_status crint_mut_lshift(crint *x, size_t k) {
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i] : &fake_dst;
         /* Pre-calculations - Ensure Constant Time */
         uint64_t previous_dbits = discarded_bits, iso_mask = (UINT64_C(1) << bshift) - 1;
-        uint64_t dbit_calc = x->limbs[index] & (iso_mask << (U64_BITS - bshift));
+        uint64_t dbit_calc = (x->limbs[index] >> (U64_BITS - bshift)) & iso_mask;
         uint64_t dst_val = (x->limbs[index] << bshift) | previous_dbits;
         /* Actual Assignment + Per Iteration Cleanup */
         CHOOSE_OPTION((discarded_bits), (_lib_crt_lt(i, x->n)), (dbit_calc), (discarded_bits));

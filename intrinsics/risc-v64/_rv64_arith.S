@@ -282,18 +282,18 @@ _rv64_crt_wdiv128:
 
 .crt_div_loop:
     // Early high bit overflow check
-    srli a7, a1, 63 // t6 = hi >> 63 (Isolate the MSB)
+    srli a7, t4, 63 // t6 = chosen_hi >> 63 (Isolate the MSB)
     andi a7, a7, 1 // Explicitly isolating the LSB
 
     // Normal, 128-bit dividend shifting routine
     slli a0, a0, 1 // q <<= 1
     // test_rem = (chosen_hi << 1) | ((chosen_lo >> i) & 1)
     // In this implementation, we operate directly onto x9 (chosen_hi)
-    slli t4, t4, 1 // chosen_hi <<= 1
     srli t1, t3, 63 // Extract bit 63 from chosen_lo (MSB)
     andi t1, t1, 1 // (chosen_lo >> 63) & 1 (Isolating the MSB)
-    or t4, t4, t1 // t4 (chosen_hi) |= t1 (lo >> 63)
     slli t3, t3, 1 // chosen_lo <<= 1 (moving to the next bit)
+    slli t4, t4, 1 // chosen_hi <<= 1
+    or t4, t4, t1 // t4 (chosen_hi) |= t1 (lo >> 63)
 
 
     /* --- Quotient & Remainder value manipulation --- */
@@ -307,7 +307,6 @@ _rv64_crt_wdiv128:
     /* ------- Remainder Calculations ------- */
     and t1, a2, t6 // t1 = div & mask
     sub t4, t4, t1 // chosen_hi (hi) -= (div & mask)
-
     // Incrementing the loop counter
     addiw t5, t5, 1 // Incrementing loop counter
     bltu t5, 64 .crt_div_loop // (i < 64) -- loop bound

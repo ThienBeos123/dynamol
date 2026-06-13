@@ -225,77 +225,91 @@ _x86sv_wdiv128:
 * pre-conditions: hi/rsi < div
 */
 _x86sv_crt_wdiv128:
-    ; --- 1. Evaluate Overflow State ---
-    xor r9, r9 ; Clear the r9 register
-    xor r10, r10 ; Clear the r10 register
-    test rdx, rdx ; RDX (div) == 0?
-    setz r10b ; r10b = 1 if div == 0
-    cmp rsi, rdx ; Compare hi (RSI) with div (RDX)
-    setae r9b ; r9b = 1 if hi >= div, else 0 (overflow flag)
-    or r9b, r10b ; overflow_flag
+    ; =========== 1. Determine Overflow Flag & Write to Memory ===========
+    test rdx, rdx ; div == 0?
+    setz r9b ; r9b = (div == 0) ? 1 : 0
+    cmp rsi, rdx ; Compare hi and div
+    setae r10b ; r10b = (hi >= div) ? 1 : 0
+    or r9b, r10b ; overflow_flag = (hi >= div) | (div == 0)
+    mov byte ptr [r8], r10b ; *overflowed = overflow_flag
+    
 
-    ; --- 2. Neutralize Hardware Divide Errors ---
-    ; If hi >= div, the CPU will fault. We use conditional moves to feed
-    ; a safe dummy configuration (hi=0, lo=0, div=1) to the execution engine.
-    mov r10, rsi ; r10 = working_hi
-    mov r11, rdi ; r11 = working_lo
-    mov r12, rdx ; r12 = working_div
+    ; =========== 2. Multiplexing of Fake vs Real Values ===========
+    mov r9, 1 ; fake_hi = 1
+    mov rax, 0x1928356720912386 ; fake_lo = 0x1928356720912386 
+    test r10b, r10b
+    cmovnz rdi, rax ; chosen_lo = overflow_flag ? fake_lo : lo
+    cmovnz rsi, r9 ; chosen_hi = overflow_flag ? fake_hi : hi
+    ; Loop Configurations
+    xor rax, rax ; q = 0
+    xor r9, r9 ; Loop counter (i)
+    /* Variables-Registers List:
+        - rdi: chosen_lo
+        - rsi: chosen_hi
+        - rax: q - RETURN QUOTIENT
+        - r9d: i - LOOP COUNTER
+        - r10: OVERFLOW FLAG
+    */
+.crt_div_loop:
+    ; Early high bit overflow check
+    mov r11, rsi ; r11 = rsi (chosen_hi)
+    shr r11, 63 ; r11 = rsi >> 63 (Isolating the MSB)
+    and r11, 1 ; r11 = (rsi >> 63) & 1 (Explicitly isolating the MSB)
 
-    mov rax, 0 ; Dummy lo/hi value
-    mov rbx, 1 ; Dummy div value (prevents division by zero)
+    ; Normal, 128-bit dividend shifting routine
+    shl rax, 1 ; q <<= 1
+    ; test_rem = (chosen_hi << 1) | ((chosen_lo >> i) & 1)
+    ; In this implementation, we operate directly on rsi (chosen_hi)
+    mov r10, rdi ; r10 = chosen_lo (rdi)
+    shr r10, 63 ; r10 = chosen_lo << 63
+    and r10, 1 ; r10 = (chosen_lo << 63) & 1
+    shl rdi, 1 ; chosen_lo (rdi) <<= 1
+    add rsi, rsi ; chosen_hi (rsi) <<= 1
+    or rsi, r10 ; chosen_hi |= extracted_bit
 
-    cmovae r10, rax ; If overflowed: working_hi = 0
-    cmovae r11, rax ; If overflowed: working_lo = 0
-    cmovae r12, rbx ; If overflowed: working_div = 1
 
-    ; --- 3. Execute Native Hardware Division ---
-    mov rdx, r10 ; RDX = working_hi
-    mov rax, r11 ; RAX = working_lo
-    div r12 ; [RDX:RAX] / r12
-    ; RAX = calculated_quot, RDX = calculated_rem
+    /* --- Quotient & Remainder value manipulation --- */
+    xor rbx, rbx ; Clean the RBX register
+    cmp rsi, rdx ; (chosen_hi >= div)?
+    setae al ; al = (chosen_hi >= div)?
+    or rbx, r11 ; rbx |= r11 (chosen_hi >= div | hi_overflow)
+    neg rbx ; mask = -(rbx_cond) --> -1 (UINT64_MAX) : 0
+    /* Quotient Calculations */
+    mov r11, rbx
+    and r11, 1 ; 1 & mask
+    or rax, r11 ; q |= (1 & mask)
+    /* Remainder Calculations */
+    mov r11, rdx
+    and r11, rbx ; div & mask
+    sub rsi, r11 ; chosen_hi -= (div & mask)
+    ; Incrementing loop counter
+    inc r9d
+    cmp r9d, 64
+    jl .crt_div_loop
 
-    ; --- 4. Final Output Formatting (Bitwise Multiplexing) ---
-    ; Setup our overflow default constants
-    mov r13, -1 ; r13 = UINT64_MAX
-    mov r14, 0 ; r14 = 0
 
-    ; If an overflow actually happened, override the hardware results
-    cmovae rax, r13 ; If overflowed: quotient = UINT64_MAX
-    cmovae rdx, r14 ; If overflowed: remainder = 0
-    ; Commit remainder to memory (*rem)
-    mov [rcx], rdx
+    ; =========== 5. Final Output Selections ===========
+    test r10b, r10b ; Check overflow flag again
+    ; ----- QUOTIENT RETURNS -----
+    mov r10, -1 ; r10 = (uint64_t)-1 = UINT64_MAX (0xFFFFFFFFFFFFFFFF)
+    cmovnz rax, r10 ; rax ? (overflow_flag/r10b) ? UINT64_MAX : quot
+    ; ----- REMAINDER RETURNS -----
+    mov rdi, rsi ; rdi = chosen_hi (rsi)
+    mov r11, 0 ; r11 = 0
+    cmovnz rdi, r11 ; rdi ? (overflow_flag/r10b) ? 0 (r11) : chosen_hi (rdi)
+    mov qword ptr [rcx], rdi ; *rhat (*rcx) = rdi (selected remainder)
 
-    ; --- 5. Optional Pointer Safety Check for *overflowed ---
-    ; If the user passed NULL (0) for R8, we skip writing to it.
-    ; While this utilizes a jump, it is totally safe for cryptography/constant-time
-    ; security because pointer presence is an execution environment property,
-    ; completely independent of secret mathematical data keys.
-    test r8, r8
-    jz .crt_done
-    mov [r8], r9b ; *overflowed = overflow_flag
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */
-    mov rdi, 0 # Function parameter / argument
-    mov rsi, 0 # Function parameter / argument
-    mov rdx, 0 # Function parameter / argument
-    mov rbx, 0
-    mov r9, 0
-    mov r10, 0
-    mov r11, 0
-    mov r12, 0
-    mov r13, 0
-    mov r14, 0
-.crt_done:
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */
-    mov rdi, 0 # Function parameter / argument
-    mov rsi, 0 # Function parameter / argument
-    mov rdx, 0 # Function parameter / argument
-    mov rbx, 0
-    mov r9, 0
-    mov r10, 0
-    mov r11, 0
-    mov r12, 0
-    mov r13, 0
-    mov r14, 0
+
+    ; =========== 6. Aggressive Post-operation Clearance ===========
+    xor rbx, rbx
+    xor rcx, rcx
+    xor rdx, rdx
+    xor rsi, rsi
+    xor rdi, rdi
+    xor r8, r8
+    xor r9, r9
+    xor r10, r10
+    xor r11, r11
     ret
 
 

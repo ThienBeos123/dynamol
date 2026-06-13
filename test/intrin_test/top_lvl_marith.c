@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <stdio.h>
 #include <include.h>
 #include <_libdnml_config/numeric_config.h>
 #include <../../intrinsics/intrinsics.h>

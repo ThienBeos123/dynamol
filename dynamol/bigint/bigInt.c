@@ -254,14 +254,14 @@ bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err) {
         err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
-    uint64_t discarded_bits = 0; bigInt res = {0};
+    uint64_t carry_in = 0; bigInt res = {0};
     if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
     memcpy(res.limbs, x.limbs, x.n * U64_BYTES); res.n = x.n; res.sign = x.sign;
     __BIGINT_INTERNAL_RLSHIFT__(&res, limb_shift); res.n = x.n - limb_shift;
-    if (bshift) for (size_t i = res.n - 1; i != (size_t)-1; --i) {
-        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
-        res.limbs[i] = (x.limbs[i] >> bshift) | positioned_bits;
-        discarded_bits = x.limbs[i] & ((UINT64_C(1) << bshift) - 1);
+    if (bshift) for (size_t i = res.n; i > 0; --i) {
+        uint64_t next_carry = x.limbs[i - 1] & ((UINT64_C(1) << k) - 1);
+        res.limbs[i - 1] = (x.limbs[i - 1] >> bshift) | (carry_in << (U64_BITS - bshift));
+        carry_in = next_carry;
     } res.sign = x.sign; bigInt_normalize(&res); return res;
 }
 bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err) {
@@ -277,7 +277,7 @@ bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err) {
     if (bshift) for (size_t i = limb_shift; i < x.n; ++i) {
         res.limbs[i] = (x.limbs[i] << bshift) | discarded_bits;
         uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
-        discarded_bits = x.limbs[i] & (iso_mask << (U64_BITS - bshift));
+        discarded_bits = (x.limbs[i] >> (U64_BITS - bshift)) & iso_mask;
     } bigInt_normalize(&res); *err = BIGINT_SUCCESS; return res;
 }
 bigInt bigInt_lshiftg(const bigInt x, size_t k, dnml_status *err) {
@@ -306,13 +306,13 @@ dnml_status bigInt_mut_not(bigInt *x) {
 dnml_status bigInt_mut_rshift(bigInt *x, size_t k) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(bigInt_pvalidate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    uint64_t discarded_bits = 0;
+    uint64_t carry_in = 0;
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
     __BIGINT_INTERNAL_RLSHIFT__(x, limb_shift); x->n -= limb_shift;
-    if (bshift) for (size_t i = x->n - 1; i != (size_t)-1; --i) {
-        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
-        discarded_bits = x->limbs[i] & ((UINT64_C(1) << bshift) - 1);
-        x->limbs[i] = (x->limbs[i] >> bshift) | positioned_bits;
+    if (bshift) for (size_t i = x->n; i > 0; --i) {
+        uint64_t next_carry = x->limbs[i - 1] & ((UINT64_C(1) << k) - 1);
+        x->limbs[i - 1] = (x->limbs[i - 1] >> bshift) | (carry_in << (U64_BITS - bshift));
+        carry_in = next_carry;
     } bigInt_normalize(x); return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_lshift(bigInt *x, size_t k) {
@@ -321,10 +321,9 @@ dnml_status bigInt_mut_lshift(bigInt *x, size_t k) {
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
     uint64_t discarded_bits = 0; __BIGINT_INTERNAL_LLSHIFT__(x, limb_shift);
     if (bshift) for (size_t i = limb_shift; i < x->n; ++i) {
-        uint64_t previous_dbits = discarded_bits;
+        x->limbs[i] = (x->limbs[i] << bshift) | discarded_bits;
         uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
         discarded_bits = x->limbs[i] & (iso_mask << (U64_BITS - bshift));
-        x->limbs[i] = (x->limbs[i] << bshift) | previous_dbits;
     } bigInt_normalize(x); return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_lshiftg(bigInt *x, size_t k) {
@@ -1310,8 +1309,8 @@ static int8_t __BIGINT_MAGCOMP__(const bigInt *a, const bigInt *b) {
     test_assert(a != NULL && b != NULL, input_null, clear_arena, BIGINT_NULL);
     if (a->n != b->n) return (a->n > b->n) ? 1 : -1;
     // Loops from most-significant digit down to least-significant digit
-    for (size_t i = a->n - 1; i != (size_t)-1; --i) {
-        if (a->limbs[i] != b->limbs[i]) return (a->limbs[i] > b->limbs[i]) ? 1 : -1;
+    for (size_t i = a->n; i  > 0; --i) {
+        if (a->limbs[i - 1] != b->limbs[i - 1]) return (a->limbs[i - 1] > b->limbs[i - 1]) ? 1 : -1;
         // Compare which one current most-significant digit is bigger
     }
     return 0;
@@ -1575,12 +1574,10 @@ static void __BIGINT_MAGDIVMOD_U64__(
     DNML_TEST_ASSERT(val, "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", clear_arena);
     dnml_status err_check = bigInt_reserve(quot, x->n+1); heap_alloc_oom_void(err_check, err);
     quot->n = x->n; uint64_t remainder = 0; uint8_t ovf_test;
-    for (size_t i = x->n - 1; i != (size_t)-1; --i) {
-        quot->limbs[i] = __DIV_HELPER_UI64__(remainder, x->limbs[i], val, &remainder, &ovf_test);
+    for (size_t i = x->n; i > 0; --i) {
+        quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, x->limbs[i - 1], val, &remainder, &ovf_test);
         DNML_TEST_ASSERT(ovf_test, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", clear_arena);
-    }
-    *rem = remainder;
-    bigInt_normalize(quot);
+    } *rem = remainder; bigInt_normalize(quot);
 }
 /* --------------- MAGNITUDED CORE NUMBER-THEORETIC ---------------- */
 static inline uint64_t ___GCD_UI64___(const uint64_t a, const uint64_t b) { return __BIGINT_EUCLID__(a, b); }
@@ -1661,8 +1658,8 @@ static void __BIGINT_MAGLCM__(bigInt *res, const bigInt *a, const bigInt *b, dnm
 }
 static void __BIGINT_MAGEMOD_U64__(uint64_t* res, const bigInt *a, const uint64_t mod) {
     uint64_t curr_rem = 0; uint8_t ovf_test;
-    for (size_t i = a->n - 1; i != (size_t)-1; --i) {
-        uint64_t tmp_quot = __DIV_HELPER_UI64__(a->limbs[i], curr_rem, mod, &curr_rem, &ovf_test);
+    for (size_t i = a->n; i > 0; --i) {
+        uint64_t tmp_quot = __DIV_HELPER_UI64__(a->limbs[i - 1], curr_rem, mod, &curr_rem, &ovf_test);
         DNML_TEST_ASSERT(ovf_test, "CRITICIAL DEBUG ERROR: Division quotient's overflowed", clear_arena);
     } *res = curr_rem;
 }
