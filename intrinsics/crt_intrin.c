@@ -54,10 +54,10 @@ uint8_t _lib_crt_isneg(int64_t x) {
     return (*_libdnml_crt_cmp_ftable.is_neg)(x);
 }
 uint8_t _lib_crt_neq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.eq_func)(x, y);
+    return (*_libdnml_crt_cmp_ftable.neq_func)(x, y);
 }
 uint8_t _lib_crt_eq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.neq_func)(x, y);
+    return (*_libdnml_crt_cmp_ftable.eq_func)(x, y);
 }
 uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
     return (*_libdnml_crt_cmp_ftable.select_fn)(cond, a, b);

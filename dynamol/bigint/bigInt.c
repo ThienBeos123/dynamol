@@ -274,10 +274,13 @@ bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err) {
     if (bigInt_snew(&res, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
     memcpy(res.limbs, x.limbs, x.n * U64_BYTES); res.n = x.n; res.sign = x.sign;
     __BIGINT_INTERNAL_LLSHIFT__(&res, limb_shift);
-    if (bshift) for (size_t i = limb_shift; i < x.n; ++i) {
-        res.limbs[i] = (x.limbs[i] << bshift) | discarded_bits;
+    if (bshift) {
         uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
-        discarded_bits = (x.limbs[i] >> (U64_BITS - bshift)) & iso_mask;
+        for (size_t i = limb_shift; i < x.n; ++i) {
+            uint64_t next_discarded = (x.limbs[i] >> (U64_BITS - bshift)) & iso_mask;
+            res.limbs[i] = (x.limbs[i] << bshift) | discarded_bits;
+            discarded_bits = next_discarded;
+        } 
     } bigInt_normalize(&res); *err = BIGINT_SUCCESS; return res;
 }
 bigInt bigInt_lshiftg(const bigInt x, size_t k, dnml_status *err) {
@@ -291,10 +294,13 @@ bigInt bigInt_lshiftg(const bigInt x, size_t k, dnml_status *err) {
     if (bigInt_snew(&res, alloc_cap) == DNML_ALLOC_OOM) func_ret_oom(err);
     for (size_t i = 0; i < x.n; ++i) res.limbs[i + limb_shift] = x.limbs[i];
     res.n = alloc_cap; res.sign = x.sign;
-    if (bshift) for (size_t i = limb_shift; i < res.n; ++i) {
-        uint64_t new_carry = res.limbs[i] >> (U64_BITS - bshift);
-        res.limbs[i] = (res.limbs[i] << bshift) | discarded_bits;
-        discarded_bits = new_carry;
+    if (bshift) {
+        uint64_t iso_mask = (UINT64_C(1) << k) - 1;
+        for (size_t i = limb_shift; i < res.n; ++i) {
+            uint64_t new_carry = (res.limbs[i] >> (U64_BITS - bshift)) & iso_mask;
+            res.limbs[i] = (res.limbs[i] << bshift) | discarded_bits;
+            discarded_bits = new_carry;
+        }
     } bigInt_normalize(&res); *err = BIGINT_SUCCESS; return res;
 }
 dnml_status bigInt_mut_not(bigInt *x) {
@@ -320,10 +326,13 @@ dnml_status bigInt_mut_lshift(bigInt *x, size_t k) {
     test_assert(bigInt_pvalidate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
     uint64_t discarded_bits = 0; __BIGINT_INTERNAL_LLSHIFT__(x, limb_shift);
-    if (bshift) for (size_t i = limb_shift; i < x->n; ++i) {
-        x->limbs[i] = (x->limbs[i] << bshift) | discarded_bits;
+    if (bshift) {
         uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
-        discarded_bits = x->limbs[i] & (iso_mask << (U64_BITS - bshift));
+        for (size_t i = limb_shift; i < x->n; ++i) {
+            uint64_t next_carry = (x->limbs[i] >> (U64_BITS - bshift)) & iso_mask;
+            x->limbs[i] = (x->limbs[i] << bshift) | discarded_bits;
+            discarded_bits = next_carry;
+        } 
     } bigInt_normalize(x); return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_lshiftg(bigInt *x, size_t k) {
@@ -334,10 +343,13 @@ dnml_status bigInt_mut_lshiftg(bigInt *x, size_t k) {
     size_t alloc_cap = (x->n + limb_shift + !!(bshift));
     if (bigInt_reserve(x, alloc_cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
     __BIGINT_INTERNAL_LLSHIFT__(x, limb_shift); x->n = alloc_cap;
-    if (bshift) for (size_t i = limb_shift; i < x->n; ++i) {
-        uint64_t new_carry = x->limbs[i] >> (U64_BITS - bshift);
-        x->limbs[i] = (x->limbs[i] << bshift) | discarded_bits;
-        discarded_bits = new_carry;
+    if (bshift) {
+        uint64_t iso_mask = (UINT64_C(1) << k) - 1;
+        for (size_t i = limb_shift; i < x->n; ++i) {
+            uint64_t next_carry = (x->limbs[i] >> (U64_BITS - bshift)) & iso_mask;
+            x->limbs[i] = (x->limbs[i] << bshift) | discarded_bits;
+            discarded_bits = next_carry;
+        }
     } bigInt_normalize(x); return BIGINT_SUCCESS;
 }
 /* ------------- Mutative, Fixed-width ------------- */

@@ -465,42 +465,27 @@ static int8_t __CRINT_MAGCMP__(crint *x, crint *y) {
     DNML_TEST_ASSERT((x->poisoned), crint_poisoned, { crint_free(x); });
     /* Main Operation - Comparison */
     // We set ret to 2 as a safety mask to check if ret is previously set or not
-    int8_t ret = 2, curr = 0;
-    // Check 1: if (x->n > y->n) return 1;
-    CHOOSE_OPTION((curr), (_lib_crt_gt(x->n, y->n)), (1), (0));
-    CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
-    // Check 2: if (x->n < y->n) return -1;
-    CHOOSE_OPTION((curr), (_lib_crt_lt(x->n, y->n)), (-1), (0));
-    CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
-    // Check 3: Sequential checks
-    size_t upperbound = crtmax(x->cap, y->cap);
-    uint64_t x_curr, y_curr;
-    for (size_t i = upperbound - 1; _lib_crt_neq(i, -1); --i) {
-        /*
-        * Guarantees that each iteration always access an index to normalize timing
-        * We universally chosen the first limb of each crint as a placeholder
-        * with not semantic meaning
-        */
-        CHOOSE_OPTION((x_curr), (_lib_crt_lt(i, x->cap)), (x->limbs[i]), (x->limbs[0]));
-        CHOOSE_OPTION((x_curr), (_lib_crt_lt(i, x->cap)), (y->limbs[i]), (y->limbs[0]));
-        // Actually Getting the right value
-        CHOOSE_OPTION((x_curr), (_lib_crt_lt(i, x->n)), (x_curr), (0));
-        CHOOSE_OPTION((y_curr), (_lib_crt_lt(i, y->n)), (y_curr), (0));
-        // Comparing values
-        /*
-        * If our x_curr == x->limbs[i], in which i > y->n,
-        * then such case was already covered above in our pre-checks
-        * due to the fact that _lib_crt_gt(x->n, y->n). This also works inversely for y
-        */
-       CHOOSE_OPTION((curr), (_lib_crt_gt(x_curr, y_curr)), (1), (0));
-       CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
-       CHOOSE_OPTION((curr), (_lib_crt_lt(x_curr, y_curr)), (-1), (0));
-       CHOOSE_OPTION((ret), (!(!curr) & (_lib_crt_eq(ret, 2))), (curr), (ret));
+    int8_t ret = 2;
+    // 1st, 2nd check, testing metadata
+    ret = (int8_t)_lib_crt_select(_lib_crt_gt(x->n, y->n), 1, ret);
+    ret = (int8_t)_lib_crt_select(_lib_crt_lt(x->n, y->n), -1, ret);
+    size_t upperbound = crtmax(x->n, y->n); uint64_t x_curr, y_curr;
+    for (size_t i = upperbound; _lib_crt_gt(i, 0); --i) {
+        x_curr = _lib_crt_select(_lib_crt_lt(i - 1, x->cap), x->limbs[i - 1], x->limbs[0]);
+        y_curr = _lib_crt_select(_lib_crt_lt(i - 1, y->cap), y->limbs[i - 1], y->limbs[0]);
+        x_curr = _lib_crt_select(_lib_crt_lt(i - 1, x->n), x_curr, 0);
+        y_curr = _lib_crt_select(_lib_crt_lt(i - 1, y->n), y_curr, 0);
+        /* Evaluating if x_curr > y_curr AND vice versa */
+        int8_t limb_diff = 0;
+        limb_diff = (int8_t)_lib_crt_select(_lib_crt_gt(x_curr, y_curr), 1, limb_diff);
+        limb_diff = (int8_t)_lib_crt_select(_lib_crt_lt(x_curr, y_curr), -1, limb_diff);
+        /* Mutating and modifiying ret based on limb_diff */
+        int8_t next_value = (int8_t)_lib_crt_select(_lib_crt_neq(limb_diff, 0), limb_diff, ret);
+        ret = (int8_t)_lib_crt_select(_lib_crt_eq(ret, 2), next_value, ret); // clang-format off
+        limb_diff = 0; next_value = 0; // clang-format on
     }
-    // ALL CHECKS WEREN'T SATIFIES --> EQUAL
-    CHOOSE_OPTION((ret), (_lib_crt_eq(ret, 2)), (0), (ret));
-    /* Aggresive Memory Sanitization */ // clang-format off
-    curr = 0; upperbound = 0; x_curr = 0; y_curr = 0; x = 0; y = 0; return ret; // clang-format on
+    ret = (int8_t)_lib_crt_select(_lib_crt_eq(ret, 2), 0, ret); // clang-format off
+    upperbound = 0; x_curr = 0; y_curr = 0; x = NULL; y = NULL; return ret; // clang-format on
 }
 /* ---------------- Integer - I64 ---------------- */
 bool crint_equal_i64(crint x, int64_t val, dnml_status *err) {

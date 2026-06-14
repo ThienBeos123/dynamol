@@ -107,8 +107,8 @@ size_t __BIGINT_CTZ__(const bigInt *x) {
 /* Internal Arithmetic */
 int8_t __BIGINT_INTERNAL_COMP__(const bigInt *x, const bigInt *y) {
     if (x->n != y->n) return (x->n > y->n) ? 1 : -1;
-    for (size_t i = x->n - 1; i != (size_t)-1; --i) {
-        if (x->limbs[i] != y->limbs[i]) return (x->limbs[i] > y->limbs[i]) ? 1 : -1;
+    for (size_t i = x->n; i > 0; --i) {
+        if (x->limbs[i - 1] != y->limbs[i - 1]) return (x->limbs[i - 1] > y->limbs[i - 1]) ? 1 : -1;
     } return 0;
 }
 uint8_t __BIGINT_IS_EVEN__(const bigInt *x) { return !(x->limbs[0] & 1); }
@@ -173,12 +173,16 @@ void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) { // Assumes k < 64
     } __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k) { // Assumes k < 64
-    if (!k) return; uint64_t discarded_bits = 0;
+    if (!k) return; 
+    uint64_t discarded_bits = 0;
+    uint64_t iso_mask = (UINT64_C(1) << k) - 1;
     for (size_t i = 0; i < x->n; ++i) {
+        uint64_t next_discarded = (x->limbs[i] >> (U64_BITS - k)) & iso_mask;
         x->limbs[i] = (x->limbs[i] << k) | discarded_bits;
-        uint64_t iso_mask = (UINT64_C(1) << k) - 1;
-        discarded_bits = (x->limbs[i] >> (U64_BITS - k)) & iso_mask;
-    } if (discarded_bits) x->limbs[x->n++] = discarded_bits;
+        discarded_bits = next_discarded;
+    } 
+    // Append the final overflow carry limb if necessary
+    if (discarded_bits) x->limbs[x->n++] = discarded_bits;
     __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs) {
