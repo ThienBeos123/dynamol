@@ -73,8 +73,8 @@ uint8_t _prefix_handle_stream__(FILE* stream, uint8_t *base, uint16_t *curr_char
 size_t __BITCOUNT___(size_t digit_count, uint8_t base);
 uint8_t __BASEN_DCOUNT__(uint64_t val, uint8_t base);
 uint64_t __MAG_I64__(int64_t val);
-uint64_t _stou64(const char *buf, size_t buflen);
-int _itosn(uint64_t x, char *buf, int buflen);
+// uint64_t _stou64(const char *buf, size_t buflen);
+// int _itosn(uint64_t x, char *buf, int buflen);
 uint64_t _dnml_ipower_u64(uint64_t base, uint8_t power);
 
 

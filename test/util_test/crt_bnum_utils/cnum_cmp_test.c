@@ -37,7 +37,7 @@ static limb_t c_1_1[2]  = { UINT64_C(0x0000000000000001), UINT64_C(0x00000000000
 static limb_t c_f_f[2]  = { UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF) };
 static limb_t c_seq[3]  = { UINT64_C(0x0000000000000001), UINT64_C(0x0000000000000002), UINT64_C(0x0000000000000003) };
 static limb_t c_alt[3]  = { UINT64_C(0xAAAAAAAAAAAAAAAA), UINT64_C(0x5555555555555555), UINT64_C(0xAAAAAAAAAAAAAAAA) };
-static const cmp_case_t cases[] = {
+static const cmp_case_t cases[60] = {
     { { 0, 1, c_zero, 1 },  { 0, 1, c_zero, 1 },  0 }, // 0
     { { 0, 1, c_zero, 1 },  { 1, 1, c_one, 1 },  -1 }, // 1
     { { 1, 1, c_one, 1 },   { 0, 1, c_zero, 1 },   1 }, // 2
@@ -114,8 +114,7 @@ int main(void) { _libdnml_init();
     printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM MAGNITUDE COMPARISON   \n");
     printf("===================================================================\n");
     printf("---- __CRINT_INTERNAL_CMP__ -----\n");
-    int num_cases = sizeof(cases) / sizeof(cmp_case_t);
-    for (int i = 0; i < num_cases; i++) { total_tests++;
+    for (int i = 0; i < 60; i++) { total_tests++;
         const cmp_case_t *c = &cases[i];
         memset(x_buf, 0, max_limbs * sizeof(limb_t));
         memset(y_buf, 0, max_limbs * sizeof(limb_t));

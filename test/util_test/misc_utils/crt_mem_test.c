@@ -28,6 +28,7 @@ limitations under the License.
 
 
 int main(void) { _libdnml_init();
-    // code here ...
+    
+
     _libdnml_cleanup(); return 0;
 }

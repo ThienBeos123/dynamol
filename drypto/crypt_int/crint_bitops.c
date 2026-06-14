@@ -231,15 +231,10 @@ dnml_status crint_mut_rshift(crint *x, size_t k) {
         CHOOSE_OPTION((carry_in), (_lib_crt_lt(i - 1, x->n)), (dbit_calc), (carry_in));
         CHOOSE_OPTION((*dst), (_lib_crt_lt(i - 1, x->n)), (dst_val), (curr_dval));
         index = 0; positioned_bits = 0; dbit_calc = 0; dst_val = 0; curr_dval = 0;
-    }
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
-    crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
-    norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint);
+    } crint_normalize(x);
     /* Aggrestive, Post-operation Cleanup */ // clang-format off
-    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; carry_in = 0; norm_crint = 0;
-    fake_normalized.limbs = 0; fake_normalized. n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
-    fake_normalized.poisoned = 0; x = 0; k = 0; return ret_stat; // clang-format on
+    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; carry_in = 0; 
+    x = 0; k = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_lshift(crint *x, size_t k) {
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});

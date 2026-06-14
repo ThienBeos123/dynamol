@@ -36,10 +36,10 @@ extern "C" {
 #define SIGN_BIT_MASK UINT64_C(0x8000000000000000)
 
 /* Precomputation */
-#define log2_10 3.322
-#define log2_16 4
-#define log2_2  1
-#define log2_8  3
+#define log2_10 3.32192809489L
+#define log2_16 4.00000000000L
+#define log2_2  1.00000000000L
+#define log2_8  3.00000000000L
 
 //*========================================== Thresholds //*========================================== *//
 /* String Parsing */

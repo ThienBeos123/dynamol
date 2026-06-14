@@ -186,13 +186,14 @@ void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k) { // Assumes k < 64
     __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs) {
+    if (!klimbs) return;
     if (klimbs >= x->n) { __BIGINT_INTERNAL_ZSET__(x); return; }
     memcpy(x->limbs, (x->limbs + klimbs), (x->n - klimbs) * U64_BYTES);
     x->n -= klimbs; __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
 }
 void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs) {
+    if (!klimbs || !x->n) return;
     if (klimbs >= x->cap) { __BIGINT_INTERNAL_ZSET__(x); return; }
-    if (x->n == 0) return;
     size_t moved = (x->n + klimbs > x->cap) ? x->cap - klimbs : x->n;
     memmove(x->limbs + klimbs, x->limbs, moved * U64_BYTES);
     x->n = (x->n + klimbs > x->cap) ? x->cap : x->n + klimbs;

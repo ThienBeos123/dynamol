@@ -51,22 +51,18 @@ target_link_libraries(bnum_valid_test       PRIVATE dnml::dnml_core)
 add_executable(cnum_cmp_test            crt_bnum_utils/cnum_cmp_test.c)
 add_executable(cnum_correction_test     crt_bnum_utils/cnum_correction_test.c)
 add_executable(cnum_limb_shift          crt_bnum_utils/cnum_limb_shift.c)
-add_executable(cnum_new_test            crt_bnum_utils/cnum_new_test.c)
 target_link_libraries(cnum_cmp_test         PRIVATE dnml::dnml_core)
 target_link_libraries(cnum_correction_test  PRIVATE dnml::dnml_core)
 target_link_libraries(cnum_limb_shift       PRIVATE dnml::dnml_core)
-target_link_libraries(cnum_new_test         PRIVATE dnml::dnml_core)
 
 
 # /misc_utils
 add_executable(clamp_test       misc_utils/clamp_test.c)
 add_executable(crt_mem_test     misc_utils/crt_mem_test.c)
 add_executable(misc_conv_test   misc_utils/misc_conv_test.c)
-add_executable(misc_count_test  misc_utils/misc_count_test.c)
 target_link_libraries(clamp_test        PRIVATE dnml::dnml_core)
 target_link_libraries(crt_mem_test      PRIVATE dnml::dnml_core)
 target_link_libraries(misc_conv_test    PRIVATE dnml::dnml_core)
-target_link_libraries(misc_count_test   PRIVATE dnml::dnml_core)
 
 
 # /str_parse

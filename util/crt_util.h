@@ -41,19 +41,29 @@ extern "C" {
 
 
 /* crt_misc_util.c */
-NO_INLINE void __libdnml_memset_strict(volatile void *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop);
-NO_INLINE void __libdnml_memwipe_strict(volatile void *buf, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_memset_strict(volatile void *dst, uint8_t val, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_memwipe_strict(volatile void *dst, size_t len, size_t start, size_t end, bool noop);
 NO_INLINE void __libdnml_memcpy_strict(
-    volatile void *buf, const void* src, 
+    volatile void *dst, const void* src, 
     size_t len, size_t srclen, 
     size_t start, size_t end, bool noop
 );
-NO_INLINE void __libdnml_smemset_u64(volatile uint64_t *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop);
-NO_INLINE void __libdnml_smemwipe_u64(volatile uint64_t *buf, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_memmove_strict(
+    volatile void *dst, size_t cap,
+    size_t dst_start, size_t src_start, 
+    size_t len, bool noop
+);
+NO_INLINE void __libdnml_smemset_u64(volatile uint64_t *dst, uint8_t val, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_smemwipe_u64(volatile uint64_t *dst, size_t len, size_t start, size_t end, bool noop);
 NO_INLINE void __libdnml_smemcpy_u64(
     volatile uint64_t *dst, uint64_t *src,
     size_t len, size_t srclen,
     size_t start, size_t end, bool noop
+);
+NO_INLINE void __libdnml_smemmove_u64(
+    volatile uint64_t *dst, size_t cap,
+    size_t dst_start, size_t src_start, 
+    size_t len, bool noop
 );
 uint64_t __CRT_MAG_I64__(int64_t x);
 size_t __clamp_size(size_t cap, size_t insize);
