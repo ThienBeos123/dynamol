@@ -44,20 +44,15 @@ NO_INLINE void __libdnml_memcpy_strict(
     volatile uint8_t *p = (uint8_t*)dst; uint8_t *ps = (uint8_t*)src;
     size_t opsize = crtmax(len, srclen);
     for (size_t i = 0; i < opsize; ++i) {
-        uint8_t curr, src_curr; size_t index;
-        CHOOSE_OPTION((curr), (i >= len), (p[i]), (p[len - 1]));
-        CHOOSE_OPTION((src_curr), (i >= srclen), (ps[i]), (0));
-        CHOOSE_OPTION((index), (i >= len), (i), (len - 1))
-        CHOOSE_OPTION((p[index]),
-            ((i >= start) & (i <= end) &
-            (!noop) & (i < len)),
-            (src_curr), (curr)
-        ); // clang-format off
-        curr = 0; src_curr = 0; index = 0;
+        size_t dst_idx = _lib_crt_select(_lib_crt_lt(i, len), i, 0);
+        size_t src_idx = _lib_crt_select(_lib_crt_lt(i, srclen), i, 0);
+        uint8_t curr = p[dst_idx], src_curr = ps[src_idx];
+        CHOOSE_OPTION((p[dst_idx]), ((i >= start) & (i <= end) & (!noop) & (i < len) & (i < srclen)), (src_curr), (curr));
+        curr = 0; src_curr = 0; dst_idx = 0; src_idx = 0;
     }
     /* Aggresive Post-operation Cleanup */
     opsize = 0; p = 0; ps = 0; dst = 0; src = 0;
-    len = 0; len = 0; srclen = 0; start = 0; end = 0; noop = 0; // clang-format on
+    len = 0; srclen = 0; start = 0; end = 0; noop = 0; // clang-format on
 }
 NO_INLINE void __libdnml_memmove_strict(
     volatile void *dst, size_t cap, size_t dst_start,
@@ -102,13 +97,13 @@ NO_INLINE void __libdnml_memmove_strict(
 
 NO_INLINE void __libdnml_smemset_u64(volatile uint64_t *dst, uint8_t val, size_t len, size_t start, size_t end, bool noop) {
     size_t instart = start * U64_BYTES;
-    size_t inend; CHOOSE_OPTION((inend), (end), ((end - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
+    size_t inend; CHOOSE_OPTION((inend), (_lib_crt_lt(end, 1)), (U64_BYTES), ((end * U64_BYTES + (U64_BYTES - 1))));
     __libdnml_memset_strict(dst, val, len * U64_BYTES, instart, inend, noop); // clang-format off
     instart = 0; inend = 0; dst = 0; val = 0; len = 0; start = 0; end = 0; noop = 0; // clang-format on
 }
 NO_INLINE void __libdnml_smemwipe_u64(volatile uint64_t *dst, size_t len, size_t start, size_t end, bool noop) {
     size_t instart = start * U64_BYTES;
-    size_t inend; CHOOSE_OPTION((inend), (end), ((end - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
+    size_t inend; CHOOSE_OPTION((inend), (_lib_crt_lt(end, 1)), (U64_BYTES), ((end * U64_BYTES + (U64_BYTES - 1))));
     __libdnml_memwipe_strict(dst, len * U64_BYTES, instart, inend, noop); // clang-format on
     instart = 0; inend = 0; dst = 0; len = 0; start = 0; end = 0; noop = 0; // clang-format off
 }
@@ -118,7 +113,7 @@ NO_INLINE void __libdnml_smemcpy_u64(
     size_t start, size_t end, bool noop
 ) {
     size_t instart = start * U64_BYTES;
-    size_t inend; CHOOSE_OPTION((inend), (end), ((end - 1) * U64_BYTES + (U64_BYTES - 1)), (0));
+    size_t inend; CHOOSE_OPTION((inend), (_lib_crt_lt(end, 1)), (U64_BYTES), ((end * U64_BYTES + (U64_BYTES - 1))));
     __libdnml_memcpy_strict(dst, src, len * U64_BYTES, srclen * U64_BYTES, instart, inend, noop); // clang-format off
     instart = 0; inend = 0; dst = 0; src = 0; len = 0; srclen = 0; start = 0; end = 0; noop = 0; // clang-format on
 }

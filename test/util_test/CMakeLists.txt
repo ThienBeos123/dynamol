@@ -57,11 +57,13 @@ target_link_libraries(cnum_limb_shift       PRIVATE dnml::dnml_core)
 
 
 # /misc_utils
-add_executable(clamp_test       misc_utils/clamp_test.c)
+add_executable(crt_conv_test    misc_utils/crt_conv_test.c)
 add_executable(crt_mem_test     misc_utils/crt_mem_test.c)
+add_executable(crt_u64mem_test  misc_utils/crt_u64mem_test.c)
 add_executable(misc_conv_test   misc_utils/misc_conv_test.c)
-target_link_libraries(clamp_test        PRIVATE dnml::dnml_core)
+target_link_libraries(crt_conv_test     PRIVATE dnml::dnml_core)
 target_link_libraries(crt_mem_test      PRIVATE dnml::dnml_core)
+target_link_libraries(crt_u64mem_test   PRIVATE dnml::dnml_core)
 target_link_libraries(misc_conv_test    PRIVATE dnml::dnml_core)
 
 

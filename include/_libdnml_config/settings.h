@@ -25,7 +25,7 @@ limitations under the License.
 extern "C" {
 #endif
 
-#define _DNML_DEBUG_MODE 1
+#define _DNML_DEBUG_MODE 0
 
 #if _DNML_DEBUG_MODE
     #undef NDEBUG

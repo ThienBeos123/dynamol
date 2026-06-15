@@ -23,91 +23,11 @@ limitations under the License.
 #include <libdnml_types.h>
 // Memory Management and Algorithmic core
 #include <_libdnml_config/numeric_config.h>
-#include "../../../util/util.h"
 #include "../../../util/crt_util.h"
 #include "../../../libdnml_base.h"
-typedef struct { size_t digit_cnt; uint8_t base; size_t exp; } bcnt_case_t;
-typedef struct { uint64_t val; uint8_t base; uint8_t exp; } basen_case_t;
 typedef struct { int64_t val; uint64_t exp; } mag_case_t;
-
-//* ============== GLOBAL ARRAY OF CASES ============== *//
-static const bcnt_case_t bcnt_cases[100] = {
-    { 0, 2, 0 }, { 1, 2, 1 }, { 2, 2, 2 }, { 3, 2, 3 }, { 4, 2, 4 },
-    { 8, 2, 8 }, { 16, 2, 16 }, { 32, 2, 32 }, { 64, 2, 64 }, { 128, 2, 128 },
-    { 0, 8, 0 }, { 1, 8, 3 }, { 2, 8, 6 }, { 3, 8, 9 }, { 4, 8, 12 },
-    { 8, 8, 24 }, { 16, 8, 48 }, { 32, 8, 96 }, { 64, 8, 192 }, { 128, 8, 384 },
-    // Base 10 corrected upperbounds (ceill(cnt * log2(10)))
-    { 0, 10, 0 }, { 1, 10, 4 }, { 2, 10, 7 }, { 3, 10, 10 }, { 4, 10, 14 },
-    { 5, 10, 17 }, { 6, 10, 20 }, { 7, 10, 24 }, { 8, 10, 27 }, { 9, 10, 30 },
-    { 10, 10, 34 }, { 11, 10, 37 }, { 12, 10, 40 }, { 13, 10, 44 }, { 14, 10, 47 },
-    { 15, 10, 50 }, { 16, 10, 54 }, { 20, 10, 67 }, { 64, 10, 213 },
-    { 0, 16, 0 }, { 1, 16, 4 }, { 2, 16, 8 }, { 3, 16, 12 }, { 4, 16, 16 },
-    { 8, 16, 32 }, { 16, 16, 64 }, { 32, 16, 128 }, { 64, 16, 256 }, { 128, 16, 512 },
-    // Arbitrary Bases Upperbounds corrected
-    { 1, 3, 2 }, { 2, 3, 4 }, { 5, 3, 8 }, { 10, 3, 16 }, { 20, 3, 32 },
-    { 50, 3, 80 }, { 1, 4, 2 }, { 2, 4, 4 }, { 10, 4, 20 }, { 20, 4, 40 },
-    { 1, 5, 3 }, { 5, 5, 12 }, { 10, 5, 24 }, { 20, 5, 47 }, { 1, 6, 3 },
-    { 10, 6, 26 }, { 20, 6, 52 }, { 1, 7, 3 }, { 10, 7, 29 }, { 20, 7, 57 },
-    { 1, 9, 4 }, { 10, 9, 32 }, { 20, 9, 64 }, { 1, 11, 4 }, { 10, 11, 35 },
-    { 20, 11, 70 }, { 1, 12, 4 }, { 10, 12, 36 }, { 20, 12, 72 }, { 1, 20, 5 },
-    { 10, 20, 44 }, { 20, 20, 87 }, { 1, 32, 5 }, { 10, 32, 50 }, { 20, 32, 100 },
-    { 1, 64, 6 }, { 10, 64, 60 }, { 20, 64, 120 }, { 100, 2, 100 }, { 100, 8, 300 },
-    { 100, 16, 400 }, { 100, 10, 333 }, { 1000, 2, 1000 }, { 1000, 8, 3000 }, { 1000, 16, 4000 },
-    { 1000, 10, 3322 }, { 500, 2, 500 }, { 500, 8, 1500 }, { 500, 16, 2000 }, { 500, 10, 1661 }
-};
-
-static const basen_case_t basen_cases[100] = {
-    { UINT64_C(1), 10, 1 }, { UINT64_C(9), 10, 1 },
-    { UINT64_C(10), 10, 2 }, { UINT64_C(99), 10, 2 },
-    { UINT64_C(100), 10, 3 }, { UINT64_C(999), 10, 3 },
-    { UINT64_C(1000), 10, 4 }, { UINT64_C(9999), 10, 4 },
-    { UINT64_C(10000), 10, 5 }, { UINT64_C(99999), 10, 5 },
-    { UINT64_C(100000), 10, 6 }, { UINT64_C(999999), 10, 6 },
-    { UINT64_C(1000000), 10, 7 }, { UINT64_C(9999999), 10, 7 },
-    { UINT64_C(10000000), 10, 8 }, { UINT64_C(99999999), 10, 8 },
-    { UINT64_C(100000000), 10, 9 }, { UINT64_C(999999999), 10, 9 },
-    { UINT64_C(1000000000), 10, 10 }, { UINT64_C(9999999999), 10, 10 },
-    { UINT64_C(10000000000), 10, 11 }, { UINT64_C(99999999999), 10, 11 },
-    { UINT64_C(100000000000), 10, 12 }, { UINT64_C(999999999999), 10, 12 },
-    { UINT64_C(1000000000000), 10, 13 }, { UINT64_C(10000000004095), 10, 14 },
-    { UINT64_C(100000000000000), 10, 15 }, { UINT64_C(999999999999999), 10, 15 },
-    { UINT64_C(1000000000000000), 10, 16 }, { UINT64_C(9999999999999999), 10, 16 },
-    { UINT64_C(10000000000000000), 10, 17 }, { UINT64_C(10000000000000000), 10, 17 },
-    { UINT64_C(100000000000000000), 10, 18 }, { UINT64_C(16000000000000000000), 10, 20 },
-    { UINT64_C(0xFFFFFFFFFFFFFFFF), 10, 20 }, { UINT64_C(1), 2, 1 },
-    { UINT64_C(2), 2, 2 }, { UINT64_C(3), 2, 2 },
-    { UINT64_C(4), 2, 3 }, { UINT64_C(7), 2, 3 },
-    { UINT64_C(8), 2, 4 }, { UINT64_C(15), 2, 4 },
-    { UINT64_C(16), 2, 5 }, { UINT64_C(127), 2, 7 },
-    { UINT64_C(128), 2, 8 }, { UINT64_C(255), 2, 8 },
-    { UINT64_C(260), 2, 9 }, { UINT64_C(0x000000000000FFFF), 2, 16 },
-    { UINT64_C(0x0000000000010000), 2, 17 }, { UINT64_C(0x00000000FFFFFFFF), 2, 32 },
-    { UINT64_C(0x0000000100000000), 2, 33 }, { UINT64_C(0x7FFFFFFFFFFFFFFF), 2, 63 },
-    { UINT64_C(0x8000000000000000), 2, 64 }, { UINT64_C(0xFFFFFFFFFFFFFFFF), 2, 64 },
-    { UINT64_C(1), 16, 1 }, { UINT64_C(15), 16, 1 },
-    { UINT64_C(16), 16, 2 }, { UINT64_C(255), 16, 2 },
-    { UINT64_C(256), 16, 3 }, { UINT64_C(0x000000000000FFF0), 16, 4 },
-    { UINT64_C(0x000000000000FFFF), 16, 4 }, { UINT64_C(0x0000000000010000), 16, 5 },
-    { UINT64_C(0x00000000FFFFFFFF), 16, 8 }, { UINT64_C(0x0000000100000000), 16, 9 },
-    { UINT64_C(0xFFFFFFFFFFFFFFFF), 16, 16 }, { UINT64_C(1), 8, 1 },
-    { UINT64_C(7), 8, 1 }, { UINT64_C(8), 8, 2 },
-    { UINT64_C(63), 8, 2 }, { UINT64_C(64), 8, 3 },
-    { UINT64_C(0x00000000000001FF), 8, 3 }, { UINT64_C(0x0000000000000200), 8, 4 },
-    { UINT64_C(0xFFFFFFFFFFFFFFFF), 8, 22 }, { UINT64_C(5), 5, 2 },
-    { UINT64_C(24), 5, 2 }, { UINT64_C(25), 5, 3 },
-    { UINT64_C(124), 5, 3 }, { UINT64_C(125), 5, 4 },
-    { UINT64_C(0xFFFFFFFFFFFFFFFF), 5, 28 }, { UINT64_C(3), 3, 2 },
-    { UINT64_C(8), 3, 2 }, { UINT64_C(9), 3, 3 },
-    { UINT64_C(26), 3, 3 }, { UINT64_C(27), 3, 4 },
-    { UINT64_C(0xFFFFFFFFFFFFFFFF), 3, 41 }, { UINT64_C(32), 32, 2 },
-    { UINT64_C(0x00000000000003FF), 32, 2 }, { UINT64_C(0x0000000000000400), 32, 3 },
-    { UINT64_C(0xFFFFFFFFFFFFFFFF), 32, 13 }, { UINT64_C(64), 64, 2 },
-    { UINT64_C(0x0000000000000FFF), 64, 2 }, { UINT64_C(0x0000000000001000), 64, 3 },
-    { UINT64_C(0xFFFFFFFFFFFFFFFF), 64, 11 }, { UINT64_C(10), 10, 2 },
-    { UINT64_C(100), 10, 3 }, { UINT64_C(1000), 10, 4 },
-    { UINT64_C(10000), 10, 5 }, { UINT64_C(100000), 10, 6 },
-    { UINT64_C(1000000), 10, 7 }, { UINT64_C(10000000), 10, 8 }
-};
+typedef struct { size_t cap, insize; size_t exp; } clamp_case_t;
+//* ================ GLOBAL ARRAY OF CASES ================ *//
 static const mag_case_t mag_cases[100] = {
     { INT64_C(0x0000000000000000), UINT64_C(0x0000000000000000) }, /* 0 */
     { INT64_C(0x0000000000000001), UINT64_C(0x0000000000000001) }, /* 1 */
@@ -210,6 +130,117 @@ static const mag_case_t mag_cases[100] = {
     { INT64_C(0x000000174876E800), UINT64_C(0x000000174876E800) }, /* 98 */
     { INT64_C(0xFFFFFFE8B7891800), UINT64_C(0x000000174876E800) }  /* 99 */
 };
+static const clamp_case_t clamp_cases[100] = {
+    // ---- Group 1: Zero Conditions and Exact Match Boundaries (1 - 20) ----
+    { UINT64_C(0), UINT64_C(0), UINT64_C(0) },
+    { UINT64_C(0), UINT64_C(1), UINT64_C(0) },
+    { UINT64_C(1), UINT64_C(0), UINT64_C(0) },
+    { UINT64_C(1), UINT64_C(1), UINT64_C(1) },
+    { UINT64_C(1), UINT64_C(2), UINT64_C(1) },
+    { UINT64_C(2), UINT64_C(1), UINT64_C(1) },
+    { UINT64_C(2), UINT64_C(2), UINT64_C(2) },
+    { UINT64_C(2), UINT64_C(3), UINT64_C(2) },
+    { UINT64_C(3), UINT64_C(2), UINT64_C(2) },
+    { UINT64_C(3), UINT64_C(3), UINT64_C(3) },
+    { UINT64_C(3), UINT64_C(4), UINT64_C(3) },
+    { UINT64_C(4), UINT64_C(3), UINT64_C(3) },
+    { UINT64_C(4), UINT64_C(4), UINT64_C(4) },
+    { UINT64_C(4), UINT64_C(5), UINT64_C(4) },
+    { UINT64_C(5), UINT64_C(4), UINT64_C(4) },
+    { UINT64_C(5), UINT64_C(5), UINT64_C(5) },
+    { UINT64_C(5), UINT64_C(6), UINT64_C(5) },
+    { UINT64_C(10), UINT64_C(9), UINT64_C(9) },
+    { UINT64_C(10), UINT64_C(10), UINT64_C(10) },
+    { UINT64_C(10), UINT64_C(11), UINT64_C(10) },
+
+    // ---- Group 2: Low-Scale Variations and Bounds Steps (21 - 40) ----
+    { UINT64_C(16), UINT64_C(15), UINT64_C(15) },
+    { UINT64_C(16), UINT64_C(16), UINT64_C(16) },
+    { UINT64_C(16), UINT64_C(17), UINT64_C(16) },
+    { UINT64_C(32), UINT64_C(31), UINT64_C(31) },
+    { UINT64_C(32), UINT64_C(32), UINT64_C(32) },
+    { UINT64_C(32), UINT64_C(33), UINT64_C(32) },
+    { UINT64_C(64), UINT64_C(63), UINT64_C(63) },
+    { UINT64_C(64), UINT64_C(64), UINT64_C(64) },
+    { UINT64_C(64), UINT64_C(65), UINT64_C(64) },
+    { UINT64_C(128), UINT64_C(127), UINT64_C(127) },
+    { UINT64_C(128), UINT64_C(128), UINT64_C(128) },
+    { UINT64_C(128), UINT64_C(129), UINT64_C(128) },
+    { UINT64_C(256), UINT64_C(255), UINT64_C(255) },
+    { UINT64_C(256), UINT64_C(256), UINT64_C(256) },
+    { UINT64_C(256), UINT64_C(257), UINT64_C(256) },
+    { UINT64_C(512), UINT64_C(511), UINT64_C(511) },
+    { UINT64_C(512), UINT64_C(512), UINT64_C(512) },
+    { UINT64_C(512), UINT64_C(513), UINT64_C(512) },
+    { UINT64_C(1024), UINT64_C(1023), UINT64_C(1023) },
+    { UINT64_C(1024), UINT64_C(1024), UINT64_C(1024) },
+
+    // ---- Group 3: Symmetric Clamping Over-allocations (41 - 60) ----
+    { UINT64_C(1024), UINT64_C(1025), UINT64_C(1024) },
+    { UINT64_C(2048), UINT64_C(2047), UINT64_C(2047) },
+    { UINT64_C(2048), UINT64_C(2048), UINT64_C(2048) },
+    { UINT64_C(2048), UINT64_C(2049), UINT64_C(2048) },
+    { UINT64_C(4096), UINT64_C(4095), UINT64_C(4095) },
+    { UINT64_C(4096), UINT64_C(4096), UINT64_C(4096) },
+    { UINT64_C(4096), UINT64_C(4097), UINT64_C(4096) },
+    { UINT64_C(8192), UINT64_C(8191), UINT64_C(8191) },
+    { UINT64_C(8192), UINT64_C(8192), UINT64_C(8192) },
+    { UINT64_C(8192), UINT64_C(8193), UINT64_C(8192) },
+    { UINT64_C(16384), UINT64_C(16383), UINT64_C(16383) },
+    { UINT64_C(16384), UINT64_C(16384), UINT64_C(16384) },
+    { UINT64_C(16384), UINT64_C(16385), UINT64_C(16384) },
+    { UINT64_C(32768), UINT64_C(32767), UINT64_C(32767) },
+    { UINT64_C(32768), UINT64_C(32768), UINT64_C(32768) },
+    { UINT64_C(32768), UINT64_C(32769), UINT64_C(32768) },
+    { UINT64_C(65536), UINT64_C(65535), UINT64_C(65535) },
+    { UINT64_C(65536), UINT64_C(65536), UINT64_C(65536) },
+    { UINT64_C(65536), UINT64_C(65537), UINT64_C(65536) },
+    { UINT64_C(100000), UINT64_C(50000), UINT64_C(50000) },
+
+    // ---- Group 4: Asymmetric Interleaved Spans (61 - 80) ----
+    { UINT64_C(100000), UINT64_C(100000), UINT64_C(100000) },
+    { UINT64_C(100000), UINT64_C(200000), UINT64_C(100000) },
+    { UINT64_C(1000000), UINT64_C(999999), UINT64_C(999999) },
+    { UINT64_C(1000000), UINT64_C(1000000), UINT64_C(1000000) },
+    { UINT64_C(1000000), UINT64_C(1000001), UINT64_C(1000000) },
+    { UINT64_C(4294967295), UINT64_C(4294967294), UINT64_C(4294967294) },
+    { UINT64_C(4294967295), UINT64_C(4294967295), UINT64_C(4294967295) },
+    { UINT64_C(4294967295), UINT64_C(4294967296), UINT64_C(4294967295) },
+    { UINT64_C(4294967296), UINT64_C(4294967295), UINT64_C(4294967295) },
+    { UINT64_C(4294967296), UINT64_C(4294967296), UINT64_C(4294967296) },
+    { UINT64_C(4294967296), UINT64_C(4294967297), UINT64_C(4294967296) },
+    { UINT64_C(1000000000), UINT64_C(500000000), UINT64_C(500000000) },
+    { UINT64_C(1000000000), UINT64_C(1000000000), UINT64_C(1000000000) },
+    { UINT64_C(1000000000), UINT64_C(1500000000), UINT64_C(1000000000) },
+    { UINT64_C(1000000000000), UINT64_C(999999999999), UINT64_C(999999999999) },
+    { UINT64_C(1000000000000), UINT64_C(1000000000000), UINT64_C(1000000000000) },
+    { UINT64_C(1000000000000), UINT64_C(1000000000001), UINT64_C(1000000000000) },
+    { UINT64_C(1000000000000000), UINT64_C(500000000000000), UINT64_C(500000000000000) },
+    { UINT64_C(1000000000000000), UINT64_C(1000000000000000), UINT64_C(1000000000000000) },
+    { UINT64_C(1000000000000000), UINT64_C(2000000000000000), UINT64_C(1000000000000000) },
+
+    // ---- Group 5: Int64/UInt64 Maximum Boundaries & Extremes (81 - 100) ----
+    { UINT64_C(9223372036854775807), UINT64_C(9223372036854775806), UINT64_C(9223372036854775806) },
+    { UINT64_C(9223372036854775807), UINT64_C(9223372036854775807), UINT64_C(9223372036854775807) },
+    { UINT64_C(9223372036854775807), UINT64_C(9223372036854775808), UINT64_C(9223372036854775807) },
+    { UINT64_C(9223372036854775808), UINT64_C(9223372036854775807), UINT64_C(9223372036854775807) },
+    { UINT64_C(9223372036854775808), UINT64_C(9223372036854775808), UINT64_C(9223372036854775808) },
+    { UINT64_C(9223372036854775808), UINT64_C(9223372036854775809), UINT64_C(9223372036854775808) },
+    { UINT64_C(18446744073709551614), UINT64_C(18446744073709551613), UINT64_C(18446744073709551613) },
+    { UINT64_C(18446744073709551614), UINT64_C(18446744073709551614), UINT64_C(18446744073709551614) },
+    { UINT64_C(18446744073709551614), UINT64_C(18446744073709551615), UINT64_C(18446744073709551614) },
+    { UINT64_C(18446744073709551615), UINT64_C(0), UINT64_C(0) },
+    { UINT64_C(18446744073709551615), UINT64_C(1), UINT64_C(1) },
+    { UINT64_C(18446744073709551615), UINT64_C(1000), UINT64_C(1000) },
+    { UINT64_C(18446744073709551615), UINT64_C(1000000), UINT64_C(1000000) },
+    { UINT64_C(18446744073709551615), UINT64_C(18446744073709551614), UINT64_C(18446744073709551614) },
+    { UINT64_C(18446744073709551615), UINT64_C(18446744073709551615), UINT64_C(18446744073709551615) },
+    { UINT64_C(0), UINT64_C(18446744073709551615), UINT64_C(0) },
+    { UINT64_C(1), UINT64_C(18446744073709551615), UINT64_C(1) },
+    { UINT64_C(100), UINT64_C(18446744073709551615), UINT64_C(100) },
+    { UINT64_C(100000), UINT64_C(18446744073709551615), UINT64_C(100000) },
+    { UINT64_C(4294967296), UINT64_C(18446744073709551615), UINT64_C(4294967296) }
+};
 
 
 
@@ -218,38 +249,30 @@ int main(void) { _libdnml_init();
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     printf("===================================================================\n");
-    printf("          RUNNING INTEGRATED UNIT TESTS - MISC CONVERSIONS         \n");
+    printf("        RUNNING INTEGRATED UNIT TESTS - CRT MISC CONVERSIONS       \n");
     printf("===================================================================\n");
-    printf("---- __BITCOUNT___ -----\n");
-    for (int i = 0; i < 100; i++) { total_tests++;
-        const bcnt_case_t *curr_case = &bcnt_cases[i];
-        size_t res = __BITCOUNT___(curr_case->digit_cnt, curr_case->base);
-        if (res == curr_case->exp) passed_tests++;
-        else printf(
-            "[FAIL] __BITCOUNT___    | case %-2d | digit_cnt: %-20zu base: %-2" PRIu8 " | res: %8zu | exp: %8zu\n",
-            i, curr_case->digit_cnt, curr_case->base, res, curr_case->exp
-        );
-    }
-    printf("---- __BASEN_DCOUNT__ -----\n");
-    for (int i = 0; i < 100; i++) { total_tests++;
-        const basen_case_t *curr_case = &basen_cases[i];
-        uint8_t res = __BASEN_DCOUNT__(curr_case->val, curr_case->base);
-        if (res == curr_case->exp) passed_tests++;
-        else printf(
-            "[FAIL] __BASEN_DCOUNT__ | case %-2d | val: %-20" PRIu64 " base: %-2" PRIu8 " | res: %3" PRIu8 " | exp: %3" PRIu8 "\n",
-            i, curr_case->val, curr_case->base, res, curr_case->exp
-        );
-    }
-    printf("---- __MAG_I64__ -----\n");
+    printf("---- __CRT_MAG_I64__ -----\n");
     for (int i = 0; i < 100; i++) { total_tests++;
         const mag_case_t *curr_case = &mag_cases[i];
-        uint64_t res = __MAG_I64__(curr_case->val);
+        uint64_t res = __CRT_MAG_I64__(curr_case->val);
         if (res == curr_case->exp) passed_tests++;
         else printf(
-            "[FAIL] __MAG_I64__      | case %-2d | val: %-20" PRId64 " | res: %20" PRIu64 " | exp: %20" PRIu64 "\n",
+            "[FAIL] __CRT_MAG_I64__      | case %-2d | val: %-20" PRId64 " | res: %20" PRIu64 " | exp: %20" PRIu64 "\n",
             i, curr_case->val, res, curr_case->exp
         );
     }
+    printf("---- __clamp_size -----\n");
+    for (int i = 0; i < 100; i++) { total_tests++;
+        const clamp_case_t *curr_case = &clamp_cases[i];
+        size_t res = __clamp_size(curr_case->cap, curr_case->insize);
+        if (res == curr_case->exp) passed_tests++;
+        else printf(
+            "[FAIL] __clamp_size         | case %-2d | cap: %-20zu "
+            "insize: %-20zu | res: %20zu | exp: %20zu\n",
+            i, curr_case->cap, curr_case->insize, res, curr_case->exp
+        );
+    }
+
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;

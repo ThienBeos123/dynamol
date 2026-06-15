@@ -41,7 +41,7 @@ and is generally unsafe for production-use for the user */
     } \
 } while (0)
 #else
-#define DNML_TEST_ASSERT(condition, message)
+#define DNML_TEST_ASSERT(condition, message, cleanup_code)
 #endif
 
 

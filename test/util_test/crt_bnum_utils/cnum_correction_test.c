@@ -223,7 +223,7 @@ int main(void) { _libdnml_init();
     limb_t *res_buf = (limb_t *)malloc(max_limbs * sizeof(limb_t));
 
     printf("===================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM MAGNITUDE COMPARISON   \n");
+    printf("        RUNNING INTEGRATED UNIT TESTS - CRYPTNUM CORRECTIONS.      \n");
     printf("===================================================================\n");
     printf("---- __CRINT_INTERNAL_CMP__ -----\n");
     for (int i = 0; i < 80; i++) { total_tests++; match = false;

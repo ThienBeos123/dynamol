@@ -97,24 +97,36 @@ crint __CRINT_ERRVAL__(void) { return (crint){ .limbs = NULL, .n = 1, .cap = 0, 
 
 /* ----- Mathematical Tools ----- */
 dnml_status __CRINT_INTERNAL_RLSHIFT__(crint *x, size_t len, size_t limb_cnt) {
-    crint_poison(x); uint8_t set_zero = (_lib_crt_geq(limb_cnt, x->n));
+    crint_poison(x); uint8_t set_zero = _lib_crt_geq(limb_cnt, x->n);
+    for (size_t i = 0; _lib_crt_lt(i, x->cap); ++i) {
+        size_t src_idx = i + limb_cnt;
+        uint8_t take_src = _lib_crt_lt(src_idx, x->n) & (!(set_zero));
+        uint64_t shifted_val = _lib_crt_select(take_src, x->limbs[src_idx], 0);
+        limb_t curr_val = x->limbs[i];
+        x->limbs[i] = _lib_crt_select(x->poisoned, curr_val, shifted_val);
+        src_idx = 0; take_src = 0; shifted_val = 0; curr_val = 0;
+    }
+    
+    /* Safely update length metadata */ // clang-format off
     size_t subtracted_range = x->n - limb_cnt;
-    size_t cpy_range = _lib_crt_select((set_zero), 0, subtracted_range);
-    __libdnml_smemcpy_u64(x->limbs, x->limbs, x->cap, x->cap, 0, cpy_range, (x->poisoned));
-    x->n -= limb_cnt & (uint64_t)(-(int64_t)(!!(x->poisoned)));
-    return _lib_crt_select(x->poisoned, CRINT_POISON, CRINT_SUCCESS);
+    size_t next_n = _lib_crt_select(set_zero, 0, subtracted_range);
+    x->n = _lib_crt_select(x->poisoned, x->n, next_n);
+    return _lib_crt_select(x->poisoned, CRINT_POISON, CRINT_SUCCESS); // clang-format on
 }
 dnml_status __CRINT_INTERNAL_LLSHIFT__(crint *x, size_t len, size_t limb_cnt) {
     crint_poison(x); uint8_t set_zero = (_lib_crt_geq(limb_cnt, x->cap));
-    size_t moved = _lib_crt_select(_lib_crt_gt(x->n + limb_cnt, x->cap), x->cap - limb_cnt, x->n);
-    uint64_t lcnt_mask = (uint64_t)(-(int64_t)(set_zero | x->poisoned));
-    __libdnml_smemmove_u64(x->limbs, x->cap, limb_cnt & lcnt_mask, 0, moved, (x->poisoned | set_zero));
-    __libdnml_smemwipe_u64(x->limbs, x->cap, 0, x->cap, !(set_zero));
-    /* Updating metadata + Aggressive Post-operation Cleanup */
-    size_t old_n = x->n; // clang-format off
+    for (size_t i = x->cap; _lib_crt_gt(i, 0); --i) { size_t idx = i - 1;
+        uint8_t has_src = _lib_crt_geq(idx, limb_cnt) & !(set_zero);
+        size_t src_idx = _lib_crt_select(has_src, idx - limb_cnt, 0);
+        uint8_t take_src = has_src & _lib_crt_lt(src_idx, x->n);
+        limb_t target_val = x->limbs[src_idx], curr_limb = x->limbs[idx];
+        limb_t shifted_val = _lib_crt_select(take_src, target_val, 0);
+        x->limbs[idx] = _lib_crt_select(x->poisoned, curr_limb, shifted_val); // clang-format off
+        idx = 0; has_src = 0; src_idx = 0; take_src = 0; target_val = 0; shifted_val = 0; // clang-format on
+    }
+    /* Updating metadata */ size_t old_n = x->n;
     x->n = _lib_crt_select(_lib_crt_gt(x->n + limb_cnt, x->cap), x->cap, x->n + limb_cnt);
     x->n = _lib_crt_select(set_zero, 0, x->n);
     x->n = _lib_crt_select(x->poisoned, old_n, x->n);
-    len = 0; limb_cnt = 0; set_zero = 0; moved = 0; lcnt_mask = 0; old_n = 0;
-    return _lib_crt_select(x->poisoned, CRINT_POISON, CRINT_SUCCESS); // clang-format on
+    return _lib_crt_select(x->poisoned, CRINT_POISON, CRINT_SUCCESS); 
 }

@@ -245,8 +245,7 @@ static const limb_shift_case llshift_cases[60] = {
     { { 30, 30, (limb_t *)limbs_c30 }, 1, { 31, 31, (limb_t *)limbs_ll_out30 } }
 };
 
-int main(void) {
-    _libdnml_init();
+int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
     limb_t *ret_buf = (limb_t *)malloc(128 * sizeof(limb_t)); 

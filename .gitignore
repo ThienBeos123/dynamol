@@ -5,6 +5,8 @@ build/
 build_asan/
 build_dbg/
 build_debug/
+log/
+logs/
 *.o
 *.out
 *.a

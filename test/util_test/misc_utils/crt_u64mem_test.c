@@ -27,12 +27,12 @@ limitations under the License.
 #include "../../../libdnml_base.h"
 #define TEST_MAX_CAP 64
 #define CASE_CNT 80
-typedef struct { uint8_t val; size_t start; size_t end; bool noop; } memset_case_t;
+typedef struct { uint64_t val; size_t start; size_t end; bool noop; } memset_case_t;
 typedef struct { size_t start; size_t end; bool noop; } memwipe_case_t;
-typedef struct { uint8_t src_val; size_t src_start, src_range; size_t start, end; bool noop; } memcpy_case_t;
-typedef struct { uint8_t val; size_t dst_start; size_t src_start; size_t len; bool noop; } memmove_case_t;
+typedef struct { uint64_t src_val; size_t src_start, src_range; size_t start, end; bool noop; } memcpy_case_t;
+typedef struct { uint64_t val; size_t dst_start; size_t src_start; size_t len; bool noop; } memmove_case_t;
 //* ============= GLOBAL ARRAY OF CASES ============= */
-// __libdnml_memset_strict() cases
+// __libdnml_smemset_u64() cases
 static const memset_case_t memset_cases[CASE_CNT] = {
     // ---- Group 1: Standard Mutations (noop = false, so loop tests for 0) ----
     { 55,  0,  0, false }, { 12,  0,  5, false }, { 99,  0, 63, false }, { 42, 10, 20, false },
@@ -62,7 +62,7 @@ static const memset_case_t memset_cases[CASE_CNT] = {
     { 212, 12, 13, true },  { 213, 13, 12, true },  { 214, 55, 56, true },  { 215, 56, 55, true },
     { 216,  5,  6, true },  { 217,  6,  5, true },  { 218, 25, 26, true },  { 219, 26, 25, true }
 };
-// __libdnml_memwipe_strict() casees
+// __libdnml_smemwipe_u64() casees
 static const memwipe_case_t memwipe_cases[CASE_CNT] = {
     // ---- Group 1: Standard wipes (noop = false) ----
     {  0,  0, false }, {  0,  5, false }, {  0, 63, false }, { 10, 20, false },
@@ -92,7 +92,7 @@ static const memwipe_case_t memwipe_cases[CASE_CNT] = {
     { 12, 13, true },  { 13, 12, true },  { 55, 56, true },  { 56, 55, true },
     {  5,  6, true },  {  6,  5, true },  { 25, 26, true },  { 26, 25, true }
 };
-// __libdnml_memcpy_strict() cases
+// __libdnml_smemcpy_u64() cases
 static const memcpy_case_t memcpy_cases[CASE_CNT] = {
     // ---- Group 1: Matching Indices Configurations (noop = false) ----
     { 10,  0, 64,  0,  0, false }, { 11,  0, 64,  0,  5, false }, { 12,  0, 64,  0, 63, false },
@@ -130,7 +130,7 @@ static const memcpy_case_t memcpy_cases[CASE_CNT] = {
     { 95,  0, 64, 56, 55, true },  { 96,  0, 10,  5,  6, true },  { 97,  0, 10,  6,  5, true },
     { 98,  0, 30, 25, 26, true },  { 99,  0, 30, 26, 25, true }
 };
-// __libdnml_memmove_strict() cases
+// __libdnml_smemmove_u64() cases
 static const memmove_case_t memmove_cases[CASE_CNT] = {
     // ---- Group 1: Forward Shifts (dst_start < src_start) (noop = false) ----
     { 7,   0, 10,  5, false }, { 8,   2, 12,  8, false }, { 9,   5, 25, 15, false }, { 10, 20, 40, 10, false },
@@ -162,126 +162,140 @@ static const memmove_case_t memmove_cases[CASE_CNT] = {
 };
 
 
-static void print_arr(uint8_t *arr, const char *arr_name, FILE *log_path) {
+static void print_arr(uint64_t *arr, const char *arr_name, FILE *log_path) {
     fprintf(log_path, "%s = {\n", arr_name);
-    uint8_t block1, block2, block3, block4;
-    uint8_t block5, block6, block7, block8;
+    uint64_t block1, block2, block3, block4;
+    uint64_t block5, block6, block7, block8;
     for (size_t i = 0; i < TEST_MAX_CAP; i += 8) {
         block1 = arr[i]; block2 = arr[i + 1]; block3 = arr[i + 2];
         block4 = arr[i + 3]; block5 = arr[i + 4]; block6 = arr[i + 5];
         block7 = arr[i + 6]; block8 = arr[i + 7];
         fprintf(log_path,
-            "    %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ",\n",
+            "    %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 
+            ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ",\n",
             block1, block2, block3, block4, block5, block6, block7, block8
         );
     } fputs("}\n", log_path);
 }
+static uint64_t setup_val(uint8_t pattern) {
+    uint64_t ret = pattern; ret <<= U64_BYTES; ret |= pattern;
+    ret <<= U64_BYTES; ret |= pattern; ret <<= U64_BYTES; ret |= pattern;
+    ret <<= U64_BYTES; ret |= pattern; ret <<= U64_BYTES; ret |= pattern;
+    ret <<= U64_BYTES; ret |= pattern; ret <<= U64_BYTES; ret |= pattern;
+    return ret;
+}
+
 
 int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end; bool pass = false; FILE* log_path;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    uint8_t *dst_buf = calloc(TEST_MAX_CAP, sizeof(uint8_t));
-    uint8_t *src_buf = calloc(TEST_MAX_CAP, sizeof(uint8_t));
+    uint64_t *dst_buf = calloc(TEST_MAX_CAP, sizeof(uint64_t));
+    uint64_t *src_buf = calloc(TEST_MAX_CAP, sizeof(uint64_t));
     fputs("===================================================================\n", stdout);
     fputs("       RUNNING INTEGRATED UNIT TESTS - 8-BIT MEMORY UTILITIES      \n", stdout);
     fputs("===================================================================\n", stdout);
-    log_path = fopen("../../log/__libdnml_memset_logs.txt", "w+");
-    fputs("---- __libdnml_memset_strict -----\n", log_path);
+    log_path = fopen("../../log/__libdnml_smemset_logs.txt", "w+");
+    fputs("---- __libdnml_smemset_u64 -----\n", log_path);
     for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-        memset(dst_buf, 0, TEST_MAX_CAP); pass = true;
-        uint8_t val = memset_cases[i].val; size_t start = memset_cases[i].start;
+        memset(dst_buf, 0, TEST_MAX_CAP * U64_BYTES); pass = true;
+        uint64_t val = memset_cases[i].val; size_t start = memset_cases[i].start;
         size_t end = memset_cases[i].end; bool noop = memset_cases[i].noop;
-        __libdnml_memset_strict(dst_buf, val, TEST_MAX_CAP, start, end, noop);
+        __libdnml_smemset_u64(dst_buf, val, TEST_MAX_CAP, start, end, noop);
         size_t bound = min(end + 1, TEST_MAX_CAP);
         for (size_t j = start; j < bound; ++j) {
-            uint8_t chosen_val = (noop) ? 0 : val;
-            if (dst_buf[j] != chosen_val) { pass = false; break; } 
-        }
-        if (pass) ++passed_tests;
-        else {
-            fprintf(log_path,
-                "[FAIL] __libdnml_memset_strict | Case %-2d | val: %-3" PRIu8 
-                " Start: %-2zu End: %-2zu Noop: %s\n", i, val, start, end, (noop) ? "True" : "False"
-            ); print_arr(dst_buf, "dst_buf", log_path); fputc('\n', log_path);
-        }
-    } fclose(log_path);
-    fputs("__libdnml_memset_strict: Result written to: ../../log/__libdnml_memwipe_logs.txt\n", stdout);
-
-    log_path = fopen("../../log/__libdnml_memwipe_logs.txt", "w+");
-    fputs("---- __libdnml_memwipe_strict -----\n", log_path);
-    for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-        memset(dst_buf, UINT8_MAX, TEST_MAX_CAP); pass = true;
-        size_t start = memset_cases[i].start;
-        size_t end = memset_cases[i].end; bool noop = memset_cases[i].noop;
-        __libdnml_memwipe_strict(dst_buf, TEST_MAX_CAP, start, end, noop);
-        size_t bound = min(end + 1, TEST_MAX_CAP);
-        for (size_t j = start; j < bound; ++j) {
-            uint8_t chosen_val = (noop) ? UINT8_MAX : 0;
-            if (dst_buf[j] != chosen_val) { pass = false; break; } 
-        }
-        if (pass) ++passed_tests;
-        else { 
-            fprintf(log_path,
-                "[FAIL] __libdnml_memwipe_strict | Case %-2d | Start: %-2zu "
-                "End: %-2zu Noop: %s\n", i, start, end, (noop) ? "True" : "False"
-            ); print_arr(dst_buf, "dst_buf", log_path); fputc('\n', log_path);
-        }
-    } fclose(log_path);
-    fputs("__libdnml_memwipe_strict: Result written to: ../../log/__libdnml_memwipe_logs.txt\n", stdout);
-
-    log_path = fopen("../../log/__libdnml_memcpy_logs.txt", "w+");
-    fputs("---- __libdnml_memcpy_strict -----\n", log_path);
-    for (int i = 0; i < CASE_CNT; ++i) { total_tests++; memset(src_buf, 0, TEST_MAX_CAP); memset(dst_buf, 0, TEST_MAX_CAP);
-        size_t src_init_len = min(
-            memcpy_cases[i].src_range, 
-            (src_buf + TEST_MAX_CAP > src_buf + memcpy_cases[i].src_start) ? 
-            TEST_MAX_CAP - memcpy_cases[i].src_start : 0
-        );
-        if (memcpy_cases[i].src_start < TEST_MAX_CAP) {
-            memset(src_buf + memcpy_cases[i].src_start, memcpy_cases[i].src_val, src_init_len);
-        }
-        size_t start = memcpy_cases[i].start, end = memcpy_cases[i].end; bool noop = memcpy_cases[i].noop;
-        __libdnml_memcpy_strict(dst_buf, src_buf, TEST_MAX_CAP, TEST_MAX_CAP, start, end, noop);
-        size_t bound = min(end + 1, TEST_MAX_CAP);
-        for (size_t j = start; j < bound; ++j) {
-            uint8_t chosen_val = (noop) ? 0 : src_buf[j];
+            uint64_t chosen_val = (noop) ? 0 : setup_val((uint8_t)val);
             if (dst_buf[j] != chosen_val) { pass = false; break; }
         }
         if (pass) ++passed_tests;
         else {
             fprintf(log_path,
-                "[FAIL] __libdnml_memcpy_strict | Case %-2d | Start: %-2zu "
+                "[FAIL] __libdnml_smemset_u64 | Case %-2d | val: %-3" PRIu64 
+                " Start: %-2zu End: %-2zu Noop: %s\n", i, val, start, end, (noop) ? "True" : "False"
+            ); print_arr(dst_buf, "dst_buf", log_path); fputc('\n', log_path);
+        }
+    } fclose(log_path);
+    fputs("__libdnml_smemset_u64: Result written to: ../../log/__libdnml_memwipe_logs.txt\n", stdout);
+
+    log_path = fopen("../../log/__libdnml_smemwipe_logs.txt", "w+");
+    fputs("---- __libdnml_smemwipe_u64 -----\n", log_path);
+    for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
+        memset(dst_buf, UINT8_MAX, TEST_MAX_CAP * U64_BYTES); pass = true;
+        size_t start = memset_cases[i].start;
+        size_t end = memset_cases[i].end; bool noop = memset_cases[i].noop;
+        __libdnml_smemwipe_u64(dst_buf, TEST_MAX_CAP, start, end, noop);
+        size_t bound = min(end + 1, TEST_MAX_CAP);
+        for (size_t j = start; j < bound; ++j) {
+            uint64_t chosen_val = (noop) ? UINT64_MAX : 0;
+            if (dst_buf[j] != chosen_val) { pass = false; break; }
+        }
+        if (pass) ++passed_tests;
+        else { 
+            fprintf(log_path,
+                "[FAIL] __libdnml_smemwipe_u64 | Case %-2d | Start: %-2zu "
+                "End: %-2zu Noop: %s\n", i, start, end, (noop) ? "True" : "False"
+            ); print_arr(dst_buf, "dst_buf", log_path); fputc('\n', log_path);
+        }
+    } fclose(log_path);
+    fputs("__libdnml_smemwipe_u64: Result written to: ../../log/__libdnml_memwipe_logs.txt\n", stdout);
+
+    log_path = fopen("../../log/__libdnml_smemcpy_logs.txt", "w+");
+    fputs("---- __libdnml_smemcpy_u64 -----\n", log_path);
+    for (int i = 0; i < CASE_CNT; ++i) { total_tests++; 
+        memset(src_buf, 0, TEST_MAX_CAP * U64_BYTES);
+        memset(dst_buf, 0, TEST_MAX_CAP * U64_BYTES);
+        size_t src_init_len = 0;
+        if (memcpy_cases[i].src_start < TEST_MAX_CAP) {
+            src_init_len = min(memcpy_cases[i].src_range, TEST_MAX_CAP - memcpy_cases[i].src_start);
+            for (size_t k = 0; k < src_init_len; ++k) {
+                src_buf[memcpy_cases[i].src_start + k] = (uint64_t)memcpy_cases[i].src_val;
+            }
+        }
+        size_t start = memcpy_cases[i].start, end = memcpy_cases[i].end; bool noop = memcpy_cases[i].noop;
+        __libdnml_smemcpy_u64(dst_buf, src_buf, TEST_MAX_CAP, TEST_MAX_CAP, start, end, noop);
+        size_t bound = min(end + 1, TEST_MAX_CAP);
+        for (size_t j = start; j < bound; ++j) {
+            uint64_t chosen_val = (noop) ? 0 : src_buf[j];
+            if (dst_buf[j] != chosen_val) { pass = false; break; }
+        }
+        if (pass) ++passed_tests;
+        else {
+            fprintf(log_path,
+                "[FAIL] __libdnml_smemcpy_u64 | Case %-2d | Start: %-2zu "
                 "End: %-2zu, Noop: %s\n", i, start, end, (noop) ? "True" : "False"
             ); print_arr(dst_buf, "dst_buf", log_path); print_arr(src_buf, "src_buf", log_path); fputc('\n', log_path);
         }
     } fclose(log_path);
-    fputs("__libdnml_memcpy_strict: Result written to: ../../log/__libdnml_memcpy_logs.txt\n", stdout);
+    fputs("__libdnml_smemcpy_u64: Result written to: ../../log/__libdnml_memcpy_logs.txt\n", stdout);
 
-    log_path = fopen("../../log/__libdnml_memmove_logs.txt", "w+");
-    fputs("---- __libdnml_memmove_strict -----\n", log_path);
-    for (int i = 0; i < CASE_CNT; ++i) { total_tests++; memset(dst_buf, 0, TEST_MAX_CAP);
+    log_path = fopen("../../log/__libdnml_smemmove_logs.txt", "w+");
+    fputs("---- __libdnml_smemmove_u64 -----\n", log_path);
+    for (int i = 0; i < CASE_CNT; ++i) { total_tests++; memset(dst_buf, 0, TEST_MAX_CAP * U64_BYTES);
         size_t dst_start = memmove_cases[i].dst_start, src_start = memmove_cases[i].src_start;
         size_t len = memmove_cases[i].len; bool noop = memmove_cases[i].noop;
         size_t init_len = (dst_start < TEST_MAX_CAP) ? min(len, TEST_MAX_CAP - dst_start) : 0;
-        if (init_len) memset(dst_buf + dst_start, memmove_cases[i].val, init_len);
-        memcpy(src_buf, dst_buf, TEST_MAX_CAP); // Reserved as a truth source for NOP case
-        __libdnml_memmove_strict(dst_buf, TEST_MAX_CAP, dst_start, src_start, len, noop);
+        if (init_len) {
+            for (size_t k = 0; k < init_len; ++k) {
+                dst_buf[dst_start + k] = (uint64_t)memmove_cases[i].val;
+            }
+        }
+        memcpy(src_buf, dst_buf, TEST_MAX_CAP * U64_BYTES); // Reserved as a truth source for NOP case
+        __libdnml_smemmove_u64(dst_buf, TEST_MAX_CAP, dst_start, src_start, len, noop);
         size_t moved_len = min(min(len, TEST_MAX_CAP - src_start), TEST_MAX_CAP - dst_start);
         if (noop) for (size_t j = 0; j < TEST_MAX_CAP; ++j) { if (dst_buf[j] != src_buf[j]) { pass = false; break; } }
-        else for (size_t j = 0; j < moved_len; ++j) {
+        else for (size_t j = 0; j < moved_len; ++j) { 
             if (dst_buf[dst_start + j] != src_buf[src_start + j]) { pass = false; break; }
         }
         if (pass) ++passed_tests;
         else {
             fprintf(log_path,
-                "[FAIL] __libdnml_memmove_strict | Case %-2d | Val: %-3" PRIu8
+                "[FAIL] __libdnml_smemmove_u64 | Case %-2d | Val: %-3" PRIu64
                 " Dst_Start: %-2zu Src_Start: %-2zu Len: %-2zu Noop: %s\n", 
                 i, memmove_cases[i].val, dst_start, src_start, len, noop ? "True" : "False"
             ); print_arr(dst_buf, "dst_buf", log_path); fputc('\n', log_path);
         }
     } fclose(log_path);
-    fputs("__libdnml_memmove_strict: Result written to: ../../log/__libdnml_memmove_logs.txt\n", stdout);
+    fputs("__libdnml_smemmove_u64: Result written to: ../../log/__libdnml_memmove_logs.txt\n", stdout);
 
     
     #undef TEST_MAX_CAP
