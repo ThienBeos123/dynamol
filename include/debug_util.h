@@ -76,8 +76,8 @@ and is generally unsafe for production-use for the user */
 } while (0);
 
 // CONVENIENT MACROS
-#define scan_eof(curr_char, stream, ret) do { \
-    if (curr_char == (uint16_t)(EOF)) { \
+#define scan_eos(curr_char, stream, ret) do { \
+    if (curr_char == (uint16_t)(EOF) || curr_char == '\n') { \
         if (ferror(stream)) return FILE_ERR_PARSE; \
         else return ret; \
     } \

@@ -422,18 +422,6 @@ bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err);
 bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err);
 bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status *err);
 //* -------------------------- BigInt Assignments -------------------------- *//
-size_t bigInt_get_size(const char *str, size_t len, uint8_t *baseout, dnml_status *err);
-size_t bigInt_get_sizeb(const char *str, size_t len, uint8_t base, dnml_status *err);
-size_t bigInt_get_sizesa(
-    const char *str, size_t len,
-    uint8_t *baseout, size_t bisize,
-    dnml_status *err
-);
-size_t bigInt_get_sizebsa(
-    const char *str, size_t len,
-    uint8_t base, size_t bisize,
-    dnml_status *err
-);
 /* Default String --> BigInt */
 dnml_status bigInt_get_str(bigInt *x, const char *str);
 dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base);
@@ -453,10 +441,6 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
 
 
 //* -------------------- DECIMAL INPUTS/OUTPUTS --------------------- */
-size_t bigInt_fscan_size(FILE *stream, uint8_t *baseout, dnml_status *err);
-size_t bigInt_fscanb_size(FILE *stream, uint8_t base, dnml_status *err);
-size_t bigInt_fscansa_size(FILE *stream, uint8_t *baseout, size_t bi_size, dnml_status *err);
-size_t bigInt_fscanbsa_size(FILE *stream, uint8_t base, size_t bi_size, dnml_status *err);
 /* --------- Decimal Instant OUTPUT ---------  */
 dnml_status bigInt_put(const bigInt x);
 dnml_status bigInt_putb(const bigInt x, uint8_t base);
@@ -491,16 +475,13 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base);
 //* -------------------- BINARY INPUTS/OUTPUTS --------------------- */
 /* --------- Binary INPUT/OUTPUT ---------  */
 dnml_status bigInt_fwrite(FILE *stream, const bigInt x);
-size_t bigInt_fread_size(FILE *stream);
 dnml_status bigInt_fread(FILE *stream, bigInt *x);
 dnml_status bigInt_fsread(FILE *stream, bigInt *x);
 dnml_status bigInt_ftread(FILE *stream, bigInt *x);
 /* --------- SERIALIZATION / DESERIALIZATION ---------  */
-size_t bigInt_serial_size(const bigInt x);
 dnml_status bigInt_serialize(char *buf, size_t len, const bigInt x, size_t *written);
 dnml_status bigInt_tserialize(char *buf, size_t len, const bigInt x, size_t *written);
 dnml_status bigInt_sserialize(char *buf, size_t len, const bigInt x, size_t *written);
-size_t bigInt_deserial_size(const char *str, size_t len);
 dnml_status bigInt_deserialize(bigInt *x, const char* str, size_t len);
 
 

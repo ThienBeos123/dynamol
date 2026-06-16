@@ -26,7 +26,7 @@ size_t _actual_len(const char *str, size_t buflen) {
 }
 uint16_t _fskip_whitespace__(FILE *stream) {
     uint16_t c;
-    while ((c = fgetc(stream)) != (uint16_t)EOF && isspace(c));
+    while ((c = fgetc(stream)) != (uint16_t)EOF && c != '\n' && isspace(c));
     return c;
 }
 size_t _skip_whitespace(const char *str, size_t len, size_t *pos) {
