@@ -22,7 +22,6 @@ limitations under the License.
 #include "../../intrinsics/arm64/__arm64_conn__.h"
 #include "../../intrinsics/x86_64/__x86_conn__.h"
 #include "../../intrinsics/risc-v64/__rv64_conn__.h"
-
 // ==========================================================
 // TEST CASES POPULATION (60 elements each: 30 base + 30 extra)
 // ==========================================================
@@ -106,13 +105,13 @@ int main(void) {
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("=========================================================\n");
-    printf("        RUNNING INTEGRATED UNIT TESTS - BITOPS           \n");
-    printf("=========================================================\n");
+    fputs("=========================================================\n", stdout);
+    fputs("        RUNNING INTEGRATED UNIT TESTS - BITOPS           \n", stdout);
+    fputs("=========================================================\n", stdout);
     // ------------------------------------------------------
     // 1. TEST BSWAP64 VARIANTS
     // ------------------------------------------------------
-    printf("--- Testing BSWAP64 Architectures ---\n");
+    fputs("--- Testing BSWAP64 Architectures ---\n", stdout);
     for (int i = 0; i < 60; i++) {
         uint64_t input = bswap_cases[i].input;
         uint64_t expected = bswap_cases[i].expected;
@@ -173,7 +172,7 @@ int main(void) {
     // ------------------------------------------------------
     // 2. TEST CLZ64 VARIANTS
     // ------------------------------------------------------
-    printf("--- Testing CLZ64 Architectures ---\n");
+    fputs("--- Testing CLZ64 Architectures ---\n", stdout);
     for (int i = 0; i < 60; i++) {
         uint64_t input = other_cases[i].input;
         uint8_t expected = other_cases[i].clz;
@@ -241,7 +240,7 @@ int main(void) {
     // ------------------------------------------------------
     // 3. TEST CTZ64 VARIANTS
     // ------------------------------------------------------
-    printf("--- Testing CTZ64 Architectures ---\n");
+    fputs("--- Testing CTZ64 Architectures ---\n", stdout);
     for (int i = 0; i < 60; i++) {
         uint64_t input = other_cases[i].input;
         uint8_t expected = other_cases[i].ctz;
@@ -309,7 +308,7 @@ int main(void) {
     // ------------------------------------------------------
     // 4. TEST PCNT64 VARIANTS
     // ------------------------------------------------------
-    printf("--- Testing PCNT64 Architectures ---\n");
+    fputs("--- Testing PCNT64 Architectures ---\n", stdout);
     for (int i = 0; i < 60; i++) {
         uint64_t input = other_cases[i].input;
         uint8_t expected = other_cases[i].pcnt;
@@ -370,11 +369,11 @@ int main(void) {
     // Summary output block
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     return (passed_tests == total_tests) ? 0 : 1;
 }

@@ -22,7 +22,6 @@ limitations under the License.
 #include "../../intrinsics/risc-v64/__rv64_conn__.h"
 #include "../../intrinsics/x86_64/__x86_conn__.h"
 #include "../../intrinsics/crt_vanillc/__crt_vanillc_con__.h"
-
 /* ============================== TEST STRUCT TYPE & TEST ARRAY ============================== */
 typedef struct { int64_t x, y; uint8_t lt_exp, gt_exp, leq_exp, geq_exp; } test_case;
 static const test_case global_bank[100] = {
@@ -130,16 +129,14 @@ static const test_case global_bank[100] = {
 
 int main(void) {
     size_t passed_tests = 0, total_tests = 0; uint8_t res;
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("=========================================================\n");
-    printf("      RUNNING INTEGRATED UNIT TESTS - SIGNED COMP        \n");
-    printf("=========================================================\n");
+    struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
+    fputs("=========================================================\n", stdout);
+    fputs("      RUNNING INTEGRATED UNIT TESTS - SIGNED COMP        \n", stdout);
+    fputs("=========================================================\n", stdout);
     /* =============== Test: x < y =============== */
-    printf("--- Testing LTI64 (<) Architectures ---\n");
+    fputs("--- Testing LTI64 (<) Architectures ---\n", stdout);
     for (size_t i = 0; i < 100; ++i) {
-        int64_t x = global_bank[i].x;
-        int64_t y = global_bank[i].y;
+        int64_t x = global_bank[i].x, y = global_bank[i].y;
         uint8_t lt_exp = global_bank[i].lt_exp;
         #if __ARCH_ARM64__
             res = _arm64_crt_lti64(x, y);
@@ -190,7 +187,7 @@ int main(void) {
         #endif
     }
     /* =============== Test: x > y =============== */
-    printf("--- Testing GTI64 (>) Architectures ---\n");
+    fputs("--- Testing GTI64 (>) Architectures ---\n", stdout);
     for (size_t i = 0; i < 100; ++i) {
         int64_t x = global_bank[i].x;
         int64_t y = global_bank[i].y;
@@ -244,7 +241,7 @@ int main(void) {
         #endif
     }
     /* =============== Test: x <= y =============== */
-    printf("--- Testing LEQI64 (<=) Architectures ---\n");
+    fputs("--- Testing LEQI64 (<=) Architectures ---\n", stdout);
     for (size_t i = 0; i < 100; ++i) {
         int64_t x = global_bank[i].x;
         int64_t y = global_bank[i].y;
@@ -298,7 +295,7 @@ int main(void) {
         #endif
     }
     /* =============== Test: x >= y =============== */
-    printf("--- Testing GEQ (>=) Architectures ---\n");
+    fputs("--- Testing GEQ (>=) Architectures ---\n", stdout);
     for (size_t i = 0; i < 100; ++i) {
         int64_t x = global_bank[i].x;
         int64_t y = global_bank[i].y;
@@ -354,7 +351,7 @@ int main(void) {
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("\n=============== Test Summary ===============\n");
+    fputs( "\n=============== Test Summary ===============\n", stdout);
     printf("Total tests: %3zu\n", total_tests);
     printf("Passed: %3zu\n", passed_tests);
     printf("Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);

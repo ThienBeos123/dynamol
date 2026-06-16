@@ -26,12 +26,12 @@ limitations under the License.
 #include "../../../util/util.h"
 #include "../../../util/crt_util.h"
 #include "../../../libdnml_base.h"
+#define CASE_CNT 100
 typedef struct { size_t digit_cnt; uint8_t base; size_t exp; } bcnt_case_t;
 typedef struct { uint64_t val; uint8_t base; uint8_t exp; } basen_case_t;
 typedef struct { int64_t val; uint64_t exp; } mag_case_t;
-
 //* ============== GLOBAL ARRAY OF CASES ============== *//
-static const bcnt_case_t bcnt_cases[100] = {
+static const bcnt_case_t bcnt_cases[CASE_CNT] = {
     { 0, 2, 0 }, { 1, 2, 1 }, { 2, 2, 2 }, { 3, 2, 3 }, { 4, 2, 4 },
     { 8, 2, 8 }, { 16, 2, 16 }, { 32, 2, 32 }, { 64, 2, 64 }, { 128, 2, 128 },
     { 0, 8, 0 }, { 1, 8, 3 }, { 2, 8, 6 }, { 3, 8, 9 }, { 4, 8, 12 },
@@ -55,8 +55,7 @@ static const bcnt_case_t bcnt_cases[100] = {
     { 100, 16, 400 }, { 100, 10, 333 }, { 1000, 2, 1000 }, { 1000, 8, 3000 }, { 1000, 16, 4000 },
     { 1000, 10, 3322 }, { 500, 2, 500 }, { 500, 8, 1500 }, { 500, 16, 2000 }, { 500, 10, 1661 }
 };
-
-static const basen_case_t basen_cases[100] = {
+static const basen_case_t basen_cases[CASE_CNT] = {
     { UINT64_C(1), 10, 1 }, { UINT64_C(9), 10, 1 },
     { UINT64_C(10), 10, 2 }, { UINT64_C(99), 10, 2 },
     { UINT64_C(100), 10, 3 }, { UINT64_C(999), 10, 3 },
@@ -217,11 +216,11 @@ int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("===================================================================\n");
-    printf("          RUNNING INTEGRATED UNIT TESTS - MISC CONVERSIONS         \n");
-    printf("===================================================================\n");
-    printf("---- __BITCOUNT___ -----\n");
-    for (int i = 0; i < 100; i++) { total_tests++;
+    fputs("===================================================================\n", stdout);
+    fputs("          RUNNING INTEGRATED UNIT TESTS - MISC CONVERSIONS         \n", stdout);
+    fputs("===================================================================\n", stdout);
+    fputs("---- __BITCOUNT___ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         const bcnt_case_t *curr_case = &bcnt_cases[i];
         size_t res = __BITCOUNT___(curr_case->digit_cnt, curr_case->base);
         if (res == curr_case->exp) passed_tests++;
@@ -230,8 +229,8 @@ int main(void) { _libdnml_init();
             i, curr_case->digit_cnt, curr_case->base, res, curr_case->exp
         );
     }
-    printf("---- __BASEN_DCOUNT__ -----\n");
-    for (int i = 0; i < 100; i++) { total_tests++;
+    fputs("---- __BASEN_DCOUNT__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         const basen_case_t *curr_case = &basen_cases[i];
         uint8_t res = __BASEN_DCOUNT__(curr_case->val, curr_case->base);
         if (res == curr_case->exp) passed_tests++;
@@ -240,8 +239,8 @@ int main(void) { _libdnml_init();
             i, curr_case->val, curr_case->base, res, curr_case->exp
         );
     }
-    printf("---- __MAG_I64__ -----\n");
-    for (int i = 0; i < 100; i++) { total_tests++;
+    fputs("---- __MAG_I64__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         const mag_case_t *curr_case = &mag_cases[i];
         uint64_t res = __MAG_I64__(curr_case->val);
         if (res == curr_case->exp) passed_tests++;
@@ -251,13 +250,14 @@ int main(void) { _libdnml_init();
         );
     }
 
+    #undef CASE_CNT
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

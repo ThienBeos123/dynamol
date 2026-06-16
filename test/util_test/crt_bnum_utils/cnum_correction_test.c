@@ -23,8 +23,9 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/crt_util.h"
 #include "../../../libdnml_base.h"
+#define CASE_CNT 80
+#define MAX_SIZE_T 5
 typedef struct { const crint in; const crint exp; } case_t;
-
 // ===================================================================
 // DISCRETE EXTERNAL LIMB STORAGE FOR TEST CASES
 // ===================================================================
@@ -132,7 +133,7 @@ DEF_CASE(78, 0x55, 0x66, 0x0, 0x0, 0x0, 0x55, 0x66, 0x0, 0x0, 0x0)
 DEF_CASE(79, 0x77, 0x88, 0x0, 0x0, 0x0, 0x77, 0x88, 0x0, 0x0, 0x0)
 
 /* Global Array of Unit-tested cases */
-static const case_t global_bank[80] = {
+static const case_t global_bank[CASE_CNT] = {
     { { 1, 5, in_0,  1, false }, { 0, 5, exp_0,  1, false } },
     { { 1, 5, in_1,  1, false }, { 1, 5, exp_1,  1, false } },
     { { 2, 5, in_2,  1, false }, { 1, 5, exp_2,  1, false } },
@@ -216,21 +217,18 @@ static const case_t global_bank[80] = {
 };
 
 int main(void) { _libdnml_init();
-    int total_tests = 0, passed_tests = 0;
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    const size_t max_limbs = 5; bool match = false;
-    limb_t *res_buf = (limb_t *)malloc(max_limbs * sizeof(limb_t));
-
-    printf("===================================================================\n");
-    printf("        RUNNING INTEGRATED UNIT TESTS - CRYPTNUM CORRECTIONS.      \n");
-    printf("===================================================================\n");
-    printf("---- __CRINT_INTERNAL_CMP__ -----\n");
-    for (int i = 0; i < 80; i++) { total_tests++; match = false;
+    int total_tests = 0, passed_tests = 0; struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start); bool match = false;
+    limb_t *res_buf = (limb_t *)malloc(MAX_SIZE_T * sizeof(limb_t)); assert(res_buf != NULL);
+    fputs("===================================================================\n", stdout);
+    fputs("        RUNNING INTEGRATED UNIT TESTS - CRYPTNUM CORRECTIONS.      \n", stdout);
+    fputs("===================================================================\n", stdout);
+    fputs("---- __CRINT_INTERNAL_CMP__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++; match = false;
         const case_t *curr_case = &global_bank[i];
-        memset(res_buf, 0, max_limbs * sizeof(limb_t));
+        memset(res_buf, 0, MAX_SIZE_T * sizeof(limb_t));
         /* Setup local bigInts with heap-backed memory */
-        crint res = curr_case->in; res.limbs = res_buf;  res.cap = max_limbs;
+        crint res = curr_case->in; res.limbs = res_buf;  res.cap = MAX_SIZE_T;
         if (curr_case->in.n > 0) {
             memcpy(res_buf, curr_case->in.limbs, curr_case->in.n * sizeof(limb_t));
         }
@@ -246,14 +244,16 @@ int main(void) { _libdnml_init();
         );
     }
 
+    #undef CASE_CNT
+    #undef MAX_SIZE_T
     free(res_buf); clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
 
     _libdnml_cleanup(); 
     return (passed_tests == total_tests) ? 0 : 1;

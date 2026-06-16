@@ -181,8 +181,9 @@ int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end; bool pass = false; FILE* log_path;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    uint8_t *dst_buf = calloc(TEST_MAX_CAP, sizeof(uint8_t));
+    uint8_t *dst_buf = calloc(TEST_MAX_CAP, sizeof(uint8_t)); assert(dst_buf != NULL);
     uint8_t *src_buf = calloc(TEST_MAX_CAP, sizeof(uint8_t));
+    if (src_buf == NULL) { free(dst_buf); assert(src_buf != NULL); }
     fputs("===================================================================\n", stdout);
     fputs("       RUNNING INTEGRATED UNIT TESTS - 8-BIT MEMORY UTILITIES      \n", stdout);
     fputs("===================================================================\n", stdout);
@@ -288,11 +289,11 @@ int main(void) { _libdnml_init();
     #undef CASE_CNT
     free(dst_buf), free(src_buf); clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

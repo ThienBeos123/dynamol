@@ -25,8 +25,9 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/crt_util.h"
 #include "../../../libdnml_base.h"
+#define MAX_SIZE_T 16
+#define CASE_CNT 60
 typedef struct { crint x; crint y; int8_t expected; } cmp_case_t;
-
 /* Static limbs for test cases */
 static limb_t c_zero[1] = { UINT64_C(0x0000000000000000) };
 static limb_t c_one[1]  = { UINT64_C(0x0000000000000001) };
@@ -37,7 +38,7 @@ static limb_t c_1_1[2]  = { UINT64_C(0x0000000000000001), UINT64_C(0x00000000000
 static limb_t c_f_f[2]  = { UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF) };
 static limb_t c_seq[3]  = { UINT64_C(0x0000000000000001), UINT64_C(0x0000000000000002), UINT64_C(0x0000000000000003) };
 static limb_t c_alt[3]  = { UINT64_C(0xAAAAAAAAAAAAAAAA), UINT64_C(0x5555555555555555), UINT64_C(0xAAAAAAAAAAAAAAAA) };
-static const cmp_case_t cases[60] = {
+static const cmp_case_t cases[CASE_CNT] = {
     { { 0, 1, c_zero, 1 },  { 0, 1, c_zero, 1 },  0 }, // 0
     { { 0, 1, c_zero, 1 },  { 1, 1, c_one, 1 },  -1 }, // 1
     { { 1, 1, c_one, 1 },   { 0, 1, c_zero, 1 },   1 }, // 2
@@ -102,25 +103,23 @@ static const cmp_case_t cases[60] = {
 
 
 int main(void) { _libdnml_init();
-    int total_tests = 0, passed_tests = 0;
-    struct timespec start, end;
+    int total_tests = 0, passed_tests = 0; struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     /* Allocate heap buffers for comparison operands */
-    const size_t max_limbs = 16;
-    limb_t *x_buf = (limb_t *)malloc(max_limbs * sizeof(limb_t));
-    limb_t *y_buf = (limb_t *)malloc(max_limbs * sizeof(limb_t));
-
-    printf("===================================================================\n");
-    printf("    RUNNING INTEGRATED UNIT TESTS - CRYPTNUM INTERNAL COMPARISON   \n");
-    printf("===================================================================\n");
-    printf("---- __CRINT_INTERNAL_CMP__ -----\n");
-    for (int i = 0; i < 60; i++) { total_tests++;
+    limb_t *x_buf = (limb_t *)malloc(MAX_SIZE_T * sizeof(limb_t)); assert(x_buf != NULL);
+    limb_t *y_buf = (limb_t *)malloc(MAX_SIZE_T * sizeof(limb_t));
+    if (y_buf == NULL) { free(x_buf); assert(y_buf != NULL); }
+    fputs("===================================================================\n", stdout);
+    fputs("    RUNNING INTEGRATED UNIT TESTS - CRYPTNUM INTERNAL COMPARISON   \n", stdout);
+    fputs("===================================================================\n", stdout);
+    fputs("---- __CRINT_INTERNAL_CMP__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         const cmp_case_t *c = &cases[i];
-        memset(x_buf, 0, max_limbs * sizeof(limb_t));
-        memset(y_buf, 0, max_limbs * sizeof(limb_t));
+        memset(x_buf, 0, MAX_SIZE_T * sizeof(limb_t));
+        memset(y_buf, 0, MAX_SIZE_T * sizeof(limb_t));
         /* Setup local bigInts with heap-backed memory */
-        crint tx = c->x; tx.limbs = x_buf; tx.cap = max_limbs;
-        crint ty = c->y; ty.limbs = y_buf; ty.cap = max_limbs;
+        crint tx = c->x; tx.limbs = x_buf; tx.cap = MAX_SIZE_T;
+        crint ty = c->y; ty.limbs = y_buf; ty.cap = MAX_SIZE_T;
         if (c->x.n > 0) memcpy(x_buf, c->x.limbs, c->x.n * sizeof(limb_t));
         if (c->y.n > 0) memcpy(y_buf, c->y.limbs, c->y.n * sizeof(limb_t));
         int8_t res = __CRINT_INTERNAL_CMP__(&tx, &ty);
@@ -132,13 +131,15 @@ int main(void) { _libdnml_init();
         );
     }
 
+    #undef CASE_CNT
+    #undef MAX_SIZE_T
     free(x_buf); free(y_buf); clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

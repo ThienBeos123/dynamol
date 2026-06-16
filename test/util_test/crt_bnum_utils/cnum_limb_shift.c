@@ -23,15 +23,12 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/crt_util.h"
 #include "../../../libdnml_base.h"
-
+#define CASE_CNT 60
 #define MAX_SIZE_T 32
-
 typedef struct { const crint in; size_t klimbs; const crint exp; } limb_shift_case;
-
 /* ========================================================================== */
 /* RIGHT SHIFT STATIC LIMB BUFFERS                       */
 /* ========================================================================== */
-
 // ---- Valid Right-Shift Arrays (1 - 50) ----
 static limb_t r_in_01[]  = { UINT64_C(0x0000000000000000) };
 static limb_t r_exp_01[] = { UINT64_C(0x0000000000000000) };
@@ -290,7 +287,7 @@ static limb_t r_poison_exp_60_extra[] = { UINT64_C(0x0000000000000001) };
 /* GLOBAL TEST CASE REGISTRIES                         */
 /* ========================================================================== */
 
-static const limb_shift_case rlshift_cases[60] = {
+static const limb_shift_case rlshift_cases[CASE_CNT] = {
     // ---- Group 1: Valid Right-Shift Structural Mapping Operations (1 - 50) ----
     { { 1, 4, r_in_01, 1, false }, 0, { 1, 4, r_exp_01, 1, false } },
     { { 1, 4, r_in_02, 1, false }, 0, { 1, 4, r_exp_02, 1, false } },
@@ -356,7 +353,7 @@ static const limb_shift_case rlshift_cases[60] = {
     { { 1, 1, r_poison_in_60, 1, true }, 1, { 1, 1, r_poison_exp_60, 1, true } }
 };
 
-static const limb_shift_case llshift_cases[60] = {
+static const limb_shift_case llshift_cases[CASE_CNT] = {
     // ---- Group 3: Valid Left-Shift Structural Mapping Operations (1 - 50) ----
     { { 1, 4, l_in_01, 1, false }, 0, { 1, 4, l_exp_01, 1, false } },
     { { 1, 4, l_in_02, 1, false }, 0, { 1, 4, l_exp_02, 1, false } },
@@ -422,18 +419,15 @@ static const limb_shift_case llshift_cases[60] = {
     { { 1, 1, l_poison_in_60, 1, true }, 1, { 1, 1, r_poison_exp_60_extra, 1, true } }
 };
 
-int main(void) { 
-    _libdnml_init();
-    int total_tests = 0, passed_tests = 0;
-    struct timespec start, end; 
+int main(void) { _libdnml_init();
+    int total_tests = 0, passed_tests = 0; struct timespec start, end; 
     clock_gettime(CLOCK_MONOTONIC, &start);
-    limb_t *ret_buf = (limb_t *)malloc(MAX_SIZE_T * sizeof(limb_t));
-    printf("====================================================================\n");
-    printf("   RUNNING INTEGRATED UNIT TESTS - CRYPT-NUM LIMB-SHIFT UTILITIES   \n");
-    printf("====================================================================\n");
-    printf("---- __CRINT_INTERNAL_RLSHIFT -----\n");
-    for (int i = 0; i < 60; i++) { 
-        total_tests++; 
+    limb_t *ret_buf = (limb_t *)malloc(MAX_SIZE_T * sizeof(limb_t)); assert(ret_buf != NULL);
+    fputs("====================================================================\n", stdout);
+    fputs("   RUNNING INTEGRATED UNIT TESTS - CRYPT-NUM LIMB-SHIFT UTILITIES   \n", stdout);
+    fputs("====================================================================\n", stdout);
+    fputs("---- __CRINT_INTERNAL_RLSHIFT -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) {  total_tests++;
         memset(ret_buf, 0, MAX_SIZE_T * sizeof(limb_t));
         if (rlshift_cases[i].in.limbs && rlshift_cases[i].in.n > 0) {
             memcpy(ret_buf, rlshift_cases[i].in.limbs, rlshift_cases[i].in.n * sizeof(limb_t));
@@ -452,8 +446,7 @@ int main(void) {
         else printf("[FAIL] RLSHIFT Case %2d: Missed structural matching requirements.\n", i);
     }
     printf("---- __CRINT_INTERNAL_LLSHIFT -----\n");
-    for (int i = 0; i < 60; i++) { 
-        total_tests++; 
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         memset(ret_buf, 0, MAX_SIZE_T * sizeof(limb_t));
         if (llshift_cases[i].in.limbs && llshift_cases[i].in.n > 0) {
             memcpy(ret_buf, llshift_cases[i].in.limbs, llshift_cases[i].in.n * sizeof(limb_t));
@@ -473,13 +466,15 @@ int main(void) {
     }
 
     /* Summary output block */
+    #undef CASE_CNT
+    #undef MAX_SIZE_T
     clock_gettime(CLOCK_MONOTONIC, &end); free(ret_buf);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (total_tests > 0) ? ((passed_tests * 100.0) / total_tests) : 0.0);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

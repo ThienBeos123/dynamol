@@ -23,6 +23,8 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
 #include "../../../libdnml_base.h"
+#define CASE_CNT 60
+#define MAX_SIZE_T 128
 typedef struct { const bigInt in; size_t klimbs; const bigInt exp; } limb_shift_case;
 /* ========== STATIC LIMB DATA REGISTRY ========== */
 static const limb_t limbs_c1[1]   = {1};
@@ -120,7 +122,7 @@ static const limb_t limbs_ll_out29[30] = {1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
 static const limb_t limbs_ll_out30[31] = {1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
 
 //* ============== GLOBAL ARENA OF CASES ============== *//
-static const limb_shift_case rlshift_cases[60] = {
+static const limb_shift_case rlshift_cases[CASE_CNT] = {
     { { 1, 1, (limb_t *)limbs_c1 }, 0, { 1, 1, (limb_t *)limbs_c1 } },
     { { 2, 2, (limb_t *)limbs_c2 }, 0, { 2, 2, (limb_t *)limbs_c2 } },
     { { 3, 3, (limb_t *)limbs_c3 }, 0, { 3, 3, (limb_t *)limbs_c3 } },
@@ -182,7 +184,7 @@ static const limb_shift_case rlshift_cases[60] = {
     { { 30, 30, (limb_t *)limbs_c30 }, 1, { 29, 29, (limb_t *)limbs_rl_out30 } },
     { { 31, 31, (limb_t *)limbs_c31 }, 1, { 30, 30, (limb_t *)limbs_rl_out31 } }
 };
-static const limb_shift_case llshift_cases[60] = {
+static const limb_shift_case llshift_cases[CASE_CNT] = {
     { { 1, 1, (limb_t *)limbs_c1 }, 0, { 1, 1, (limb_t *)limbs_c1 } },
     { { 2, 2, (limb_t *)limbs_c2 }, 0, { 2, 2, (limb_t *)limbs_c2 } },
     { { 3, 3, (limb_t *)limbs_c3 }, 0, { 3, 3, (limb_t *)limbs_c3 } },
@@ -248,33 +250,32 @@ static const limb_shift_case llshift_cases[60] = {
 int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
-    limb_t *ret_buf = (limb_t *)malloc(128 * sizeof(limb_t)); 
-    if (!ret_buf) return 1;
-    printf("====================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n");
-    printf("====================================================================\n");
-    printf("---- __BIGINT_INTERNAL_RLSHIFT -----\n");
-    for (int i = 0; i < 60; i++) { total_tests++; 
-        memset(ret_buf, 0, 128 * sizeof(limb_t));
+    limb_t *ret_buf = (limb_t *)malloc(MAX_SIZE_T * sizeof(limb_t)); assert(ret_buf != NULL);
+    fputs("====================================================================\n", stdout);
+    fputs("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n", stdout);
+    fputs("====================================================================\n", stdout);
+    fputs("---- __BIGINT_INTERNAL_RLSHIFT -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
+        memset(ret_buf, 0, MAX_SIZE_T * sizeof(limb_t));
         if (rlshift_cases[i].in.limbs && rlshift_cases[i].in.n > 0) {
             memcpy(ret_buf, rlshift_cases[i].in.limbs, rlshift_cases[i].in.n * sizeof(limb_t));
         }
         bigInt test_x; test_x.limbs = ret_buf;
-        test_x.n = rlshift_cases[i].in.n; test_x.cap = 128;
+        test_x.n = rlshift_cases[i].in.n; test_x.cap = MAX_SIZE_T;
         __BIGINT_INTERNAL_RLSHIFT__(&test_x, rlshift_cases[i].klimbs);
         int match = (test_x.n == rlshift_cases[i].exp.n);
         if (match) match = memcmp(test_x.limbs, rlshift_cases[i].exp.limbs, rlshift_cases[i].exp.n * U64_BYTES) == 0;
         if (match) passed_tests++;
         else printf("[FAIL] RLSHIFT Case %2d: Missed structural matching requirements.\n", i);
     }
-    printf("---- __BIGINT_INTERNAL_LLSHIFT -----\n");
-    for (int i = 0; i < 60; i++) { total_tests++; 
-        memset(ret_buf, 0, 128 * sizeof(limb_t));
+    fputs("---- __BIGINT_INTERNAL_LLSHIFT -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
+        memset(ret_buf, 0, MAX_SIZE_T * sizeof(limb_t));
         if (llshift_cases[i].in.limbs && llshift_cases[i].in.n > 0) {
             memcpy(ret_buf, llshift_cases[i].in.limbs, llshift_cases[i].in.n * sizeof(limb_t));
         }
         bigInt test_x; test_x.limbs = ret_buf;
-        test_x.n = llshift_cases[i].in.n; test_x.cap = 128;
+        test_x.n = llshift_cases[i].in.n; test_x.cap = MAX_SIZE_T;
         __BIGINT_INTERNAL_LLSHIFT__(&test_x, llshift_cases[i].klimbs);
         int match = (test_x.n == llshift_cases[i].exp.n);
         if (match) match = memcmp(test_x.limbs, llshift_cases[i].exp.limbs, llshift_cases[i].exp.n * U64_BYTES) == 0;
@@ -283,13 +284,15 @@ int main(void) { _libdnml_init();
     }
 
     /* Summary output block */
+    #undef CASE_CNT
+    #undef MAX_SIZE_T
     clock_gettime(CLOCK_MONOTONIC, &end); free(ret_buf);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (total_tests > 0) ? ((passed_tests * 100.0) / total_tests) : 0.0);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

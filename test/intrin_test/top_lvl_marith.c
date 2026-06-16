@@ -18,11 +18,11 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../intrinsics/intrinsics.h"
 #include "../../libdnml_base.h"
+#define CASE_CNT 30
 typedef struct { uint64_t a; uint64_t b; uint64_t mod; uint64_t expected; } modmul_case_t;
 typedef struct { uint64_t base; uint64_t exp; uint64_t mod; uint64_t expected; } modexp_case_t;
-
 // Test cases arrays indexed from bottom-up (30 down to 1)
-static const modmul_case_t modmul_cases[] = {
+static const modmul_case_t modmul_cases[30] = {
     { UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0x0000000000000000) }, // 1
     { UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0x0000000000000000), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0x0000000000000000) }, // 2
     { UINT64_C(0xFFFFFFFFFFFFFFFE), UINT64_C(0x0000000000000001), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFE) }, // 3
@@ -54,8 +54,7 @@ static const modmul_case_t modmul_cases[] = {
     { UINT64_C(0x000000000000000A), UINT64_C(0x000000000000000A), UINT64_C(0x0000000000000007), UINT64_C(0x0000000000000002) }, // 29
     { UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFC5), UINT64_C(0x0000000000000D24) } // 30
 };
-
-static const modexp_case_t modexp_cases[] = {
+static const modexp_case_t modexp_cases[30] = {
     { UINT64_C(0x0000000000000001), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFC5), UINT64_C(0x0000000000000001) }, // 1
     { UINT64_C(0xFFFFFFFFFFFFFFC5), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFC5), UINT64_C(0x0000000000000000) }, // 2
     { UINT64_C(0xFFFFFFFFFFFFFFC4), UINT64_C(0x0000000000000001), UINT64_C(0xFFFFFFFFFFFFFFC5), UINT64_C(0xFFFFFFFFFFFFFFC4) }, // 3
@@ -90,16 +89,14 @@ static const modexp_case_t modexp_cases[] = {
 
 
 
-int main(void) {
-    _libdnml_init();
-    struct timespec start, end; int passed_tests = 0;
-    int total_tests = 60; // 30 cases * 2 operations
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("====================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - TOP-LEVEL MODULAR ARITHMETIC   \n");
-    printf("====================================================================\n");
-    printf("----- __MODMUL_UI64__ TEST --------\n");
-    for (int i = 0; i < 30; i++) {
+int main(void) { _libdnml_init();
+    int total_tests = 0, passed_tests = 0;
+    struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
+    fputs("====================================================================\n", stdout);
+    fputs("     RUNNING INTEGRATED UNIT TESTS - TOP-LEVEL MODULAR ARITHMETIC   \n", stdout);
+    fputs("====================================================================\n", stdout);
+    fputs("----- __MODMUL_UI64__ TEST --------\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { ++total_tests;
         uint64_t out = __MODMUL_UI64__(modmul_cases[i].a, modmul_cases[i].b, modmul_cases[i].mod);
         if (out == modmul_cases[i].expected) passed_tests++;
         else printf(
@@ -108,8 +105,8 @@ int main(void) {
             modmul_cases[i].b, modmul_cases[i].mod, modmul_cases[i].expected, out
         );
     }
-    printf("----- __MODEXP_UI64__ TEST --------\n");
-    for (int i = 0; i < 30; i++) {
+    fputs("----- __MODEXP_UI64__ TEST --------\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { ++total_tests;
         uint64_t out = __MODEXP_UI64__(modexp_cases[i].base, modexp_cases[i].exp, modexp_cases[i].mod);
         if (out == modexp_cases[i].expected) passed_tests++;
         else {
@@ -120,13 +117,14 @@ int main(void) {
     }
 
     // Summary output block
+    #undef CASE_CNT
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0); // Converting to milliseconds
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

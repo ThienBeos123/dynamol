@@ -54,11 +54,10 @@ float __froll(xoshiro256_state *state);
 /* ---------------------- */
 /* str_parse.c */
 /* ---------------------- */
-size_t _actual_len(const char *str, size_t buflen, size_t *actual_len);
+size_t _actual_len(const char *str, size_t buflen);
 uint16_t _fskip_whitespace__(FILE *stream);
 size_t _skip_whitespace(const char *str, size_t len, size_t *pos);
 size_t _skip_leading_zeros(const char *str, size_t len, size_t *pos);
-uint8_t _is_valid_digit__(uint16_t *curr_char);
 uint8_t _sign_handle_(const char *str, size_t *curr_pos, int8_t *sign);
 uint8_t _sign_handle_nlen_(const char *str, size_t *curr_pos, int8_t *sign, size_t len);
 uint8_t _arbit_bprefix(const char *str, size_t *curr_pos, uint8_t *base);

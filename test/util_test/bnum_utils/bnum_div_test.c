@@ -25,9 +25,11 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
 #include "../../../libdnml_base.h"
+#define CASE_CNT 60
+#define MAX_SIZE_T 12
 typedef struct { const bigInt in; uint64_t optional_val; const bigInt exp; } div_case_t;
 //* =============== GLOBAL ARRAY OF CASES =============== *//
-static const div_case_t div3_cases[60] = {
+static const div_case_t div3_cases[CASE_CNT] = {
     { .in = { .limbs = NULL, .n = 0 }, .optional_val = 0, .exp = { .limbs = NULL, .n = 0 } }, // 0
     { .in = { .limbs = (limb_t[]){3}, .n = 1 }, .optional_val = 0, .exp = { .limbs = (limb_t[]){1}, .n = 1 } }, // 1
     { .in = { .limbs = (limb_t[]){6}, .n = 1 }, .optional_val = 0, .exp = { .limbs = (limb_t[]){2}, .n = 1 } }, // 2
@@ -89,7 +91,7 @@ static const div_case_t div3_cases[60] = {
     { .in = { .limbs = (limb_t[]){24, 0, 3}, .n = 3 }, .optional_val = 0, .exp = { .limbs = (limb_t[]){8, 0, 1}, .n = 3 } }, // 58
     { .in = { .limbs = (limb_t[]){27, 0, 3}, .n = 3 }, .optional_val = 0, .exp = { .limbs = (limb_t[]){9, 0, 1}, .n = 3 } } // 59
 };
-static const div_case_t divmod_cases[60] = {
+static const div_case_t divmod_cases[CASE_CNT] = {
     { .in = { .limbs = NULL, .n = 0 }, .optional_val = 1, .exp = { .limbs = NULL, .n = 0 } }, // 0
     { .in = { .limbs = (limb_t[]){10}, .n = 1 }, .optional_val = 1, .exp = { .limbs = (limb_t[]){10}, .n = 1 } }, // 1
     { .in = { .limbs = NULL, .n = 0 }, .optional_val = 2, .exp = { .limbs = NULL, .n = 0 } }, // 2
@@ -153,37 +155,35 @@ static const div_case_t divmod_cases[60] = {
 };
 
 
-int main(void) {
-    _libdnml_init();
+int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
-    limb_t *ret_buf = (limb_t *)malloc(12 * U64_BYTES); 
-    if (!ret_buf) return 1;
-    printf("====================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n");
-    printf("====================================================================\n");
-    printf("---- __BIGINT_DIV3__ -----\n");
-    for (int i = 0; i < 60; i++) { total_tests++; 
-        memset(ret_buf, 0, 12 * U64_BYTES);
+    limb_t *ret_buf = (limb_t *)malloc(MAX_SIZE_T * U64_BYTES); assert(ret_buf != NULL);
+    fputs("====================================================================\n", stdout);
+    fputs("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n", stdout);
+    fputs("====================================================================\n", stdout);
+    fputs("---- __BIGINT_DIV3__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
+        memset(ret_buf, 0, MAX_SIZE_T * U64_BYTES);
         if (div3_cases[i].in.limbs && div3_cases[i].in.n > 0) {
             memcpy(ret_buf, div3_cases[i].in.limbs, div3_cases[i].in.n * U64_BYTES);
         }
         bigInt test_x; test_x.limbs = ret_buf;
-        test_x.n = div3_cases[i].in.n; test_x.cap = 12;
+        test_x.n = div3_cases[i].in.n; test_x.cap = MAX_SIZE_T;
         __BIGINT_DIV3__(&test_x);
         int match = (test_x.n == div3_cases[i].exp.n);
         if (match) match = memcmp(test_x.limbs, div3_cases[i].exp.limbs, div3_cases[i].exp.n * U64_BYTES) == 0;
         if (match) passed_tests++;
         else printf("[FAIL] DIV3 Case %2d: Missed structural matching requirements.\n", i);
     }
-    printf("---- __BIGINT_INTERNAL_DIVMOD_UI64__ -----\n");
-    for (int i = 0; i < 60; i++) { total_tests++; 
-        memset(ret_buf, 0, 12 * U64_BYTES);
+    fputs("---- __BIGINT_INTERNAL_DIVMOD_UI64__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
+        memset(ret_buf, 0, MAX_SIZE_T * U64_BYTES);
         if (divmod_cases[i].in.limbs && divmod_cases[i].in.n > 0) {
             memcpy(ret_buf, divmod_cases[i].in.limbs, divmod_cases[i].in.n * U64_BYTES);
         }
         bigInt test_x; test_x.limbs = ret_buf;
-        test_x.n = divmod_cases[i].in.n; test_x.cap = 12;
+        test_x.n = divmod_cases[i].in.n; test_x.cap = MAX_SIZE_T;
         __BIGINT_INTERNAL_DIVMOD_UI64__(&test_x, divmod_cases[i].optional_val);
         int match = (test_x.n == divmod_cases[i].exp.n);
         if (match) match = memcmp(test_x.limbs, divmod_cases[i].exp.limbs, divmod_cases[i].exp.n * U64_BYTES) == 0;
@@ -192,13 +192,15 @@ int main(void) {
     }
 
     /* Summary output block */
+    #undef MAX_SIZE_T
+    #undef CASE_CNT
     clock_gettime(CLOCK_MONOTONIC, &end); free(ret_buf);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (total_tests > 0) ? ((passed_tests * 100.0) / total_tests) : 0.0);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup() ;return (passed_tests == total_tests) ? 0 : 1;
 }

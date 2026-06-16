@@ -96,16 +96,15 @@ static const will_overflow_case global_wocases[40] = {
 
 
 
-int main(void) {
-    _libdnml_init();
+int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    limb_t *l_buf = (limb_t *)malloc(12 * sizeof(limb_t));
-    printf("========================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM COUNT REQUIRE UTILITIES     \n");
-    printf("========================================================================\n");
-    printf("---- __BIGINT_LIMBS_NEEDED__ -----\n");
+    limb_t *l_buf = (limb_t *)malloc(12 * sizeof(limb_t)); assert(l_buf != NULL);
+    fputs("========================================================================\n", stdout);
+    fputs("     RUNNING INTEGRATED UNIT TESTS - BIGNUM COUNT REQUIRE UTILITIES     \n", stdout);
+    fputs("========================================================================\n", stdout);
+    fputs("---- __BIGINT_LIMBS_NEEDED__ -----\n", stdout);
     for (int i = 0; i < 100; i++) { total_tests++;
         size_t res = __BIGINT_LIMBS_NEEDED__(global_lncases[i].bits);
         if (res == global_lncases[i].limb_out) passed_tests++;
@@ -114,7 +113,7 @@ int main(void) {
             i, global_lncases[i].bits, global_lncases[i].limb_out, res
         );
     }
-    printf("---- __BIGINT_WILL_OVERFLOW__ -----\n");
+    fputs("---- __BIGINT_WILL_OVERFLOW__ -----\n", stdout);
     for (int i = 0; i < 40; i++) { total_tests++;
         size_t limbs_to_copy = global_wocases[i].x.n < 12 ? global_wocases[i].x.n : 12;
         if (global_wocases[i].x.limbs && limbs_to_copy > 0) {
@@ -134,11 +133,11 @@ int main(void) {
 
     free(l_buf); clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

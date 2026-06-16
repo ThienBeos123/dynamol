@@ -25,9 +25,10 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
 #include "../../../libdnml_base.h"
+#define CASE_CNT 60
 typedef struct { const bigInt in; uint64_t prim_op; const bigInt exp; } case_t;
 //* ============= GLOBAL ARRAY OF CASES ============= *//
-static const case_t add_case[60] = {
+static const case_t add_case[CASE_CNT] = {
     { .in = { .limbs = NULL, .n = 0 }, .prim_op = 0, .exp = { .limbs = NULL, .n = 0 } }, // 0
     { .in = { .limbs = NULL, .n = 0 }, .prim_op = 1, .exp = { .limbs = (limb_t[]){1}, .n = 1 } }, // 1
     { .in = { .limbs = (limb_t[]){1}, .n = 1 }, .prim_op = 1, .exp = { .limbs = (limb_t[]){2}, .n = 1 } }, // 2
@@ -89,7 +90,7 @@ static const case_t add_case[60] = {
     { .in = { .limbs = (limb_t[]){0, 1ULL << 63}, .n = 2 }, .prim_op = 2, .exp = { .limbs = (limb_t[]){2, 1ULL << 63}, .n = 2 } }, // 58
     { .in = { .limbs = (limb_t[]){UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0xFFFFFFFFFFFFFFFF)}, .n = 4 }, .prim_op = 1, .exp = { .limbs = (limb_t[]){0, 0, 0, 0, 1}, .n = 5 } } // 59
 };
-static const case_t mul_case[60] = {
+static const case_t mul_case[CASE_CNT] = {
     { .in = { .limbs = NULL, .n = 0 }, .prim_op = 0, .exp = { .limbs = NULL, .n = 0 } }, // 0
     { .in = { .limbs = NULL, .n = 0 }, .prim_op = 1, .exp = { .limbs = NULL, .n = 0 } }, // 1
     { .in = { .limbs = (limb_t[]){1}, .n = 1 }, .prim_op = 1, .exp = { .limbs = (limb_t[]){1}, .n = 1 } }, // 2
@@ -153,17 +154,15 @@ static const case_t mul_case[60] = {
 };
 
 
-int main(void) {
-    _libdnml_init();
+int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
-    limb_t *ret_buf = (limb_t *)malloc(12 * U64_BYTES); 
-    if (!ret_buf) return 1;
-    printf("====================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n");
-    printf("====================================================================\n");
-    printf("---- __BIGINT_INTERNAL_ADD_UI64__ -----\n");
-    for (int i = 0; i < 60; i++) { total_tests++; 
+    limb_t *ret_buf = (limb_t *)malloc(12 * U64_BYTES); assert(ret_buf != NULL);
+    fputs("====================================================================\n", stdout);
+    fputs("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n", stdout);
+    fputs("====================================================================\n", stdout);
+    fputs("---- __BIGINT_INTERNAL_ADD_UI64__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
         memset(ret_buf, 0, 12 * U64_BYTES);
         if (add_case[i].in.limbs && add_case[i].in.n > 0) {
             memcpy(ret_buf, add_case[i].in.limbs, add_case[i].in.n * U64_BYTES);
@@ -176,8 +175,8 @@ int main(void) {
         if (match) passed_tests++;
         else printf("[FAIL] ADD Case %2d: Missed structural matching requirements.\n", i);
     }
-    printf("---- __BIGINT_INTERNAL_MUL_UI64__ -----\n");
-    for (int i = 0; i < 60; i++) { total_tests++; 
+    fputs("---- __BIGINT_INTERNAL_MUL_UI64__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
         memset(ret_buf, 0, 12 * U64_BYTES);
         if (mul_case[i].in.limbs && mul_case[i].in.n > 0) {
             memcpy(ret_buf, mul_case[i].in.limbs, mul_case[i].in.n * U64_BYTES);
@@ -196,13 +195,14 @@ int main(void) {
     }
 
     /* Summary output block */
+    #undef CASE_CNT
     clock_gettime(CLOCK_MONOTONIC, &end); free(ret_buf);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (total_tests > 0) ? ((passed_tests * 100.0) / total_tests) : 0.0);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

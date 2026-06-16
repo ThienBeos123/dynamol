@@ -25,7 +25,6 @@ limitations under the License.
 typedef struct { int64_t x; uint8_t ispos_exp, isneg_exp; } sign_test_case;
 typedef struct { uint64_t x, y; uint8_t eq_exp, neq_exp; } equality_test_case;
 typedef struct { uint8_t cond; uint64_t a, b; uint64_t select_exp; } selection_test_case;
-
 /* ============================== 99 SIGN TEST CASES ============================== */
 static const sign_test_case sign_bank[99] = {
     { INT64_C(0x0000000000000000), 1, 0 }, { INT64_C(0x0000000000000001), 1, 0 }, { INT64_C(0xFFFFFFFFFFFFFFFF), 0, 1 }, // 1
@@ -62,7 +61,6 @@ static const sign_test_case sign_bank[99] = {
     { INT64_C(0x0000000000004E20), 1, 0 }, { INT64_C(0xFFFFFFFFFFFFB1E0), 0, 1 }, { INT64_C(0x000000000000C350), 1, 0 }, // 32
     { INT64_C(0xFFFFFFFFFFFF3CB0), 0, 1 }, { INT64_C(0x000000000001E240), 1, 0 }, { INT64_C(0xFFFFFFFFFFFE1DC0), 0, 1 }  // 33
 };
-
 /* ============================== 100 EQUALITY TEST CASES ============================== */
 static const equality_test_case equality_bank[100] = {
 /* 1 */   { 0x0000000000000000, 0x0000000000000000, 1, 0 },
@@ -166,7 +164,6 @@ static const equality_test_case equality_bank[100] = {
 /* 99 */  { 0xFFFFFFFFFFFFFFFE, 0x0000000000000000, 0, 1 },
 /* 100 */ { 0x0000000000000000, 0xFFFFFFFFFFFFFFFE, 0, 1 }
 };
-
 /* ============================== 100 MULTIPLEXING TEST CASES ============================== */
 static const selection_test_case selection_bank[100] = {
 /* 1 */   { 0, 0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF },
@@ -272,19 +269,15 @@ static const selection_test_case selection_bank[100] = {
 };
 
 int main(void) {
-    size_t passed_tests = 0;
-    size_t total_tests = 0;
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("=========================================================\n");
-    printf("   RUNNING INTEGRATED UNIT TESTS - GENERAL EQUALITIES    \n");
-    printf("=========================================================\n");
-
-
+    size_t passed_tests = 0, total_tests = 0;
+    struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
+    fputs("=========================================================\n", stdout);
+    fputs("   RUNNING INTEGRATED UNIT TESTS - GENERAL EQUALITIES    \n", stdout);
+    fputs("=========================================================\n", stdout);
     /* ---------------------------------------------------------------------- */
     /* 1. SIGN TESTS (ispos, isneg)                                           */
     /* ---------------------------------------------------------------------- */
-    printf("--- Testing ISPOS/ISNEG Architectures ---\n");
+    fputs("--- Testing ISPOS/ISNEG Architectures ---\n", stdout);
     for (size_t i = 0; i < 99; i++) {
         int64_t x = sign_bank[i].x;
         uint8_t ispos_exp = sign_bank[i].ispos_exp;
@@ -350,7 +343,7 @@ int main(void) {
     /* ---------------------------------------------------------------------- */
     /* 2. EQUALITY TESTS (eq, neq)                                            */
     /* ---------------------------------------------------------------------- */
-    printf("--- Testing EQ/NEG Architectures ---\n");
+    fputs("--- Testing EQ/NEG Architectures ---\n", stdout);
     for (size_t i = 0; i < 100; i++) {
         uint64_t x = equality_bank[i].x; uint64_t y = equality_bank[i].y;
         uint8_t eq_exp = equality_bank[i].eq_exp;
@@ -416,7 +409,7 @@ int main(void) {
     /* ---------------------------------------------------------------------- */
     /* 3. SELECTION TESTS (select)                                            */
     /* ---------------------------------------------------------------------- */
-    printf("--- Testing SELECT Architectures ---\n");
+    fputs("--- Testing SELECT Architectures ---\n", stdout);
     for (size_t i = 0; i < 100; i++) {
         uint8_t cond = selection_bank[i].cond;
         uint64_t a = selection_bank[i].a;
@@ -459,13 +452,13 @@ int main(void) {
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("\n==============================================================================\n");
-    printf("TEST SUITE EXECUTION SUMMARY\n");
-    printf("==============================================================================\n");
+    fputs( "\n==============================================================================\n", stdout);
+    fputs( "TEST SUITE EXECUTION SUMMARY\n", stdout);
+    fputs( "==============================================================================\n", stdout);
     printf("Total Internal Evaluations Run : %3zu\n", total_tests);
     printf("Total Mathematical Assertions Passed: %3zu\n", passed_tests);
     printf("Total Execution Operational Window  : %lf ms\n", elapsed_time);
-    printf("==============================================================================\n");
+    fputs( "==============================================================================\n", stdout);
 
     return (passed_tests == total_tests) ? 0 : 1;
 }

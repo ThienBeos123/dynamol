@@ -25,6 +25,8 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/util.h"
 #include "../../../libdnml_base.h"
+#define CASE_CNT 70
+#define MAX_SIZE_T 6
 typedef struct { const bigInt x; uint8_t base; size_t out; } countdb_case_t;
 typedef struct { size_t lcnt; uint8_t base; size_t out; } maxcdb_case_t;
 typedef struct { const bigInt x; size_t out; } ctz_case_t;
@@ -65,7 +67,7 @@ static limb_t cdb_l_62[1] = { UINT64_C(0x000000FFFFFFFFFF) }, cdb_l_63[1] = { UI
 static limb_t cdb_l_64[1] = { UINT64_C(0x0000020000000000) }, cdb_l_65[1] = { UINT64_C(0x0000040000000000) };
 static limb_t cdb_l_66[1] = { UINT64_C(0x0000080000000000) }, cdb_l_67[1] = { UINT64_C(0x000009184E72A000) };
 static limb_t cdb_l_68[1] = { UINT64_C(0x00000FFFFFFFFFFF) }, cdb_l_69[1] = { UINT64_C(0x0000100000000000) };
-static const countdb_case_t countdb_cases[70] = {
+static const countdb_case_t countdb_cases[CASE_CNT] = {
     { { 0, 1, cdb_l_0, 1 }, 2, 0 }, /* 0 */ { { 1, 1, cdb_l_1, 1 }, 8, 1 }, /* 1 */
     { { 1, 1, cdb_l_2, 1 }, 10, 1 }, /* 2 */ { { 1, 1, cdb_l_3, 1 }, 16, 1 }, /* 3 */
     { { 1, 1, cdb_l_4, 1 }, 3, 2 }, /* 4 */ { { 1, 1, cdb_l_5, 1 }, 5, 2 }, /* 5 */
@@ -103,7 +105,7 @@ static const countdb_case_t countdb_cases[70] = {
     { { 1, 1, cdb_l_68, 1 }, 5, 19 }, /* 68 */ { { 1, 1, cdb_l_69, 1 }, 7, 16 }, /* 69 */
 };
 /* --- MaxCDB cases --- */
-static const maxcdb_case_t maxcdb_cases[70] = {
+static const maxcdb_case_t maxcdb_cases[CASE_CNT] = {
     { 1, 2, 65 }, /* 0 */ { 2, 8, 43 }, /* 1 */ { 3, 10, 58 }, /* 2 */
     { 4, 16, 65 }, /* 3 */ { 5, 3, 202 }, /* 4 */ { 6, 5, 166 }, /* 5 */
     { 1, 7, 23 }, /* 6 */ { 2, 2, 129 }, /* 7 */ { 3, 8, 65 }, /* 8 */
@@ -231,17 +233,16 @@ static const ctz_case_t ctz_cases[70] = {
     { { 6, 6, ctz_l_68, 1 }, 340 }, /* 68 */ { { 6, 6, ctz_l_69, 1 }, 345 }, /* 69 */
 };
 
-int main(void) {
-    _libdnml_init();
+int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    limb_t *l_buf = (limb_t *)malloc(6 * sizeof(limb_t));
-    printf("===================================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - BIGNUM DIGIT/TZ UTILITIES     \n");
-    printf("===================================================================\n");
-    printf("---- __BIGINT_COUNTDB__ -----\n");
-    for (int i = 0; i < 70; i++) { total_tests++;
+    limb_t *l_buf = (limb_t *)malloc(MAX_SIZE_T * sizeof(limb_t)); assert(l_buf != NULL);
+    fputs("===================================================================\n", stdout);
+    fputs("     RUNNING INTEGRATED UNIT TESTS - BIGNUM DIGIT/TZ UTILITIES     \n", stdout);
+    fputs("===================================================================\n", stdout);
+    fputs("---- __BIGINT_COUNTDB__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         bigInt tx = countdb_cases[i].x; tx.limbs = l_buf;
         memcpy(l_buf, countdb_cases[i].x.limbs, tx.n * sizeof(limb_t));
         size_t res = __BIGINT_COUNTDB__(&tx, countdb_cases[i].base);
@@ -252,8 +253,8 @@ int main(void) {
             i, i, tx.n, countdb_cases[i].out, res
         );
     }
-    printf("---- __BIGINT_MAXCDB__ -----\n");
-    for (int i = 0; i < 70; i++) { total_tests++;
+    fputs("---- __BIGINT_MAXCDB__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         size_t res = __BIGINT_MAXCDB__(maxcdb_cases[i].lcnt, maxcdb_cases[i].base);
         if (res == maxcdb_cases[i].out) passed_tests++;
         else printf(
@@ -261,8 +262,8 @@ int main(void) {
             i, maxcdb_cases[i].lcnt, maxcdb_cases[i].base, maxcdb_cases[i].out, res
         );
     }
-    printf("---- __BIGINT_CTZ__ -----\n");
-    for (int i = 0; i < 70; i++) { total_tests++;
+    fputs("---- __BIGINT_CTZ__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         bigInt tx = ctz_cases[i].x; tx.limbs = l_buf;
         memcpy(l_buf, ctz_cases[i].x.limbs, tx.n * sizeof(limb_t));
         size_t res = __BIGINT_CTZ__(&tx);
@@ -274,13 +275,15 @@ int main(void) {
         );
     }
 
+    #undef CASE_CNT
+    #undef MAX_SIZE_T
     free(l_buf); clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

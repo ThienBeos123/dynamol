@@ -26,7 +26,6 @@ limitations under the License.
 typedef struct {uint64_t lo, hi; uint64_t div; uint64_t quot, rem; uint8_t ovf_flag; } wdiv_case_t;
 #define ylw "\033[1;33m"
 #define esc "\033[0m"
-
 static const wdiv_case_t perf_cases[32] = {
     { UINT64_C(0x000000000000000A), UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000002), UINT64_C(0x0000000000000005), UINT64_C(0x0000000000000000), 0 }, // 1
     { UINT64_C(0x000000000000000B), UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000003), UINT64_C(0x0000000000000003), UINT64_C(0x0000000000000002), 0 }, // 2
@@ -101,11 +100,11 @@ int main(void) {
     struct timespec start, end;
     int total_tests = 0; int passed_tests = 0;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("=========================================================\n");
-    printf("     RUNNING INTEGRATED UNIT TESTS - WIDE DIVISION       \n");
-    printf("=========================================================\n");
+    fputs("=========================================================\n", stdout);
+    fputs("     RUNNING INTEGRATED UNIT TESTS - WIDE DIVISION       \n", stdout);
+    fputs("=========================================================\n", stdout);
     // 1. TEST WIDE DIVISION - PERFORMANCE-BASED
-    printf("--- Testing WDIV128 (PERF) Architectures ---\n");
+    fputs("--- Testing WDIV128 (PERF) Architectures ---\n", stdout);
     for (int i = 0; i < 32; i++) {
         uint64_t lo = perf_cases[i].lo;
         uint64_t hi = perf_cases[i].hi; 
@@ -158,7 +157,7 @@ int main(void) {
 
 
     // 1. TEST WIDE DIVISION - PERFORMANCE-BASED
-    printf("--- Testing WDIV128 (CRYPTO) Architectures ---\n");
+    fputs("--- Testing WDIV128 (CRYPTO) Architectures ---\n", stdout);
     for (int i = 0; i < 32; i++) {
         uint64_t lo = crt_cases[i].lo;
         uint64_t hi = crt_cases[i].hi; 
@@ -211,13 +210,15 @@ int main(void) {
 
 
     // Summary output block
+    #undef ylw
+    #undef esc
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     return (passed_tests == total_tests) ? 0 : 1;
 }

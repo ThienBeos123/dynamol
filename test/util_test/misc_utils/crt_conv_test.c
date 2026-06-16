@@ -25,10 +25,11 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../../util/crt_util.h"
 #include "../../../libdnml_base.h"
+#define CASE_CNT 100
 typedef struct { int64_t val; uint64_t exp; } mag_case_t;
 typedef struct { size_t cap, insize; size_t exp; } clamp_case_t;
 //* ================ GLOBAL ARRAY OF CASES ================ *//
-static const mag_case_t mag_cases[100] = {
+static const mag_case_t mag_cases[CASE_CNT] = {
     { INT64_C(0x0000000000000000), UINT64_C(0x0000000000000000) }, /* 0 */
     { INT64_C(0x0000000000000001), UINT64_C(0x0000000000000001) }, /* 1 */
     { INT64_C(0xFFFFFFFFFFFFFFFF), UINT64_C(0x0000000000000001) }, /* 2 */
@@ -130,7 +131,7 @@ static const mag_case_t mag_cases[100] = {
     { INT64_C(0x000000174876E800), UINT64_C(0x000000174876E800) }, /* 98 */
     { INT64_C(0xFFFFFFE8B7891800), UINT64_C(0x000000174876E800) }  /* 99 */
 };
-static const clamp_case_t clamp_cases[100] = {
+static const clamp_case_t clamp_cases[CASE_CNT] = {
     // ---- Group 1: Zero Conditions and Exact Match Boundaries (1 - 20) ----
     { UINT64_C(0), UINT64_C(0), UINT64_C(0) },
     { UINT64_C(0), UINT64_C(1), UINT64_C(0) },
@@ -248,11 +249,11 @@ int main(void) { _libdnml_init();
     int total_tests = 0, passed_tests = 0;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("===================================================================\n");
-    printf("        RUNNING INTEGRATED UNIT TESTS - CRT MISC CONVERSIONS       \n");
-    printf("===================================================================\n");
-    printf("---- __CRT_MAG_I64__ -----\n");
-    for (int i = 0; i < 100; i++) { total_tests++;
+    fputs("===================================================================\n", stdout);
+    fputs("        RUNNING INTEGRATED UNIT TESTS - CRT MISC CONVERSIONS       \n", stdout);
+    fputs("===================================================================\n", stdout);
+    fputs("---- __CRT_MAG_I64__ -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         const mag_case_t *curr_case = &mag_cases[i];
         uint64_t res = __CRT_MAG_I64__(curr_case->val);
         if (res == curr_case->exp) passed_tests++;
@@ -261,8 +262,8 @@ int main(void) { _libdnml_init();
             i, curr_case->val, res, curr_case->exp
         );
     }
-    printf("---- __clamp_size -----\n");
-    for (int i = 0; i < 100; i++) { total_tests++;
+    fputs("---- __clamp_size -----\n", stdout);
+    for (int i = 0; i < CASE_CNT; i++) { total_tests++;
         const clamp_case_t *curr_case = &clamp_cases[i];
         size_t res = __clamp_size(curr_case->cap, curr_case->insize);
         if (res == curr_case->exp) passed_tests++;
@@ -273,14 +274,14 @@ int main(void) { _libdnml_init();
         );
     }
 
-
+    #undef CASE_CNT
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
 }

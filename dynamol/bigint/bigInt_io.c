@@ -914,7 +914,7 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     }
 
     //* ======= 4. Initiating Resulting BigInt ======= *//
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     limb_t *tmp = malloc(U64_BYTES * cap);
@@ -971,7 +971,7 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
     }
 
     //* ======= 3. Initiating Resulting BigInt ======= *//
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     limb_t *tmp = malloc(U64_BYTES * cap);
@@ -1105,7 +1105,7 @@ size_t bigInt_get_sizesa(
     }
 
     //* ======= 4. BigInt Size Validity Checking ======= *//
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (bisize < cap) { *err = BIGINT_ERR_RANGE; *baseout = base; return res;}
@@ -1148,7 +1148,7 @@ size_t bigInt_get_sizebsa(
     }
 
     //* ======= 3. Initiating Resulting BigInt ======= *//
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (bisize < cap) { *err = BIGINT_ERR_RANGE; return res; }
@@ -1319,7 +1319,7 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
 
     //* ======= 4. Initiating Resulting BigInt ======= *//
     dnml_status err_check;
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (bigInt_reserve(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1373,7 +1373,7 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
 
     //* ======= 3. Initiating Resulting BigInt ======= *//
     dnml_status err_check;
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (bigInt_reserve(x, cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1558,7 +1558,7 @@ dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
 
     //* ======= 4. Initiating Resulting BigInt ======= *//
     dnml_status err_check;
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     size_t limit = (cap > x->cap) ? true_len - __BIGINT_COUNTDB__(x, 10): curr_pos;
@@ -1616,7 +1616,7 @@ dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
 
     //* ======= 3. Initiating Resulting BigInt ======= *//
     dnml_status err_check;
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     size_t limit = (cap > x->cap) ? true_len - __BIGINT_COUNTDB__(x, 10): curr_pos;
@@ -1801,7 +1801,7 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
 
     //* ======= 4. Initiating Resulting BigInt ======= *//
     dnml_status err_check;
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (x->cap < cap) return BIGINT_ERR_RANGE;
@@ -1856,7 +1856,7 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
 
     //* ======= 3. Initiating Resulting BigInt ======= *//
     dnml_status err_check;
-    size_t true_len = 0; _actual_len(str, len, &true_len);
+    size_t true_len = _actual_len(str, len);
     size_t bits = __BITCOUNT___(true_len - curr_pos, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     if (x->cap < cap) return BIGINT_ERR_RANGE;
@@ -2741,7 +2741,7 @@ dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocat
     //* Main accumulator loop *//
     uint64_t threshold; uint8_t index_lookup, numerical_val; bigInt tmp_buf;
     if (bigInt_snew(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    while (_is_valid_digit__(&current_char)) {
+    while (current_char != (uint16_t)EOF && isspace(current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :
@@ -2781,7 +2781,7 @@ dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocat
     //* Main accumulator loop *//
     uint64_t threshold; uint8_t index_lookup, numerical_val; bigInt tmp_buf;
     if (bigInt_snew(&tmp_buf, x->cap) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
-    while (_is_valid_digit__(&current_char)) {
+    while (current_char != (uint16_t)EOF && isspace(current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :
@@ -2838,7 +2838,7 @@ dnml_status bigInt_sscan(bigInt *x) {
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = 1, .n = 0, .cap = x->cap };
-    while (_is_valid_digit__(&current_char)) {
+    while (current_char != (uint16_t)EOF && isspace(current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :
@@ -2887,7 +2887,7 @@ dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = 1, .n = 0, .cap = x->cap };
-    while (_is_valid_digit__(&current_char)) {
+    while (current_char != (uint16_t)EOF && isspace(current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :
@@ -2946,7 +2946,7 @@ dnml_status bigInt_tscan(bigInt *x) {
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = 1, .n = 0, .cap = x->cap};
-    while (_is_valid_digit__(&current_char)) {
+    while (current_char != (uint16_t)EOF && isspace(current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :
@@ -2995,7 +2995,7 @@ dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
     if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
 
     bigInt tmp_buf = { .limbs = tmp_limbs, .sign = 1, .n = 0, .cap = x->cap };
-    while (_is_valid_digit__(&current_char)) {
+    while (current_char != (uint16_t)EOF && isspace(current_char)) {
         index_lookup = (uint8_t)(current_char - '\0');
         numerical_val = (base <= 16) ?
             _VALUE_LOOKUP_INSEN_[index_lookup] :

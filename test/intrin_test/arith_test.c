@@ -25,12 +25,10 @@ limitations under the License.
 #include "../../intrinsics/arm64/__arm64_conn__.h"
 #include "../../intrinsics/x86_64/__x86_conn__.h"
 #include "../../intrinsics/risc-v64/__rv64_conn__.h"
-
 // TEST CASES STRUCTURES DEFINITIONS
 typedef struct { uint64_t a, b; uint8_t carry; uint64_t res; uint8_t out_carry; } arith_carry_case;
 typedef struct { uint64_t a, b; uint64_t lo; uint64_t hi; } wmul_case;
 typedef struct { uint64_t in; uint64_t out; } modinv_case;
-
 // STATIC CONST DISCRETE DATA ARRAYS (100 ELEMENTS EACH)
 static const arith_carry_case add_cases[100] = {
     // 1-20: Zero and Basic Edge Boundaries
@@ -321,11 +319,11 @@ int main(void) {
     struct timespec start, end;
     int total_tests = 0; int passed_tests = 0;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    printf("=========================================================\n");
-    printf("      RUNNING INTEGRATED UNIT TESTS - ARITHMETIC         \n");
-    printf("=========================================================\n");
+    fputs("=========================================================\n", stdout);
+    fputs("      RUNNING INTEGRATED UNIT TESTS - ARITHMETIC         \n", stdout);
+    fputs("=========================================================\n", stdout);
     // 1. TEST ADDITION WITH CARRY (ADD64C)
-    printf("--- Testing ADD64C Architectures ---\n");
+    fputs("--- Testing ADD64C Architectures ---\n", stdout);
     for (int i = 0; i < 100; i++) {
         uint64_t a = add_cases[i].a, b = add_cases[i].b;
         uint8_t cin = add_cases[i].carry;
@@ -387,7 +385,7 @@ int main(void) {
         #endif
     }
     // 2. TEST SUBTRACTION WITH BORROW (SUB64B)
-    printf("--- Testing SUB64B Architectures ---\n");
+    fputs("--- Testing SUB64B Architectures ---\n", stdout);
     for (int i = 0; i < 100; i++) {
         uint64_t a = sub_cases[i].a, b = sub_cases[i].b;
         uint8_t bin = sub_cases[i].carry; // struct definition reuse mapping
@@ -449,7 +447,7 @@ int main(void) {
         #endif
     }
     // 3. TEST WIDE MULTIPLICATION (WMUL128)
-    printf("--- Testing WMUL128 Architectures ---\n");
+    fputs("--- Testing WMUL128 Architectures ---\n", stdout);
     for (int i = 0; i < 46; i++) {
         uint64_t a = wmul_cases[i].a, b = wmul_cases[i].b;
         uint64_t exp_lo = wmul_cases[i].lo, exp_hi = wmul_cases[i].hi;
@@ -514,7 +512,7 @@ int main(void) {
         #endif
     }
     // 4. TEST MODULAR INVERSE (MODINV64)
-    printf("--- Testing MODINV64 Architectures ---\n");
+    fputs("--- Testing MODINV64 Architectures ---\n", stdout);
     for (int i = 0; i < 14; i++) {
         uint64_t input = modinv_cases[i].in;
         uint64_t expected = modinv_cases[i].out;
@@ -558,11 +556,11 @@ int main(void) {
     // Summary block matching execution time printing format
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("=========================================================\n");
-    printf("TEST SUMMARY:\n");
+    fputs( "=========================================================\n", stdout);
+    fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (passed_tests * 100.0) / total_tests);
     printf("+) Total Runtime: %lf ms\n", elapsed_time);
-    printf("=========================================================\n");
+    fputs( "=========================================================\n", stdout);
     return (passed_tests == total_tests) ? 0 : 1;
 }
