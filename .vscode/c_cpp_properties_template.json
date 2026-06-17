@@ -30,8 +30,8 @@
             ],
             "defines": [],
             "compilerPath": "", 
-            "cStandard": "c23",
-            "cppStandard": "c++26",
+            "cStandard": "",
+            "cppStandard": "",
             "intelliSenseMode": ""
         }
     ],

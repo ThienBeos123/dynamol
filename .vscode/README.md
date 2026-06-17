@@ -49,6 +49,8 @@ IntelliSense LSP is dictated by the file [`c_cpp_properties.json`](/.vscode/c_cp
 
 Now, specifically, we should focus on the `compilerPath` and `intelliSenseMode` attribute. The `compilerPath` and `intelliSenseMode` is currently of exemplary demonstration, and should be replaced with whatever that is the path to the user's compiler (Clang, GCC, MSVC, etc) and the user's current `os-compiler-arch`. Additionally, for any developers on older systems, they may modify `cStandard` and `cppStandard` to be within their version support, as lib-dnml supports a standard of C99, but the Author utilizes C23 and. C++26 standards for more modern code specifications.
 
+Knowing that, one developer should create there own local "c_cpp_properties.json" from [`c_cpp_properties_template.json`](/.vscode/c_cpp_properties_template.json) with the latest include paths for the LSP. Afterwards, they should fill in the cStandard, cppStandard, compilerPath, intelliSenseMode, and name attributes according to their machine.
+
 > ***IMPORTANT***: As lib-dnml is an ever-changing library, with nearly daily active-development, it is imperical that there is a consistent effort in maintaining and updating the `includePath` list of directories containing `.h` files to maintain the best development experience. However, such things is tricky and largely periphery in the grand scheme of software development, and therefore is expected to be flawed and outdated.
 
 
@@ -109,3 +111,5 @@ And then changing `"clangd.arguments"` as below inside [`settings.json`](/.vscod
 ```
 
 This ensures continuation of development and debugging of compilation failures caused by using build presets in [`CMakePresets.json`](/CMakePresets.json), where the build is absolutely stripped of any optimizations (crytographically, performance-wised, debugging-wise, etc).
+
+Knowing this, one developer should fill in the exact build they are working on for ClangD to track into, and add any additional settings when copied into settings.json from [`settings_template.json`](/.vscode/settings_template.json) like function and comments folding, LSP discrepancies handling, etc.
