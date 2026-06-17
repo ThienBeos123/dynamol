@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.3)
+cmake_minimum_required(VERSION 3.1...3.5)
 project(lib-dnml VERSION 1.0.0 LANGUAGES C ASM)
 # Handle non-ELF Mach-O linking overrides on macOS
 if(APPLE)
@@ -8,12 +8,12 @@ if(APPLE)
     
     # Enforce native macOS binary layout protections instead
     # (ASLR, DEP, and stack guard binding are on by default in AppleClang)
-    add_link_options(-Wl,-bind_at_load)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-bind_at_load")
 endif()
 
 
 # Set C standard (Updated to crisp C23)
-set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(GNUInstallDirs)

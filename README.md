@@ -82,10 +82,21 @@ int main(void) {
 
 
 ## Build & Installation
-After the acquisition of the source code, have a look at INSTALLATION.md for detailed instructions at building, compiling, and integrating lib-dnml into your projects. For more platform-specific instructions:
+For the installation of lib-dnml, there are a variety of methods. The user can either download and maintain lib-dnml alongside other dependencies/packages through a package manager like vcpkg, Homebrew, pacman, apt, etc (W.I.P). The user can also install lib-dnml through downloading source code releases on GitHub and Gitlab as a .zip, and compiling natively to maximally optimize for their hardware. Here are some valuable documentation detailing such endeavor:
 
 * [Instruction for developers](/doc/DEV-BUILD.md)
 * [Instruction for downloader/users](/doc/USER-BUILD.md)
+
+For convenience or potentially issues relating to the inability to build lib-dnml through build systems such as CMake, Ninja, or Makefiles and pure command-line compilation commands as provided per release in [USER-BUILD.md](/doc/USER-BUILD.md), the user may resort to pre-compiled distribution `.zip` files containing the public headers (`lib-dnml.h(pp)`),  linkable static library (`libdnml_core.a`), and a `README.md` containing the supported OS/Distributions for such pre-compiled release and criteria for such identification (libc implementation, glibc version, etc). Here are the current (and planned) supported platforms for pre-compiled releases:
+
+* MacOS - ARM64 (W.I.P - No release versions yet)
+* MacOS - x86_64 (Intel Mac) (W.I.P - No release versions yet)
+* Windows - x86_64 (W.I.P - No release versions yet)
+* Linux - x86_64 (W.I.P - No release versions yet)
+* Linux - ARM64 (W.I.P - No release versions yet)
+* Linux - RISC-V (W.I.P - No release versions yet)
+* MORE INCOMING... (Potential future support for BSD Distributions and Mobile platforms such as Android or iOS)
+
 
 
 ## Documentation

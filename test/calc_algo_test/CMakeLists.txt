@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.3)
+cmake_minimum_required(VERSION 3.1...3.5)
 project(lib-dnml LANGUAGES C ASM)
 
 # Redirect compiled binary targets directly into the folder expected by run_low.sh

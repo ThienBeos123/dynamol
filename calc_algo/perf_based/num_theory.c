@@ -125,12 +125,12 @@ size_t __BIGINT_ECPP_WS__(size_t n_size) { return 0; }
 size_t __BIGINT_PTEST_WS__(size_t x_size) {
     if (x_size < MIXED_MAIN) return 0;
     else {
-        size_t random_size = (size_t)(sqrt((double)x_size)) + 1;
+        size_t random_size = (size_t)(sqrtl((long double)x_size)) + 1;
         size_t proc_calls = max(
             __BIGINT_BPSW_WS__(x_size),
             __BIGINT_MRABIN_WS__(x_size, random_size)
         );
-        return (random_size * U64_BYTES) + proc_calls + (2 * alignof(max_align_t));
+        return (random_size * U64_BYTES) + proc_calls;
     }
 }
 //* ======== Primality Testing - ALGORITHMS ======== *//

@@ -27,7 +27,7 @@ limitations under the License.
 extern "C" {
 #endif
 
-typedef enum : uint32_t {
+typedef enum {
     BIGINT_SUCCESS,             // 0
     BIGINT_TRUNC_SUCCESS,       // 1
     BIGINT_NULL,                // 2
