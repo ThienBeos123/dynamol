@@ -18,7 +18,7 @@
     },
     "clangd.arguments": [
         // ClangD Core Configs
-        "--compile-commands-dir=${workspaceFolder}/build",
+        "--compile-commands-dir=${workspaceFolder}/build/unix",
         "--background-index",
         "--clang-tidy",
         // Completion and QOLs

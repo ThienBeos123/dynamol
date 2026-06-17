@@ -25,10 +25,13 @@ limitations under the License.
 extern "C" {
 #endif
 
-#define _DNML_DEBUG_MODE 0
+#ifndef _DNML_DEBUG_MODE
+  /* Default debug mode value; can be overridden at compile time with -D_DNML_DEBUG_MODE=1 or 0 */
+  #define _DNML_DEBUG_MODE 0
+#endif
 
 #if _DNML_DEBUG_MODE
-    #undef NDEBUG
+  #undef NDEBUG
 #endif
 
 

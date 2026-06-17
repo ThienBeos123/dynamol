@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 4.3)
 project(lib-dnml VERSION 1.0.0 LANGUAGES C ASM)
+# Handle non-ELF Mach-O linking overrides on macOS
+if(APPLE)
+    # Clear ELF-specific attributes so they don't break AppleClang
+    set(CMAKE_EXE_LINKER_FLAGS "" CACHE STRING "" FORCE)
+    set(CMAKE_SHARED_LINKER_FLAGS "" CACHE STRING "" FORCE)
+    
+    # Enforce native macOS binary layout protections instead
+    # (ASLR, DEP, and stack guard binding are on by default in AppleClang)
+    add_link_options(-Wl,-bind_at_load)
+endif()
+
 
 # Set C standard (Updated to crisp C23)
 set(CMAKE_C_STANDARD 23)
@@ -10,9 +21,10 @@ include(CMakePackageConfigHelpers)
 
 # HARDWARE ARCHITECTURE (Fixed for cross-platform toolchains and compilers)
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
-    # Only apply -march flags if using a compiler that supports GCC/Clang syntax
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         add_compile_options(-march=armv8-a)
+        # Inject native ARM Branch Protection & Pointer Authentication instead of Intel CET
+        add_compile_options(-mbranch-protection=standard)
     endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64")
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -21,10 +33,13 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         add_compile_options(-march=x86-64)
+        # Inject Intel Control-Flow protection safely here since the hardware supports it
+        add_compile_options(-fcf-protection=full)
     elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
         add_compile_options(/arch:AVX2) 
     endif()
 endif()
+
 
 # Define the primary static library target
 add_library(dnml_core STATIC
@@ -81,6 +96,22 @@ add_library(dnml_core STATIC
     drypto/crypt_int/crint_bitops.c
     drypto/crypt_int/crint_num_theory.c
 )
+if(APPLE) 
+    # If on Apple, Clang may propagate C compilation flags down into Assembly,
+    # which causes early abortion on hand-written Assembly.
+    set_property(SOURCE 
+        include/dnml_sys/asm/_dnml_cpuid.S
+        intrinsics/arm64/_arm64_arith.S
+        intrinsics/arm64/_arm64_bitops.S
+        intrinsics/arm64/_arm64_crt_alg.S
+        intrinsics/arm64/_arm64_crt_equal.S
+        intrinsics/arm64/_arm64_crt_i64cmp.S
+        intrinsics/arm64/_arm64_crt_u64cmp.S
+        intrinsics/arm64/_arm64_marith.S
+        intrinsics/arm64/_arm64_sec.S
+        PROPERTY COMPILE_OPTIONS "-Xarch_asm;-fno-stack-protector"
+    )
+endif()
 
 # ------------ CPU-ARCH ASSEMBLY COMPILATION ------------
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
@@ -155,29 +186,6 @@ target_include_directories(dnml_core
     INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> # Allows downstreams to find <dnml/libdnml.h> safely
 )
-
-# ------- Compiler Flags -------
-if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-    target_compile_options(dnml_core PRIVATE 
-        -Wall -Wextra -Wpedantic -Werror
-        # Miscellanous Warning Suppression
-        -Wno-misleading-indentation
-        -Wno-bitwise-instead-of-logical
-        # Unused-class Warning Supression
-        -Wno-unused-parameter -Wno-unused-function 
-        -Wno-unused-variable -Wno-unused-value 
-        -Wno-unused-macros -Wno-unused-but-set-variable
-        -Wno-unused-but-set-parameter
-    )
-elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(dnml_core PRIVATE 
-        /W4 /WX
-        /wd4100 # Unused parameter
-        /wd4505 # Unused local function
-        /wd4101 # Unused local variable
-    )
-endif()
-
 
 
 

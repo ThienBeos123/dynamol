@@ -14,10 +14,28 @@ include_directories(
 # and install tree so users can do "cmake .." inside test/low/build without
 # needing an absolute path.
 list(APPEND CMAKE_PREFIX_PATH
+    # Basic paths for barebone builds
     "${CMAKE_CURRENT_SOURCE_DIR}/../../build/install"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../build"
-)
 
+    # Paths on standard Development builds
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build/unix/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build/unix"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build/msvc/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build/msvc"
+
+    # Paths on testing release builds - Drypto
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-crt/unix/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-crt/unix"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-crt/msvc/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-crt/msvc"
+
+    # Paths on testing release builds - Dynamol
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-perf/unix/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-perf/unix"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-perf/msvc/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../build-perf/msvc"
+)
 if(NOT TARGET dnml::dnml_core)
     find_package(dnml_core REQUIRED CONFIG)
 endif()

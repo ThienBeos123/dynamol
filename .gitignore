@@ -2,11 +2,11 @@
 ztest/
 zbuild/
 build/
-build_asan/
-build_dbg/
-build_debug/
+build-crt/
+build-perf/
 log/
 logs/
+install/
 *.o
 *.out
 *.a

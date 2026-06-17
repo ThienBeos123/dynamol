@@ -101,12 +101,12 @@ If you are a developer who wants to either contribute to our project, or just wa
 ## Project Status
 ~~~md
 ## Status
-- Version: v0.2.2 (pre-release)
+- Version: v0.3.1 (pre-release)
 - API is subject to change
 
 - Mathematical Module is maturing               [#####     ] 50%
-- Testing & benchmarking in progress            [#####     ] 50%
-- Cryptography features in progress             [#         ] 10%
+- Testing & benchmarking in progress            [##        ] 25%
+- Cryptography features in progress             [####      ] 40%
 - Embedded-development features in progress     [          ] 0%
 - Generic I/O in progress                       [          ] 0%
 ~~~

@@ -300,12 +300,14 @@ for (size_t i = 0; i < TOP_BOUNDS; ++i) {
 This is for the decrementing style only works for iterator of signed types, since sign types can go below zero and successfully trigger the exit condition of going below zero. However, for unsigned types, such conditions can't happen, due to how on iterations i, where `i == 0`, decrementing `i` would lead to unsigned integer wrap-around to the maximum value of the type's size. This would lead to a loose, endless loop. However, for cases in which it is absolutely necessary to use an unsigned integer type for the loop iterator, where the loop trajectory is descending (when iterating backwards through a string, for instance), the loop should be written like this:
 
 ```c
-for (size_t i = TOP_BOUNDS - 1; i != (size_t)-1; --i) {
+for (size_t i = TOP_BOUNDS; i > 0; --i) {
     // code over here ...
+    array[i - 1] = ...;
+    // Next code over there and there
 }
 ```
 
-This works for the reason that if the beginning iterator value is one less than the TOP_BOUNDS, in which the TOP_BOUNDS value is the maximum value of the unsigned integer type, then upon wrapping around into the maximum value of the unsigned integer type, the value would trigger the exit condition + it would not match any value within the correct range bounds. However, for cases where the loop bounds is proven to fit sufficiently in the range of the signed integer type of `int64_t (2^63 - 1)`, then it is still preferred for the loop iterator to be of type int64_t and written like this for ease of readability:
+This prevents underflow wraparounds for unsigned types like `size_t`, where we never have to go below zero to meet the bounds condition. However, for cases where the loop bounds is proven to fit sufficiently in the range of the signed integer type of `int64_t (2^63 - 1)`, then it is still preferred for the loop iterator to be of type int64_t and written like this for ease of development and index-accessing, since having to decrement from the iterator for every memory accesses of a buffer is error-prone and elusive:
 
 ```c
 // WON'T CAUSE INFINITE RUNTIME SINCE SIGNED INTEGERS CAN BE CHECKED IF THEY GO BELOW ZERO

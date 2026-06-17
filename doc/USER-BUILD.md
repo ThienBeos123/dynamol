@@ -126,6 +126,8 @@ lib /OUT:dnml_core.lib *.obj
 
 ```
 
+> **IMPORTANT**: LIB-DNML DEVELOPMENT VELOCITY IS CURRENTLY IN ITS EARLY STAGE, SO EXPECT THESE LEGACY, SINGLE-LINE COMPILATION OPTIONS TO EASILY BECOME OBSOLETE, AND SHOULD ONLY BE CHOSEN FOR COMPILATION ON STABLE RELEASE VERSION, AND NOT PRE-RELEASE VERSIONS
+
 ### Consuming Standalone Built Binaries
 
 Once a direct manual compilation is completed, copy the generated static binary archive file (`libdnml_core.a` or `dnml_core.lib`) along with the parent interface header `include/libdnml.h` and its sub-headers straight into your downstream consumer development directory space. Link them manually during your application's compile step (e.g., passing toolchain reference flags like `-L. -ldnml_core`).

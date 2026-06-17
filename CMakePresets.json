@@ -1,67 +1,108 @@
 {
-  "version": 3,
-  "cmakeMinimumRequired": {
-    "major": 4,
-    "minor": 3,
-    "patch": 0
-  },
-  "configurePresets": [
-    {
-      "name": "default",
-      "displayName": "Default Release",
-      "description": "Configure a default release build.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_FLAGS": "-O2 -Wall -Wextra -pedantic"
-      }
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
     },
-    {
-      "name": "debug",
-      "displayName": "Debug Build",
-      "description": "Configure a debug build with symbols.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build_dbg",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_FLAGS": "-O0 -Wall -Wextra -pedantic"
-      }
-    },
-    {
-      "name": "asan",
-      "displayName": "AddressSanitizer Build",
-      "description": "Configure a debug build with AddressSanitizer enabled.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build_asan",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_FLAGS": "-g -O0 -Wall -Wextra -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer"
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "default",
-      "displayName": "Build Default",
-      "configurePreset": "default"
-    },
-    {
-      "name": "debug",
-      "displayName": "Build Debug",
-      "configurePreset": "debug"
-    },
-    {
-      "name": "asan",
-      "displayName": "Build ASan",
-      "configurePreset": "asan"
-    }
-  ],
-  "testPresets": [
-    {
-      "name": "default",
-      "displayName": "Run Tests",
-      "configurePreset": "default"
-    }
-  ]
+    "configurePresets": [
+        {  
+            "name": "fdev-unix",
+            "hidden": true,
+            "cacheVariables": { 
+                "CMAKE_C_FLAGS": "-g -O0 -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer -fno-strict-aliasing -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fPIE -Wno-misleading-indentation -Wno-bitwise-instead-of-logical -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Wno-unused-value -Wno-unused-macros -Wno-unused-but-set-variable -Wno-unused-but-set-parameter -Wno-missing-field-initializers"
+            }
+        }, 
+        {
+            "name": "fdev-msvc",
+            "hidden": true,
+            "cacheVariables": { 
+                "CMAKE_C_FLAGS": "/Zi /Od /W4 /WX /permissive- /fsanitize=address /Oy /GS /guard:cf /wd4100 /wd4101 /wd4189 /wd4702 /wd4505"
+            }
+        }, 
+        {   
+            "name": "crt-release-unix-flag",
+            "hidden": true,
+            "cacheVariables": { 
+                "CMAKE_C_FLAGS": "-w -O2 -fno-strict-aliasing -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fPIE"
+            }
+        }, 
+        {
+            "name": "crt-release-msvc-flag",
+            "hidden": true,
+            "cacheVariables": { 
+                "CMAKE_C_FLAGS": "/W0 /O2 /GS /guard:cf"
+            }
+        }, 
+        {   
+            "name": "perf-release-unix-flag",
+            "hidden": true,
+            "cacheVariables": { "CMAKE_C_FLAGS": "-w -O3 -ffast-math -flto -march=native -mtune=native" }
+        }, 
+        {
+            "name": "perf-release-msvc-flag",
+            "hidden": true,
+            "cacheVariables": { 
+                "CMAKE_C_FLAGS": "/W0 /O2 /Oi /Ot /fp:fast"
+            }
+        }, 
+
+        {
+            "name": "dev-unix",
+            "displayName": "Development Build (GCC/Clang)",
+            "description": "Configure a Unix development build with symbols.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/unix",
+            "inherits": "fdev-unix"
+        },
+        {
+            "name": "dev-msvc",
+            "displayName": "Development Build (MSVC)",
+            "description": "Configure an MSVC development build with symbols.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/msvc",
+            "inherits": "fdev-msvc"
+        },
+        { 
+            "name": "drypto-release-unix",
+            "displayName": "Drypto Release Build (GCC/Clang)",
+            "description": "Configure a hardened release build for Drypto on Unix systems.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-crt/unix",
+            "inherits": "crt-release-unix-flag"
+        },
+        { 
+            "name": "drypto-release-msvc",
+            "displayName": "Drypto Release Build (MSVC)",
+            "description": "Configure a hardened release build for Drypto on Windows using MSVC.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-crt/msvc",
+            "inherits": "crt-release-msvc-flag"
+        },
+        { 
+            "name": "dynamol-release-unix",
+            "displayName": "Dynamol Release Build (GCC/Clang)",
+            "description": "Configure a performance-optimized release build on Unix systems.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-perf/unix",
+            "inherits": "perf-release-unix-flag"
+        },
+        { 
+            "name": "dynamol-release-msvc",
+            "displayName": "Dynamol Release Build (MSVC)",
+            "description": "Configure a performance-optimized release build on Windows using MSVC.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-perf/msvc",
+            "inherits": "perf-release-msvc-flag"
+        }
+    ],
+    "buildPresets": [
+        { "name": "dev-unix", "configurePreset": "dev-unix" },
+        { "name": "dev-msvc", "configurePreset": "dev-msvc" },
+        { "name": "drypto-release-unix", "configurePreset": "drypto-release-unix" },
+        { "name": "drypto-release-msvc", "configurePreset": "drypto-release-msvc" },
+        { "name": "dynamol-release-unix", "configurePreset": "dynamol-release-unix" },
+        { "name": "dynamol-release-msvc", "configurePreset": "dynamol-release-msvc" }
+    ]
 }
+
