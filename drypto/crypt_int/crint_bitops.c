@@ -21,15 +21,15 @@ limitations under the License.
 
 //* ================================= MISCALLENOUS BITWISE OPERATION ================================== */
 crint crint_not(crint x, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x.poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
     crint res; dnml_status new_stat = crint_snew(&res, x.n); limb_t fake_dst; limb_t *dst;
-    CHOOSE_OPTION((ret_stat), 
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+    CHOOSE_OPTION((ret_stat),
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
@@ -40,7 +40,7 @@ crint crint_not(crint x, dnml_status *err) {
     res.n = x.n & mask; res.sign = x.sign & mask;
     limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
-    norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized; 
+    norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized;
     crint_normalize(norm_crint);
 
     /* Masking Metadata to Invalidity */
@@ -49,39 +49,39 @@ crint crint_not(crint x, dnml_status *err) {
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.poisoned = (_lib_crt_neq(ret_stat, CRINT_SUCCESS));
     /* Aggresive, Post-oepration Cleanup */ // clang-format off
-    if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; 
+    if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
     dst = 0; mask = 0; ret_stat = 0;  new_stat = 0; fake_dst = 0; norm_crint = 0; fake_normalized.limbs = 0;
     fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0;
     pbv_crint_clear(x); err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_rshift(crint x, size_t k, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x.poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; crint res; dnml_status new_stat = crint_snew(&res, x.n);
-    CHOOSE_OPTION((ret_stat), 
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+    CHOOSE_OPTION((ret_stat),
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
 
     limb_t fake_dst; limb_t *dst;
-    uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS))), discarded_bits = 0;
+    uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS))), carry_in = 0;
     dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : x.limbs;
     size_t end; CHOOSE_OPTION((end), (x.n), (x.n - 1), (0));
     __libdnml_smemcpy_u64(dst, x.limbs, x.n, x.n, 0, end, (!(_lib_crt_eq(ret_stat, CRINT_SUCCESS))));
     __CRINT_INTERNAL_RLSHIFT__(&res, x.n, limb_shift & mask); res.n = x.n - limb_shift;
-    for (size_t i = res.n - 1; _lib_crt_neq(i, -1); --i) { /* Individual Bit Shift Loops */
-        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i] : &fake_dst;
-        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift); 
-        *dst = (x.limbs[i] >> bshift) | positioned_bits; positioned_bits = 0; // Clearance
-        discarded_bits = x.limbs[i] & ((UINT64_C(1) << bshift) - 1);
+    for (size_t i = res.n; i > 0; --i) {
+        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i - 1] : &fake_dst;
+        uint64_t next_carry = x.limbs[i - 1] & ((UINT64_C(1) << k) - 1);
+        *dst = (x.limbs[i - 1] >> k) | (carry_in << (U64_BITS - k)); 
+        carry_in = next_carry;
     }
     /* Normalization (with faking tricks) */
     res.n &= mask; res.sign = x.sign & mask;
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized;
     crint_normalize(norm_crint);
@@ -92,21 +92,21 @@ crint crint_rshift(crint x, size_t k, dnml_status *err) {
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.poisoned = (_lib_crt_neq(ret_stat, CRINT_SUCCESS));
     /* Aggresive, Post-oepration Cleanup */ // clang-format off
-    if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; ret_stat = 0; new_stat = 0; limb_shift = 0; 
-    bshift = 0; end = 0; fake_dst = 0; dst = 0; mask = 0; discarded_bits = 0; norm_crint = 0; 
+    if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; ret_stat = 0; new_stat = 0; limb_shift = 0;
+    bshift = 0; end = 0; fake_dst = 0; dst = 0; mask = 0; carry_in = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; pbv_crint_clear(x); k = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_lshift(crint x, size_t k, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x.poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; crint res; dnml_status new_stat = crint_snew(&res, x.n);
     CHOOSE_OPTION((ret_stat),
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
 
@@ -116,14 +116,16 @@ crint crint_lshift(crint x, size_t k, dnml_status *err) {
     size_t end; CHOOSE_OPTION((end), (x.n), (x.n - 1), (0));
     __libdnml_smemcpy_u64(dst, x.limbs, x.n, x.n, 0, end, (!(_lib_crt_eq(ret_stat, CRINT_SUCCESS))));
     __CRINT_INTERNAL_LLSHIFT__(&res, x.n, limb_shift & mask); res.n = x.n;
+    uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
     for (size_t i = 0; _lib_crt_lt(i, x.n); ++i) { /* Individual Bit Shift Loops */
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i] : &fake_dst;
-        *dst = (x.limbs[i] << k) | discarded_bits; uint64_t iso_mask = (UINT64_C(1) << bshift) - 1;
-        discarded_bits = x.limbs[i] & (iso_mask << U64_BITS - bshift); iso_mask = 0;
+        uint64_t next_carry = (x.limbs[i] >> (U64_BITS - bshift)) & iso_mask;
+        *dst = (x.limbs[i] << k) | discarded_bits; 
+        discarded_bits = next_carry; next_carry = 0;
     }
     /* Normalization (with faking tricks) */
     res.n = x.n & mask; res.sign = x.sign & mask;
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized;
     crint_normalize(norm_crint);
@@ -134,41 +136,42 @@ crint crint_lshift(crint x, size_t k, dnml_status *err) {
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.poisoned = (_lib_crt_neq(ret_stat, CRINT_SUCCESS));
     /* Aggresive, Post-oepration Cleanup */ // clang-format off
-    if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; ret_stat = 0; new_stat = 0; limb_shift = 0; 
-    bshift = 0; end = 0; fake_dst = 0; dst = 0;  mask = 0; discarded_bits = 0; norm_crint = 0;
+    if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; ret_stat = 0; new_stat = 0; limb_shift = 0;
+    bshift = 0; end = 0; fake_dst = 0; dst = 0;  mask = 0; discarded_bits = 0; norm_crint = 0; iso_mask = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; pbv_crint_clear(x); k = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_lshiftg(crint x, size_t k, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x.poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; crint res;
     size_t alloc_size = (x.n + limb_shift + !!(bshift)); dnml_status new_stat = crint_snew(&res, alloc_size);
-    CHOOSE_OPTION((ret_stat), 
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+    CHOOSE_OPTION((ret_stat),
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
 
-    limb_t fake_dst; limb_t *dst; 
+    limb_t fake_dst; limb_t *dst;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS))), discarded_bits = 0;
     for (size_t i = 0; _lib_crt_lt(i, x.n); ++i) { /* Limb Shifting Loop */
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i + limb_shift] : &fake_dst;
         *dst = x.limbs[i];
     } 
-    res.n = alloc_size;
-    for (size_t i = limb_shift; _lib_crt_lt(i, res.n); ++i) { /* Individual Bit Shift Loops */
+    res.n = alloc_size; 
+    uint64_t iso_mask = (UINT64_C(1) << k) - 1;
+    for (size_t i = limb_shift; _lib_crt_lt(i, res.n); ++i) {
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res.limbs[i] : &fake_dst;
-        uint64_t new_carry = res.limbs[i] >> (U64_BITS - bshift);
+        uint64_t new_carry = (res.limbs[i] >> (U64_BITS - bshift)) & iso_mask;
         *dst = (res.limbs[i] << bshift) | discarded_bits;
         discarded_bits = new_carry; new_carry = 0;
     }
     /* Normalization (with faking tricks) */
     res.n &= mask; res.sign = x.sign & mask;
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized;
     crint_normalize(norm_crint);
@@ -180,13 +183,13 @@ crint crint_lshiftg(crint x, size_t k, dnml_status *err) {
     res.poisoned = (_lib_crt_neq(ret_stat, CRINT_SUCCESS));
     /* Aggresive, Post-oepration Cleanup */ // clang-format off
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; ret_stat = 0; new_stat = 0; limb_shift = 0;
-    bshift = 0; alloc_size = 0; fake_dst = 0; dst = 0; mask = 0; discarded_bits = 0; norm_crint = 0;
+    bshift = 0; alloc_size = 0; fake_dst = 0; dst = 0; mask = 0; discarded_bits = 0; norm_crint = 0; iso_mask = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; pbv_crint_clear(x); k = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 dnml_status crint_mut_not(crint *x) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
     DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; return CRINT_ERR_INVAL; }
@@ -195,17 +198,17 @@ dnml_status crint_mut_not(crint *x) {
     for (size_t i = 0; _lib_crt_lt(i, x->n); ++i) {
         CHOOSE_OPTION((x->limbs[i]), (x->poisoned), (x->limbs[i]), (~(x->limbs[i])));
     }
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggressive Post-Operation Cleanup */ // clang-format off
     norm_crint = 0; fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0;
     fake_normalized.sign = 0; fake_normalized.poisoned = 0; x = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_rshift(crint *x, size_t k) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
     DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; return CRINT_ERR_INVAL; }
@@ -214,32 +217,28 @@ dnml_status crint_mut_rshift(crint *x, size_t k) {
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
 
-    __CRINT_INTERNAL_RLSHIFT__(x, x->n, limb_shift & mask); x->n -= limb_shift & mask; 
-    limb_t fake_dst; limb_t* dst; uint64_t discarded_bits = 0;
-    for (size_t i = x->cap - 1; _lib_crt_neq(i, -1); --i) { /* Individual Bits Loop */
-        size_t index; CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
-        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i] : &fake_dst;
+    __CRINT_INTERNAL_RLSHIFT__(x, x->n, limb_shift & mask); x->n -= limb_shift & mask;
+    limb_t fake_dst; limb_t* dst; uint64_t carry_in = 0;
+    for (size_t i = x->cap; i > 0; --i) {
+        size_t index; CHOOSE_OPTION((index), (_lib_crt_lt(i - 1, x->n)), (i - 1), (0));
+        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i - 1] : &fake_dst;
         /* Pre-calculations - Ensure Constant Time */
-        uint64_t positioned_bits = discarded_bits << (U64_BITS - bshift);
+        uint64_t positioned_bits = (carry_in << (U64_BITS - bshift));
         uint64_t dbit_calc = x->limbs[index] & ((UINT64_C(1) << bshift) - 1);
         uint64_t dst_val = (x->limbs[index] >> bshift) | positioned_bits;
+        uint64_t curr_dval = *dst;
         /* Actual Assignment + Per Iteration Cleanup */
-        CHOOSE_OPTION((discarded_bits), (_lib_crt_lt(i, x->n)), (dbit_calc), (discarded_bits));
-        CHOOSE_OPTION((*dst), (_lib_crt_lt(i, x->n)), (dst_val), (*dst));
-        index = 0; positioned_bits = 0; dbit_calc = 0; dst_val = 0;
-    } 
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
-    crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
-    norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+        CHOOSE_OPTION((carry_in), (_lib_crt_lt(i - 1, x->n)), (dbit_calc), (carry_in));
+        CHOOSE_OPTION((*dst), (_lib_crt_lt(i - 1, x->n)), (dst_val), (curr_dval));
+        index = 0; positioned_bits = 0; dbit_calc = 0; dst_val = 0; curr_dval = 0;
+    } crint_normalize(x);
     /* Aggrestive, Post-operation Cleanup */ // clang-format off
-    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; discarded_bits = 0; norm_crint = 0; 
-    fake_normalized.limbs = 0; fake_normalized. n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; 
-    fake_normalized.poisoned = 0; x = 0; k = 0; return ret_stat; // clang-format on
+    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; carry_in = 0; 
+    x = 0; k = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_lshift(crint *x, size_t k) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
     DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; return CRINT_ERR_INVAL; }
@@ -248,32 +247,32 @@ dnml_status crint_mut_lshift(crint *x, size_t k) {
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
 
-    __CRINT_INTERNAL_LLSHIFT__(x, x->n, limb_shift & mask);
-    limb_t fake_dst; limb_t* dst; uint64_t discarded_bits = 0;
+    __CRINT_INTERNAL_LLSHIFT__(x, x->n, limb_shift & mask); limb_t fake_dst; limb_t* dst; 
+    uint64_t discarded_bits = 0, iso_mask = (UINT64_C(1) << bshift) - 1;
     for (size_t i = 0; _lib_crt_lt(i, x->cap); ++i) { /* Individual Bits Loop */
         size_t index; CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i] : &fake_dst;
         /* Pre-calculations - Ensure Constant Time */
-        uint64_t previous_dbits = discarded_bits, iso_mask = (UINT64_C(1) << bshift) - 1;
-        uint64_t dbit_calc = x->limbs[index] & (iso_mask << U64_BITS - bshift);
+        uint64_t previous_dbits = discarded_bits;
+        uint64_t dbit_calc = (x->limbs[index] >> (U64_BITS - bshift)) & iso_mask;
         uint64_t dst_val = (x->limbs[index] << bshift) | previous_dbits;
         /* Actual Assignment + Per Iteration Cleanup */
         CHOOSE_OPTION((discarded_bits), (_lib_crt_lt(i, x->n)), (dbit_calc), (discarded_bits));
         CHOOSE_OPTION((*dst), (_lib_crt_lt(i, x->n)), (dst_val), (*dst));
         index = 0; previous_dbits = 0; dbit_calc = 0; dst_val = 0;
-    } 
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    }
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggrestive, Post-operation Cleanup */ // clang-format off
-    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; discarded_bits = 0; norm_crint = 0; 
-    fake_normalized.limbs = 0; fake_normalized. n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; 
-    fake_normalized.poisoned = 0; x = 0; k = 0; return ret_stat; // clang-format on
+    limb_shift = 0; bshift = 0; mask = 0; fake_dst = 0; dst = 0; discarded_bits = 0; norm_crint = 0;
+    fake_normalized.limbs = 0; fake_normalized. n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
+    fake_normalized.poisoned = 0; x = 0; k = 0; iso_mask = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_lshiftg(crint *x, size_t k) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
     DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; return CRINT_ERR_INVAL; }
@@ -281,8 +280,8 @@ dnml_status crint_mut_lshiftg(crint *x, size_t k) {
     CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
     size_t limb_shift = k / U64_BITS, bshift = k % U64_BITS; size_t alloc_cap = (x->n + limb_shift + !!(bshift));
     dnml_status reserve_stat = crint_reserve(x, alloc_cap); CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (reserve_stat), (ret_stat)
     ); uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS)));
 
@@ -290,14 +289,14 @@ dnml_status crint_mut_lshiftg(crint *x, size_t k) {
     crint fake_operated = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     llshift_operated = (_lib_crt_eq(ret_stat, DNML_ALLOC_OOM)) ? &fake_operated : x;
     CHOOSE_OPTION((llshift_size), (_lib_crt_eq(ret_stat, DNML_ALLOC_OOM)), (FAKE_BUF_CAP), (x->cap));
-    __CRINT_INTERNAL_LLSHIFT__(llshift_operated, llshift_size, limb_shift & mask); 
-    x->n += (limb_shift + !!(bshift)) & mask;
-    limb_t fake_dst; limb_t* dst; uint64_t discarded_bits = 0; // Used in individual Bits Loop
-    for (size_t i = limb_shift & mask; _lib_crt_lt(i, x->n); ++i) { /* Individual Bits Loop */ 
+    __CRINT_INTERNAL_LLSHIFT__(llshift_operated, llshift_size, limb_shift & mask);
+    x->n += (limb_shift + !!(bshift)) & mask; limb_t fake_dst; limb_t* dst; 
+    uint64_t discarded_bits = 0, iso_mask = (UINT64_C(1) << bshift) - 1;
+    for (size_t i = limb_shift & mask; _lib_crt_lt(i, x->n); ++i) {
        size_t index; CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
        dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i] : &fake_dst;
         /* Pre-calculations - Ensure Constant Time */
-        uint64_t new_carry = x->limbs[index] >> (U64_BITS - bshift);
+        uint64_t new_carry = (x->limbs[index] >> (U64_BITS - bshift)) & iso_mask;
         uint64_t dst_val = (x->limbs[index] << bshift) | discarded_bits;
         /* Actual Assignment + Per Iteration Cleanup */
         CHOOSE_OPTION((discarded_bits), (_lib_crt_lt(i, x->n)), (new_carry), (discarded_bits));
@@ -305,12 +304,12 @@ dnml_status crint_mut_lshiftg(crint *x, size_t k) {
         index = 0; new_carry = 0; dst_val = 0;
     }
     crint* norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_operated;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggrestive, Post-operation Cleanup */ // clang-format off
-    limb_shift = 0; bshift = 0; alloc_cap = 0; reserve_stat = 0; mask = 0;
+    limb_shift = 0; bshift = 0; alloc_cap = 0; reserve_stat = 0; mask = 0; iso_mask = 0;
     __libdnml_smemwipe_u64(fake_buf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
     llshift_operated = 0; llshift_size = 0; norm_crint = 0; fake_operated.poisoned = 0;
-    fake_operated.limbs = 0; fake_operated.n = 0; fake_operated.cap = 0; fake_operated.sign = 0; 
+    fake_operated.limbs = 0; fake_operated.n = 0; fake_operated.cap = 0; fake_operated.sign = 0;
     fake_dst = 0; dst = 0; discarded_bits = 0; x = 0; k = 0; return ret_stat; // clang-format on
 }
 
@@ -319,12 +318,12 @@ dnml_status crint_mut_lshiftg(crint *x, size_t k) {
 
 //* ================================= MUTATIVE, FIXED WIDTH BITWISE OPERATION ================================== */
 dnml_status crint_mut_andu64(crint *x, uint64_t val) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; return CRINT_ERR_INVAL; }
-    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; 
+    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
     uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
     first_limb = first_limb & val; int8_t ret_sign; uint64_t origin_val = x->limbs[0];
@@ -337,12 +336,12 @@ dnml_status crint_mut_andu64(crint *x, uint64_t val) {
     first_limb = 0; ret_sign = 0; origin_val = 0; x = 0; val = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_nandu64(crint *x, uint64_t val) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; return CRINT_ERR_INVAL; }
-    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; 
+    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
     uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
     first_limb = ~(first_limb & val); uint64_t origin_val = x->limbs[0]; size_t ret_size;
@@ -357,12 +356,12 @@ dnml_status crint_mut_nandu64(crint *x, uint64_t val) {
     first_limb = 0; origin_val = 0; ret_size = 0; end = 0; x = 0; val = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_oru64(crint *x, uint64_t val) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; return CRINT_ERR_INVAL; }
-    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; 
+    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
     uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
     first_limb = first_limb | val; uint64_t origin_val = x->limbs[0]; size_t ret_size;
@@ -376,12 +375,12 @@ dnml_status crint_mut_oru64(crint *x, uint64_t val) {
     first_limb = 0; origin_val = 0; ret_size = 0; x = 0; val = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_noru64(crint *x, uint64_t val) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; return CRINT_ERR_INVAL; }
-    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; 
+    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
     uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
     first_limb = ~(first_limb | val); uint64_t origin_val = x->limbs[0]; size_t ret_size;
@@ -407,12 +406,12 @@ dnml_status crint_mut_noru64(crint *x, uint64_t val) {
     fake_normalized.sign = 0; fake_normalized.poisoned = 0; x = 0; val = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_xoru64(crint *x, uint64_t val) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; return CRINT_ERR_INVAL; }
-    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; 
+    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
     uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
     first_limb = first_limb ^ val; uint64_t origin_val = x->limbs[0]; size_t ret_size;
@@ -427,7 +426,7 @@ dnml_status crint_mut_xoru64(crint *x, uint64_t val) {
         limb_t curr_limb = x->limbs[i]; // Always valid to access, but not to be used
         dst = (_lib_crt_lt(i, x->n) & !(x->poisoned)) ? &x->limbs[i] : &fake_dst;
         *dst = curr_limb ^ 0; curr_limb = 0; // Current Iteration Clearance
-    } 
+    }
     limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
@@ -438,12 +437,12 @@ dnml_status crint_mut_xoru64(crint *x, uint64_t val) {
     fake_normalized.sign = 0; fake_normalized.poisoned = 0; x = 0; val = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_xnoru64(crint *x, uint64_t val) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; return CRINT_ERR_INVAL; }
-    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; 
+    /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned), (CRINT_POISON), (ret_stat));
     uint64_t first_limb = x->limbs[0]; CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0));
     first_limb = ~(first_limb ^ val); uint64_t origin_val = x->limbs[0]; size_t ret_size;
@@ -458,7 +457,7 @@ dnml_status crint_mut_xnoru64(crint *x, uint64_t val) {
         limb_t curr_limb = x->limbs[i]; // Always valid to access, but not to be used
         dst = (_lib_crt_lt(i, x->n) & !(x->poisoned)) ? &x->limbs[i] : &fake_dst;
         *dst = ~(curr_limb ^ 0); curr_limb = 0; // Current Iteration Clearance
-    } 
+    }
     limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
@@ -469,8 +468,8 @@ dnml_status crint_mut_xnoru64(crint *x, uint64_t val) {
     fake_normalized.sign = 0; fake_normalized.poisoned = 0; x = 0; val = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mut_and(crint *x, crint y) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; return CRINT_ERR_INVAL; }
@@ -480,8 +479,8 @@ dnml_status crint_mut_and(crint *x, crint y) {
     size_t op_range = crtmax(x->n, y.n); dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -492,9 +491,9 @@ dnml_status crint_mut_and(crint *x, crint y) {
         uint64_t a; CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
         uint64_t b; CHOOSE_OPTION((b), (_lib_crt_lt(i, y.n)), (*src), (0));
         *dst = a & b; a = 0; b = 0;
-    } 
+    }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (op_range));
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
     crint_normalize(norm_crint);
@@ -504,8 +503,8 @@ dnml_status crint_mut_and(crint *x, crint y) {
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); return ret_stat; // clang-format on
 }
 dnml_status crint_mut_nand(crint *x, crint y) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; return CRINT_ERR_INVAL; }
@@ -515,8 +514,8 @@ dnml_status crint_mut_nand(crint *x, crint y) {
     size_t op_range = crtmax(x->n, y.n); dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -527,20 +526,20 @@ dnml_status crint_mut_nand(crint *x, crint y) {
         uint64_t a; CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
         uint64_t b; CHOOSE_OPTION((b), (_lib_crt_lt(i, y.n)), (*src), (0));
         *dst = ~(a & b); a = 0; b = 0;
-    } 
+    }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (op_range));
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggressive Post-Operation Cleanup */ // clang-format off
     op_range = 0; reserve_stat = 0;; fake_dst = 0; dst = 0; fake_src = 0; src = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); return ret_stat; // clang-format on
 }
 dnml_status crint_mut_or(crint *x, crint y) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; return CRINT_ERR_INVAL; }
@@ -550,8 +549,8 @@ dnml_status crint_mut_or(crint *x, crint y) {
     size_t op_range = crtmax(x->n, y.n); dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -562,20 +561,20 @@ dnml_status crint_mut_or(crint *x, crint y) {
         uint64_t a; CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
         uint64_t b; CHOOSE_OPTION((b), (_lib_crt_lt(i, y.n)), (*src), (0));
         *dst = (a | b); a = 0; b = 0;
-    } 
+    }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (op_range));
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggressive Post-Operation Cleanup */ // clang-format off
     op_range = 0; reserve_stat = 0;; fake_dst = 0; dst = 0; fake_src = 0; src = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); return ret_stat; // clang-format on
 }
 dnml_status crint_mut_nor(crint *x, crint y) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; return CRINT_ERR_INVAL; }
@@ -585,8 +584,8 @@ dnml_status crint_mut_nor(crint *x, crint y) {
     size_t op_range = crtmax(x->n, y.n); dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -597,20 +596,20 @@ dnml_status crint_mut_nor(crint *x, crint y) {
         uint64_t a; CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
         uint64_t b; CHOOSE_OPTION((b), (_lib_crt_lt(i, y.n)), (*src), (0));
         *dst = ~(a | b); a = 0; b = 0;
-    } 
+    }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (op_range));
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggressive Post-Operation Cleanup */ // clang-format off
     op_range = 0; reserve_stat = 0;; fake_dst = 0; dst = 0; fake_src = 0; src = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); return ret_stat; // clang-format on
 }
 dnml_status crint_mut_xor(crint *x, crint y) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; return CRINT_ERR_INVAL; }
@@ -620,8 +619,8 @@ dnml_status crint_mut_xor(crint *x, crint y) {
     size_t op_range = crtmax(x->n, y.n); dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -632,20 +631,20 @@ dnml_status crint_mut_xor(crint *x, crint y) {
         uint64_t a; CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
         uint64_t b; CHOOSE_OPTION((b), (_lib_crt_lt(i, y.n)), (*src), (0));
         *dst = (a ^ b); a = 0; b = 0;
-    } 
+    }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (op_range));
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggressive Post-Operation Cleanup */ // clang-format off
     op_range = 0; reserve_stat = 0;; fake_dst = 0; dst = 0; fake_src = 0; src = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); return ret_stat; // clang-format on
 }
 dnml_status crint_mut_xnor(crint *x, crint y) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; return CRINT_ERR_INVAL; }
@@ -655,8 +654,8 @@ dnml_status crint_mut_xnor(crint *x, crint y) {
     size_t op_range = crtmax(x->n, y.n); dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -667,12 +666,12 @@ dnml_status crint_mut_xnor(crint *x, crint y) {
         uint64_t a; CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
         uint64_t b; CHOOSE_OPTION((b), (_lib_crt_lt(i, y.n)), (*src), (0));
         *dst = ~(a ^ b); a = 0; b = 0;
-    } 
+    }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (op_range));
-    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; 
+    limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
-    crint_normalize(norm_crint); 
+    crint_normalize(norm_crint);
     /* Aggressive Post-Operation Cleanup */ // clang-format off
     op_range = 0; reserve_stat = 0; fake_dst = 0; dst = 0; fake_src = 0; src = 0; norm_crint = 0;
     fake_normalized.limbs = 0; fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
@@ -684,16 +683,16 @@ dnml_status crint_mut_xnor(crint *x, crint y) {
 
 //* ================================= MUTATIVE, EXPLICIT WIDTH BITWISE OPERATION ================================== */
 dnml_status crint_mutex_andu64(crint *x, uint64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; uint8_t noop = false;
     CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
-    noop |= (x->poisoned); noop |= (!(op_range)); uint64_t first_limb = x->limbs[0]; 
-    CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0)); first_limb = first_limb & val; 
-    int8_t ret_sign; uint64_t origin_val = x->limbs[0]; 
+    noop |= (x->poisoned); noop |= (!(op_range)); uint64_t first_limb = x->limbs[0];
+    CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0)); first_limb = first_limb & val;
+    int8_t ret_sign; uint64_t origin_val = x->limbs[0];
     /* Re-assignment */
     CHOOSE_OPTION((x->limbs[0]), (x->poisoned | !op_range), (origin_val), (first_limb));
     CHOOSE_OPTION((x->n), (x->poisoned | !op_range), (x->n), (!!(first_limb)));
@@ -701,10 +700,10 @@ dnml_status crint_mutex_andu64(crint *x, uint64_t val, size_t op_range) {
     CHOOSE_OPTION((x->sign), (x->poisoned | !op_range), (x->sign), (ret_sign));
     /* Reservation */
     size_t alloc_range; CHOOSE_OPTION((alloc_range), (noop), (0), (op_range));
-    dnml_status reserve_stat = crint_reserve(x, alloc_range); 
+    dnml_status reserve_stat = crint_reserve(x, alloc_range);
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     ); uint64_t oom_mask = (uint64_t)(-(int64_t)(_lib_crt_neq(ret_stat, DNML_ALLOC_OOM)));
     /* Clearing out the other limbs */
@@ -712,15 +711,15 @@ dnml_status crint_mutex_andu64(crint *x, uint64_t val, size_t op_range) {
     dst = (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) ? fake_buf : x->limbs;
     CHOOSE_OPTION((buf_cap), (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)), (FAKE_BUF_CAP), (x->cap));
     __libdnml_smemwipe_u64(dst, buf_cap, 1, buf_cap - 1, (noop));
-    /* Aggressive Memory Clearance */ // clang-format off 
+    /* Aggressive Memory Clearance */ // clang-format off
     x->cap &= oom_mask; x->n &= oom_mask; x->sign &= oom_mask; x->poisoned &= oom_mask;
     noop = 0; first_limb = 0; ret_sign = 0; origin_val = 0; alloc_range = 0; reserve_stat = 0;
     dst = 0; buf_cap = 0; oom_mask = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_nandu64(crint *x, uint64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -728,8 +727,8 @@ dnml_status crint_mutex_nandu64(crint *x, uint64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */ limb_t fake_dst = 123; limb_t *dst;
@@ -744,21 +743,21 @@ dnml_status crint_mutex_nandu64(crint *x, uint64_t val, size_t op_range) {
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
     crint_normalize(norm_crint); CHOOSE_OPTION((x->sign), (x->n | x->poisoned), (x->sign), (1));
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0; 
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; 
+    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0;
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_oru64(crint *x, uint64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS; uint8_t noop = false;
     CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
-    noop |= (x->poisoned); noop |= (!(op_range)); uint64_t first_limb = x->limbs[0]; 
-    CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0)); first_limb = first_limb | val; 
-    int8_t ret_sign; uint64_t origin_val = x->limbs[0]; 
+    noop |= (x->poisoned); noop |= (!(op_range)); uint64_t first_limb = x->limbs[0];
+    CHOOSE_OPTION((first_limb), (x->n), (first_limb), (0)); first_limb = first_limb | val;
+    int8_t ret_sign; uint64_t origin_val = x->limbs[0];
     /* Re-assignment */
     CHOOSE_OPTION((x->limbs[0]), (x->poisoned | !op_range), (origin_val), (first_limb));
     CHOOSE_OPTION((x->n), (x->poisoned | !op_range), (x->n), (!!(first_limb)));
@@ -766,10 +765,10 @@ dnml_status crint_mutex_oru64(crint *x, uint64_t val, size_t op_range) {
     CHOOSE_OPTION((x->sign), (x->poisoned | !op_range), (x->sign), (ret_sign));
     /* Reservation */
     size_t alloc_range; CHOOSE_OPTION((alloc_range), (noop), (0), (op_range));
-    dnml_status reserve_stat = crint_reserve(x, alloc_range); 
+    dnml_status reserve_stat = crint_reserve(x, alloc_range);
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     ); uint64_t oom_mask = (uint64_t)(-(int64_t)(_lib_crt_neq(ret_stat, DNML_ALLOC_OOM)));
     /* Clearing out the other limbs */
@@ -781,15 +780,15 @@ dnml_status crint_mutex_oru64(crint *x, uint64_t val, size_t op_range) {
     CHOOSE_OPTION((end), (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)), (FAKE_BUF_CAP), (end));
     CHOOSE_OPTION((buf_cap), (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)), (FAKE_BUF_CAP), (x->cap));
     __libdnml_smemwipe_u64(dst, buf_cap, start, end, (noop));
-    /* Aggressive Memory Clearance */ // clang-format off 
+    /* Aggressive Memory Clearance */ // clang-format off
     x->cap &= oom_mask; x->n &= oom_mask; x->sign &= oom_mask; x->poisoned &= oom_mask;
-    noop = 0; first_limb = 0; ret_sign = 0; origin_val = 0; alloc_range = 0; reserve_stat = 0; 
+    noop = 0; first_limb = 0; ret_sign = 0; origin_val = 0; alloc_range = 0; reserve_stat = 0;
     dst = 0; start = 0; end = 0; buf_cap = 0; oom_mask = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_noru64(crint *x, uint64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -797,8 +796,8 @@ dnml_status crint_mutex_noru64(crint *x, uint64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */ limb_t fake_dst = 123; limb_t *dst;
@@ -813,14 +812,14 @@ dnml_status crint_mutex_noru64(crint *x, uint64_t val, size_t op_range) {
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
     crint_normalize(norm_crint); CHOOSE_OPTION((x->sign), (x->n | x->poisoned), (x->sign), (1));
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0; 
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; 
+    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0;
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_xoru64(crint *x, uint64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -828,8 +827,8 @@ dnml_status crint_mutex_xoru64(crint *x, uint64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */ limb_t fake_dst = 123; limb_t *dst;
@@ -844,28 +843,28 @@ dnml_status crint_mutex_xoru64(crint *x, uint64_t val, size_t op_range) {
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
     crint_normalize(norm_crint); CHOOSE_OPTION((x->sign), (x->n | x->poisoned), (x->sign), (1));
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0; 
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; 
+    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0;
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_xnoru64(crint *x, uint64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
     CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
-    dnml_status reserve_stat = crint_reserve(x, op_range); 
+    dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Main Loop and Fake-handling for OOM */ 
+    /* Main Loop and Fake-handling for OOM */
     limb_t fake_dst = 123; limb_t *dst;
-    for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) { 
+    for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
         uint64_t a, b;
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[i] : &fake_dst;
         CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0)); CHOOSE_OPTION((b), (!i), (val), (0));
@@ -877,14 +876,14 @@ dnml_status crint_mutex_xnoru64(crint *x, uint64_t val, size_t op_range) {
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_normalized;
     crint_normalize(norm_crint); CHOOSE_OPTION((x->sign), (x->n | x->poisoned), (x->sign), (1));
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0; 
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; 
+    reserve_stat = 0; fake_dst = 0; dst = 0; norm_crint = 0; fake_normalized.limbs = 0;
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0;
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_andi64(crint *x, int64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -892,19 +891,19 @@ dnml_status crint_mutex_andi64(crint *x, int64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Main Loop and Fake-handling for OOM */ 
+    /* Main Loop and Fake-handling for OOM */
     uint64_t extension_bits; CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
     limb_t fake_dst = 123; limb_t* dst; size_t index;
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
-        uint64_t a, b, mag_val = __CRT_MAG_I64__(val); 
+        uint64_t a, b, mag_val = __CRT_MAG_I64__(val);
         CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[index] : &fake_dst;
         CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
-        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits)); 
+        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits));
         *dst = (a & b); a = 0; b = 0; mag_val = 0;
     }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (crtmax(x->n, op_range)));
@@ -918,9 +917,9 @@ dnml_status crint_mutex_andi64(crint *x, int64_t val, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format-on
 }
 dnml_status crint_mutex_nandi64(crint *x, int64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -928,19 +927,19 @@ dnml_status crint_mutex_nandi64(crint *x, int64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Main Loop and Fake-handling for OOM */ 
+    /* Main Loop and Fake-handling for OOM */
     uint64_t extension_bits; CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
     limb_t fake_dst = 123; limb_t* dst; size_t index;
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
-        uint64_t a, b, mag_val = __CRT_MAG_I64__(val); 
+        uint64_t a, b, mag_val = __CRT_MAG_I64__(val);
         CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[index] : &fake_dst;
         CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
-        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits)); 
+        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits));
         *dst = ~(a & b); a = 0; b = 0; mag_val = 0;
     }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (crtmax(x->n, op_range)));
@@ -954,9 +953,9 @@ dnml_status crint_mutex_nandi64(crint *x, int64_t val, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format-on
 }
 dnml_status crint_mutex_ori64(crint *x, int64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -964,19 +963,19 @@ dnml_status crint_mutex_ori64(crint *x, int64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Main Loop and Fake-handling for OOM */ 
+    /* Main Loop and Fake-handling for OOM */
     uint64_t extension_bits; CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
     limb_t fake_dst = 123; limb_t* dst; size_t index;
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
-        uint64_t a, b, mag_val = __CRT_MAG_I64__(val); 
+        uint64_t a, b, mag_val = __CRT_MAG_I64__(val);
         CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[index] : &fake_dst;
         CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
-        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits)); 
+        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits));
         *dst = (a | b); a = 0; b = 0; mag_val = 0;
     }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (crtmax(x->n, op_range)));
@@ -990,9 +989,9 @@ dnml_status crint_mutex_ori64(crint *x, int64_t val, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format-on
 }
 dnml_status crint_mutex_nori64(crint *x, int64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1000,19 +999,19 @@ dnml_status crint_mutex_nori64(crint *x, int64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Main Loop and Fake-handling for OOM */ 
+    /* Main Loop and Fake-handling for OOM */
     uint64_t extension_bits; CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
     limb_t fake_dst = 123; limb_t* dst; size_t index;
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
-        uint64_t a, b, mag_val = __CRT_MAG_I64__(val); 
+        uint64_t a, b, mag_val = __CRT_MAG_I64__(val);
         CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[index] : &fake_dst;
         CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
-        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits)); 
+        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits));
         *dst = ~(a | b); a = 0; b = 0; mag_val = 0;
     }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (crtmax(x->n, op_range)));
@@ -1026,9 +1025,9 @@ dnml_status crint_mutex_nori64(crint *x, int64_t val, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format-on
 }
 dnml_status crint_mutex_xori64(crint *x, int64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1036,19 +1035,19 @@ dnml_status crint_mutex_xori64(crint *x, int64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Main Loop and Fake-handling for OOM */ 
+    /* Main Loop and Fake-handling for OOM */
     uint64_t extension_bits; CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
     limb_t fake_dst = 123; limb_t* dst; size_t index;
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
-        uint64_t a, b, mag_val = __CRT_MAG_I64__(val); 
+        uint64_t a, b, mag_val = __CRT_MAG_I64__(val);
         CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[index] : &fake_dst;
         CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
-        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits)); 
+        CHOOSE_OPTION((b), (!i), (mag_val), (extension_bits));
         *dst = (a ^ b); a = 0; b = 0; mag_val = 0;
     }
     CHOOSE_OPTION((x->n), (x->poisoned), (x->n), (crtmax(x->n, op_range)));
@@ -1062,9 +1061,9 @@ dnml_status crint_mutex_xori64(crint *x, int64_t val, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format-on
 }
 dnml_status crint_mutex_xnori64(crint *x, int64_t val, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, {});
-    DNML_TEST_ASSERT((crint_pvalidate(x)), full_contract, { crint_free(x); });
-    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); }); 
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
+    DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
+    DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { x = 0; val = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x)) { x = 0; val = 0; op_range = 0; return CRINT_ERR_INVAL; }
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1072,15 +1071,15 @@ dnml_status crint_mutex_xnori64(crint *x, int64_t val, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Main Loop and Fake-handling for OOM */ 
+    /* Main Loop and Fake-handling for OOM */
     uint64_t extension_bits; CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
     limb_t fake_dst = 123; limb_t* dst; size_t index;
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
-        uint64_t a, b, mag_val = __CRT_MAG_I64__(val); 
+        uint64_t a, b, mag_val = __CRT_MAG_I64__(val);
         CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[index] : &fake_dst;
         CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
@@ -1098,8 +1097,8 @@ dnml_status crint_mutex_xnori64(crint *x, int64_t val, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; val = 0; op_range = 0; return ret_stat; // clang-format-on
 }
 dnml_status crint_mutex_and(crint *x, crint y, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_ERR_INVAL; }
@@ -1109,8 +1108,8 @@ dnml_status crint_mutex_and(crint *x, crint y, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -1134,8 +1133,8 @@ dnml_status crint_mutex_and(crint *x, crint y, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_nand(crint *x, crint y, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0;  op_range = 0; return CRINT_ERR_INVAL; }
@@ -1145,8 +1144,8 @@ dnml_status crint_mutex_nand(crint *x, crint y, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -1156,7 +1155,7 @@ dnml_status crint_mutex_nand(crint *x, crint y, size_t op_range) {
         CHOOSE_OPTION((index), (_lib_crt_lt(i, x->n)), (i), (0));
         dst = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x->limbs[index] : &fake_dst;
         src = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &y.limbs[index] : &fake_src;
-        CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0)); 
+        CHOOSE_OPTION((a), (_lib_crt_lt(i, x->n)), (*dst), (0));
         CHOOSE_OPTION((b), (_lib_crt_lt(i, y.n)), (*src), (0));
         *dst = ~(a & b); a = 0; b = 0; index = 0;
     }
@@ -1171,8 +1170,8 @@ dnml_status crint_mutex_nand(crint *x, crint y, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_or(crint *x, crint y, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_ERR_INVAL; }
@@ -1182,8 +1181,8 @@ dnml_status crint_mutex_or(crint *x, crint y, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -1207,8 +1206,8 @@ dnml_status crint_mutex_or(crint *x, crint y, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_nor(crint *x, crint y, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_ERR_INVAL; }
@@ -1218,8 +1217,8 @@ dnml_status crint_mutex_nor(crint *x, crint y, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -1243,8 +1242,8 @@ dnml_status crint_mutex_nor(crint *x, crint y, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_xor(crint *x, crint y, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_ERR_INVAL; }
@@ -1254,8 +1253,8 @@ dnml_status crint_mutex_xor(crint *x, crint y, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -1279,8 +1278,8 @@ dnml_status crint_mutex_xor(crint *x, crint y, size_t op_range) {
     fake_normalized.poisoned = 0; x = 0; pbv_crint_clear(y); op_range = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_mutex_xnor(crint *x, crint y, size_t op_range) {
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), pointer_null, { crint_free(&y); });
-    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), full_contract, { crint_free(x); crint_free(&y); });
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
+    DNML_TEST_ASSERT((crint_pvalidate(x) & crint_validate(y)), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
     if (_lib_crt_eq((ptr_t)x, (ptr_t)(NULL))) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_NULL; }
     if (!crint_pvalidate(x) | !crint_validate(y)) { pbv_crint_clear(y); x = 0; op_range = 0; return CRINT_ERR_INVAL; }
@@ -1290,8 +1289,8 @@ dnml_status crint_mutex_xnor(crint *x, crint y, size_t op_range) {
     dnml_status reserve_stat = crint_reserve(x, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(reserve_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(x); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(reserve_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop and Fake-handling for OOM */
@@ -1320,7 +1319,7 @@ dnml_status crint_mutex_xnor(crint *x, crint y, size_t op_range) {
 
 //* ================================= FUNCTION, FIXED WIDTH BITWISE OPERATION ================================== */
 crint crint_andu64(crint x, uint64_t val, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1328,11 +1327,11 @@ crint crint_andu64(crint x, uint64_t val, dnml_status *err) {
     /* Allocating a New Crint */
     crint res; dnml_status new_stat = crint_new(&res);
     CHOOSE_OPTION((ret_stat), (
-        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)), 
+        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Actual Operation */ limb_t fake_buf[1] = {0}; 
+    /* Actual Operation */ limb_t fake_buf[1] = {0};
     uint64_t first_limb = x.limbs[0]; CHOOSE_OPTION((first_limb), (x.n), (first_limb), (0));
     res.limbs = (_lib_crt_eq(ret_stat, DNML_ALLOC_OOM)) ? fake_buf : res.limbs;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
@@ -1349,7 +1348,7 @@ crint crint_andu64(crint x, uint64_t val, dnml_status *err) {
     val = 0; err = 0; first_limb = 0; mask = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_nandu64(crint x, uint64_t val, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1357,11 +1356,11 @@ crint crint_nandu64(crint x, uint64_t val, dnml_status *err) {
     /* Allocating a New Crint */
     crint res; dnml_status new_stat = crint_snew(&res, x.n);
     CHOOSE_OPTION((ret_stat), (
-        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)), 
+        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Actual Operation */ limb_t fake_buf[FAKE_BUF_CAP] = {0}; 
+    /* Actual Operation */ limb_t fake_buf[FAKE_BUF_CAP] = {0};
     uint64_t first_limb = x.limbs[0]; CHOOSE_OPTION((first_limb), (x.n), (first_limb), (0));
     res.limbs = (_lib_crt_eq(ret_stat, DNML_ALLOC_OOM)) ? fake_buf : res.limbs;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
@@ -1371,17 +1370,17 @@ crint crint_nandu64(crint x, uint64_t val, dnml_status *err) {
 
     /* Masking to Invalidity + Aggressive Post-operation Cleanup */ // clang-format off
     res.limbs[0] &= mask;
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_POISON)) ? res.limbs : NULL; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_POISON)) ? res.limbs : NULL;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.n &= mask; res.sign &= mask; res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat; ret_stat = 0;
     __libdnml_smemwipe_u64(fake_buf, FAKE_BUF_CAP, 0, FAKE_BUF_CAP - 1, false);
-    new_stat = 0; fake_buf[0] = 0; first_limb = 0; mask = 0; 
+    new_stat = 0; fake_buf[0] = 0; first_limb = 0; mask = 0;
     pbv_crint_clear(x); val = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_oru64(crint x, uint64_t val, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1389,11 +1388,11 @@ crint crint_oru64(crint x, uint64_t val, dnml_status *err) {
     /* Allocating a New Crint */
     crint res; dnml_status new_stat = crint_snew(&res, x.n);
     CHOOSE_OPTION((ret_stat), (
-        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)), 
+        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Bitwise Loop Operation */ 
+    /* Bitwise Loop Operation */
     limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, x.n); ++i) {
@@ -1405,9 +1404,9 @@ crint crint_oru64(crint x, uint64_t val, dnml_status *err) {
     limb_t fake_buf[FAKE_BUF_CAP] = {0}; crint* norm_crint; res.n = x.n;
     crint fake_normalized = { .limbs = fake_buf, .n = FAKE_BUF_CAP, .cap = FAKE_BUF_CAP, .sign = 1, .poisoned = false };
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized; crint_normalize(norm_crint);
-    
+
     /* Masking metadata to Invalidity based on status */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); res.n &= mask; res.cap = x.n & mask;
@@ -1419,7 +1418,7 @@ crint crint_oru64(crint x, uint64_t val, dnml_status *err) {
     fake_normalized.poisoned = 0; pbv_crint_clear(x); val = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_noru64(crint x, uint64_t val, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1427,11 +1426,11 @@ crint crint_noru64(crint x, uint64_t val, dnml_status *err) {
     /* Allocating a New Crint */
     crint res; dnml_status new_stat = crint_snew(&res, x.n);
     CHOOSE_OPTION((ret_stat), (
-        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)), 
+        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Bitwise Loop Operation */ 
+    /* Bitwise Loop Operation */
     limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, x.n); ++i) {
@@ -1445,7 +1444,7 @@ crint crint_noru64(crint x, uint64_t val, dnml_status *err) {
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized; crint_normalize(norm_crint);
 
     /* Masking metadata to Invalidity based on status */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); res.n &= mask; res.cap = x.n & mask;
@@ -1457,7 +1456,7 @@ crint crint_noru64(crint x, uint64_t val, dnml_status *err) {
     fake_normalized.poisoned = 0; pbv_crint_clear(x); val = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_xoru64(crint x, uint64_t val, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1465,11 +1464,11 @@ crint crint_xoru64(crint x, uint64_t val, dnml_status *err) {
     /* Allocating a New Crint */
     crint res; dnml_status new_stat = crint_snew(&res, x.n);
     CHOOSE_OPTION((ret_stat), (
-        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)), 
+        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Bitwise Loop Operation */ 
+    /* Bitwise Loop Operation */
     limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, x.n); ++i) {
@@ -1483,7 +1482,7 @@ crint crint_xoru64(crint x, uint64_t val, dnml_status *err) {
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized; crint_normalize(norm_crint);
 
     /* Masking metadata to Invalidity based on status */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); res.n &= mask; res.cap = x.n & mask;
@@ -1495,7 +1494,7 @@ crint crint_xoru64(crint x, uint64_t val, dnml_status *err) {
     fake_normalized.poisoned = 0; pbv_crint_clear(x); val = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_xnoru64(crint x, uint64_t val, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate((x))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; })
     /* Actual Operations */ dnml_status ret_stat = CRINT_SUCCESS;
@@ -1503,11 +1502,11 @@ crint crint_xnoru64(crint x, uint64_t val, dnml_status *err) {
     /* Allocating a New Crint */
     crint res; dnml_status new_stat = crint_snew(&res, x.n);
     CHOOSE_OPTION((ret_stat), (
-        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)), 
+        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        _lib_crt_eq(ret_stat, CRINT_ERR_RANGE)),
         (DNML_ALLOC_OOM), (ret_stat)
     );
-    /* Bitwise Loop Operation */ 
+    /* Bitwise Loop Operation */
     limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, x.n); ++i) {
@@ -1521,7 +1520,7 @@ crint crint_xnoru64(crint x, uint64_t val, dnml_status *err) {
     norm_crint = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &res : &fake_normalized; crint_normalize(norm_crint);
 
     /* Masking metadata to Invalidity based on status */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); res.n &= mask; res.cap = x.n & mask;
@@ -1533,7 +1532,7 @@ crint crint_xnoru64(crint x, uint64_t val, dnml_status *err) {
     fake_normalized.poisoned = 0; pbv_crint_clear(x); val = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_and(crint x, crint y, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -1544,8 +1543,8 @@ crint crint_and(crint x, crint y, dnml_status *err) {
     size_t op_range = crtmax(x.n, y.n); crint res; dnml_status new_stat = crint_snew(&res, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(&x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop & Fake-handling for OOM */
@@ -1560,7 +1559,7 @@ crint crint_and(crint x, crint y, dnml_status *err) {
         *dst = ((*src1) & (*src2)); a = 0; b = 0;
     }
     /* Masking to Invalidity */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.n = op_range & mask; res.cap = op_range & mask; res.sign = (int64_t)((x.sign | y.sign) & mask);
@@ -1572,13 +1571,13 @@ crint crint_and(crint x, crint y, dnml_status *err) {
     norm_crint = (_lib_crt_gt(ret_stat, CRINT_SUCCESS)) ? &res : & fake_normalized;
     crint_normalize(norm_crint); /**/ if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err= ret_stat;
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0; 
+    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0;
     fake_src1 = 0; fake_src2 = 0; dst = 0; src1 = 0; src2 = 0; fake_normalized.limbs = 0;
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0; 
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_nand(crint x, crint y, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -1589,8 +1588,8 @@ crint crint_nand(crint x, crint y, dnml_status *err) {
     size_t op_range = crtmax(x.n, y.n); crint res; dnml_status new_stat = crint_snew(&res, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(&x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop & Fake-handling for OOM */
@@ -1605,7 +1604,7 @@ crint crint_nand(crint x, crint y, dnml_status *err) {
         *dst = ~((*src1) & (*src2)); a = 0; b = 0;
     }
     /* Masking to Invalidity */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.n = op_range & mask; res.cap = op_range & mask; res.sign = (int64_t)((x.sign | y.sign) & mask);
@@ -1617,13 +1616,13 @@ crint crint_nand(crint x, crint y, dnml_status *err) {
     norm_crint = (_lib_crt_gt(ret_stat, CRINT_SUCCESS)) ? &res : & fake_normalized;
     crint_normalize(norm_crint); /**/ if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err= ret_stat;
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0; 
+    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0;
     fake_src1 = 0; fake_src2 = 0; dst = 0; src1 = 0; src2 = 0; fake_normalized.limbs = 0;
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0; 
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_or(crint x, crint y, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -1634,8 +1633,8 @@ crint crint_or(crint x, crint y, dnml_status *err) {
     size_t op_range = crtmax(x.n, y.n); crint res; dnml_status new_stat = crint_snew(&res, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(&x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop & Fake-handling for OOM */
@@ -1650,7 +1649,7 @@ crint crint_or(crint x, crint y, dnml_status *err) {
         *dst = ((*src1) | (*src2)); a = 0; b = 0;
     }
     /* Masking to Invalidity */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.n = op_range & mask; res.cap = op_range & mask; res.sign = (int64_t)((x.sign | y.sign) & mask);
@@ -1662,13 +1661,13 @@ crint crint_or(crint x, crint y, dnml_status *err) {
     norm_crint = (_lib_crt_gt(ret_stat, CRINT_SUCCESS)) ? &res : & fake_normalized;
     crint_normalize(norm_crint); /**/ if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err= ret_stat;
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0; 
+    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0;
     fake_src1 = 0; fake_src2 = 0; dst = 0; src1 = 0; src2 = 0; fake_normalized.limbs = 0;
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0; 
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_nor(crint x, crint y, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -1679,8 +1678,8 @@ crint crint_nor(crint x, crint y, dnml_status *err) {
     size_t op_range = crtmax(x.n, y.n); crint res; dnml_status new_stat = crint_snew(&res, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(&x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop & Fake-handling for OOM */
@@ -1695,7 +1694,7 @@ crint crint_nor(crint x, crint y, dnml_status *err) {
         *dst = ~((*src1) | (*src2)); a = 0; b = 0;
     }
     /* Masking to Invalidity */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.n = op_range & mask; res.cap = op_range & mask; res.sign = (int64_t)((x.sign | y.sign) & mask);
@@ -1707,13 +1706,13 @@ crint crint_nor(crint x, crint y, dnml_status *err) {
     norm_crint = (_lib_crt_gt(ret_stat, CRINT_SUCCESS)) ? &res : & fake_normalized;
     crint_normalize(norm_crint); /**/ if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err= ret_stat;
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0; 
+    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0;
     fake_src1 = 0; fake_src2 = 0; dst = 0; src1 = 0; src2 = 0; fake_normalized.limbs = 0;
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0; 
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_xor(crint x, crint y, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -1724,8 +1723,8 @@ crint crint_xor(crint x, crint y, dnml_status *err) {
     size_t op_range = crtmax(x.n, y.n); crint res; dnml_status new_stat = crint_snew(&res, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(&x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop & Fake-handling for OOM */
@@ -1740,7 +1739,7 @@ crint crint_xor(crint x, crint y, dnml_status *err) {
         *dst = ((*src1) ^ (*src2)); a = 0; b = 0;
     }
     /* Masking to Invalidity */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.n = op_range & mask; res.cap = op_range & mask; res.sign = (int64_t)((x.sign | y.sign) & mask);
@@ -1752,13 +1751,13 @@ crint crint_xor(crint x, crint y, dnml_status *err) {
     norm_crint = (_lib_crt_gt(ret_stat, CRINT_SUCCESS)) ? &res : & fake_normalized;
     crint_normalize(norm_crint); /**/ if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err= ret_stat;
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0; 
+    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0;
     fake_src1 = 0; fake_src2 = 0; dst = 0; src1 = 0; src2 = 0; fake_normalized.limbs = 0;
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0; 
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_xnor(crint x, crint y, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -1769,8 +1768,8 @@ crint crint_xnor(crint x, crint y, dnml_status *err) {
     size_t op_range = crtmax(x.n, y.n); crint res; dnml_status new_stat = crint_snew(&res, op_range);
     DNML_TEST_ASSERT((_lib_crt_neq(new_stat, DNML_ALLOC_OOM)), realloc_null, { crint_free(&x); crint_free(&y); });
     CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) & 
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), 
+        (_lib_crt_eq(new_stat, DNML_ALLOC_OOM)) &
+        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Main Loop & Fake-handling for OOM */
@@ -1785,7 +1784,7 @@ crint crint_xnor(crint x, crint y, dnml_status *err) {
         *dst = ~((*src1) ^ (*src2)); a = 0; b = 0;
     }
     /* Masking to Invalidity */
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     res.n = op_range & mask; res.cap = op_range & mask; res.sign = (int64_t)((x.sign | y.sign) & mask);
@@ -1797,9 +1796,9 @@ crint crint_xnor(crint x, crint y, dnml_status *err) {
     norm_crint = (_lib_crt_gt(ret_stat, CRINT_SUCCESS)) ? &res : & fake_normalized;
     crint_normalize(norm_crint); /**/ if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err= ret_stat;
     /* Aggressive Post-Operation Cleanup */ // clang-format off
-    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0; 
+    ret_stat = 0; op_range = 0; new_stat = 0; mask = 0; norm_crint = 0; fake_dst = 0;
     fake_src1 = 0; fake_src2 = 0; dst = 0; src1 = 0; src2 = 0; fake_normalized.limbs = 0;
-    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0; 
+    fake_normalized.n = 0; fake_normalized.cap = 0; fake_normalized.sign = 0; fake_normalized.poisoned = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); err = 0; chosen_freed = 0; return res; // clang-format on
 }
 
@@ -1808,8 +1807,8 @@ crint crint_xnor(crint x, crint y, dnml_status *err) {
 
 //* ================================= FUNCTION, EXPLICIT WIDTH BITWISE OPERATION ================================== */
 crint crint_ex_andu64(crint x, uint64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -1819,8 +1818,8 @@ crint crint_ex_andu64(crint x, uint64_t val, size_t op_range, dnml_status *err) 
     /* Allocation of Result */
     crint res; dnml_status new_stat = crint_snew(&res, op_range);
     CHOOSE_OPTION((ret_stat), (
-        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) & 
-        _lib_crt_eq(ret_stat, CRINT_SUCCESS)), 
+        _lib_crt_eq(new_stat, DNML_ALLOC_OOM) &
+        _lib_crt_eq(ret_stat, CRINT_SUCCESS)),
         (DNML_ALLOC_OOM), (ret_stat)
     );
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(ret_stat, CRINT_SUCCESS))); limb_t tmp_limb[1] = {0};
@@ -1831,17 +1830,17 @@ crint crint_ex_andu64(crint x, uint64_t val, size_t op_range, dnml_status *err) 
     CHOOSE_OPTION((ret_sign), (first_limb), (x.sign), (1));
     CHOOSE_OPTION((res.sign), (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), (ret_sign), (0));
     /* Post-operation Cleanup */ // clang-format off
-    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_POISON)) ? res.limbs : NULL; 
+    limb_t *chosen_freed = (_lib_crt_eq(ret_stat, CRINT_POISON)) ? res.limbs : NULL;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    res.cap = op_range & mask; res.poisoned = (x.poisoned); ret_stat = 0; 
-    first_limb = 0; new_stat = 0; mask = 0; tmp_limb[0] = 0; pbv_crint_clear(x); 
+    res.cap = op_range & mask; res.poisoned = (x.poisoned); ret_stat = 0;
+    first_limb = 0; new_stat = 0; mask = 0; tmp_limb[0] = 0; pbv_crint_clear(x);
     val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_nandu64(crint x, uint64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -1872,21 +1871,21 @@ crint crint_ex_nandu64(crint x, uint64_t val, size_t op_range, dnml_status *err)
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
     ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; norm_crint = 0; fake_normalized.limbs = 0;
-    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0; 
+    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_oru64(crint x, uint64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -1917,21 +1916,21 @@ crint crint_ex_oru64(crint x, uint64_t val, size_t op_range, dnml_status *err) {
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
     ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; norm_crint = 0; fake_normalized.limbs = 0;
-    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0; 
+    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_noru64(crint x, uint64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -1962,21 +1961,21 @@ crint crint_ex_noru64(crint x, uint64_t val, size_t op_range, dnml_status *err) 
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
     ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; norm_crint = 0; fake_normalized.limbs = 0;
-    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0; 
+    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_xoru64(crint x, uint64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2007,21 +2006,21 @@ crint crint_ex_xoru64(crint x, uint64_t val, size_t op_range, dnml_status *err) 
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
     ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; norm_crint = 0; fake_normalized.limbs = 0;
-    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0; 
+    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_xnoru64(crint x, uint64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2052,21 +2051,21 @@ crint crint_ex_xnoru64(crint x, uint64_t val, size_t op_range, dnml_status *err)
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
     ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; norm_crint = 0; fake_normalized.limbs = 0;
-    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0; 
+    fake_normalized.cap = 0; fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_andi64(crint x, int64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2080,7 +2079,7 @@ crint crint_ex_andi64(crint x, int64_t val, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src; 
+    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t extension_bits, mag_val = __CRT_MAG_I64__(val);
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
@@ -2099,22 +2098,22 @@ crint crint_ex_andi64(crint x, int64_t val, size_t op_range, dnml_status *err) {
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0;
     extension_bits = 0; norm_crint = 0; fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_nandi64(crint x, int64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2128,7 +2127,7 @@ crint crint_ex_nandi64(crint x, int64_t val, size_t op_range, dnml_status *err) 
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src; 
+    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t extension_bits, mag_val = __CRT_MAG_I64__(val);
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
@@ -2147,22 +2146,22 @@ crint crint_ex_nandi64(crint x, int64_t val, size_t op_range, dnml_status *err) 
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0;
     extension_bits = 0; norm_crint = 0; fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_ori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2176,7 +2175,7 @@ crint crint_ex_ori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src; 
+    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t extension_bits, mag_val = __CRT_MAG_I64__(val);
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
@@ -2195,22 +2194,22 @@ crint crint_ex_ori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0;
     extension_bits = 0; norm_crint = 0; fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_nori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2224,7 +2223,7 @@ crint crint_ex_nori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src; 
+    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t extension_bits, mag_val = __CRT_MAG_I64__(val);
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
@@ -2243,22 +2242,22 @@ crint crint_ex_nori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0;
     extension_bits = 0; norm_crint = 0; fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_xori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2272,7 +2271,7 @@ crint crint_ex_xori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src; 
+    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t extension_bits, mag_val = __CRT_MAG_I64__(val);
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
@@ -2291,22 +2290,22 @@ crint crint_ex_xori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0;
     extension_bits = 0; norm_crint = 0; fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_xnori64(crint x, int64_t val, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x)), full_contract, { crint_free(&x); });
-    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); }); 
+    DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
+    DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     if (!crint_validate(x)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
         pbv_crint_clear(x); val = 0; op_range = 0; return __CRINT_ERRVAL__();
@@ -2320,7 +2319,7 @@ crint crint_ex_xnori64(crint x, int64_t val, size_t op_range, dnml_status *err) 
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src; 
+    limb_t fake_dst = 123, fake_src = 456; limb_t *dst, *src;
     uint64_t extension_bits, mag_val = __CRT_MAG_I64__(val);
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     CHOOSE_OPTION((extension_bits), (_lib_crt_isneg(val)), (UINT64_MAX), (0));
@@ -2339,21 +2338,21 @@ crint crint_ex_xnori64(crint x, int64_t val, size_t op_range, dnml_status *err) 
     crint_normalize(norm_crint);
 
     /* Post-operation Cleanup */ // clang-format off
-    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs; 
+    limb_t* chosen_freed = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? NULL : res.limbs;
     free(chosen_freed); // Safe nop when chosen_freed = NULL since ANSI-C
     res.limbs = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? res.limbs : 0;
-    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask)); 
+    CHOOSE_OPTION((res.sign), (res.n), (x.sign & mask), (1 & mask));
     res.n &= mask; res.cap = op_range & mask;
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src = 0; dst = 0; src = 0; mag_val = 0;
     extension_bits = 0; norm_crint = 0; fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); val = 0; op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_and(crint x, crint y, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -2368,7 +2367,7 @@ crint crint_ex_and(crint x, crint y, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2; 
+    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
         size_t sindex1; CHOOSE_OPTION((sindex1), (_lib_crt_lt(i, x.n)), (i), (0));
@@ -2395,13 +2394,13 @@ crint crint_ex_and(crint x, crint y, size_t op_range, dnml_status *err) {
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0; 
-    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0;
+    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_nand(crint x, crint y, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -2416,7 +2415,7 @@ crint crint_ex_nand(crint x, crint y, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2; 
+    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
         size_t sindex1; CHOOSE_OPTION((sindex1), (_lib_crt_lt(i, x.n)), (i), (0));
@@ -2443,13 +2442,13 @@ crint crint_ex_nand(crint x, crint y, size_t op_range, dnml_status *err) {
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0; 
-    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0;
+    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_or(crint x, crint y, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -2464,7 +2463,7 @@ crint crint_ex_or(crint x, crint y, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2; 
+    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
         size_t sindex1; CHOOSE_OPTION((sindex1), (_lib_crt_lt(i, x.n)), (i), (0));
@@ -2491,13 +2490,13 @@ crint crint_ex_or(crint x, crint y, size_t op_range, dnml_status *err) {
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0; 
-    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0;
+    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_nor(crint x, crint y, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -2512,7 +2511,7 @@ crint crint_ex_nor(crint x, crint y, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2; 
+    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
         size_t sindex1; CHOOSE_OPTION((sindex1), (_lib_crt_lt(i, x.n)), (i), (0));
@@ -2539,13 +2538,13 @@ crint crint_ex_nor(crint x, crint y, size_t op_range, dnml_status *err) {
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0; 
-    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0;
+    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_xor(crint x, crint y, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -2560,7 +2559,7 @@ crint crint_ex_xor(crint x, crint y, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2; 
+    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
         size_t sindex1; CHOOSE_OPTION((sindex1), (_lib_crt_lt(i, x.n)), (i), (0));
@@ -2587,13 +2586,13 @@ crint crint_ex_xor(crint x, crint y, size_t op_range, dnml_status *err) {
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0; 
-    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0;
+    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
 crint crint_ex_xnor(crint x, crint y, size_t op_range, dnml_status *err) {
-    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), full_contract, { crint_free(&x); crint_free(&y); });
+    DNML_TEST_ASSERT((crint_validate(x) & crint_validate(y)), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     if (!crint_validate(x) | !crint_validate(y)) {
         if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = CRINT_ERR_INVAL;
@@ -2608,7 +2607,7 @@ crint crint_ex_xnor(crint x, crint y, size_t op_range, dnml_status *err) {
         (DNML_ALLOC_OOM), (ret_stat)
     );
     /* Bitwise Loop Operation */
-    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2; 
+    limb_t fake_dst = 123, fake_src1 = 456, fake_src2 = 789; limb_t *dst, *src1, *src2;
     uint64_t mask = (uint64_t)(-(int64_t)(_lib_crt_eq(new_stat, CRINT_SUCCESS)));
     for (size_t i = 0; _lib_crt_lt(i, op_range); ++i) {
         size_t sindex1; CHOOSE_OPTION((sindex1), (_lib_crt_lt(i, x.n)), (i), (0));
@@ -2635,11 +2634,8 @@ crint crint_ex_xnor(crint x, crint y, size_t op_range, dnml_status *err) {
     res.poisoned = (_lib_crt_eq(ret_stat, CRINT_POISON));
     /* Aggeressive Post-operation Cleanup */
     if (_lib_crt_neq((ptr_t)err, (ptr_t)(NULL))) *err = ret_stat;
-    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0; 
-    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0; 
+    ret_stat = 0; new_stat = 0; fake_dst = 0; fake_src1 = 0; fake_src2 = 0; dst = 0;
+    src1 = 0; src2 = 0; norm_crint = 0;fake_normalized.limbs = 0; fake_normalized.cap = 0;
     fake_normalized.n = 0; fake_normalized.poisoned = 0; fake_normalized.sign = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); op_range = 0; err = 0; chosen_freed = 0; return res; // clang-format on
 }
-
-
-

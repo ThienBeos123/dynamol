@@ -53,14 +53,14 @@ extern uint64_t _x86sv_modinv64(uint64_t x);
 #define _x86_modinv64   _x86sv_modinv64
 // _x86_sysv_bitops.S
 extern uint8_t _x86sv_clz64e(uint64_t x); //* Also crt-secured
-extern uint8_t _x86sv_clz64s(uint64_t x); //* Also crt-secured 
+extern uint8_t _x86sv_clz64s(uint64_t x); //* Also crt-secured
 extern uint8_t _x86sv_ctz64e(uint64_t x); //* Also crt-secured
 extern uint8_t _x86sv_ctz64s(uint64_t x); //* Also crt-secured
 extern uint64_t _x86sv_bswap64(uint64_t x); //* Also crt-secured
 extern uint8_t _x86sv_pcnt64e(uint64_t x); //* Also crt-secured
 extern uint8_t _x86sv_pcnt64s(uint64_t x); //* Also crt-secured
 #define _x86_clz64e     _x86sv_clz64e
-#define _x86_clz64s     _x86sv_clz64s 
+#define _x86_clz64s     _x86sv_clz64s
 #define _x86_ctz64e     _x86sv_ctz64e
 #define _x86_ctz64s     _x86sv_ctz64s
 #define _x86_bswap64    _x86sv_bswap64
@@ -144,7 +144,7 @@ extern uint64_t _x86w64_bswap64(uint64_t x); //* Also crt-secured
 extern uint8_t _x86w64_pcnt64e(uint64_t x); //* Also crt-secured
 extern uint8_t _x86w64_pcnt64s(uint64_t x); //* Also crt-secured
 #define _x86_clz64e     _x86w64_clz64e
-#define _x86_clz64s     _x86w64_clz64s  
+#define _x86_clz64s     _x86w64_clz64s
 #define _x86_ctz64e     _x86w64_ctz64e
 #define _x86_ctz64s     _x86w64_ctz64s
 #define _x86_bswap64    _x86w64_bswap64

@@ -34,18 +34,18 @@ size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size) {
 }
 size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     size_t k = (size_t)(max(m_size, n_size) / 3) + 1;
-    size_t total_points_p = (k << 2 + 6);
-    size_t total_points_q = (k << 2 + 6);
+    size_t total_points_p = ((k << 2) + 6);
+    size_t total_points_q = ((k << 2) + 6);
     size_t total_points_r = ((k << 3) + (k << 1) + 32);
     size_t res_alias = (k << 1) + 14;
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
-size_t __BIGINT_TOOM_4_WS__(size_t m_size, size_t n_size) {}
-size_t __BIGINT_TOOM_5_WS__(size_t m_size, size_t n_size) {}
-size_t __BIGINT_TOOM_6p5_WS__(size_t m_size, size_t n_size) {}
-size_t __BIGINT_TOOM_7p5_WS__(size_t m_size, size_t n_size) {}
-size_t __BIGINT_TOOM_8p5_WS__(size_t m_size, size_t n_size) {}
-size_t __BIGINT_SSA_WS__(size_t a_size, size_t b_size) {}
+size_t __BIGINT_TOOM_4_WS__(size_t m_size, size_t n_size) { return 0; }
+size_t __BIGINT_TOOM_5_WS__(size_t m_size, size_t n_size) { return 0; }
+size_t __BIGINT_TOOM_6p5_WS__(size_t m_size, size_t n_size) { return 0; }
+size_t __BIGINT_TOOM_7p5_WS__(size_t m_size, size_t n_size) { return 0; }
+size_t __BIGINT_TOOM_8p5_WS__(size_t m_size, size_t n_size) { return 0; }
+size_t __BIGINT_SSA_WS__(size_t a_size, size_t b_size) { return 0; }
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
     if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0; // Doesn't need any
     else if (min(a_size, b_size) * 2 <= max(a_size, b_size)) return 0;
@@ -136,7 +136,7 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     *   +) pOuter = m0 + m2                                     | +) qOuter = n0 + n2
     *   +) p(0)   = m0          (NO FULL TEMPORARY)             | +) q(0)   = n0          (NO FULL TEMPORARY)
     *   +) p(1)   = pOuter + m1                                 | +) q(1)   = qOuter + n1
-    *   +) p(-1)  = pOuter - m1                                 | +) q(-1)  = qOuter - n1   
+    *   +) p(-1)  = pOuter - m1                                 | +) q(-1)  = qOuter - n1
     *   +) p(-2)  = 2*(p(-1) + m2) - m0                         | +) q(-2)  = 2*(q(-1) + n2) - n0
     *   +) p(inf) = m2          (NO FULL TEMPORARY)             | +) q(inf) = n2          (NO FULL TEMPORARY) */
     // p(x) TEMPORARIES                                         // q(x) TEMPORARIES
@@ -152,17 +152,17 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);                     __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
     __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);                  __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
     /* ------------ POINT-WISE MULTIPLICATION ------------
-    *   +) r(0)   = p(0)   * q(0)     
+    *   +) r(0)   = p(0)   * q(0)
     *   +) r(1)   = p(1)   * q(1)
-    *   +) r(-1)  = p(-1)  * q(-1)    
+    *   +) r(-1)  = p(-1)  * q(-1)
     *   +) r(-2)  = p(-2)  * q(-2)
-    *   +) r(inf) = p(inf) * q(inf)                    */ 
+    *   +) r(inf) = p(inf) * q(inf)                    */
     BIGINT_TEMP(r0,     (k << 1),               toom_ctx, err_check, end_stat); // 2k
     BIGINT_TEMP(r1,     (k << 1) + 9,           toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 8 (interpolation - r1)
     BIGINT_TEMP(r_neg1, (k << 1) + 9,           toom_ctx, err_check, end_stat); // 2k + 2 (original) --> 2k + 7 (interpolation - r2)
     BIGINT_TEMP(r_neg2, (k << 1) + 10,          toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 7 (interpolation - r3)
     BIGINT_TEMP(rinf,    m2size + n2size + 4,   toom_ctx, err_check, end_stat); // 2k (original) ---> 2k + 4 (bit-shifts accounted)
-    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx); 
+    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx);
     __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx);
     __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx);
     __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx);
@@ -174,10 +174,10 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
     /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
     /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
-    /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2); 
+    /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
     __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
     __BIGINT_ADD_SAW__(&r_neg2, &r_neg2, &rinf);
-    /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1); 
+    /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     // ------------------ RECOMPOSITION ------------------ //

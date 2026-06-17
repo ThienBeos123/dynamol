@@ -45,14 +45,10 @@ limitations under the License.
 
 
 //? ============================= COMMON !TEST! ASSERT ERRORS CATALOG ============================= ?//
-#define pointer_null "Invalid Input: Pointer input passed as NULL (-Einput_null_pointer)"
-#define calloc_null "Allocation Failure: calloc() returned NULL (-Ealloc_calloc_fail)" /* CALLOC returns NULL */
-#define realloc_null "Allocation Failure: realloc() returned NULL (-Ealloc_realloc_fail)" /* REALLOC returns NULL */
-#define full_contract "Contract Violation: Invalid CryptInt (-Ecrypt_int_invalid)" /* FULL Contract Violation */
-#define store_inval "\
+#define ci_full_contract "Contract Violation: Invalid CryptInt (-Ecrypt_int_invalid)" /* FULL Contract Violation */
+#define ci_store_inval "\
 Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)" /* Partial Contract Violation - Storage */
 #define crint_poisoned "Mathematical Error: CryptInt Poisoned (-Ecrypt_int_invalid)" /* CryptInt Poisoined - Testing */
-#define null_err "Parameter Error: Status/Error parameter-based returns is null (-Enull_err_param)" /* err == NULL - testing */
 
 
 
@@ -87,9 +83,9 @@ Partial Contract Violation: CryptInt invalid for storage (-Ecrypt_int_sinvalid)"
 
 // Mutative Macros
 #define _pre_assert(x, cleanup) do { \
-    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)(x), (ptr_t)(NULL))), pointer_null, {}); \
+    DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)(x), (ptr_t)(NULL))), input_null, {}); \
     DNML_TEST_ASSERT((!(x)->poisoned), crint_poisoned, {cleanup}); \
-    DNML_TEST_ASSERT((crint_pvalidate((x))), full_contract, {cleanup}); \
+    DNML_TEST_ASSERT((crint_pvalidate((x))), ci_full_contract, {cleanup}); \
 } while(0);
 #define _mheap_alloc_oom(err) do { DNML_TEST_ASSERT((err != DNML_ALLOC_OOM), realloc_null, __crint_exit()); } while(0);
 

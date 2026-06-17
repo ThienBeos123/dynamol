@@ -38,7 +38,7 @@ All contributions must target `dev` as the final endpoint, while `main` is only 
 ## Code Standard & Requiremnets
 ### Code Standard:
 Please detail to the following files:
-- [CODE-STANDARDS.md](/CODE-STANDARDS.md) (Project-wide, Genearal standards)
+- [CODE-STANDARDS.md](/doc/CODE-STANDARDS.md) (Project-wide, Genearal standards)
 - [CRYPT-API-DESIGN.md](drypto/CRYPT-API-DESIGN.md) (Code Standard specific to the Drypto module)
 - [PERF-API-DESIGN.md](dynamol/PERF-API-DESIGN.md) (Code standard specific to the Dynamol module)
 
@@ -124,4 +124,4 @@ Contributors must either:
 
 Before testing such refactored features
 
-### For more details, please have a look at [TEST_CONDUCT.md](test/TEST_CONDUCT.md)
+### For more details, please have a look at the [README.md](test/README.md) at the directory [`/test`](test/README.md)

@@ -113,7 +113,15 @@ typedef struct {
     uint64_t (*wmul128)(uint64_t a, uint64_t b, uint64_t *hi);
     uint64_t (*wdiv128)(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed);
 } _CRT_ARITH_FTABLE;
-typedef struct {} _CRT_ALG_FTABLE;
+typedef struct {
+    // Signed Integer Algebraic functions
+    int64_t (*crt_fmod)(int64_t x);
+    int64_t (*crt_fpow)(int64_t base, int64_t exp);
+    int64_t (*crt_sqrt)(int64_t x);
+    int64_t (*crt_cbrt)(int64_t x);
+    int64_t (*crt_log)(int64_t x);
+    int64_t (*crt_log10)(int64_t x);
+} _CRT_ALG_FTABLE;
 typedef struct {
     /* Standard U64 Comparisons */
     uint8_t (*lt_func)(uint64_t x, uint64_t y);
@@ -150,6 +158,7 @@ void _libdnml_fill_crt_garith(void);
 void _libdnml_fill_crt_galg(void);
 void _libdnml_fill_crt_gcmp(void);
 void _libdnml_fill_crt_gsec(void);
+void __dnml_crtifunc_cleanup(void);
 
 
 

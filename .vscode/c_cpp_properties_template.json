@@ -1,0 +1,39 @@
+{
+    "configurations": [
+        {
+            "name": "",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/dnml_sys",
+                "${workspaceFolder}/include/dnml_sys/asm",
+                "${workspaceFolder}/include/_libdnml_mem",
+                "${workspaceFolder}/include/_libdnml_perf",
+                "${workspaceFolder}/include/_libdnml_config",
+
+                "${workspaceFolder}/intrinsics",
+                "${workspaceFolder}/intrinsics/x86_64",
+                "${workspaceFolder}/intrinsics/arm64",
+                "${workspaceFolder}/intrinsics/risc-v64",
+                "${workspaceFolder}/intrinsics/zvanillc",
+                "${workspaceFolder}/intrinsics/crt_vanillc",
+
+                "${workspaceFolder}/util",
+                "${workspaceFolder}/calc_algo/algo_base",
+                "${workspaceFolder}/calc_algo/perf_based",
+                "${workspaceFolder}/calc_algo/crt_based",
+
+                "${workspaceFolder}/dynamol",
+                "${workspaceFolder}/dynamol/bigint",
+                "${workspaceFolder}/dynamol/bigfloat",
+                "${workspaceFolder}/drypto/crypt_int",
+                "${workspaceFolder}/drypto/crypt_float"
+            ],
+            "defines": [],
+            "compilerPath": "", 
+            "cStandard": "",
+            "cppStandard": "",
+            "intelliSenseMode": ""
+        }
+    ],
+    "version": 4
+}

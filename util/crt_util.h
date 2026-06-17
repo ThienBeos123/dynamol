@@ -41,17 +41,38 @@ extern "C" {
 
 
 /* crt_misc_util.c */
-void __libdnml_memset_strict(void *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop);
-void __libdnml_memwipe_strict(void *buf, size_t len, size_t start, size_t end, bool noop);
-void __libdnml_memcpy_strict(void *buf, const void* src, size_t len, size_t srclen, size_t start, size_t end, bool noop);
-void __libdnml_smemset_u64(uint64_t *buf, uint8_t val, size_t len, size_t start, size_t end, bool noop);
-void __libdnml_smemwipe_u64(uint64_t *buf, size_t len, size_t start, size_t end, bool noop);
-void __libdnml_smemcpy_u64(uint64_t *dst, uint64_t *src, size_t len, size_t srclen, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_memset_strict(volatile void *dst, uint8_t val, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_memwipe_strict(volatile void *dst, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_memcpy_strict(
+    volatile void *dst, const void* src, 
+    size_t len, size_t srclen, 
+    size_t start, size_t end, bool noop
+);
+NO_INLINE void __libdnml_memmove_strict(
+    volatile void *dst, size_t cap,
+    size_t dst_start, size_t src_start, 
+    size_t len, bool noop
+);
+NO_INLINE void __libdnml_smemset_u64(volatile uint64_t *dst, uint8_t val, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_smemwipe_u64(volatile uint64_t *dst, size_t len, size_t start, size_t end, bool noop);
+NO_INLINE void __libdnml_smemcpy_u64(
+    volatile uint64_t *dst, uint64_t *src,
+    size_t len, size_t srclen,
+    size_t start, size_t end, bool noop
+);
+NO_INLINE void __libdnml_smemmove_u64(
+    volatile uint64_t *dst, size_t cap,
+    size_t dst_start, size_t src_start, 
+    size_t len, bool noop
+);
 uint64_t __CRT_MAG_I64__(int64_t x);
 size_t __clamp_size(size_t cap, size_t insize);
 
 
 /* crt_bnum_util.c */
+dnml_status __CRINT_IFREE__(crint *x);
+dnml_status __CRINT_INEW__(crint *x);
+dnml_status __CRINT_INEWS__(crint *x, size_t n);
 dnml_status __CRINT_TRIM_LZ__(crint *x);
 int8_t __CRINT_INTERNAL_CMP__(crint *x, crint *y);
 dnml_status __CRINT_INTERNAL_RLSHIFT__(crint *x, size_t len, size_t limb_cnt);

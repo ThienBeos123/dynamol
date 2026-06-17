@@ -59,7 +59,7 @@ public:
     //* ======================================================================== *//
     /* Primitive -> BigInt */
     BigInt& operator=(const BigInt& other) { if (this != &other) { bigInt_set(other._data, &_data); } return *this; }
-    BigInt& operator=(BigInt&& other) noexcept { 
+    BigInt& operator=(BigInt&& other) noexcept {
         if (this != &other) {
             bigInt_free(&_data); _data = other._data;
             std::memset(&other._data, 0, sizeof(bigInt));
@@ -225,7 +225,7 @@ public:
     // ========================================================================
     void canonicalize() { bigInt_canonicalize(&_data); }
     void normalize() { bigInt_normalize(&_data); }
-    void resize(size_t k) { check_status(bigInt_resize(&_data, k)); }  
+    void resize(size_t k) { check_status(bigInt_resize(&_data, k)); }
     void reserve(size_t k) { check_status(bigInt_reserve(&_data, k)); }
     void shrink(size_t k) { check_status(bigInt_shrink(&_data, k)); }
     void reset() { bigInt_reset(&_data); }

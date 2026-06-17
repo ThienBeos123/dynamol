@@ -8,8 +8,7 @@ BIGINT:
    1. A cryptInt's limbs MUST NEVER be NULL (bi.limbs != NULL)
    2. A cryptInt's capacity MUST NEVER be less than 1 (bi.cap >= 1)
    3. A cryptInt's utilized length MUST NEVER be more than its capacity (bi.n <= bi.cap)
-   4. A cryptInt's sign MUST ALWAYS be either 1 (Positive) or -1 (Negative) 
-       (bi.sign = (1 || -1))
+   4. A cryptInt's sign MUST ALWAYS be either 1 (Positive) or -1 (Negative) (bi.sign = (1 || -1))
    5. A cryptInt's with a value of 0 canonically have 0 utilized length (bi.n == 0)
 
    -- ARITHMETIC VALIDITY --

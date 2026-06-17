@@ -48,7 +48,7 @@ asm_text_section
 
 
 /* ------- 64 BIT MODULAR INVERSE OF MODULO 2^64 -------
-* uint64_t _x86w64_modinv64(uint64_t x) 
+* uint64_t _x86w64_modinv64(uint64_t x)
 * arg: rcx: uint64_t x   (64 BIT)
 * ret: rax: x^-1 mod(2^64)
 */

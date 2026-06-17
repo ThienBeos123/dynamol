@@ -333,3 +333,43 @@ _libdnml_crt_sec_ftable.hw_halt = _cintrin_nop_halt;
 _libdnml_crt_sec_ftable.hw_shalt = _cintrin_nop_halt;
 #endif
 }
+void __dnml_crtifunc_cleanup(void) {
+    // Clearing CRT_BITOPS IFUNC table
+    _libdnml_crt_gbitops_ftable.bswap64 = 0;
+    _libdnml_crt_gbitops_ftable.clz64 = 0;
+    _libdnml_crt_gbitops_ftable.ctz64 = 0;
+    _libdnml_crt_gbitops_ftable.pcnt64 = 0;
+    // Clearing CRT_ARITH IFUNC table
+    _libdnml_crt_garith_ftable.add64c = 0;
+    _libdnml_crt_garith_ftable.sub64b = 0;
+    _libdnml_crt_garith_ftable.wdiv128 = 0;
+    _libdnml_crt_garith_ftable.wmul128 = 0;
+    // Clearing CRT_ALG IFUNC table
+    _libdnml_crt_galg_ftable.crt_fmod = 0;
+    _libdnml_crt_galg_ftable.crt_fpow = 0;
+    _libdnml_crt_galg_ftable.crt_sqrt = 0;
+    _libdnml_crt_galg_ftable.crt_cbrt = 0;
+    _libdnml_crt_galg_ftable.crt_log = 0;
+    _libdnml_crt_galg_ftable.crt_log10 = 0;
+    // Clearing CRT_CMP IFUNC - U64 COMPARISON table
+    _libdnml_crt_cmp_ftable.lt_func = 0;
+    _libdnml_crt_cmp_ftable.gt_func = 0;
+    _libdnml_crt_cmp_ftable.leq_func = 0;
+    _libdnml_crt_cmp_ftable.geq_func = 0;
+    // Clearing CRT_CMP IFUNC - I64 COMPARISON table
+    _libdnml_crt_cmp_ftable.lti64_func = 0;
+    _libdnml_crt_cmp_ftable.gti64_func = 0;
+    _libdnml_crt_cmp_ftable.leqi64_func = 0;
+    _libdnml_crt_cmp_ftable.geqi64_func = 0;
+    // Clearing CRT_CMP IFUNC - EQUALITY table
+    _libdnml_crt_cmp_ftable.is_neg = 0;
+    _libdnml_crt_cmp_ftable.is_pos = 0;
+    _libdnml_crt_cmp_ftable.eq_func = 0;
+    _libdnml_crt_cmp_ftable.neq_func = 0;
+    _libdnml_crt_cmp_ftable.select_fn = 0;
+    // Clearing CRT_SEC IFUNC table
+    _libdnml_crt_sec_ftable.hw_drbg = 0;
+    _libdnml_crt_sec_ftable.hw_halt = 0;
+    _libdnml_crt_sec_ftable.hw_shalt = 0;
+    _libdnml_crt_sec_ftable.hw_trng = 0;
+}

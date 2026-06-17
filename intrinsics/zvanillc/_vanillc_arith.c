@@ -38,15 +38,15 @@ uint64_t _cintrin_sub64b(uint64_t a, uint64_t b, uint8_t *borrow) {
 //  +) Mutate the high 64 bit as a parameter
 uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     // Seperate a and b into 2 different halves
-    uint64_t mask = (1ULL << 32) - 1;
-    uint64_t a_low = a & mask;        uint64_t b_low = b & mask; // Extract the 32 lower bits
-    uint64_t a_high = a >> 32;        uint64_t b_high = b >> 32; // Extract the 32 upper bits
+    uint64_t mask = (UINT64_C(1) << 32) - 1;
+    uint64_t a_low = a & mask; uint64_t b_low = b & mask; // Extract the 32 lower bits
+    uint64_t a_high = a >> 32; uint64_t b_high = b >> 32; // Extract the 32 upper bits
 
     uint64_t first_mul = a_low * b_low;
     uint64_t second_mul = a_low * b_high;
     uint64_t third_mul = a_high * b_low;
     uint64_t fourth_mul = a_high * b_high;
-    
+
     // Lower Half Calculation
     uint64_t mid = second_mul + third_mul;
     uint64_t mid_carry = (mid < second_mul); // Handles mid overflow (0 <= mid < 2^65)
@@ -55,13 +55,13 @@ uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     /* Lower half of a bit is attained by the formula:  Res % 2^64 = low
     *   +) (a x b % 2^64) = (first_mul + mid * 2^32 + fourth_mul * 2^64) % 2^64
     *                     = (first_mul + mid * 2^32) % 2^64 (1)
-    * 
+    *
     *   +) mid                      = mid_low + mid_high * 2^32
     *      mid * 2^32               = mid_low * 2^32 + mid_high * 2^64
     *      (mid * 2^32) % 2^64      = (mid_low * 2^32 + mid_high * 2^64) % 2^64
-    *      (mid * 2^32) % 2^64      = mid_low * 2^32                                
+    *      (mid * 2^32) % 2^64      = mid_low * 2^32
     *                               = mid_low << 32 (2)
-    * 
+    *
     * ----> (a x b % 2^64)      = first_mul + mid_low * 2^32
     * ----> (a x b) lower bits  = first_mul + mid_low * 2^32
     */
@@ -72,14 +72,14 @@ uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
     /* Higher half of a bit is attained by the formula:  floor(Res / 2^64) = high
     *   +) floor(a x b / 2^64) = floor((first_mul + mid * 2^32 + fourth_mul * 2^64) / 2^64)
     *                          = floor((first_mul / 2^64) + (mid * 2^-32) + fourth_mul)
-    * 
+    *
     *   +) mid                  = mid_low + mid_high * 2^32
     *      mid * 2^-32          = (mid_low + mid_high * 2^32) / 2^32
     *      mid * 2^-32          = (mid_low / 2^32) + mid_high
     *      floor(mid * 2^-32)   = floor((mid_low / 2^32) + mid_high)
     *      floor(mid * 2^-32)   = floor({0 <= mid_low / 2^32 < 1} + mid_high)  (0 <= mid_low < 2^32)
     *      floor(mid * 2^-32)   = mid_high
-    * 
+    *
     *   -----> floor(a x b / 2^64) = floor(first_mul / 2^64) + mid_high + fourth_mul
     *                              = mid_high + fourth_mul
     */
@@ -95,17 +95,20 @@ uint64_t _cintrin_wmul128(uint64_t a, uint64_t b, uint64_t *hi) {
 //  +) Mutates the 64 bit remainder parameter - rhat
 //  +) Preconditions: hi < div
 uint64_t _cintrin_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
+    if (!div) { *rhat = 0; if (overflowed != NULL) *overflowed = 1; return UINT64_MAX; }
+    if (!lo && !hi) { *rhat = 0; if (overflowed != NULL) *overflowed = 0; return 0; }
+    if (!hi) { *rhat = lo % div; if (overflowed != NULL) *overflowed = 0; return lo / div; }
     if (hi >= div) {
-        if (overflowed) *overflowed = 1;
+        if (overflowed != NULL) *overflowed = 1;
         *rhat = hi % div; return UINT64_MAX;
     }
     /* Normal Operations here */
     uint64_t q = 0;
-    for (int i = U64_BITS - 1; i >= 0; --i) {
-        q <<= 1;
-        uint64_t test_rem = (hi << 1) | ((lo >> i) & 1);
-        if (test_rem >= div) { q |= 1; hi = test_rem - div; }
-        else hi = test_rem;
-    }
-    *rhat = hi; *overflowed = 0; return q;
+    for (size_t i = 0; i < U64_BITS; ++i) {
+        uint8_t hi_overflow = (hi >> 63);
+        uint64_t test_rem = (hi << 1) | ((lo >> 63) & 1);
+        q <<= 1; lo <<= 1;
+        if (hi_overflow || test_rem >= div) { q |= 1; hi = test_rem - div; }
+        else { hi = test_rem; }
+    } *rhat = hi; *overflowed = 0; return q;
 }

@@ -17,130 +17,6 @@ limitations under the License.
 
 
 #include "intrinsics.h"
-
-
-
-
-
-//* --------------------------------------------------------------------------------------- *//
-//*                                    SINGLE-LIMB ARITHMETIC                               *//
-//* --------------------------------------------------------------------------------------- *//
-uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
-    *carry = !!(*carry);
-    #if __compiler_clang // Clang --> Always used
-        return __builtin_addcll(a, b, *carry, (unsigned long long*)carry);
-    #elif __compiler_gcc // GCC --> Always used
-        uint64_t sum;
-        *carry = __builtin_uaddll_overflow(a, b, &sum);
-        return sum;
-    #elif __compiler_msvc // MSVC --> Only on x86_64
-        uint64_t sum;
-        *carry = _addcarry_u64((*carry) ? 1 : 0, a, b,  &sum)
-        return sum;
-    #else
-        return (*_libdnml_crt_garith_ftable.add64c)(a, b, carry);
-    #endif
-}
-uint64_t __CRT_SUB_U64__(uint64_t a, uint64_t b, uint8_t *borrow) {
-    *borrow = !!(*borrow);
-    #if (__compiler_gcc || __compiler_clang) 
-        // Clang / GCC --> Always used
-        uint64_t diff;
-        *borrow =  __builtin_sub_overflow(a, b, &diff);
-        return diff;
-    #elif __compiler_msvc // MSVC --> Only on x86_64
-        uint64_t diff;
-        *borrow = _subborrow_u64((*borrow) ? 1 : 0, a, b, &diff);
-        return diff;
-    #else
-        return (*_libdnml_crt_garith_ftable.sub64b)(a, b, borrow);
-    #endif
-}
-uint64_t __CRT_MUL_U64__(uint64_t a, uint64_t b, uint64_t *hi) {
-    #if __HAS_int128__ // GCC / Clang --> ALWAYS USED
-        uint128 res = ((uint128)a) * ((uint128)b);
-        *hi = (uint64_t)(res >> U64_BITS);
-        return (uint64_t)res;
-    #elif __compiler_msvc // MSVC - Only on x86/ARM64
-        return _umul128(a, b, hi);
-    #else
-        return (*_libdnml_crt_garith_ftable.wmul128)(a, b, hi);
-    #endif
-}
-uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
-    if (hi >= div) { 
-        if (_DNML_DEBUG_MODE) { 
-            fputs("Division Error - Can't contain full quotient in 64 bit", stderr);
-            abort();
-        } else { *rhat = 0; return 0; }
-    } 
-    #if __HAS_int128__ // GCC / Clang
-        uint128 dividend = ((uint128)(hi) << U64_BITS) | lo; 
-        *rhat = (uint64_t)(dividend % div);
-        return (uint64_t)(dividend / div);
-    #elif __compiler_msvc // MSVC
-        return _udiv128(hi, lo, div, rhat);
-    #else // Unknown Compiler
-        #if !(__ARCH_X86_64__)
-            *rhat = _libdnml_crt_gbitops_ftable.clz64(div);
-        #endif
-        return (*_libdnml_crt_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
-    #endif
-}
-
-
-
-
-
-
-//* ----------------------------------------------------------------------------------- *//
-//*                                    BITWISE OPERATIONS                               *//
-//* ----------------------------------------------------------------------------------- *//
-uint8_t __CRT_CLZ_UI64__(uint64_t x) {
-    // The actual code
-    #if (__compiler_gcc || __compiler_clang)
-        return __builtin_clzll(x);
-    #elif __compiler_msvc
-        return _CountLeadingZeros64(x);
-    #else
-        return (*_libdnml_crt_gbitops_ftable.clz64)(x);
-    #endif
-}
-uint8_t __CRT_CTZ_UI64__(uint64_t x) {
-    // The actual code
-    #if (__compiler_gcc || __compiler_clang) 
-        return __builtin_ctzll(x);
-    #elif __compilter_msvc
-        return _CountTrailingZeros64(x);
-    #else
-        return (*_libdnml_crt_gbitops_ftable.ctz64)(x);
-    #endif
-}
-uint64_t __CRT_BSWAP_UI64__(uint64_t x) {
-    if (!x || !(x ^ UINT64_MAX)) return x;
-    #if (__compiler_gcc || __compiler_clang)
-        return __builtin_bswap64(x);
-    #elif __compiler_msvc
-        return _byteswap_uint64(x);
-    #else
-        return (*_libdnml_crt_gbitops_ftable.bswap64)(x);
-    #endif
-}
-uint8_t __CRT_PCNT_UI64__(uint64_t x) { 
-    if (!x) return 0; 
-    else if (!(x ^ UINT64_MAX)) return U64_BITS;
-    #if (__compiler_gcc || __compiler_clang)
-        return __builtin_popcountll(x);
-    #elif __compiler_msvc
-        return __popcnt64(x);
-    #else
-        return (*_libdnml_crt_gbitops_ftable.pcnt64)(x);
-    #endif
-}
-
-
-
-
 //* --------------------------------------------------------------------------------------- *//
 //*                                        COMPARISON ARIT                                  *//
 //* --------------------------------------------------------------------------------------- *//
@@ -178,13 +54,113 @@ uint8_t _lib_crt_isneg(int64_t x) {
     return (*_libdnml_crt_cmp_ftable.is_neg)(x);
 }
 uint8_t _lib_crt_neq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.eq_func)(x, y);
+    return (*_libdnml_crt_cmp_ftable.neq_func)(x, y);
 }
 uint8_t _lib_crt_eq(uint64_t x, uint64_t y) {
-    return (*_libdnml_crt_cmp_ftable.neq_func)(x, y);
+    return (*_libdnml_crt_cmp_ftable.eq_func)(x, y);
 }
 uint64_t _lib_crt_select(uint8_t cond, uint64_t a, uint64_t b) {
     return (*_libdnml_crt_cmp_ftable.select_fn)(cond, a, b);
+}
+
+
+
+
+//* --------------------------------------------------------------------------------------- *//
+//*                                    SINGLE-LIMB ARITHMETIC                               *//
+//* --------------------------------------------------------------------------------------- *//
+uint64_t __CRT_ADD_U64__(uint64_t a, uint64_t b, uint8_t *carry) {
+    unsigned long long carry_io = !!(*carry);
+    #if __compiler_clang
+        unsigned long long result = __builtin_addcll(a, b, carry_io, &carry_io); // clang-format off
+        *carry = (uint8_t)carry_io; carry_io = 0; a = 0; b = 0; carry = 0; return result; // clang-format on
+    #elif __compiler_gcc
+        uint64_t sum;
+        uint8_t c1 = __builtin_uaddll_overflow(a, b, &sum);
+        uint8_t c2 = __builtin_uaddll_overflow(sum, (uint64_t)carry_io, &sum); // clang-format off
+        *carry = c1 | c2; carry_io = 0; c1 = 0; c2 = 0; a = 0; b = 0; carry = 0;; return sum; // clang-format on
+    #elif __compiler_msvc
+        uint64_t sum; *carry = _addcarry_u64(!!(*carry) a, b, &sum); return sum;
+    #else
+        return (*_libdnml_crt_garith_ftable.add64c)(a, b, carry);
+    #endif
+}
+uint64_t __CRT_SUB_U64__(uint64_t a, uint64_t b, uint8_t *borrow) {
+    *borrow = !!(*borrow);
+    #if (__compiler_gcc || __compiler_clang)
+        uint64_t diff;
+        uint8_t b1 = __builtin_sub_overflow(a, b, &diff);
+        uint8_t b2 = __builtin_sub_overflow(diff, (uint64_t)*borrow, &diff); // clang-format off
+        *borrow = b1 | b2; b1 = 0; b2 = 0; a = 0; b = 0; borrow = 0; return diff; // clang-format on
+    #elif __compiler_msvc
+        uint64_t diff; *borrow = _subborrow_u64(!!(*borrow), a, b, &diff); return diff;
+    #else
+        return (*_libdnml_crt_garith_ftable.sub64b)(a, b, borrow);
+    #endif
+}
+uint64_t __CRT_MUL_U64__(uint64_t a, uint64_t b, uint64_t *hi) {
+    #if __HAS_int128__ // GCC / Clang --> ALWAYS USED
+        uint128 res = ((uint128)a) * ((uint128)b);
+        *hi = (uint64_t)(res >> U64_BITS); 
+        a = 0; b = 0; hi = 0; return (uint64_t)res;
+    #elif __compiler_msvc // MSVC - Only on x86/ARM64
+        return _umul128(a, b, hi);
+    #else
+        return (*_libdnml_crt_garith_ftable.wmul128)(a, b, hi);
+    #endif
+}
+uint64_t __CRT_DIV_U128__(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rhat, uint8_t *overflowed) {
+    return (*_libdnml_crt_garith_ftable.wdiv128)(lo, hi, div, rhat, overflowed);
+}
+
+
+
+
+
+
+//* ----------------------------------------------------------------------------------- *//
+//*                                    BITWISE OPERATIONS                               *//
+//* ----------------------------------------------------------------------------------- *//
+uint8_t __CRT_CLZ_UI64__(uint64_t x) {
+    // The actual code
+    #if (__compiler_gcc || __compiler_clang)
+        return __builtin_clzll(x);
+    #elif __compiler_msvc
+        return _CountLeadingZeros64(x);
+    #else
+        return (*_libdnml_crt_gbitops_ftable.clz64)(x);
+    #endif
+}
+uint8_t __CRT_CTZ_UI64__(uint64_t x) {
+    // The actual code
+    #if (__compiler_gcc || __compiler_clang)
+        return __builtin_ctzll(x);
+    #elif __compilter_msvc
+        return _CountTrailingZeros64(x);
+    #else
+        return (*_libdnml_crt_gbitops_ftable.ctz64)(x);
+    #endif
+}
+uint64_t __CRT_BSWAP_UI64__(uint64_t x) {
+    if (!x || !(x ^ UINT64_MAX)) return x;
+    #if (__compiler_gcc || __compiler_clang)
+        return __builtin_bswap64(x);
+    #elif __compiler_msvc
+        return _byteswap_uint64(x);
+    #else
+        return (*_libdnml_crt_gbitops_ftable.bswap64)(x);
+    #endif
+}
+uint8_t __CRT_PCNT_UI64__(uint64_t x) {
+    if (!x) return 0;
+    else if (!(x ^ UINT64_MAX)) return U64_BITS;
+    #if (__compiler_gcc || __compiler_clang)
+        return __builtin_popcountll(x);
+    #elif __compiler_msvc
+        return __popcnt64(x);
+    #else
+        return (*_libdnml_crt_gbitops_ftable.pcnt64)(x);
+    #endif
 }
 
 
@@ -200,8 +176,8 @@ typedef void (*halt_func_t)(void);
 static void __INTERNAL_MEMCPY_STRICT__(void *buf, const void *src, size_t len) {}
 static void __INTERNAL_MEMWIPE_STRICT__(void *buf, size_t len) {}
 static int __internal_write_seed(
-    void *buf, size_t len, int retry_max, 
-    rng_func_t hw_rng, halt_func_t hw_halt, 
+    void *buf, size_t len, int retry_max,
+    rng_func_t hw_rng, halt_func_t hw_halt,
     size_t *written
 ) {
     uint8_t* p = (uint8_t*)buf;
@@ -222,7 +198,7 @@ static int __internal_write_seed(
         uint8_t is_ok = (_lib_crt_eq(err, 0));
         // If a fatal error occurs anywhere, permanently latch global_status to -2
         global_status = (global_status & ~is_fatal) | (-2 & is_fatal);
-        
+
 
         // ------------ RETRIES TRACKING ------------
         // If retry_exceed && global_status != -2, latch to -1
@@ -243,7 +219,7 @@ static int __internal_write_seed(
 
         // ------------ FAULT MASKING & HIDING ------------
         // 1. Copy data into a local staging variable to guarantee 100% uniform code tracking
-        // 2. We execute a full 8-byte transfer into a temporary buffer, then conditionally 
+        // 2. We execute a full 8-byte transfer into a temporary buffer, then conditionally
         //    commit bytes into the real destination stream to eliminate memcpy timing variances.
         uint64_t staging_val = block;
         uint8_t staging_bytes[8]; __INTERNAL_MEMCPY_STRICT__(staging_bytes, &staging_val, 8);
@@ -262,8 +238,8 @@ static int __internal_write_seed(
         rem -= active_bytes; *written += active_bytes;
         (hw_halt)(); // ALWAYS DO A HALT TO ENSURE NO SIGNIFICANT TIMING VARIANCE
         /* ==== MANDATORY "PER-ITERATION" VARIABLE CLEANUP ==== */ // clang-format off
-        err = 0; block = 0; is_fatal = 0; is_wait = 0; is_ok = 0; retry_exceed = 0; 
-        has_space = 0; exec_valid = 0; write_enabled = 0; write_amounts = 0; active_bytes = 0; 
+        err = 0; block = 0; is_fatal = 0; is_wait = 0; is_ok = 0; retry_exceed = 0;
+        has_space = 0; exec_valid = 0; write_enabled = 0; write_amounts = 0; active_bytes = 0;
         staging_val = 0; __INTERNAL_MEMWIPE_STRICT__(staging_bytes, 8); // clang-format on
     }
     /* ==== MANDATORY "POST-OPERATION" VARIABLE CLEANUP ==== */ // clang-format off
@@ -382,7 +358,7 @@ static int ___ENTROPY_CSDARWIN(void *buf, size_t len, int retry_max, size_t *wri
     for (size_t i = 0; _lib_crt_lt(i, loop_limit); ++i) {
         // Process in chunks (getentropy has 256 byte limit)
         size_t n = _lib_crt_select((remain > 256), 256, remain);
-        int ret = getentropy(ucbuf, n); global_status |= (ret); 
+        int ret = getentropy(ucbuf, n); global_status |= (ret);
         n &= (-!(ret)); // ret == 0 --> n STAYS
         ucbuf += n; (*written) += n; remain -= n;
     }
@@ -428,7 +404,8 @@ static int ___ENTROPY_CSWIN64(void *buf, size_t len, size_t *written) { //todo U
     BCryptCloseAlgorithmProvider(alg_handle, 0); // Close provider
     if (!BCRYPT_SUCCESS(status)) { errno = EIO; return -1; } // Check for failure
     *written = len; return 0; // Success (can't truly track BCryptGenRandom write)
-
+#else
+    *written = 0; return -1;
 #endif
 }
 // Cryptographical Helpers
@@ -505,5 +482,5 @@ int __GET_ENTROPY_PQC(void *buf, size_t len) { //todo UNFINISHED
             ((uint8_t*)buf)[processed + i] *= (pool_hw[i] & 1) ? pool_hw[i] : pool_hw [i] - 1; // Mul by odd
         } processed += chunk; hw_write = 0; os_write = 0; chunk = 0;
     } __INTERNAL_MEMWIPE_STRICT__(pool_os, 512); __INTERNAL_MEMWIPE_STRICT__(pool_hw, 512);
-    processed = 0; os_write = 0; os_write = 0; hw_write = 0;
+    processed = 0; os_write = 0; os_write = 0; hw_write = 0; return 0;
 }

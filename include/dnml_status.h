@@ -21,6 +21,7 @@ limitations under the License.
 
 
 #include <stdio.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,14 +101,16 @@ static inline void _print_dnml_status(dnml_status a, FILE *f) {
         case CRINT_ERR_INVAL:   fputs("CRINT_ERR_INVAL", f); break;
         case CRINT_ERR_SINVAL:  fputs("CRINT_ERR_SINVAL", f); break;
 
+        case DARENA_OVERFLOW:           fputs("DARENA_OVERFLOW", f); break;
+        case DARENA_SUCCESS:            fputs("DARENA_SUCCESS", f); break;
+        case DARENA_POISON:             fputs("DARENA_POISON", f); break;
+
         case FILE_ERR_PARSE:            fputs("FILE_ERR_PARSE", f); break;
         case FILE_INVAL:                fputs("FILE_INVAL", f); break;
         case FILE_ILLEGAL:              fputs("FILE_ILLEGAL", f); break;
         case DNML_ALLOC_OOM:            fputs("DNML_ALLOC_OOM", f); break;
         case DNML_NULL_EPARAM:          fputs("DNML_NULL_EPARAM", f); break;
         case DNML_INVAL_CAP_REQUEST:    fputs("DNML_INVAL_CAP_REQUEST", f); break;
-        case DARENA_OVERFLOW:           fputs("DARENA_OVERFLOW", f); break;
-        case DARENA_SUCCESS:            fputs("DARENA_SUCCESS", f); break;
         case DNML_LIB_INISUCCESS:       fputs("DNML_LIB_INISUCCESS", f); break;
     }
 }

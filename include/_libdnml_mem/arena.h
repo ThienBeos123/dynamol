@@ -56,16 +56,16 @@ static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
     size_t new_cap = (a->cap) ? a->cap : 1;
     while (new_cap < min_cap) new_cap *= 2;
     uint64_t* __BUFFER_P = (uint64_t*)realloc(a->base, new_cap);
-    if (__BUFFER_P == NULL) {  a->poisoined = true; return DNML_ALLOC_OOM; } 
+    if (__BUFFER_P == NULL) {  a->poisoined = true; return DNML_ALLOC_OOM; }
     a->base = __BUFFER_P; a->cap = new_cap;
     return DARENA_SUCCESS;
 }
 static inline void* arena_alloc(dnml_arena *a, size_t space, dnml_status *err) {
     if (a->poisoined) { *err = DARENA_POISON; return NULL; }
     size_t new_offset = a->offset + space;
-    if (new_offset > a->cap) { 
-        if (err!= NULL) *err = DARENA_OVERFLOW; 
-        return NULL; 
+    if (new_offset > a->cap) {
+        if (err!= NULL) *err = DARENA_OVERFLOW;
+        return NULL;
     }
     void *ptr = a->base + new_offset;
     a->offset = new_offset;
@@ -76,7 +76,7 @@ static inline void* arena_galloc(dnml_arena *a, size_t space, dnml_status *err) 
     size_t new_offset = a->offset + space;
     if (new_offset > a->cap) {
         if (arena_grow(a, new_offset) == DNML_ALLOC_OOM) {
-            if (err != NULL) *err = DNML_ALLOC_OOM; 
+            if (err != NULL) *err = DNML_ALLOC_OOM;
             return NULL;
         }
     } void *ptr = a->base + new_offset;

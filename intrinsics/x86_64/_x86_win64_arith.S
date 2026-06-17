@@ -16,9 +16,9 @@ limitations under the License.
 
 
 
-#include "__x86_conn__.h"
-#if __ARCH_X86_64__
-#if __ABI_X64_WIN64__
+;include "__x86_conn__.h"
+;if __ARCH_X86_64__
+;if __ABI_X64_WIN64__
 
 
 asm_text_section
@@ -40,11 +40,11 @@ asm_text_section
 
 /* ------- 64 BIT ADDITION WITH CARRY -------
 * uint64_t _x86w64_add64c(uint64_t a, uint64_t b, uint8_t *carry)
-* arg: 
+* arg:
 *   rcx: uint64_t a       (64 BIT)
 *   rdx: uint64_t b       (64 BIT)
 *   r8:  uint8_t *carry   (8  BIT)
-* ret: 
+* ret:
 *   rax: (a + b + *carry) mod(2^64)
 *   r8:  boolean - 1/0
 */
@@ -69,11 +69,11 @@ _x86w64_add64c:
 
 /* ------- 64 BIT SUBTRACTION WITH BORROW -------
 * uint64_t _x86w64_sub64b(uint64_t a, uint64_t b, uint8_t *borrow)
-* arg: 
+* arg:
 *   rcx: uint64_t a       (64 BIT)
 *   rdx: uint64_t b       (64 BIT)
 *   r8:  uint8_t *borrow  (8  BIT)
-* ret: 
+* ret:
 *   rax: (a - b - *borrow) mod(2^64)
 *   r8:  boolean - 1/0
 */
@@ -95,7 +95,7 @@ _x86w64_sub64b:
 
 
 /* ------- 64 BIT WIDE MULTIPLICATION --> 128 BIT PRODUCT -------
-* uint64_t _x86w64_wmul128(uint64_t a, uint64_t b, uint64_t *hi) 
+* uint64_t _x86w64_wmul128(uint64_t a, uint64_t b, uint64_t *hi)
 * arg:
 *   rcx: uint64_t a ----> (64 BIT)
 *   rdx: uint64_t b ----> (64 BIT)
@@ -115,7 +115,7 @@ _x86w64_wmul128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - PERFORMANCE-BASED -------
-* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed) 
+* uint64_t _x86sv_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *overflowed)
 * arg:
 *   rcx:        uint64_t lo ----> (64 BIT)
 *   rdx:        uint64_t hi ----> (64 BIT)
@@ -128,8 +128,19 @@ _x86w64_wmul128:
 * pre-conditions: hi/rdx < div
 */
 _x86w64_wdiv128:
+    /* Early Returns  */
+    test r8, r8
+    jz .zero_div // if (!div)
+    // if (!lo && !hi)
+    mov r9, rcx
+    or  r9, rdx
+    jz .zero_dend
+    // if (!hi)
+    test rdx, rdx
+    jz .zero_hi
+    // if (hi >= div)
     cmp rdx, r8
-    ja .overflow
+    jae .overflow
 
     ; Divison + Returns
     mov rax, rcx ; rax = lo
@@ -142,10 +153,45 @@ _x86w64_wdiv128:
     jz .done
     mov byte [r10], 0
     ret
+
+/* Early Return Blocks */
+.zero_dend:
+    mov rdx, 0
+    mov [r9], rdx // *rhat = 0
+    mov rax, 0 // return 0
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done
+    mov byte [r10], 0
+    ret
+.zero_hi:
+    mov rax, rcx
+    xor rdx, rdx
+    div r8 // lo / div
+    ; rax = quot | rdx = rem
+    mov [r9], rdx // *rhat = lo % div
+    // return is already in RAX
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done_overflow
+    mov byte [r10], 0
+    ret
 .done:
     ret
 
-/* Overflow handling blocs */
+/* Overflow hanndling blocks */
+.zero_div:
+    mov rdx, 0
+    mov [r9], rdx // *rhat = 0
+    mov rax, -1 // return UINT64_MAX
+    ; if (overflow != NULL) *overflow = 1
+    mov r10, [rsp + 40]
+    test r10, r10
+    .jz .done_overflow
+    mov byte [r10], 1
+    ret
 .overflow:
     mov rax, rdx
     xor rdx, rdx
@@ -165,7 +211,7 @@ _x86w64_wdiv128:
 
 
 /* ------- 64 BIT WIDE DIVISION OF 128 BIT DIVIDEND - CRYPTOGRAPHY-BASED -------
-* uint64_t _x86w64_crt_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *ovf) 
+* uint64_t _x86w64_crt_wdiv128(uint64_t lo, uint64_t hi, uint64_t div, uint64_t *rem, uint8_t *ovf)
 * arg:
 *   rcx:        uint64_t lo ----> (64 BIT)
 *   rdx:        uint64_t hi ----> (64 BIT)
@@ -178,74 +224,95 @@ _x86w64_wdiv128:
 * pre-conditions: hi/rdx < div
 */
 _x86w64_crt_wdiv128:
-    ; --- 1. Evaluate Overflow State ---
-    cmp rdx, r8 ; Compare hi (RDX) with div (R8)
-    setae bl ; r9b = 1 if hi >= div, else 0 (overflow flag)
+    ; =========== 1. Determine Overflow Flag & Write to Memory ===========
+    test r8, r8 ; div == 0?
+    setz r10b ; r10b = (div == 0) ? 1 : 0
+    cmp rdx, r8 ; Compare hi and div
+    setae r11b ; r10b = (hi >= div) ? 1 : 0
+    or r10b, r11b ; overflow_flag = (hi >= div) | (div == 0)
+    mov r11, [rsp + 40] ; r11 = Address value at [RSP + 40]
+    mov byte ptr [r11], r10b ; *overflowed = overflow_flag
+    
 
-    ; --- 2. Neutralize Hardware Divide Errors ---
-    ; If hi >= div, the CPU will fault. We use conditional moves to feed
-    ; a safe dummy configuration (hi=0, lo=0, div=1) to the execution engine.
-    mov r10, rdx ; r10 = working_hi
-    mov r11, rcx ; r11 = working_lo
-    mov r12, r8 ; r12 = working_div
+    ; =========== 2. Multiplexing of Fake vs Real Values ===========
+    mov rbx, 1 ; fake_hi = 1
+    mov rax, 0x1928356720912386 ; fake_lo = 0x1928356720912386 
+    test r10b, r10b
+    cmovnz rcx, rax ; chosen_lo = overflow_flag ? fake_lo : lo
+    cmovnz rdx, rbx ; chosen_hi = overflow_flag ? fake_hi : hi
+    ; Loop Configurations
+    xor rax, rax ; q = 0
+    xor r11, r11 ; Loop counter (i)
+    /* Variables-Registers List:
+        - rcx: chosen_lo
+        - rdx: chosen_hi
+        - rax: q - RETURN QUOTIENT
+        - r10: OVERFLOW FLAG
+        - r11d: i - LOOP COUNTER
+    */
+.crt_div_loop:
+    ; Early high bit overflow check
+    mov rbx, rdx ; rbx = rdx (chosen_hi)
+    shr rbx, 63 ; rbx = rdx >> 63 (Isolating the MSB)
+    and rbx, 1 ; rbx = (rdx >> 63) & 1 (Explicitly isolating the MSB)
 
-    mov rax, 0 ; Dummy lo/hi value
-    mov rbx, 1 ; Dummy div value (prevents division by zero)
+    ; Normal, 128-bit dividend shifting routine
+    shl rax, 1 ; q <<= 1
+    ; test_rem = (chosen_hi << 1) | ((chosen_lo >> i) & 1)
+    ; In this implementation, we operate directly on rsi (chosen_hi)
+    mov rdi, rcx ; rdi = chosen_lo (rcx)
+    shr rdi, 63 ; rdi = chosen_lo >> 63
+    and rdi, 1 ; rdi = (chosen_lo >> 63) & 1
+    shl rcx, 1 ; chosen_lo (rcx) <<= 1
+    add rdx, rdx ; chosen_hi (rdx) <<= 1
+    or rdx, rdi ; chosen_hi (rdx) |= extracted_bit (rdi)
 
-    cmovae r10, rax ; If overflowed: working_hi = 0
-    cmovae r11, rax ; If overflowed: working_lo = 0
-    cmovae r12, rbx ; If overflowed: working_div = 1
 
-    ; --- 3. Execute Native Hardware Division ---
-    mov rdx, r10 ; RDX = working_hi
-    mov rax, r11 ; RAX = working_lo
-    div r12 ; [RDX:RAX] / r12
-    ; RAX = calculated_quot, RDX = calculated_rem
+    /* --- Quotient & Remainder value manipulation --- */
+    xor rsi, rsi ; Clean the RSI register
+    cmp rdx, r8 ; (chosen_hi >= div)?
+    setae sil ; sil = (chosen_hi >= div)?
+    or rsi, rbx ; rsi |= rbx (chosen_hi >= div | hi_overflow)
+    neg rsi ; mask = -(rsi_cond) --> -1 (UINT64_MAX) : 0
+    /* Quotient Calculations */
+    mov rdi, rsi
+    and rdi, 1 ; 1 & mask
+    or rax, rdi ; q |= (1 & mask)
+    /* Remainder Calculations */
+    mov rdi, r8
+    and rdi, rsi ; div & mask
+    sub rdx, rdi ; chosen_hi -= (div & mask)
+    ; Incrementing loop counter
+    inc r11d
+    cmp r11d, 64
+    jl .crt_div_loop
 
-    ; --- 4. Final Output Formatting (Bitwise Multiplexing) ---
-    ; Setup our overflow default constants
-    mov rsi, -1 ; rsi = UINT64_MAX
-    mov rdi, 0 ; rdi = 0
 
-    ; If an overflow actually happened, override the hardware results
-    cmovae rax, rsi ; If overflowed: quotient = UINT64_MAX
-    cmovae rdx, rdi ; If overflowed: remainder = 0
-    ; Commit remainder to memory (*rem)
-    mov [r9], rdx
+    ; =========== 5. Final Output Selections ===========
+    test r10b, r10b ; Check overflow flag again
+    ; ----- QUOTIENT RETURNS -----
+    mov r10, -1 ; r10 = (uint64_t)-1 = UINT64_MAX (0xFFFFFFFFFFFFFFFF)
+    cmovnz rax, r10 ; rax ? (overflow_flag/r10b) ? UINT64_MAX : quot
+    ; ----- REMAINDER RETURNS -----
+    mov rcx, rdx ; rcx = chosen_hi (rdx)
+    mov rsi, 0 ; rsi = 0
+    cmovnz rcx, rsi ; rcx ? (overflow_flag/r10b) ? 0 (rsi) : chosen_hi (rcx)
+    mov qword ptr [r9], rcx ; *rhat (*r9) = rcx (selected remainder)
 
-    ; --- 5. Optional Pointer Safety Check for *overflowed ---
-    ; If the user passed NULL (0) for R8, we skip writing to it.
-    ; While this utilizes a jump, it is totally safe for cryptography/constant-time 
-    ; security because pointer presence is an execution environment property, 
-    ; completely independent of secret mathematical data keys.
-    mov r10, [rsp + 40]
-    test r10, r10
-    jz .crt_done
-    mov [r10], bl ; *overflowed = overflow_flag
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
-    mov rcx, 0 ; Parameters / Arguments
-    mov rdx, 0 ; Parameters / Arguments
-    mov r8, 0 ; Parameters / Arguments
-    mov rbx, 0
-    mov r10, 0
-    mov r11, 0
-    mov r12, 0
-    mov rsi, 0
-    mov rdi, 0
-.crt_done:
-    /* --------- POST-OPERATION AGGRESSIVE REGISTER CLEARANCE --------- */ 
-    mov rcx, 0 ; Parameters / Arguments
-    mov rdx, 0 ; Parameters / Arguments
-    mov r8, 0 ; Parameters / Arguments
-    mov rbx, 0
-    mov r10, 0
-    mov r11, 0
-    mov r12, 0
-    mov rsi, 0
-    mov rdi, 0
+
+    ; =========== 6. Aggressive Post-operation Clearance ===========
+    xor rbx, rbx
+    xor rcx, rcx
+    xor rdx, rdx
+    xor rsi, rsi
+    xor rdi, rdi
+    xor r8, r8
+    xor r9, r9
+    xor r10, r10
+    xor r11, r11
     ret
 
 
 
-#endif
-#endif
+;endif
+;endif

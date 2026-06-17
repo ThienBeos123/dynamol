@@ -52,7 +52,7 @@ limitations under the License.
 
 //* =========== KEYWORDS & FUNCTIONALITIES =========== *//
 /* Thread Local Storage - TLS - ESSENTIAL FOR ARENAS */
-#if __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__) 
+#if __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
     #include <threads.h>
     #define local_thread thread_local
 #elif (__compiler_gcc || __compiler_clang)
@@ -76,20 +76,21 @@ limitations under the License.
     #define uint128 unsigned __int128
 #else
     #define __HAS_int128__ 0
-    #define int128  
+    #define int128
     #define uint128
 #endif
 
 
 /* Inline and Restrict */
-#if __compiler_msvc
-    #define inline __forceinline
-    #define restrict __restrict
-#elif (__compiler_clang || __compiler_gcc)
-    /* Do not redefine the C keyword inline; use standard inline semantics. */
-    #define restrict __restrict__
+#if defined(__compiler_clang) || defined(__compiler_gcc)
+    #define NO_INLINE __attribute__((noinline))
+    #define FORCE_INLINE inline __attribute__((always_inline))
+#elif defined(__compiler_msvc)
+    #define NO_INLINE __declspec(noinline)
+    #define FORCE_INLINE __forceinline
 #else
-    #define restrict 
+    #define NO_INLINE
+    #define FORCE_INLINE
 #endif
 
 /* Count Leading Zeros - CLZ */
@@ -128,14 +129,6 @@ limitations under the License.
 #endif
 
 
-/* Static Assertions */
-#if __STDC_VERSION__ >= 201112L
-    #define static_assert _Static_assert
-#else
-    #define static_assert(cond, msg) typedef char static_assert_##msg[(cond) ? 1 : -1]
-#endif
-
-
 
 /* Assume / Unreachable */
 #if (__compiler_clang || __compiler_gcc)
@@ -150,4 +143,3 @@ limitations under the License.
 #endif
 
 #endif
-
