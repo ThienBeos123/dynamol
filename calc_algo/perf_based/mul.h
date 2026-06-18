@@ -43,7 +43,7 @@ size_t __BIGINT_TOOM_5_WS__(size_t m_size, size_t n_size);
 size_t __BIGINT_TOOM_6p5_WS__(size_t m_size, size_t n_size);
 size_t __BIGINT_TOOM_7p5_WS__(size_t m_size, size_t n_size);
 size_t __BIGINT_TOOM_8p5_WS__(size_t m_size, size_t n_size);
-size_t __BIGINT_SSA_WS__(size_t a_size, size_t b_size);
+size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size);
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size);
 
 /* BIGINT ALGORITHMS */
@@ -55,7 +55,7 @@ void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
 void __BIGINT_TOOM_6p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx);
 void __BIGINT_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx);
 void __BIGINT_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx);
-void __BIGINT_NTT__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx);
+void __BIGINT_FFT__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx fft_ctx);
 void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx mul_ctx);
 #ifdef __cplusplus
 }

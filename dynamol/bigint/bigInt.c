@@ -20,20 +20,20 @@ limitations under the License.
 
 
 //todo ============================================ INTRODUCTION ============================================= */
-/* Attribute Explanation:
-*   +) sign     (uint8_t)       : Stores the sign (negative or positive)
-*   +) limbs    (*uint64_t)     : Pointer to each limb that holds part of the bigInt number
-*   +) n        (size_t)        : Number of currently used limbs
-*   +) cap      (size_t)        : Essentially the bigInt object/number's maximum capacity
-*/
-
-/* Terms Explanation:
-*   +) Mutative Model: Changes an existing bigInt object/variable value in place (Eg: x += 10; )
-*   +) Functional Model:
-*       -) Creates a new variable with the value of the expression (Eg: int x = 5 + 10; )
-*       -) This transfer ownership of the allocated limbs to the caller,
-*          forcing a manual deletion of the object
-*/
+/** 
+  * Attribute Explanation:
+  * +) sign     (uint8_t)       : Stores the sign (negative or positive)
+  * +) limbs    (*uint64_t)     : Pointer to each limb that holds part of the bigInt number
+  * +) n        (size_t)        : Number of currently used limbs
+  * +) cap      (size_t)        : Essentially the bigInt object/number's maximum capacity
+  *
+  * Terms Explanation:
+  * +) Mutative Model: Changes an existing bigInt object/variable value in place (Eg: x += 10; )
+  * +) Functional Model:
+  *     -) Creates a new variable with the value of the expression (Eg: int x = 5 + 10; )
+  *     -) This transfer ownership of the allocated limbs to the caller,
+  *        forcing a manual deletion of the object
+  */
 
 
 //* ======================================== CONSTRUCTORS & DESTRUCTOR ======================================= */
@@ -368,7 +368,7 @@ dnml_status bigInt_mut_nandu64 (bigInt *x, const uint64_t val) {
     if (x->n == 0) { x->limbs[0] = UINT64_MAX; x->n = 1; }
     else {
         x->limbs[0] = ~(x->limbs[0] & val);
-        if (x->n > 1) memset(&x->limbs[1], UINT64_MAX, x->n - 1);
+        if (x->n > 1) memset(&x->limbs[1], UINT8_MAX, x->n - 1);
     } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_oru64   (bigInt *x, const uint64_t val) {
@@ -451,9 +451,9 @@ dnml_status bigInt_mut_nand (bigInt *x, const bigInt y) {
     if (!x->n) {
         size_t expanded_cap = (y.n) ? y.n : 1;
         dnml_status err_check = bigInt_reserve(x, expanded_cap);
-        heap_alloc_oom(err_check); memset(x->limbs, UINT64_MAX, expanded_cap);
+        heap_alloc_oom(err_check); memset(x->limbs, UINT8_MAX, expanded_cap);
         x->n = expanded_cap;
-    } else if (!y.n) memset(x->limbs, UINT64_MAX, x->n);
+    } else if (!y.n) memset(x->limbs, UINT8_MAX, x->n);
     else {
         size_t operation_range = max(x->n, y.n);
         dnml_status err_check = bigInt_reserve(x, operation_range);
@@ -733,7 +733,7 @@ dnml_status bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t op_range) {
     test_assert(x->limbs != y.limbs, bi_aliased_limbs, clear_arena, BIGINT_ERR_ALIASED);
     if (!op_range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
-    if (!x->n || !y.n) memset(x->limbs, UINT64_MAX, op_range);
+    if (!x->n || !y.n) memset(x->limbs, UINT8_MAX, op_range);
     else {
         for (size_t i = 0; i < op_range; ++i) {
             uint64_t a = (i < x->n) ? x->limbs[i] : 0;
@@ -768,7 +768,7 @@ dnml_status bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t op_range) {
     if (!op_range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n && !y.n) {
-        memset(x->limbs, UINT64_MAX, op_range * U64_BYTES);
+        memset(x->limbs, UINT8_MAX, op_range * U64_BYTES);
         x->n = op_range;
     } else {
         for (size_t i = 0; i < op_range; ++i) {
@@ -799,7 +799,7 @@ dnml_status bigInt_mutex_xnor  (bigInt *x, const bigInt y, size_t op_range) {
     if (!op_range) return BIGINT_SUCCESS;
     dnml_status err_check = bigInt_reserve(x, op_range); heap_alloc_oom(err_check);
     if (!x->n && !y.n) {
-        memset(x->limbs, UINT64_MAX, op_range * U64_BYTES);
+        memset(x->limbs, UINT8_MAX, op_range * U64_BYTES);
         x->n = op_range;
     } else {
         for (size_t i = 0; i < op_range; ++i) {
@@ -832,7 +832,7 @@ bigInt bigInt_nandu64 (const bigInt x, const uint64_t val, dnml_status *err) {
     if (x.n == 0) { res.limbs[0] = UINT64_MAX; res.n = 1; }
     else {
         res.limbs[0] = ~(x.limbs[0] & val);
-        if (x.n > 1) memset(&res.limbs[1], UINT64_MAX, x.n - 1);
+        if (x.n > 1) memset(&res.limbs[1], UINT8_MAX, x.n - 1);
         res.n = x.n;
     } return res;
 }
@@ -943,7 +943,7 @@ bigInt bigInt_nand  (const bigInt x, const bigInt y, dnml_status *err) {
         size_t max = max(x.n, y.n);
         size_t expanded_cap = max ? max : 1;
         if (bigInt_snew(&res, expanded_cap) == DNML_ALLOC_OOM) func_ret_oom(err);
-        memset(res.limbs, UINT64_MAX, expanded_cap);
+        memset(res.limbs, UINT8_MAX, expanded_cap);
         res.n = expanded_cap;
     } else {
         size_t operation_range = max(x.n, y.n);

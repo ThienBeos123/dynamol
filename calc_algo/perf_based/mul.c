@@ -40,23 +40,17 @@ size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     size_t res_alias = (k << 1) + 14;
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
-size_t __BIGINT_TOOM_4_WS__(size_t m_size, size_t n_size) { return 0; }
-size_t __BIGINT_TOOM_5_WS__(size_t m_size, size_t n_size) { return 0; }
-size_t __BIGINT_TOOM_6p5_WS__(size_t m_size, size_t n_size) { return 0; }
-size_t __BIGINT_TOOM_7p5_WS__(size_t m_size, size_t n_size) { return 0; }
-size_t __BIGINT_TOOM_8p5_WS__(size_t m_size, size_t n_size) { return 0; }
-size_t __BIGINT_SSA_WS__(size_t a_size, size_t b_size) { return 0; }
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
     if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0; // Doesn't need any
-    else if (min(a_size, b_size) * 2 <= max(a_size, b_size)) return 0;
-    else if (a_size < BIGINT_KARATSUBA && b_size < BIGINT_KARATSUBA) return __BIGINT_KARATSUBA_WS__(a_size, b_size);
+    else if (min(a_size, b_size) * 4 <= max(a_size, b_size)) return 0;
+    else if (a_size < BIGINT_KARATSUBA && b_size < BIGINT_KARATSUBA) return __BIGINT_KARATSUBA_WS__(a_size, b_size);             
     else if (a_size < BIGINT_TOOM_3 && b_size < BIGINT_TOOM_3) return __BIGINT_TOOM_3_WS__(a_size, b_size);
-    else if (a_size <= BIGINT_TOOM_4 && b_size <= BIGINT_TOOM_4) return __BIGINT_TOOM_4_WS__(a_size, b_size);
-    else if (a_size <= BIGINT_TOOM_5 && b_size <= BIGINT_TOOM_5) return __BIGINT_TOOM_5_WS__(a_size, b_size);
-    else if (a_size <= BIGINT_TOOM_6p5 && b_size <= BIGINT_TOOM_6p5) return __BIGINT_TOOM_6p5_WS__(a_size, b_size);
-    else if (a_size <= BIGINT_TOOM_7p5 && b_size <= BIGINT_TOOM_7p5) return __BIGINT_TOOM_7p5_WS__(a_size, b_size);
-    else if (a_size <= BIGINT_TOOM_8p5 && b_size <= BIGINT_TOOM_8p5) return __BIGINT_TOOM_8p5_WS__(a_size, b_size);
-    else return __BIGINT_SSA_WS__(a_size, b_size);
+    // else if (a_size <= BIGINT_TOOM_4 && b_size <= BIGINT_TOOM_4) return __BIGINT_TOOM_4_WS__(a_size, b_size);
+    // else if (a_size <= BIGINT_TOOM_5 && b_size <= BIGINT_TOOM_5) return __BIGINT_TOOM_5_WS__(a_size, b_size);
+    // else if (a_size <= BIGINT_TOOM_6p5 && b_size <= BIGINT_TOOM_6p5) return __BIGINT_TOOM_6p5_WS__(a_size, b_size);           
+    // else if (a_size <= BIGINT_TOOM_7p5 && b_size <= BIGINT_TOOM_7p5) return __BIGINT_TOOM_7p5_WS__(a_size, b_size);
+    // else if (a_size <= BIGINT_TOOM_8p5 && b_size <= BIGINT_TOOM_8p5) return __BIGINT_TOOM_8p5_WS__(a_size, b_size);
+    else return __BIGINT_FFT_WS__(a_size, b_size);
 }
 
 /* BIGINT ALGORITHMS */
@@ -157,11 +151,11 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     *   +) r(-1)  = p(-1)  * q(-1)
     *   +) r(-2)  = p(-2)  * q(-2)
     *   +) r(inf) = p(inf) * q(inf)                    */
-    BIGINT_TEMP(r0,     (k << 1),               toom_ctx, err_check, end_stat); // 2k
-    BIGINT_TEMP(r1,     (k << 1) + 9,           toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 8 (interpolation - r1)
-    BIGINT_TEMP(r_neg1, (k << 1) + 9,           toom_ctx, err_check, end_stat); // 2k + 2 (original) --> 2k + 7 (interpolation - r2)
-    BIGINT_TEMP(r_neg2, (k << 1) + 10,          toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 7 (interpolation - r3)
-    BIGINT_TEMP(rinf,    m2size + n2size + 4,   toom_ctx, err_check, end_stat); // 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    BIGINT_TEMP(r0,     (k << 1),       toom_ctx, err_check, end_stat); // 2k
+    BIGINT_TEMP(r1,     (k << 1) + 9,   toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+    BIGINT_TEMP(r_neg1, (k << 1) + 9,   toom_ctx, err_check, end_stat); // 2k + 2 (original) --> 2k + 7 (interpolation - r2)
+    BIGINT_TEMP(r_neg2, (k << 1) + 10,  toom_ctx, err_check, end_stat); // 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+    BIGINT_TEMP(rinf,    m2size + n2size + 4, toom_ctx, err_check, end_stat); // 2k (original) ---> 2k + 4 (bit-shifts accounted)
     __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx);
     __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx);
     __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx);
@@ -187,22 +181,16 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
     __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
     __BIGINT_INTERNAL_COPY__(res, &final_res); scratch_reset(&toom_ctx, toom_mark);
-}
-void __BIGINT_TOOM_4__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-void __BIGINT_TOOM_6p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-void __BIGINT_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-void __BIGINT_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-void __BIGINT_NTT__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx ssa_ctx) {}
+}                                 
 void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx mul_ctx) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) __BIGINT_SCHOOLBOOK__(a, b, res);
-    else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) __BIGINT_SCHOOLBOOK__(a, b, res);
+    else if (min(a->n, b->n) * 4 <= max(a->n, b->n)) __BIGINT_SCHOOLBOOK__(a, b, res);
     else if (a->n <= BIGINT_KARATSUBA && b->n <= BIGINT_KARATSUBA) __BIGINT_KARATSUBA__(a, b, res, mul_ctx);
     else if (a->n <= BIGINT_TOOM_3 && b->n <= BIGINT_TOOM_3) __BIGINT_TOOM_3__(a, b, res, mul_ctx);
-    else if (a->n <= BIGINT_TOOM_4 && b->n <= BIGINT_TOOM_4) __BIGINT_TOOM_4__(a, b, res, mul_ctx);
-    else if (a->n <= BIGINT_TOOM_5 && b->n <= BIGINT_TOOM_5) __BIGINT_TOOM_5__(a, b, res, mul_ctx);
-    else if (a->n <= BIGINT_TOOM_6p5 && b->n <= BIGINT_TOOM_6p5) __BIGINT_TOOM_6p5__(a, b, res, mul_ctx);
-    else if (a->n <= BIGINT_TOOM_7p5 && b->n <= BIGINT_TOOM_7p5) __BIGINT_TOOM_7p5__(a, b, res, mul_ctx);
-    else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) __BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
-    else __BIGINT_NTT__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_4 && b->n <= BIGINT_TOOM_4) __BIGINT_TOOM_4__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_5 && b->n <= BIGINT_TOOM_5) __BIGINT_TOOM_5__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_6p5 && b->n <= BIGINT_TOOM_6p5) __BIGINT_TOOM_6p5__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_7p5 && b->n <= BIGINT_TOOM_7p5) __BIGINT_TOOM_7p5__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) __BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
+    else __BIGINT_FFT__(a, b, res, mul_ctx);
 }
