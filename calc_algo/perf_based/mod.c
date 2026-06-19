@@ -52,56 +52,50 @@ size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size) {
 
 
 /* ----------------- ALGORITHMS FUNCTIONS ----------------- */
-void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx barett_ctx) {
+void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx barett_ctx, dnml_status *err) {
     //* ---- 1. PRECOMPUTATION - μ ---- *//
-    dnml_status err_check, end_stat = 0;
+    dnml_status echeck;
     size_t barett_mark = scratch_mark(&barett_ctx), precomp_size = (n->n << 1) + 1;
-    BIGINT_TEMP(numer, precomp_size, barett_ctx, err_check, end_stat); numer.n = precomp_size;
-    BIGINT_TEMP(precomp, precomp_size, barett_ctx, err_check, end_stat);
-    BIGINT_TEMP(tmp, n->n, barett_ctx, err_check, end_stat);
-    numer.limbs[(n->n << 1)] = 1;
-    __BIGINT_DIV_DISPATCH__(&numer, n, &precomp, &tmp, barett_ctx);
+    BIGINT_TEMP(numer, precomp_size, barett_ctx, barett_mark, echeck, err,); numer.n = precomp_size;
+    BIGINT_TEMP(precomp, precomp_size, barett_ctx, barett_mark, echeck, err,);
+    BIGINT_TEMP(tmp, n->n, barett_ctx, barett_mark, echeck, err,);
+    numer.limbs[(n->n << 1)] = 1; __BIGINT_DIV_DISPATCH__(&numer, n, &precomp, &tmp, barett_ctx, &echeck);
+    SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
 
 
     //* ---- 2. NUMERATOR CALCULATION ---- *//
     size_t remlimbs = a->n - (n->n - 1);;
-    BIGINT_TEMP(a_after_shift, remlimbs, barett_ctx, err_check, end_stat); a_after_shift.n = remlimbs;
-    BIGINT_TEMP(anumer, (remlimbs + precomp.n), barett_ctx, err_check, end_stat);
+    BIGINT_TEMP(a_after_shift, remlimbs, barett_ctx, barett_mark, echeck, err,); a_after_shift.n = remlimbs;
+    BIGINT_TEMP(anumer, (remlimbs + precomp.n), barett_ctx, barett_mark, echeck, err,);
     memcpy(a_after_shift.limbs, &a->limbs[n->n - 1], remlimbs * U64_BYTES);
     // We copy starting from the n limbs, because:
     // - For instance: we want to limb right shift by 3 limbs:
     //  -----> Limbs [0] [1] [2] is lost
     //  -----> The remaining limbs start from 3;
-    __BIGINT_MUL_DISPATCH__(&a_after_shift, &precomp, &anumer, barett_ctx);
+    __BIGINT_MUL_DISPATCH__(&a_after_shift, &precomp, &anumer, barett_ctx, &echeck);
+    SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
 
     //* ---- 3. FINAL CALCULATION ---- *//
     remlimbs = anumer.n - (n->n + 1); // This value can be shortened to a->n + 1
     memcpy(anumer.limbs, &anumer.limbs[n->n - 1], remlimbs * U64_BYTES);
-    limb_t *acopy_limbs = scratch_alloc(&barett_ctx, a->n, &end_stat); mod_endstat(end_stat, err_check);
-    DNML_TEST_ASSERT(
-        !(end_stat == DARENA_OVERFLOW),
-        "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
-        { scratch_clear(&barett_ctx); scratch_destruct(&barett_ctx); }
-    );
+    limb_t *acopy_limbs = scratch_alloc(&barett_ctx, a->n, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
     bigInt a_copy = {.limbs = acopy_limbs, .n = a->n, .cap = a->n, .sign = a->sign};
     memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
     if (unlikely(precomp.cap >= remlimbs)) {
         precomp.n = 0; precomp.sign = 1;
-        __BIGINT_MUL_DISPATCH__(&anumer, n, &precomp, barett_ctx);
+        __BIGINT_MUL_DISPATCH__(&anumer, n, &precomp, barett_ctx, &echeck);
+        SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
         __BIGINT_SUB_WB__(&a_copy, &a_copy, &precomp);
     } else {
-        limb_t *final_limb = scratch_alloc(&barett_ctx, remlimbs, &err_check); mod_endstat(end_stat, err_check);
-        DNML_TEST_ASSERT(
-            !(end_stat == DARENA_OVERFLOW),
-            "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)",
-            { scratch_clear(&barett_ctx); scratch_destruct(&barett_ctx); }
-        );
+        limb_t *final_limb = scratch_alloc(&barett_ctx, remlimbs, &echeck);
+        SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
         bigInt final_res = {.limbs = final_limb, .n = 0, .cap = remlimbs, .sign = 1};
-        __BIGINT_MUL_DISPATCH__(&anumer, n, &final_res, barett_ctx);
+        __BIGINT_MUL_DISPATCH__(&anumer, n, &final_res, barett_ctx, &echeck); 
+        SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
         __BIGINT_SUB_WB__(&a_copy, &a_copy, &final_res);
     }
     while (__BIGINT_INTERNAL_COMP__(&a_copy, n) >= 0) __BIGINT_SUB_WB__(&a_copy, &a_copy, n);
-    __BIGINT_INTERNAL_COPY__(rem, &a_copy); scratch_reset(&barett_ctx, barett_mark);
+    __BIGINT_INTERNAL_COPY__(rem, &a_copy); scratch_rewind(&barett_ctx, barett_mark); *err = BIGINT_SUCCESS;
 }
 void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
     uint64_t m, carry = 0;
@@ -119,9 +113,13 @@ void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
     if (__BIGINT_INTERNAL_COMP__(t, mredc_ctx.n) > 0) __BIGINT_SUB_WB__(t, t, mredc_ctx.n);
     __BIGINT_INTERNAL_COPY__(rem, t);
 }
-void __BIGINT_MOD_DISPATCH__(const bigInt *a, const bigInt *n, bigInt *rem, bigInt *tmp_quot, calc_ctx mod_ctx) {
-    if (n->n < BIGINT_SHORT) __BIGINT_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem);
-    else if (n->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, n, tmp_quot, rem, mod_ctx);
-    else if (n->n < BIGINT_BARETT) __BIGINT_BARETT__(a, n, rem, mod_ctx);
-    else __BIGINT_NEWTON__(a, n, tmp_quot, rem, mod_ctx);
+void __BIGINT_MOD_DISPATCH__(
+    const bigInt *a, const bigInt *n, 
+    bigInt *rem, bigInt *tmp_quot,
+    calc_ctx mod_ctx, dnml_status *err
+) {
+    if (n->n < BIGINT_SHORT) { __BIGINT_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem); *err = BIGINT_SUCCESS; }
+    else if (n->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, n, tmp_quot, rem, mod_ctx, err);
+    else if (n->n < BIGINT_BARETT) __BIGINT_BARETT__(a, n, rem, mod_ctx, err);
+    else __BIGINT_NEWTON__(a, n, tmp_quot, rem, mod_ctx, err);
 }

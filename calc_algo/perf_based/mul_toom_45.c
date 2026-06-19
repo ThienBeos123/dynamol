@@ -21,5 +21,5 @@ limitations under the License.
 
 size_t __BIGINT_TOOM_4_WS__(size_t m_size, size_t n_size) { return 0; }
 size_t __BIGINT_TOOM_5_WS__(size_t m_size, size_t n_size) { return 0; }
-void __BIGINT_TOOM_4__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
-void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx) {}
+void __BIGINT_TOOM_4__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx, dnml_status *err) {}
+void __BIGINT_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx, dnml_status *err) {}

@@ -45,10 +45,10 @@ size_t __BIGINT_HALF_WS__(size_t u_size, size_t v_size);
 size_t __BIGINT_GCD_WS__(size_t u_size, size_t v_size);
 /* ======== GCD - ALGORITHMS ======== */
 uint64_t __BIGINT_EUCLID__(uint64_t u, uint64_t v);
-void __BIGINT_STEIN__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx stein_ctx);
-void __BIGINT_LEHMER__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx lehmer_ctx);
-void __BIGINT_HALF__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx half_ctx);
-void __BIGINT_GCD_DISPATCH__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx gcd_ctx);
+void __BIGINT_STEIN__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx stein_ctx, dnml_status *err);
+void __BIGINT_LEHMER__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx lehmer_ctx, dnml_status *err);
+void __BIGINT_HALF__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx half_ctx, dnml_status *err);
+void __BIGINT_GCD_DISPATCH__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx gcd_ctx, dnml_status *err);
 
 
 //* ======== Primality Testing - WORKSPACE RETURNER ======== */
@@ -59,10 +59,10 @@ size_t __BIGINT_PTEST_WS__(size_t x_size);
 /* ======== Primality Testing - ALGORITHMS ======== */
 uint8_t __BIGINT_TRIAL_DIV__(uint64_t x);
 uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n);
-uint8_t __BIGINT_MILLER_RABIN__(const bigInt *n, const bigInt* base, calc_ctx mrabin_ctx);
-uint8_t __BIGINT_BPSW__(const bigInt *n, calc_ctx mrabin_ctx);
-uint8_t __BIGINT_ECPP__(const bigInt *n, calc_ctx mrabin_ctx);
-uint8_t __BIGINT_PTEST_DISPATCH__(const bigInt *x, calc_ctx ptest_ctx);
+uint8_t __BIGINT_MILLER_RABIN__(const bigInt *n, const bigInt* base, calc_ctx rabin_ctx, dnml_status *err);
+uint8_t __BIGINT_BPSW__(const bigInt *n, calc_ctx bpsw_ctx, dnml_status *err);
+uint8_t __BIGINT_ECPP__(const bigInt *n, calc_ctx ecpp_ctx, dnml_status *err);
+uint8_t __BIGINT_PTEST_DISPATCH__(const bigInt *x, calc_ctx ptest_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

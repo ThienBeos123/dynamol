@@ -34,16 +34,12 @@ extern "C" {
 #endif
 
 
-#define BIGINT_TEMP(name, limb_count, ctx, err_check, end_stat) \
+#define BIGINT_TEMP(name, limb_count, ctx, ctx_mark, err_check, err, ret_val) \
     limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count), (&(err_check))); \
-    mod_endstat((end_stat), (err_check)); \
-    DNML_TEST_ASSERT( \
-        !((end_stat) == DARENA_OVERFLOW),  \
-        "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)", \
-        { scratch_clear(&(ctx)); scratch_destruct(&(ctx)); } \
-    ); \
+    if ((err_check) != (DARENA_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); *err = DARENA_OVERFLOW; return ret_val; } \
     bigInt name = {.limbs = name##_limbs, .sign = 1, .n = 0, .cap = (limb_count)};
 
+#define SCRATCH_OVF(err_check, ctx, mark, err, ret_val) if ((err_check) == DARENA_OVERFLOW) { scratch_rewind(&(ctx), (mark)); (*(err)) = DARENA_OVERFLOW; return ret_val;  }
 
 #ifdef __cplusplus
 }

@@ -63,10 +63,7 @@ static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
 static inline void* arena_alloc(dnml_arena *a, size_t space, dnml_status *err) {
     if (a->poisoined) { *err = DARENA_POISON; return NULL; }
     size_t new_offset = a->offset + space;
-    if (new_offset > a->cap) {
-        if (err!= NULL) *err = DARENA_OVERFLOW;
-        return NULL;
-    }
+    if (new_offset > a->cap) { if (err != NULL) *err = DARENA_OVERFLOW; return NULL; }
     void *ptr = a->base + new_offset;
     a->offset = new_offset;
     if (err != NULL) *err = DARENA_SUCCESS; return ptr;

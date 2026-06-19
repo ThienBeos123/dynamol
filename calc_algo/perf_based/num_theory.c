@@ -47,16 +47,16 @@ uint64_t __BIGINT_EUCLID__(uint64_t u, uint64_t v) {
     }
     return dividend;
 }
-void __BIGINT_STEIN__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx stein_ctx) {
+void __BIGINT_STEIN__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx stein_ctx, dnml_status *err) {
     // Base case - Identity #1 - gcd(u, 0) = u
     if (u->n == 0) { __BIGINT_INTERNAL_COPY__(res, v); return; }
     else if (v->n == 0) { __BIGINT_INTERNAL_COPY__(res, u); return; }
 
     // Setup - Identity #2 - gcd(2u, 2v) = gcd(u, v)
-    dnml_status err_check, end_stat = 0;
+    dnml_status echeck;
     size_t stein_mark = scratch_mark(&stein_ctx), maxsize = max(u->n, v->n); // maxsize is used for SWAP
-    BIGINT_TEMP(u_copy, maxsize, stein_ctx, err_check, end_stat); u_copy.n = u->n;
-    BIGINT_TEMP(v_copy, maxsize, stein_ctx, err_check, end_stat); v_copy.n = v->n;
+    BIGINT_TEMP(u_copy, maxsize, stein_ctx, stein_mark, echeck, err,); u_copy.n = u->n;
+    BIGINT_TEMP(v_copy, maxsize, stein_ctx, stein_mark, echeck, err,); v_copy.n = v->n;
     memcpy(u_copy.limbs, u->limbs, u->n * U64_BYTES);
     memcpy(v_copy.limbs, v->limbs, v->n * U64_BYTES);
     size_t i = __BIGINT_CTZ__(u); __BIGINT_INTERNAL_RSHIFT__(&u_copy, i);
@@ -76,18 +76,17 @@ void __BIGINT_STEIN__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx st
         __BIGINT_INTERNAL_RSHIFT__(&u_copy, i);
         comp_res = __BIGINT_INTERNAL_COMP__(&u_copy, &v_copy);
     }
-    __BIGINT_INTERNAL_LSHIFT__(&u_copy, k);
-    __BIGINT_INTERNAL_COPY__(res, &u_copy);
-    scratch_reset(&stein_ctx, stein_mark);
+    __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_COPY__(res, &u_copy);
+    scratch_rewind(&stein_ctx, stein_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_LEHMER__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx lehmer_ctx) {}
-void __BIGINT_HALF__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx half_ctx) {}
-void __BIGINT_GCD_DISPATCH__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx gcd_ctx) {
+void __BIGINT_LEHMER__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx lehmer_ctx, dnml_status *err) {}
+void __BIGINT_HALF__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx half_ctx, dnml_status *err) {}
+void __BIGINT_GCD_DISPATCH__(bigInt *res, const bigInt *u, const bigInt *v, calc_ctx gcd_ctx, dnml_status *err) {
     size_t op_size = min(u->n, v->n);
     if (u->n == 1 && v->n == 1) { res->limbs[0] = __BIGINT_EUCLID__(u->limbs[0], v->limbs[0]); res->n = 1; }
-    else if (op_size <= BIGINT_STEIN) __BIGINT_STEIN__(res, u, v, gcd_ctx);
-    else if (op_size <= BIGINT_LEHMER) __BIGINT_LEHMER__(res, u, v, gcd_ctx);
-    else __BIGINT_HALF__(res, u, v, gcd_ctx);
+    else if (op_size <= BIGINT_STEIN) __BIGINT_STEIN__(res, u, v, gcd_ctx, err);
+    else if (op_size <= BIGINT_LEHMER) __BIGINT_LEHMER__(res, u, v, gcd_ctx, err);
+    else __BIGINT_HALF__(res, u, v, gcd_ctx, err);
 }
 
 
@@ -138,8 +137,7 @@ size_t __BIGINT_PTEST_WS__(size_t x_size) {
 void _randbase_fill(bigInt *x, xoshiro256_state *state) {
     size_t i = 0; while (i < x->n) {
         uint64_t rand = xoshiro256pp_next(state);
-        if (i == x->n - 1 && !rand) continue;
-        ++i;
+        if (i == x->n - 1 && !rand) continue; /**/ ++i;
     }
 }
 // Main Algorithm Functions
@@ -147,14 +145,9 @@ uint8_t __BIGINT_TRIAL_DIV__(uint64_t x) {
     if (x <= 1) return 0;
     else if (x == 2 || x == 3 || x == 5) return 1;
     else if (!(x & 1) || !(x % 3) || !(x % 5)) return 0;
-    uint8_t steps[8] = {6, 4, 2, 4, 2, 4, 6, 2};
-    uint8_t steps_i = 1;
-    for (uint64_t i = 7;
-        i <= (uint64_t)(sqrt(x)) + 1;
-        i += steps[steps_i]
-    ) {
-        if (x % i == 0) return 0;
-        steps_i = (steps_i < 7) ? steps_i + 1 : 0;
+    uint8_t steps[8] = {6, 4, 2, 4, 2, 4, 6, 2}; uint8_t steps_i = 1;
+    for (uint64_t i = 7; i <= (uint64_t)(sqrtl((long double)x)) + 1; i += steps[steps_i]) {
+        if (!(x % i)) return 0; /**/ steps_i = (steps_i < 7) ? steps_i + 1 : 0;
     } return 1;
 }
 uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n) {
@@ -162,7 +155,7 @@ uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n) {
     uint8_t composite = 1;
     while (!(d & 1)) { ++s; d >>= 1; }
     for (uint8_t i = 0; i < 7; ++i) {
-        uint32_t curr_base = dmr_bases[i];
+        uint32_t curr_base = dmr_bases[i]; 
         x = __MODEXP_UI64__(curr_base, d, n);
         // 1. Check a^d mod(n) = 1
         if (x == 1 || x == n - 1) continue;
@@ -174,79 +167,81 @@ uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n) {
         } if (composite) return 0;
     } return 1;
 }
-uint8_t __BIGINT_MILLER_RABIN__(const bigInt *n, const bigInt* base, calc_ctx mrabin_ctx) {
+uint8_t __BIGINT_MILLER_RABIN__(const bigInt *n, const bigInt* base, calc_ctx rabin_ctx, dnml_status *err) {
     if (n->sign == -1) return 0;
     if (!n->n || (n->n == 1 && n->limbs[1] == 1)) return 0;
-    dnml_status err_check, end_stat = 0;
+    dnml_status echeck;
     uint8_t prim_status = 0; uint64_t a[1] = {1};
-    size_t mrabin_mark = scratch_mark(&mrabin_ctx);
+    size_t mrabin_mark = scratch_mark(&rabin_ctx);
 
-    BIGINT_TEMP(n_minus_one, n->n, mrabin_ctx, err_check, end_stat); n_minus_one.n = n->n;
-    memcpy(n_minus_one.limbs, n->limbs, n->n * U64_BYTES);
+    BIGINT_TEMP(n_min1, n->n, rabin_ctx, mrabin_mark, echeck, err, 0); n_min1.n = n->n;
+    memcpy(n_min1.limbs, n->limbs, n->n * U64_BYTES);
     bigInt constant_one = {.limbs = a, .n = 1, .cap = 1, .sign = 1 };
-    __BIGINT_SUB_WB__(&n_minus_one, &n_minus_one, &constant_one);
-    size_t s = (uint64_t)(__BIGINT_CTZ__(&n_minus_one));
-    BIGINT_TEMP(d, n_minus_one.n, mrabin_ctx, err_check, end_stat);
-    memcpy(d.limbs, n_minus_one.limbs, n_minus_one.n * U64_BYTES);
+    __BIGINT_SUB_WB__(&n_min1, &n_min1, &constant_one);
+    size_t s = (uint64_t)(__BIGINT_CTZ__(&n_min1));
+    BIGINT_TEMP(d, n_min1.n, rabin_ctx, mrabin_mark, echeck, err, 0);
+    memcpy(d.limbs, n_min1.limbs, n_min1.n * U64_BYTES);
     __BIGINT_INTERNAL_RLSHIFT__(&d, (size_t)(s / U64_BITS));
     __BIGINT_INTERNAL_RSHIFT__(&d, (size_t)(s % U64_BITS));
 
     // 1st test: a^d mod(n)
-    BIGINT_TEMP(x, n->n, mrabin_ctx, err_check, end_stat);
-    __BIGINT_MODEXP_DISPATCH__(base, &d, n, &x, mrabin_ctx);
+    BIGINT_TEMP(x, n->n, rabin_ctx, mrabin_mark, echeck, err, 0);
+    __BIGINT_MODEXP_DISPATCH__(base, &d, n, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
     if (x.n == 1 && x.limbs[0] == 1) prim_status = 1; // a^d mod(n) = 1
-    else if (!__BIGINT_INTERNAL_COMP__(&x, &n_minus_one)) prim_status = 1; // a^d mod(n) = n - 1
+    else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) prim_status = 1; // a^d mod(n) = n - 1
 
     // 2nd test: a^(2^r * d) mod(n)
     if (unlikely(n->n <= BIGINT_CLASSICAL)) {
         for (uint64_t mrr = 1; mrr < s; ++mrr) {
-            __BIGINT_CMODMUL__(&x, &x, n, &x, mrabin_ctx);
+            __BIGINT_CMODMUL__(&x, &x, n, &x, rabin_ctx, &echeck);
+            SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
             if (x.n == 1 && x.limbs[0] == 1) { prim_status = 1; break; }
-            else if (!__BIGINT_INTERNAL_COMP__(&x, &n_minus_one)) { prim_status = 1; break; }
+            else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) { prim_status = 1; break; }
         }
     } else {
-        mont_ctx mrabin_mont_ctx = {.n = n, .nprime = __MODINV_UI64__(n->limbs[0]), .k = n->n};
-        BIGINT_TEMP(r, n->n << 1, mrabin_ctx, err_check, end_stat); r.n = n->n + 1;
-        BIGINT_TEMP(r_mod_n, n->n, mrabin_ctx, err_check, end_stat);
-        BIGINT_TEMP(tmp, n->n << 1, mrabin_ctx, err_check, end_stat);
-        r.limbs[n->n] = 1; __BIGINT_MOD_DISPATCH__(&r, n, &r_mod_n, &tmp, mrabin_ctx);
-        __BIGINT_MUL_DISPATCH__(&r_mod_n, &r_mod_n, &tmp, mrabin_ctx);
-        __BIGINT_MOD_DISPATCH__(&tmp, n, &tmp, &r, mrabin_ctx);
-        mrabin_mont_ctx.r2 = &tmp;
+        mont_ctx mont_ctx = {.n = n, .nprime = __MODINV_UI64__(n->limbs[0]), .k = n->n};
+        BIGINT_TEMP(r, n->n << 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.n = n->n + 1;
+        BIGINT_TEMP(r_mod_n, n->n, rabin_ctx, mrabin_mark, echeck, err, 0);
+        BIGINT_TEMP(tmp, n->n << 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.limbs[n->n] = 1; 
+        __BIGINT_MOD_DISPATCH__(&r, n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MUL_DISPATCH__(&r_mod_n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MOD_DISPATCH__(&tmp, n, &tmp, &r, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        mont_ctx.r2 = &tmp;
         // Conversions
-        __BIGINT_MONTMUL__(&x, mrabin_mont_ctx.r2, mrabin_mont_ctx, &x, mrabin_ctx);
-        __BIGINT_MONTMUL__(&n_minus_one, mrabin_mont_ctx.r2, mrabin_mont_ctx, &n_minus_one, mrabin_ctx);
+        __BIGINT_MONTMUL__(&x, mont_ctx.r2, mont_ctx, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MONTMUL__(&n_min1, mont_ctx.r2, mont_ctx, &n_min1, rabin_ctx, &echeck);
+        SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
         // 1 in Montgomery form is just R mod(N), so we reuse r_mod_n
         for (uint64_t mrr = 1; mrr < s; ++mrr) {
-            __BIGINT_MONTMUL__(&x, &x, mrabin_mont_ctx, &x, mrabin_ctx);
+            __BIGINT_MONTMUL__(&x, &x, mont_ctx, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
             if (!__BIGINT_INTERNAL_COMP__(&x, &constant_one)) { prim_status = 1; break; }
-            else if (!__BIGINT_INTERNAL_COMP__(&x, &n_minus_one)) { prim_status = 1; break; }
+            else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) { prim_status = 1; break; }
         }
-    } scratch_reset(&mrabin_ctx, mrabin_mark);
-    return prim_status;
+    } scratch_rewind(&rabin_ctx, mrabin_mark); *err = BIGINT_SUCCESS; return prim_status;
 }
-uint8_t __BIGINT_BPSW__(const bigInt *n, calc_ctx mrabin_ctx) { return 0; }
-uint8_t __BIGINT_ECPP__(const bigInt *n, calc_ctx mrabin_ctx) { return 0; }
-uint8_t __BIGINT_PTEST_DISPATCH__(const bigInt *x, calc_ctx ptest_ctx) {
+uint8_t __BIGINT_BPSW__(const bigInt *n, calc_ctx bpsw_ctx, dnml_status *err) { return 0; }
+uint8_t __BIGINT_ECPP__(const bigInt *n, calc_ctx ecpp_ctx, dnml_status *err) { return 0; }
+uint8_t __BIGINT_PTEST_DISPATCH__(const bigInt *x, calc_ctx ptest_ctx, dnml_status *err) {
     if (x->n < MIXED_MAIN) {
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIGINT_TRIAL_DIV__(x->limbs[0]);
         else return __BIGINT_SMALL_MRABIN__(x->limbs[0]);
     } else {
-        if (!__BIGINT_BPSW__(x, ptest_ctx)) return 0;
+        dnml_status echeck; uint8_t bpsw_ret = __BIGINT_BPSW__(x, ptest_ctx, &echeck);
+        if (echeck == DARENA_OVERFLOW) { *err = DARENA_OVERFLOW; return 0; }
+        if (!bpsw_ret) { *err = BIGINT_SUCCESS; return 0; }
+ 
         xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
         __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
         __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
         seed_xoshiro256(&ptmain_state, side_mix);
         size_t ptest_mark = scratch_mark(&ptest_ctx);
-        size_t randsize = (size_t)(sqrt((double)x->n)) + 1;
-        dnml_status err_check, end_stat = 0;
-        BIGINT_TEMP(random_base, randsize, ptest_ctx, err_check, end_stat);
+        size_t randsize = (size_t)(sqrtl((long double)x->n)) + 1;
+        BIGINT_TEMP(random_base, randsize, ptest_ctx, ptest_mark, echeck, err, 0);
         for (size_t i = 0; i < MRROUNDS_DNML; ++i) {
             _randbase_fill(&random_base, &ptmain_state);
-            if (!__BIGINT_MILLER_RABIN__(x, &random_base, ptest_ctx)) {
-                scratch_reset(&ptest_ctx, ptest_mark);
-                return 0;
-            }
-        } scratch_reset(&ptest_ctx, ptest_mark); return 1;
+            uint8_t mrabin_ret = __BIGINT_MILLER_RABIN__(x, &random_base, ptest_ctx, &echeck);
+            if (echeck == DARENA_OVERFLOW) { scratch_rewind(&ptest_ctx, ptest_mark); *err = DARENA_OVERFLOW; return 0; }
+            if (!mrabin_ret) { scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 0; }
+        } scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 1;
     }
 }
