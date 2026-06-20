@@ -49,14 +49,14 @@ size_t __BIGINT_NEWTON_NROOT_WS__(size_t a_size, uint64_t root);
 
 
 /* ----------------- ALGORITHMS ----------------- */
-void __BIGINT_BINARY_EXP__(bigInt *res, const bigInt *base, uint64_t exp, calc_ctx binexp_ctx, dnml_status *err);
-void __BIGINT_FIXED__(bigInt *res, const bigInt *base, uint64_t exp, uint8_t k, calc_ctx fix_ctx, dnml_status *err);
-void __BIGINT_SLIDING__(bigInt *res, const bigInt *base, uint64_t exp, uint8_t k, calc_ctx slide_ctx, dnml_status *err);
-void __BIGINT_HERON__(bigInt *res, const bigInt *a, calc_ctx heron_ctx, dnml_status *err);
-void __BIGINT_NEWTON_CBRT__(bigInt *res, const bigInt *a, calc_ctx cbrt_ctx, dnml_status *err);
+void __BIGINT_BINARY_EXP__(bigInt *const res, const bigInt *const base, uint64_t exp, calc_ctx binexp_ctx, dnml_status *err);
+void __BIGINT_FIXED__(bigInt *const res, const bigInt *const base, uint64_t exp, uint8_t k, calc_ctx fix_ctx, dnml_status *err);
+void __BIGINT_SLIDING__(bigInt *const res, const bigInt *const base, uint64_t exp, uint8_t k, calc_ctx slide_ctx, dnml_status *err);
+void __BIGINT_HERON__(bigInt *const res, const bigInt *const a, calc_ctx heron_ctx, dnml_status *err);
+void __BIGINT_NEWTON_CBRT__(bigInt *const res, const bigInt *const a, calc_ctx cbrt_ctx, dnml_status *err);
 uint64_t __UI64_NROOT__(uint64_t a, uint64_t root);
-void __BIGINT_NEWTON_2NRT__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx _2nroot_ctx, dnml_status *err);
-void __BIGINT_NEWTON_NRT__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx nroot_ctx, dnml_status *err);
+void __BIGINT_NEWTON_2NRT__(bigInt *const res, const bigInt *const a, uint64_t root, calc_ctx _2nroot_ctx, dnml_status *err);
+void __BIGINT_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t root, calc_ctx nroot_ctx, dnml_status *err);
 
 
 
@@ -64,11 +64,11 @@ void __BIGINT_NEWTON_NRT__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx
 size_t __BIGINT_EXP_WS__(size_t base_size, uint64_t pow);
 size_t __BIGINT_SQRT_WS__(size_t a_size);
 size_t __BIGINT_CBRT_WS__(size_t a_size);
-size_t __BIGINT_NROOT_WS__(size_t a_size, uint64_t root);
-void __BIGINT_EXP_DISPATCH__(bigInt *res, const bigInt *base, uint64_t exp, calc_ctx exp_ctx, dnml_status *err);
-void __BIGINT_SQRT_DISPATCH__(bigInt *res, const bigInt *a, calc_ctx sqrt_ctx, dnml_status *err);
-void __BIGINT_CBRT_DISPATCH__(bigInt *res, const bigInt *a, calc_ctx cbrt_ctx, dnml_status *err);
-void __BIGINT_NRT_DISPATCH__(bigInt *res, const bigInt *a, uint64_t root, calc_ctx nroot_ctx, dnml_status *err);
+size_t __BIGINT_NRT_WS__(size_t a_size, uint64_t root);
+void __BIGINT_EXP_DISPATCH__(bigInt *const res, const bigInt *const base, uint64_t exp, calc_ctx exp_ctx, dnml_status *err);
+void __BIGINT_SQRT_DISPATCH__(bigInt *const res, const bigInt *const a, calc_ctx sqrt_ctx, dnml_status *err);
+void __BIGINT_CBRT_DISPATCH__(bigInt *const res, const bigInt *const a, calc_ctx cbrt_ctx, dnml_status *err);
+void __BIGINT_NRT_DISPATCH__(bigInt *const res, const bigInt *const a, uint64_t root, calc_ctx nroot_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

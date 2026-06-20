@@ -16,39 +16,40 @@ limitations under the License.
 
 
 
-#ifndef DNML_MOD_H
-#define DNML_MOD_H
+#ifndef DNML_DIV_H
+#define DNML_DIV_H
 
 
-#include <debug_util.h>
 #include <dnml_status.h>
+#include <debug_util.h>
 #include <libdnml_types.h>
 #include <include.h>
 #include <dnml_sys/sys.h>
 #include <_libdnml_config/numeric_config.h>
-#include <_libdnml_mem/_ctx.h>
+
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
 
 #include "../algo_base/add_sub.h"
-#include "div.h"
-#include "mul.h"
+#include "heap_mul.h"
+
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size);
-size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size);
-void __BIGINT_BARETT__(const bigInt *const a, const bigInt *const n, bigInt *const rem, calc_ctx barett_ctx, dnml_status *err);
-void __BIGINT_MONT_REDC__(bigInt *const t, mont_ctx mredc_ctx, bigInt *const rem);
-void __BIGINT_MOD_DISPATCH__(
-    const bigInt *const a, const bigInt *const n,
-    bigInt *const rem, bigInt *const tmp_quot,
-    calc_ctx mod_ctx, dnml_status *err
+void __BIHEAP_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem);
+void __BIHEAP_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err);
+void __BIHEAP_BURNIKEL__(
+    const bigInt *AH, const bigInt *AL,
+    const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err
 );
+void __BIHEAP_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err);
+void __BIHEAP_DIV_DISP__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif
+
 
 
 #endif

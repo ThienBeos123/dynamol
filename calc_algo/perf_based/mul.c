@@ -54,7 +54,7 @@ size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
 }
 
 /* BIGINT ALGORITHMS */
-void __BIGINT_SCHOOLBOOK__(const bigInt *a, const bigInt *b, bigInt *res) {
+void __BIGINT_SCHOOLBOOK__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res) {
     memset(res->limbs, 0, a->n + b->n);
     for (size_t i = 0; i < a->n; ++i) {
         uint64_t carry = 0;
@@ -67,10 +67,9 @@ void __BIGINT_SCHOOLBOOK__(const bigInt *a, const bigInt *b, bigInt *res) {
         } res->limbs[i + b->n] += carry; // Add the remaining carry to the MSL
     } res->n = a->n + b->n; __BIGINT_INTERNAL_TRIM_LZ__(res);
 }
-void __BIGINT_KARATSUBA__(const bigInt *x, const bigInt *y, bigInt *res, calc_ctx karat_ctx, dnml_status *err) {
-    if (x->n <= BIGINT_SCHOOLBOOK && y->n <= BIGINT_SCHOOLBOOK) {
-        __BIGINT_SCHOOLBOOK__(x, y, res); return;
-    } //* ---- 1. SETUP ---- *?/
+void __BIGINT_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, calc_ctx karat_ctx, dnml_status *err) {
+    if (x->n <= BIGINT_SCHOOLBOOK && y->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(x, y, res); return; } 
+    //* ---- 1. SETUP ---- *?/
     size_t m = (size_t)(max(x->n, y->n) / 2);
     size_t  x0_range = m,  x1_range = x->n - m;
     size_t  y0_range = m,  y1_range = y->n - m;
@@ -110,7 +109,7 @@ void __BIGINT_KARATSUBA__(const bigInt *x, const bigInt *y, bigInt *res, calc_ct
     __BIGINT_INTERNAL_COPY__(res, &z2); scratch_rewind(&karat_ctx, karat_mark);
     *err = BIGINT_SUCCESS;
 }
-void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx toom_ctx, dnml_status *err) {
+void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {
     if (m->n <= BIGINT_SCHOOLBOOK && n->n <= BIGINT_SCHOOLBOOK) {
         __BIGINT_SCHOOLBOOK__(m, n, res); return;
     } //* -------- 1. SETUP & SPLITTING -------- *//
@@ -152,7 +151,7 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     *   +) r(-1)  = p(-1)  * q(-1)
     *   +) r(-2)  = p(-2)  * q(-2)
     *   +) r(inf) = p(inf) * q(inf) */
-    dnml_status rec_err = DARENA_SUCCESS;
+    dnml_status rec_err = BIGINT_SUCCESS;
     BIGINT_TEMP(r0,     (k << 1),       toom_ctx, toom_mark, echeck, err,); // 2k
     BIGINT_TEMP(r1,     (k << 1) + 9,   toom_ctx, toom_mark, echeck, err,); // 2k + 4 (original) --> 2k + 8 (interpolation - r1)
     BIGINT_TEMP(r_neg1, (k << 1) + 9,   toom_ctx, toom_mark, echeck, err,); // 2k + 2 (original) --> 2k + 7 (interpolation - r2)
@@ -184,7 +183,7 @@ void __BIGINT_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, calc_ctx t
     __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
     __BIGINT_INTERNAL_COPY__(res, &final_res); scratch_rewind(&toom_ctx, toom_mark); *err = BIGINT_SUCCESS;
 }                                 
-void __BIGINT_MUL_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *res, calc_ctx mul_ctx, dnml_status *err) {
+void __BIGINT_MUL_DISPATCH__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx mul_ctx, dnml_status *err) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
     else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
     else if (a->n <= BIGINT_KARATSUBA && b->n <= BIGINT_KARATSUBA) __BIGINT_KARATSUBA__(a, b, res, mul_ctx, err);

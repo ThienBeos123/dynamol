@@ -72,14 +72,21 @@ add_library(dnml_core STATIC
     util/crt_util/crt_misc_util.c
     
     calc_algo/algo_base/add_sub.c
-    # 5a. Calculational Algorithms Files - PERF-BASED
+    # 5a. Calculational Algorithms Files - PERF-BASED + ARENA
     calc_algo/perf_based/mul.c
     calc_algo/perf_based/div.c
     calc_algo/perf_based/mod.c
     calc_algo/perf_based/mod_op.c
     calc_algo/perf_based/num_theory.c
     calc_algo/perf_based/pow_root.c
-    # 5b. Calculational Algorithms Files - CRYPTO-BASED
+    # 5a. Calculational Algorithms Files - PERF-BASED + HEAP
+    calc_algo/heap_based/heap_mul.c
+    calc_algo/heap_based/heap_div.c
+    calc_algo/heap_based/heap_mod.c
+    calc_algo/heap_based/heap_modop.c
+    calc_algo/heap_based/heap_num_theory.c
+    calc_algo/heap_based/heap_pow_root.c
+    # 5c. Calculational Algorithms Files - CRYPTO-BASED
     calc_algo/crt_based/crt_mul.c
     calc_algo/crt_based/crt_div.c
     calc_algo/crt_based/crt_mod.c

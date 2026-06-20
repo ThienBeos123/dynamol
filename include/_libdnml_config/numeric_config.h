@@ -109,12 +109,6 @@ typedef enum {
     BIGINT_HALF_XGCD
 } MOD_ARITHMETIC_THRESHOLDS;
 
-#define MRROUNDS_DNML               5 // Dynamol - Scientific Calculation
-#define MRROUNDS_DBEDDED            5 // dBedded - Embedded Development
-#define MRROUNDS_DRYPTO             20 // Drypto - Cryptography
-
-#define __bienable_ecpp__       1
-
 
 #ifdef __cplusplus
 }

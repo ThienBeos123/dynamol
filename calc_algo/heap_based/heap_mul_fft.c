@@ -1,27 +1,9 @@
-/*
-Copyright (C) 2026 @ThienBeos123/@Poly-glon
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://apache.org
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+#include "heap_mul.h"
 
 
 
-#include "mul.h"
-/* Sizing Function */
-size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) { return 0; }
-
-/* Helper function */
-static size_t ___bigint_fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
+/* ========== HELPER FUNCTIONS ========== */
+static size_t ___biheap_fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
     size_t max_bits = max(a_size * U64_BITS, b_size * U64_BITS);
     size_t k = 2, d = 0, m = 0, n = 0;
     for (;;) {
@@ -37,16 +19,15 @@ static size_t ___bigint_fft_best_metadata(size_t a_size, size_t b_size, size_t *
 * It's purpose is to implement the Fast Fourier Transform, or, better suited for
 * multiplication purposes, the Number Theoretic Transform, through the Cooley-Tukey Algorithm.
 */
-static void ___bigint_cooley_tukey(limb_t *const data, size_t omega_shift, size_t d, size_t n) {}
-static void ___bigint_ifft(limb_t *const data, size_t omega_shift, size_t d, size_t n) {}
-/* Main Orchestrating Function */
-void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft_ctx, dnml_status *err) {
+static void ___biheap_cooley_tukey(limb_t *data, size_t omega_shift, size_t d, size_t n) {}
+static void ___biheap_ifft(limb_t *data, size_t omega_shift, size_t d, size_t n) {}
+/* ============ MAIN FUNCTIONS ============ */
+void __BIHEAP_FFT__(const bigInt *a, const bigInt *b, bigInt *res, dnml_status *err) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) {
-        __BIGINT_SCHOOLBOOK__(a, b, res); return; // Base-case
+        __BIHEAP_SCHOOLBOOK__(a, b, res); return; // Base-case
     } //* -------- 1. SETUP & SPLIT -------- *//
-    // Splitting and Convolution Variables
-    size_t fft_mark = scratch_mark(&fft_ctx); dnml_status err_check;
-    size_t d = 0, m = 0, n = 0, k = ___bigint_fft_best_metadata(a->n, b->n, &d, &m, &n);
+    /* Splitting and Convolution Variables */ dnml_status err_check;
+    size_t d = 0, m = 0, n = 0, k = ___biheap_fft_best_metadata(a->n, b->n, &d, &m, &n);
     size_t mlimbs = (m + U64_BITS - 1) / U64_BITS; // Limbs per D-splitted Windows - ceil(M / U64_BITS)
     size_t nlimbs = (n + U64_BITS) / U64_BITS; // Limbs per Ring Element
     bigInt a_windows[d], b_windows[d];
@@ -56,5 +37,4 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
         a_windows[i] = (bigInt){ .limbs = a->limbs + a_offset, .n = a_len, .cap = mlimbs, .sign = 1 };
         b_windows[i] = (bigInt){ .limbs = b->limbs + b_offset, .n = b_len, .cap = mlimbs, .sign = 1 };
     }
-    
 }

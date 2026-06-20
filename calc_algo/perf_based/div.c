@@ -47,12 +47,12 @@ size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size) {
 
 
 /* ------ MAIN ALGORITHMS HELPERS ------ */
-static inline void ___DASI_BURK_3BY2(
-    const bigInt *a1, const bigInt *a2, const bigInt *a3,
-    const bigInt *b1, const bigInt *b2, const bigInt *B,
-    bigInt *q, bigInt *r, calc_ctx burk_helper_ctx, dnml_status *err
+static void __burk_3b2(
+    PCONST_BIGINT a1, PCONST_BIGINT a2, PCONST_BIGINT a3,
+    PCONST_BIGINT b1, PCONST_BIGINT b2, PCONST_BIGINT B,
+    P_BIGINT q, P_BIGINT r, calc_ctx burk_helper_ctx, dnml_status *err
 ) {
-    dnml_status echeck, rec_err;
+    dnml_status echeck = BIGINT_SUCCESS, rec_err = BIGINT_SUCCESS;
     size_t burk_helper_mark = scratch_mark(&burk_helper_ctx);
     BIGINT_TEMP(c, B->n, burk_helper_ctx, burk_helper_mark, echeck, err,);
     BIGINT_TEMP(iq, a1->n + a2->n, burk_helper_ctx, burk_helper_mark, echeck, err,);
@@ -72,7 +72,7 @@ static inline void ___DASI_BURK_3BY2(
 
 
 /* ------ ALGORITHMS FUNCTIONS ------ */
-void __BIGINT_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem) {
+void __BIGINT_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIGINT rem) {
     uint64_t remainder = 0; uint8_t overflow_check;
     for (size_t i = a->n; i > 0; --i) {
         quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
@@ -84,7 +84,7 @@ void __BIGINT_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt
     rem->n = (remainder) ? 1 : 0;
     rem->sign = 1;
 }
-void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx knuth_ctx, dnml_status *err) {
+void __BIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, calc_ctx knuth_ctx, dnml_status *err) {
     /* ---- Setup ---- */ dnml_status echeck;
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
     size_t m = a->n, n = b->n, knuth_mark = scratch_mark(&knuth_ctx);
@@ -93,8 +93,7 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
 
     /* 1. Normalization */
     /*  - This stage basically make sure b is large enough to be divided by a
-    *     by making b's most significant limb's highest bit is 1
-    */
+    *     by making b's most significant limb's highest bit is 1  */
     uint64_t carry = 0;
     for (size_t i = 0; i < m; ++i) {
         uint64_t x = a->limbs[i];
@@ -131,7 +130,7 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
         qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat, &overflow_check);
         if (overflow_check) { scratch_rewind(&knuth_ctx, knuth_mark); *err = DARENA_OVERFLOW; return; }
 
-        // Validating quotient estimation (Prevent overestimation before multi-limb subtraction (expensive & risky))
+        // Validating quotient estimation (Prevent overestimation before multi-limb subtraction)
         if (qhat == UINT64_MAX) --qhat; // Check if estimates quotient is too large
         while (qhat * b0 > ((uint128)rhat << U64_BITS) + a0) {
             /* We've already got: (note: B = 2^64)
@@ -169,11 +168,10 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
         for (size_t i = 0; i < n; ++i) { uint64_t low, high;
             low = __MUL_UI64__(qhat, b_copy.limbs[i], &high); /* Multi-limb multiplication */
             uint64_t x = a_copy.limbs[j + 1]; /**/ uint64_t t = x - low - borrow;
-            borrow = (t > x) + high; // Propagate borrow (current_borrow + high) to the next limb
-            a_copy.limbs[j + i] = t;
+            borrow = (t > x) + high; /**/ a_copy.limbs[j + i] = t;
         } uint64_t x = a_copy.limbs[j + n]; /**/ a_copy.limbs[j + n] = x - borrow;
 
-        /* 5. Correction - Different from p3's validation/correction */
+        /* 5. Correction */
         /*  - The subtraction aboves follow the form of (a{j+n} + a{j+n-1 .. j}) - (borrow + qhat.b)
         *   -------> a{j+n} - borrow = a{j+n-1 ... j} - qhat.b
         *   -------> If borrow > a[j + n] -------> a[j + n] - borrow < 0
@@ -182,7 +180,7 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
         *   -------------> qhat needs to be decremented
         */
         if (x < borrow) {
-            --qhat; /* if x underflows ----> qhat was still too large ----> Decrement */
+            --qhat; /* if x underflows -> qhat was still too large -> Decrement */
             uint64_t carry2 = 0;
             /* Doing the operation a + b by:
             *   +) Adding each limb back + handle carries
@@ -214,12 +212,12 @@ void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
     scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS; // Free all temporaries
 }
 void __BIGINT_BURNIKEL__(
-    const bigInt *AH, const bigInt *AL,
-    const bigInt *b, bigInt *quot, bigInt *rem, 
+    PCONST_BIGINT AH, PCONST_BIGINT AL,
+    PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, 
     calc_ctx burk_ctx, dnml_status *err
 ) {
     if (AH->n + AL->n <= (BIGINT_SHORT << 1) && b->n <= BIGINT_SHORT) {
-        dnml_status echeck; size_t base_mark = scratch_mark(&burk_ctx);
+        dnml_status echeck = BIGINT_SUCCESS; size_t base_mark = scratch_mark(&burk_ctx);
         BIGINT_TEMP(a, AH->n + AL->n, burk_ctx, base_mark, echeck, err,);
         memcpy(a.limbs, AL->limbs, AL->n * U64_BYTES);
         memcpy(a.limbs + AH->n, AH->limbs, AH->n * U64_BYTES);
@@ -238,19 +236,19 @@ void __BIGINT_BURNIKEL__(
     bigInt b1 = {.limbs = b->limbs + k, .sign = 1,  /**/    .n = b->n - k, .cap = b->n - k};
 
     //* --------- 2. ACTUAL OPERATION --------- *//
-    dnml_status echeck, rec_err;
+    dnml_status echeck = BIGINT_SUCCESS, rec_err = BIGINT_SUCCESS;
     size_t burk_mark = scratch_mark(&burk_ctx);
     BIGINT_TEMP(q1, (k << 1), burk_ctx, burk_mark, echeck, err,);
     BIGINT_TEMP(q2, (k << 1), burk_ctx, burk_mark, echeck, err,);
     BIGINT_TEMP(r,  (k << 1), burk_ctx, burk_mark, echeck, err,);
-    ___DASI_BURK_3BY2(
+    __burk_3b2(
         &a1, &a2, &a3,  // Dividends
         &b1, &b2, b,    // Divisors
         &q1, &r,  /* Quotient + Remainders */ burk_ctx, &rec_err
     ); SCRATCH_OVF(rec_err, burk_ctx, burk_mark, err,)
     bigInt r1 = {.limbs = r.limbs,      .sign = 1, .n = k,       .cap = k};
     bigInt r2 = {.limbs = r.limbs + k,  .sign = 1, .n = r.n - k, .cap = r.n - k};
-    ___DASI_BURK_3BY2(
+    __burk_3b2(
         &r1, &r2, &a4,  // Dividends
         &b1, &b2, b,    // Divisors
         &q2, &r,  /* Quotient + Remainders*/ burk_ctx, &rec_err
@@ -262,8 +260,8 @@ void __BIGINT_BURNIKEL__(
     quot->n = 2*k; __BIGINT_INTERNAL_TRIM_LZ__(quot); __BIGINT_INTERNAL_COPY__(rem, &r);
     scratch_rewind(&burk_ctx, burk_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx newton_ctx, dnml_status *err) {}
-void __BIGINT_DIV_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *tmp_rem, calc_ctx div_ctx, dnml_status *err) {
+void __BIGINT_NEWTON__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, calc_ctx newton_ctx, dnml_status *err) {}
+void __BIGINT_DIV_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT tmp_rem, calc_ctx div_ctx, dnml_status *err) {
     if (b->n < BIGINT_SHORT) {  __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem); *err = BIGINT_SUCCESS; }
     else if (b->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, b, quot, tmp_rem, div_ctx, err);
     else if (b->n < BIGINT_BURNIKEL) { 

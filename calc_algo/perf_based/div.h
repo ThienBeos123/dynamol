@@ -45,15 +45,15 @@ size_t __BIGINT_NEWTON_WS__(size_t a_size, size_t b_size);
 size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size);
 
 
-void __BIGINT_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem);
-void __BIGINT_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx knuth_ctx, dnml_status *err);
+void __BIGINT_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const quot, bigInt *const rem);
+void __BIGINT_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, calc_ctx knuth_ctx, dnml_status *err);
 void __BIGINT_BURNIKEL__(
-    const bigInt *AH, const bigInt *AL,
-    const bigInt *b, bigInt *quot, bigInt *rem,
+    const bigInt *const AH, const bigInt *const AL,
+    const bigInt *const b, bigInt *const quot, bigInt *const rem,
     calc_ctx burk_ctx, dnml_status *err
 );
-void __BIGINT_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx newton_ctx, dnml_status *err);
-void __BIGINT_DIV_DISPATCH__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, calc_ctx div_ctx, dnml_status *err);
+void __BIGINT_NEWTON__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, calc_ctx newton_ctx, dnml_status *err);
+void __BIGINT_DIV_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const tmp_rem, calc_ctx div_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

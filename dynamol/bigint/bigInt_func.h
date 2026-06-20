@@ -98,19 +98,19 @@ extern "C" {
 //todo ===================================== NUMERIC FUNCTIONALITIES ===================================== todo//
 dnml_status _init_dynamol_bigint(void);
 //* ------------- CONSTRUCTORS & DESCTRUCTORS -------------- */
-void bigInt_free(bigInt *x); // Destructor
-dnml_status bigInt_new(bigInt *x); // Default Constructor
-dnml_status bigInt_snew(bigInt *x, size_t n);
-dnml_status bigInt_binew(bigInt *x, const bigInt *y);
-dnml_status bigInt_new_u64(bigInt *x, const uint64_t in);
-dnml_status bigInt_new_i64(bigInt *x, const int64_t in);
-dnml_status bigInt_new_f128(bigInt *x, long double in);
+void bigInt_free(bigInt *const x); // Destructor
+dnml_status bigInt_new(bigInt *const x); // Default Constructor
+dnml_status bigInt_snew(bigInt *const x, size_t n);
+dnml_status bigInt_binew(bigInt *const x, const bigInt *const y);
+dnml_status bigInt_new_u64(bigInt *const x, const uint64_t in);
+dnml_status bigInt_new_i64(bigInt *const x, const int64_t in);
+dnml_status bigInt_new_f128(bigInt *const x, long double in);
 
 
 
 //* ------------------------ ASSIGNMENTS ------------------------ */
-dnml_status bigInt_set(const bigInt x, bigInt *receiver);
-dnml_status bigInt_set_safe(const bigInt x, bigInt *receiver);
+dnml_status bigInt_set(const bigInt x, bigInt *const receiver);
+dnml_status bigInt_set_safe(const bigInt x, bigInt *const receiver);
 /* --------- BigInt --> Primitive Types --------- */
 dnml_status bigInt_setu64(const bigInt x, uint64_t* receiver);
 dnml_status bigInt_seti64(const bigInt x, int64_t* receiver);
@@ -119,10 +119,10 @@ dnml_status bigInt_setu64_safe(const bigInt x, uint64_t* receiver);
 dnml_status bigInt_seti64_safe(const bigInt x, int64_t* receiver);
 dnml_status bigInt_setf128_safe(const bigInt x, long double* receiver);
 /* --------- Primitive Types --> BigInt --------- */
-dnml_status bigInt_getu64(uint64_t x, bigInt *receiver);
-dnml_status bigInt_geti64(int64_t x, bigInt *receiver);
-dnml_status bigInt_getf128(long double x, bigInt *receiver);
-dnml_status bigInt_getf128_safe(long double x, bigInt *receiver);
+dnml_status bigInt_getu64(uint64_t x, bigInt *const receiver);
+dnml_status bigInt_geti64(int64_t x, bigInt *const receiver);
+dnml_status bigInt_getf128(long double x, bigInt *const receiver);
+dnml_status bigInt_getf128_safe(long double x, bigInt *const receiver);
 
 
 
@@ -147,42 +147,42 @@ bigInt bigInt_not(const bigInt x, dnml_status *err);
 bigInt bigInt_rshift(const bigInt x, size_t k, dnml_status *err);
 bigInt bigInt_lshift(const bigInt x, size_t k, dnml_status *err);
 bigInt bigInt_lshiftg(const bigInt x, size_t k, dnml_status *err);
-dnml_status bigInt_mut_not(bigInt *x);
-dnml_status bigInt_mut_rshift(bigInt *x, size_t k);
-dnml_status bigInt_mut_lshift(bigInt *x, size_t k);
-dnml_status bigInt_mut_lshiftg(bigInt *x, size_t k);
+dnml_status bigInt_mut_not(bigInt *const x);
+dnml_status bigInt_mut_rshift(bigInt *const x, size_t k);
+dnml_status bigInt_mut_lshift(bigInt *const x, size_t k);
+dnml_status bigInt_mut_lshiftg(bigInt *const x, size_t k);
 /* ------------- Mutative, Fixed-width ------------- */
-dnml_status bigInt_mut_andu64  (bigInt *x, const uint64_t y);
-dnml_status bigInt_mut_nandu64 (bigInt *x, const uint64_t y);
-dnml_status bigInt_mut_oru64   (bigInt *x, const uint64_t y);
-dnml_status bigInt_mut_noru64  (bigInt *x, const uint64_t y);
-dnml_status bigInt_mut_xoru64  (bigInt *x, const uint64_t y);
-dnml_status bigInt_mut_xnoru64 (bigInt *x, const uint64_t y);
-dnml_status bigInt_mut_and  (bigInt *x, const bigInt y);
-dnml_status bigInt_mut_nand (bigInt *x, const bigInt y);
-dnml_status bigInt_mut_or   (bigInt *x, const bigInt y);
-dnml_status bigInt_mut_nor  (bigInt *x, const bigInt y);
-dnml_status bigInt_mut_xor  (bigInt *x, const bigInt y);
-dnml_status bigInt_mut_xnor (bigInt *x, const bigInt y);
+dnml_status bigInt_mut_andu64  (bigInt *const x, const uint64_t y);
+dnml_status bigInt_mut_nandu64 (bigInt *const x, const uint64_t y);
+dnml_status bigInt_mut_oru64   (bigInt *const x, const uint64_t y);
+dnml_status bigInt_mut_noru64  (bigInt *const x, const uint64_t y);
+dnml_status bigInt_mut_xoru64  (bigInt *const x, const uint64_t y);
+dnml_status bigInt_mut_xnoru64 (bigInt *const x, const uint64_t y);
+dnml_status bigInt_mut_and  (bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_nand (bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_or   (bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_nor  (bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_xor  (bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_xnor (bigInt *const x, const bigInt y);
 /* ------------- Mutative, Explicit-width ------------- */
-dnml_status bigInt_mutex_andu64  (bigInt *x, const uint64_t val, size_t limb_width);
-dnml_status bigInt_mutex_nandu64 (bigInt *x, const uint64_t val, size_t limb_width);
-dnml_status bigInt_mutex_oru64   (bigInt *x, const uint64_t val, size_t limb_width);
-dnml_status bigint_mutex_noru64  (bigInt *x, const uint64_t val, size_t limb_width);
-dnml_status bigInt_mutex_xoru64  (bigInt *x, const uint64_t val, size_t limb_width);
-dnml_status bigInt_mutex_xnoru64 (bigInt *x, const uint64_t val, size_t limb_width);
-dnml_status bigInt_mutex_andi64  (bigInt *x, const int64_t val, size_t limb_width);
-dnml_status bigInt_mutex_nandi64 (bigInt *x, const int64_t val, size_t limb_width);
-dnml_status bigInt_mutex_ori64   (bigInt *x, const int64_t val, size_t limb_width);
-dnml_status bigInt_mutex_nori64  (bigInt *x, const int64_t val, size_t limb_width);
-dnml_status bigInt_mutex_xori64  (bigInt *x, const int64_t val, size_t limb_width);
-dnml_status bigInt_mutex_xnori64 (bigInt *x, const int64_t val, size_t limb_width);
-dnml_status bigInt_mutex_and   (bigInt *x, const bigInt y, size_t limb_width);
-dnml_status bigInt_mutex_nand  (bigInt *x, const bigInt y, size_t limb_width);
-dnml_status bigInt_mutex_or    (bigInt *x, const bigInt y, size_t limb_width);
-dnml_status bigInt_mutex_nor   (bigInt *x, const bigInt y, size_t limb_width);
-dnml_status bigInt_mutex_xor   (bigInt *x, const bigInt y, size_t limb_width);
-dnml_status bigInt_mutex_xnor  (bigInt *x, const bigInt y, size_t limb_width);
+dnml_status bigInt_mutex_andu64  (bigInt *const x, const uint64_t val, size_t limb_width);
+dnml_status bigInt_mutex_nandu64 (bigInt *const x, const uint64_t val, size_t limb_width);
+dnml_status bigInt_mutex_oru64   (bigInt *const x, const uint64_t val, size_t limb_width);
+dnml_status bigint_mutex_noru64  (bigInt *const x, const uint64_t val, size_t limb_width);
+dnml_status bigInt_mutex_xoru64  (bigInt *const x, const uint64_t val, size_t limb_width);
+dnml_status bigInt_mutex_xnoru64 (bigInt *const x, const uint64_t val, size_t limb_width);
+dnml_status bigInt_mutex_andi64  (bigInt *const x, const int64_t val, size_t limb_width);
+dnml_status bigInt_mutex_nandi64 (bigInt *const x, const int64_t val, size_t limb_width);
+dnml_status bigInt_mutex_ori64   (bigInt *const x, const int64_t val, size_t limb_width);
+dnml_status bigInt_mutex_nori64  (bigInt *const x, const int64_t val, size_t limb_width);
+dnml_status bigInt_mutex_xori64  (bigInt *const x, const int64_t val, size_t limb_width);
+dnml_status bigInt_mutex_xnori64 (bigInt *const x, const int64_t val, size_t limb_width);
+dnml_status bigInt_mutex_and   (bigInt *const x, const bigInt y, size_t limb_width);
+dnml_status bigInt_mutex_nand  (bigInt *const x, const bigInt y, size_t limb_width);
+dnml_status bigInt_mutex_or    (bigInt *const x, const bigInt y, size_t limb_width);
+dnml_status bigInt_mutex_nor   (bigInt *const x, const bigInt y, size_t limb_width);
+dnml_status bigInt_mutex_xor   (bigInt *const x, const bigInt y, size_t limb_width);
+dnml_status bigInt_mutex_xnor  (bigInt *const x, const bigInt y, size_t limb_width);
 /* ------------- Functional, Fixed-width ------------- */
 bigInt bigInt_andu64  (const bigInt x, const uint64_t val, dnml_status *err);
 bigInt bigInt_nandu64 (const bigInt x, const uint64_t val, dnml_status *err);
@@ -252,17 +252,17 @@ bool bigInt_mequal(const bigInt a, const bigInt b, dnml_status *err);
 *       +) FUNCTIONAL ARITHMETIC    ---> Return a new copy of a value to be asigned     (Eg: x  = 1 + 2;)
 */
 /* ------------------- Mutative Arithmetic -------------------- */
-dnml_status bigInt_mut_mulu64(bigInt *x, const uint64_t val);
-dnml_status bigInt_mut_divu64(bigInt *x, const uint64_t val);
-dnml_status bigInt_mut_modu64(bigInt *x, const uint64_t val);
-dnml_status bigInt_mut_muli64(bigInt *x, const int64_t val);
-dnml_status bigInt_mut_divi64(bigInt *x, const int64_t val);
-dnml_status bigInt_mut_modi64(bigInt *x, const int64_t val);
-dnml_status bigInt_mut_add(bigInt *x, const bigInt y);
-dnml_status bigInt_mut_sub(bigInt *x, const bigInt y);
-dnml_status bigInt_mut_mul(bigInt *x, const bigInt y);
-dnml_status bigInt_mut_div(bigInt *x, const bigInt y);
-dnml_status bigInt_mut_mod(bigInt *x, const bigInt y);
+dnml_status bigInt_mut_mulu64(bigInt *const x, const uint64_t val);
+dnml_status bigInt_mut_divu64(bigInt *const x, const uint64_t val);
+dnml_status bigInt_mut_modu64(bigInt *const x, const uint64_t val);
+dnml_status bigInt_mut_muli64(bigInt *const x, const int64_t val);
+dnml_status bigInt_mut_divi64(bigInt *const x, const int64_t val);
+dnml_status bigInt_mut_modi64(bigInt *const x, const int64_t val);
+dnml_status bigInt_mut_add(bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_sub(bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_mul(bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_div(bigInt *const x, const bigInt y);
+dnml_status bigInt_mut_mod(bigInt *const x, const bigInt y);
 /* ------------------ Functional Arithmetic ------------------- */
 bigInt bigInt_mulu64(const bigInt x, const uint64_t val, dnml_status *err);
 bigInt bigInt_divu64(const bigInt x, const uint64_t val, dnml_status *err);
@@ -288,37 +288,37 @@ bigInt bigInt_lcmi64(const bigInt x, const int64_t val, dnml_status *err);
 bigInt bigInt_lcm(const bigInt x, const bigInt y, dnml_status *err);
 bool bigInt_is_prime(const bigInt x, dnml_status *err);
 /* ---------------- Modular Reduction ---------------- */
-dnml_status bigInt_mut_emodu64(bigInt *x, const uint64_t mod);
-dnml_status bigInt_mut_emodi64(bigInt *x, const int64_t mod);
-dnml_status bigInt_mut_emod(bigInt *x, const bigInt mod);
+dnml_status bigInt_mut_emodu64(bigInt *const x, const uint64_t mod);
+dnml_status bigInt_mut_emodi64(bigInt *const x, const int64_t mod);
+dnml_status bigInt_mut_emod(bigInt *const x, const bigInt mod);
 uint64_t bigInt_emodu64(const bigInt x, const uint64_t mod, dnml_status *err);
 uint64_t bigInt_emodi64(const bigInt x, const int64_t mod, dnml_status *err);
 bigInt bigInt_emod(const bigInt x, const bigInt mod, dnml_status *err);
 /* ---------------- SMALL Modular Arithmetic --------------- */
-dnml_status bigInt_mut_modadd_u64(bigInt *x, const bigInt y, const uint64_t mod);
-dnml_status bigInt_mut_modsub_u64(bigInt *x, const bigInt y, const uint64_t mod);
-dnml_status bigInt_mut_modadd(bigInt *x, const bigInt y, const bigInt mod);
-dnml_status bigInt_mut_modsub(bigInt *x, const bigInt y, const bigInt mod);
+dnml_status bigInt_mut_modadd_u64(bigInt *const x, const bigInt y, const uint64_t mod);
+dnml_status bigInt_mut_modsub_u64(bigInt *const x, const bigInt y, const uint64_t mod);
+dnml_status bigInt_mut_modadd(bigInt *const x, const bigInt y, const bigInt mod);
+dnml_status bigInt_mut_modsub(bigInt *const x, const bigInt y, const bigInt mod);
 uint64_t bigInt_modadd_u64(const bigInt x, const bigInt y, const uint64_t mod);
 uint64_t bigInt_modsub_u64(const bigInt x, const bigInt y, const uint64_t mod);
 bigInt bigInt_modadd(const bigInt x, const bigInt y, const bigInt mod);
 bigInt bigInt_modsub(const bigInt x, const bigInt y, const bigInt mod);
 /* ---------------- LARGE Modular Arithmetic --------------- */
-dnml_status bigInt_mut_modmul_u64(bigInt *x, const bigInt y, const uint64_t mod);
-dnml_status bigInt_mut_moddiv_u64(bigInt *x, const bigInt y, const uint64_t mod);
-dnml_status bigInt_mut_modmul(bigInt *x, const bigInt y, const bigInt mod);
-dnml_status bigInt_mut_moddiv(bigInt *x, const bigInt y, const bigInt mod);
+dnml_status bigInt_mut_modmul_u64(bigInt *const x, const bigInt y, const uint64_t mod);
+dnml_status bigInt_mut_moddiv_u64(bigInt *const x, const bigInt y, const uint64_t mod);
+dnml_status bigInt_mut_modmul(bigInt *const x, const bigInt y, const bigInt mod);
+dnml_status bigInt_mut_moddiv(bigInt *const x, const bigInt y, const bigInt mod);
 uint64_t bigInt_modmul_u64(const bigInt x, const bigInt y, const uint64_t mod);
 uint64_t bigInt_moddiv_u64(const bigInt x, const bigInt y, const uint64_t mod);
 bigInt bigInt_modmul(const bigInt x, const bigInt y, const bigInt mod);
 bigInt bigInt_moddiv(const bigInt x, const bigInt y, const bigInt mod);
 /* ---------------------- Modular Algebraic ------------------ */
-dnml_status bigInt_mut_modexp_u64(bigInt *x, const bigInt y, const uint64_t mod);
-dnml_status bigInt_mut_modsqr_u64(bigInt *x, const uint64_t mod);
-dnml_status bigInt_mut_modinv_u64(bigInt *x, const uint64_t mod);
-dnml_status bigInt_mut_modexp(bigInt *x, const bigInt y, const bigInt mod);
-dnml_status bigInt_mut_modsqr(bigInt *x, const bigInt mod);
-dnml_status bigInt_mut_modinv(bigInt *x, const bigInt mod);
+dnml_status bigInt_mut_modexp_u64(bigInt *const x, const bigInt y, const uint64_t mod);
+dnml_status bigInt_mut_modsqr_u64(bigInt *const x, const uint64_t mod);
+dnml_status bigInt_mut_modinv_u64(bigInt *const x, const uint64_t mod);
+dnml_status bigInt_mut_modexp(bigInt *const x, const bigInt y, const bigInt mod);
+dnml_status bigInt_mut_modsqr(bigInt *const x, const bigInt mod);
+dnml_status bigInt_mut_modinv(bigInt *const x, const bigInt mod);
 uint64_t bigInt_modexp_u64(const bigInt x, const bigInt y, const uint64_t mod);
 uint64_t bigInt_modsqr_u64(const bigInt x, const uint64_t mod);
 uint64_t bigInt_modinv_u64(const bigInt x, const uint64_t mod);
@@ -330,11 +330,11 @@ bigInt bigInt_modinv(const bigInt x, const bigInt mod);
 
 //* -------------------- SIGNED NUMBER-THEORETIC --------------------- */
 /* -------------- MUTATIVE ALGEBRAIC -------------- */
-dnml_status bigInt_mut_sqr(bigInt *x);
-dnml_status bigInt_mut_pow(bigInt *x, const uint64_t exp);
-dnml_status bigInt_mut_sqrt(bigInt *x);
-dnml_status bigInt_mut_cbrt(bigInt *x);
-dnml_status bigInt_mut_nrt(bigInt *x, const uint64_t root);
+dnml_status bigInt_mut_sqr(bigInt *const x);
+dnml_status bigInt_mut_pow(bigInt *const x, const uint64_t exp);
+dnml_status bigInt_mut_sqrt(bigInt *const x);
+dnml_status bigInt_mut_cbrt(bigInt *const x);
+dnml_status bigInt_mut_nrt(bigInt *const x, const uint64_t root);
 /* -------------- FUNCTIONAL ALGEBRAIC -------------- */
 bigInt bigInt_sqr(const bigInt x, dnml_status *err);
 bigInt bigInt_pow(const bigInt x, const uint64_t exp, dnml_status *err);
@@ -345,19 +345,19 @@ bigInt bigInt_nrt(const bigInt x, const uint64_t root, dnml_status *err);
 
 //* ------------------------- COPIES --------------------------- */
 /* -------------  Mutative SMALL Copies ------------- */
-dnml_status bigInt_mut_copyu64(bigInt *dst, const uint64_t src);
-dnml_status bigInt_mut_dcopyu64(bigInt *dst, const uint64_t src);
-dnml_status bigInt_mut_copyi64(bigInt *dst, const int64_t src);
-dnml_status bigInt_mut_dcopyi64(bigInt *dst, const int64_t src);
+dnml_status bigInt_mut_copyu64(bigInt *const dst, const uint64_t src);
+dnml_status bigInt_mut_dcopyu64(bigInt *const dst, const uint64_t src);
+dnml_status bigInt_mut_copyi64(bigInt *const dst, const int64_t src);
+dnml_status bigInt_mut_dcopyi64(bigInt *const dst, const int64_t src);
 /* -------------  Mutative LARGE Copies ------------- */
-dnml_status bigInt_mut_copyf128(bigInt *dst, long double src);
-dnml_status bigInt_mut_dcopyf128(bigInt *dst, long double src);
-dnml_status bigInt_mut_ocopyf128(bigInt *dst, long double src);
-dnml_status bigInt_mut_tover_copyf128(bigInt *dst, long double src);
-dnml_status bigInt_mut_copy(bigInt *dst, const bigInt src);
-dnml_status bigInt_mut_dcopy(bigInt *dst, const bigInt src);
-dnml_status bigInt_mut_ocopy(bigInt *dst, const bigInt src);
-dnml_status bigInt_mut_tover_copy(bigInt *dst, const bigInt src);
+dnml_status bigInt_mut_copyf128(bigInt *const dst, long double src);
+dnml_status bigInt_mut_dcopyf128(bigInt *const dst, long double src);
+dnml_status bigInt_mut_ocopyf128(bigInt *const dst, long double src);
+dnml_status bigInt_mut_tover_copyf128(bigInt *const dst, long double src);
+dnml_status bigInt_mut_copy(bigInt *const dst, const bigInt src);
+dnml_status bigInt_mut_dcopy(bigInt *const dst, const bigInt src);
+dnml_status bigInt_mut_ocopy(bigInt *const dst, const bigInt src);
+dnml_status bigInt_mut_tover_copy(bigInt *const dst, const bigInt src);
 /* -------------  Functional SMALL Copies ------------- */
 bigInt bigInt_copyu64(const uint64_t src, dnml_status *err);
 bigInt bigInt_copyi64(const int64_t src, dnml_status *err);
@@ -372,14 +372,14 @@ bigInt bigInt_tover_copy(const bigInt src, size_t output_cap, dnml_status *err);
 
 
 //* -------------------- GENERAL UTILITIES --------------------- */
-dnml_status bigInt_canonicalize(bigInt *x);
-dnml_status bigInt_normalize(bigInt *x);
-dnml_status bigInt_resize(bigInt *x, size_t k);
-dnml_status bigInt_reserve(bigInt *x, size_t k);
-dnml_status bigInt_shrink(bigInt *x, size_t k);
-dnml_status bigInt_reset(bigInt *x);
+dnml_status bigInt_canonicalize(bigInt *const x);
+dnml_status bigInt_normalize(bigInt *const x);
+dnml_status bigInt_resize(bigInt *const x, size_t k);
+dnml_status bigInt_reserve(bigInt *const x, size_t k);
+dnml_status bigInt_shrink(bigInt *const x, size_t k);
+dnml_status bigInt_reset(bigInt *const x);
 bool bigInt_validate(const bigInt x);
-bool bigInt_pvalidate(const bigInt *x);
+bool bigInt_pvalidate(const bigInt *const x);
 
 
 
@@ -389,10 +389,10 @@ bool bigInt_pvalidate(const bigInt *x);
 size_t _finval_char(const char *str, size_t len, uint8_t *base_out);
 size_t _finval_charb(const char *str, size_t len, uint8_t base);
 //* -------------------- CONSTRUCTORS --------------------- */
-dnml_status bigInt_strinit(bigInt *x, const char* str);
-dnml_status bigInt_strbinit(bigInt *x, const char* str, uint8_t base);
-dnml_status bigInt_strninit(bigInt *x, const char* str, size_t len);
-dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t base);
+dnml_status bigInt_strinit(bigInt *const x, const char* str);
+dnml_status bigInt_strbinit(bigInt *const x, const char* str, uint8_t base);
+dnml_status bigInt_strninit(bigInt *const x, const char* str, size_t len);
+dnml_status bigInt_strnbinit(bigInt *const x, const char* str, size_t len, uint8_t base);
 
 
 //* ------------------------------ ASSIGNMENTS ------------------------------- */
@@ -423,20 +423,20 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err);
 bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status *err);
 //* -------------------------- BigInt Assignments -------------------------- *//
 /* Default String --> BigInt */
-dnml_status bigInt_get_str(bigInt *x, const char *str);
-dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base);
-dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len);
-dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t base);
+dnml_status bigInt_get_str(bigInt *const x, const char *str);
+dnml_status bigInt_get_strb(bigInt *const x, const char *str, uint8_t base);
+dnml_status bigInt_get_strn(bigInt *const x, const char *str, size_t len);
+dnml_status bigInt_get_strnb(bigInt *const x, const char *str, size_t len, uint8_t base);
 /* Truncative String --> BigInt */
-dnml_status bigInt_tget_str(bigInt *x, const char *str);
-dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base);
-dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len);
-dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t base);
+dnml_status bigInt_tget_str(bigInt *const x, const char *str);
+dnml_status bigInt_tget_strb(bigInt *const x, const char *str, uint8_t base);
+dnml_status bigInt_tget_strn(bigInt *const x, const char *str, size_t len);
+dnml_status bigInt_tget_strnb(bigInt *const x, const char *str, size_t len, uint8_t base);
 /* Safe String --> BigInt */
-dnml_status bigInt_sget_str(bigInt *x, const char *str);
-dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base);
-dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len);
-dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t base);
+dnml_status bigInt_sget_str(bigInt *const x, const char *str);
+dnml_status bigInt_sget_strb(bigInt *const x, const char *str, uint8_t base);
+dnml_status bigInt_sget_strn(bigInt *const x, const char *str, size_t len);
+dnml_status bigInt_sget_strnb(bigInt *const x, const char *str, size_t len, uint8_t base);
 
 
 
@@ -456,33 +456,33 @@ dnml_status bigInt_sfput(FILE *stream, const bigInt x);
 dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base);
 dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase);
 /* --------- Standard Stream (stdin) INPUT ---------  */
-dnml_status bigInt_scan(bigInt *x);
-dnml_status bigInt_scanb(bigInt *x, uint8_t base);
-dnml_status bigInt_sscan(bigInt *x);
-dnml_status bigInt_sscanb(bigInt *x, uint8_t base);
-dnml_status bigInt_tscan(bigInt *x);
-dnml_status bigInt_tscanb(bigInt *x, uint8_t base);
+dnml_status bigInt_scan(bigInt *const x);
+dnml_status bigInt_scanb(bigInt *const x, uint8_t base);
+dnml_status bigInt_sscan(bigInt *const x);
+dnml_status bigInt_sscanb(bigInt *const x, uint8_t base);
+dnml_status bigInt_tscan(bigInt *const x);
+dnml_status bigInt_tscanb(bigInt *const x, uint8_t base);
 /* --------- Custom Stream INPUT ---------  */
-dnml_status bigInt_fscan(FILE *stream, bigInt *x);
-dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base);
-dnml_status bigInt_fsscan(FILE *stream, bigInt *x);
-dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base);
-dnml_status bigInt_ftscan(FILE *stream, bigInt *x);
-dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base);
+dnml_status bigInt_fscan(FILE *stream, bigInt *const x);
+dnml_status bigInt_fscanb(FILE *stream, bigInt *const x, uint8_t base);
+dnml_status bigInt_fsscan(FILE *stream, bigInt *const x);
+dnml_status bigInt_fsscanb(FILE *stream, bigInt *const x, uint8_t base);
+dnml_status bigInt_ftscan(FILE *stream, bigInt *const x);
+dnml_status bigInt_ftscanb(FILE *stream, bigInt *const x, uint8_t base);
 
 
 
 //* -------------------- BINARY INPUTS/OUTPUTS --------------------- */
 /* --------- Binary INPUT/OUTPUT ---------  */
 dnml_status bigInt_fwrite(FILE *stream, const bigInt x);
-dnml_status bigInt_fread(FILE *stream, bigInt *x);
-dnml_status bigInt_fsread(FILE *stream, bigInt *x);
-dnml_status bigInt_ftread(FILE *stream, bigInt *x);
+dnml_status bigInt_fread(FILE *stream, bigInt *const x);
+dnml_status bigInt_fsread(FILE *stream, bigInt *const x);
+dnml_status bigInt_ftread(FILE *stream, bigInt *const x);
 /* --------- SERIALIZATION / DESERIALIZATION ---------  */
 dnml_status bigInt_serialize(char *buf, size_t len, const bigInt x, size_t *written);
 dnml_status bigInt_tserialize(char *buf, size_t len, const bigInt x, size_t *written);
 dnml_status bigInt_sserialize(char *buf, size_t len, const bigInt x, size_t *written);
-dnml_status bigInt_deserialize(bigInt *x, const char* str, size_t len);
+dnml_status bigInt_deserialize(bigInt *const x, const char* str, size_t len);
 
 
 

@@ -18,7 +18,6 @@ limitations under the License.
 
 #include "add_sub.h"
 
-
 //* =============== ADDITION ARITHMETIC ENGINE =============== *//
 void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     DNML_TEST_ASSERT(

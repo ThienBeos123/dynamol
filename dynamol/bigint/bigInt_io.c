@@ -82,7 +82,7 @@ static inline void _ASCII_COLUMN__(limb_t val, char* c) {
 
 
 //todo ======================================= 1. CONSTRUCTIONS ======================================= *//
-dnml_status bigInt_strinit(bigInt *x, const char* str) {
+dnml_status bigInt_strinit(bigInt *const x, const char* str) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -139,7 +139,7 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_STR_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_STR_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -148,15 +148,15 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
 
     //* =========== 6. FULLY Initializing and Copy-over ============== *//
     x->limbs = malloc(cap * U64_BYTES);
-    if (!x->limbs) { arena_reset(_DASI_STR_INIT_ARENA, tmp_mark); abort(); }
+    if (!x->limbs) { arena_rewind(_DASI_STR_INIT_ARENA, tmp_mark); abort(); }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = __TEMPHOLDER__.n;
     x->sign = sign;
-    arena_reset(_DASI_STR_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_STR_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
+dnml_status bigInt_strbinit(bigInt *const x, const char* str, const uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -200,7 +200,7 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_BASE_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -210,16 +210,16 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
 
     //* =========== 5. FULLY Initializing and Copy-over ============== *//
     limb_t *tmp = malloc(cap * U64_BYTES);
-    if (!tmp) { arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark); abort(); }
+    if (!tmp) { arena_rewind(_DASI_BASE_INIT_ARENA, tmp_mark); abort(); }
     x->limbs = tmp;
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = cap;
     x->sign = sign;
-    arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_BASE_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
+dnml_status bigInt_strninit(bigInt *const x, const char* str, const size_t len) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -277,7 +277,7 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -286,15 +286,15 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
 
     //* =========== 6. FULLY Initializing and Copy-over ============== *//
     x->limbs = malloc(cap * U64_BYTES);
-    if (!x->limbs) { arena_reset(_DASI_STRNLEN_INIT_ARENA, tmp_mark); abort(); }
+    if (!x->limbs) { arena_rewind(_DASI_STRNLEN_INIT_ARENA, tmp_mark); abort(); }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = __TEMPHOLDER__.n;
     x->sign = sign;
-    arena_reset(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t base) {
+dnml_status bigInt_strnbinit(bigInt *const x, const char* str, size_t len, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -338,7 +338,7 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -348,10 +348,10 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
 
     //* =========== 5. FULLY Initializing and Copy-over ============== *//
     x->limbs = malloc(cap * U64_BYTES);
-    if (!x->limbs) { arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark); abort(); }
+    if (!x->limbs) { arena_rewind(_DASI_BASENLEN_INIT_ARENA, tmp_mark); abort(); }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap = cap; x->n = __TEMPHOLDER__.n; x->sign = sign;
-    arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
 
@@ -393,7 +393,7 @@ dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_STRING_ARENA, tmp_mark);
     if (digit_needed > str_length) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -432,7 +432,7 @@ dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *wri
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_BASE_ARENA, tmp_mark);
     if (digit_needed > str_length) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -467,7 +467,7 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_STRNLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -507,7 +507,7 @@ dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -560,7 +560,7 @@ dnml_status bigInt_tto_strf(
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value + char_add] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
@@ -597,7 +597,7 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
     for (size_t i = total_needed - 1; i >= sign_space; --i) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
-    }  arena_reset(_DASI_SET_STRING_ARENA, tmp_mark); return STR_SUCCESS;
+    }  arena_rewind(_DASI_SET_STRING_ARENA, tmp_mark); return STR_SUCCESS;
 }
 dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
     /* Pre-operation Validation & Static Analysis */
@@ -633,7 +633,7 @@ dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *writ
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
-    } arena_reset(_DASI_SET_BASE_ARENA, tmp_mark); return STR_SUCCESS;
+    } arena_rewind(_DASI_SET_BASE_ARENA, tmp_mark); return STR_SUCCESS;
 }
 dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *written) {
     /* Pre-operation Validation & Static Analysis */
@@ -667,7 +667,7 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_SET_STRNLEN_ARENA, tmp_mark); return STR_SUCCESS;
+    arena_rewind(_DASI_SET_STRNLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
 dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
@@ -703,7 +703,7 @@ dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base,
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
+    arena_rewind(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
 dnml_status bigInt_to_strf(
     char* str, size_t len,
@@ -752,7 +752,7 @@ dnml_status bigInt_to_strf(
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value + char_add] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
+    arena_rewind(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
 //* -------------------------- BigInt Conversions -------------------------- *//
 bigInt bigInt_from_str(const char* str, dnml_status *err) {
@@ -995,7 +995,7 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
 }
 //* -------------------------- BigInt Assignments -------------------------- *//
 /* Default String --> BigInt */ /* Grows */
-dnml_status bigInt_get_str(bigInt *x, const char *str) {
+dnml_status bigInt_get_str(bigInt *const x, const char *str) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1048,17 +1048,17 @@ dnml_status bigInt_get_str(bigInt *x, const char *str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_STRING_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_STRING_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_STRING_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
+dnml_status bigInt_get_strb(bigInt *const x, const char *str, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1101,17 +1101,17 @@ dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_BASE_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_BASE_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_BASE_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
+dnml_status bigInt_get_strn(bigInt *const x, const char *str, size_t len) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1165,17 +1165,17 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_STRNLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_STRNLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_STRNLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
+dnml_status bigInt_get_strnb(bigInt *const x, const char *str, size_t len, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1219,18 +1219,18 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_BASENLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_BASENLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_BASENLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
 /* Truncative String --> BigInt */ /* Truncates */
-dnml_status bigInt_tget_str(bigInt *x, const char *str) {
+dnml_status bigInt_tget_str(bigInt *const x, const char *str) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1284,18 +1284,18 @@ dnml_status bigInt_tget_str(bigInt *x, const char *str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_STRING_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_STRING_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_STRING_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
+dnml_status bigInt_tget_strb(bigInt *const x, const char *str, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1339,18 +1339,18 @@ dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_BASE_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_BASE_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_BASE_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
+dnml_status bigInt_tget_strn(bigInt *const x, const char *str, size_t len) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1406,18 +1406,18 @@ dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
+dnml_status bigInt_tget_strnb(bigInt *const x, const char *str, size_t len, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1464,19 +1464,19 @@ dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
 /* Safe String --> BigInt */ /* Return an Error */
-dnml_status bigInt_sget_str(bigInt *x, const char *str) {
+dnml_status bigInt_sget_str(bigInt *const x, const char *str) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1528,7 +1528,7 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_STRING_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_STRING_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1536,10 +1536,10 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_STRING_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
+dnml_status bigInt_sget_strb(bigInt *const x, const char *str, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1582,7 +1582,7 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_BASE_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_BASE_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1590,10 +1590,10 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_BASE_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
+dnml_status bigInt_sget_strn(bigInt *const x, const char *str, size_t len) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1647,7 +1647,7 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1655,10 +1655,10 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
+dnml_status bigInt_sget_strnb(bigInt *const x, const char *str, size_t len, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -1702,7 +1702,7 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1710,7 +1710,7 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
 
@@ -1762,7 +1762,7 @@ dnml_status bigInt_put(const bigInt x) {
             uint8_t numeric_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             putchar((char)('0' + numeric_val));
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_putb(const bigInt x, uint8_t base) {
@@ -1802,7 +1802,7 @@ dnml_status bigInt_putb(const bigInt x, uint8_t base) {
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] :
             _DIGIT_SEN_[numerical_val]; putchar(c);
         }
-        arena_reset(_DASI_PUTB_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUTB_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
@@ -1854,7 +1854,7 @@ dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] :
             _DIGIT_SEN_[numerical_val]; putchar(c);
         }
-        arena_reset(_DASI_PUTF_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUTF_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_fput(FILE *stream, const bigInt x) {
@@ -1877,7 +1877,7 @@ dnml_status bigInt_fput(FILE *stream, const bigInt x) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             fputc((char)('0' + numerical_val), stream);
         }
-        arena_reset(_DASI_FPUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_FPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
@@ -1917,7 +1917,7 @@ dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] :
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
         }
-        arena_reset(_DASI_FPUTB_ARENA, tmp_mark);
+        arena_rewind(_DASI_FPUTB_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
@@ -1971,7 +1971,7 @@ dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool upperc
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] :
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
         }
-        arena_reset(_DASI_FPUTF_ARENA, tmp_mark);
+        arena_rewind(_DASI_FPUTF_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 /* --------- Decimal Buffered OUTPUT ---------  */
@@ -2002,7 +2002,7 @@ dnml_status bigInt_sput(const bigInt x) {
             printf("%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_SPUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_SPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
@@ -2058,7 +2058,7 @@ dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
             printf("%.*s", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
@@ -2131,7 +2131,7 @@ dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
             printf("%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
@@ -2160,7 +2160,7 @@ dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
             } fprintf(stream, "%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_SPUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_SPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
@@ -2215,7 +2215,7 @@ dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
             }
             fprintf(stream, "%.*s\n", (int)str_len, ___DASI_IO_CHUNKBUF_);
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
@@ -2287,11 +2287,11 @@ dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool upper
             fprintf(stream, "%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 /* --------- Standard Stream (stdin) INPUT ---------  */
-dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocated Temporary
+dnml_status bigInt_scan(bigInt *const x) {                            //* Heap-allocated Temporary
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     //* Whitespace & Sign *//
@@ -2343,7 +2343,7 @@ dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocat
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocated Temporary
+dnml_status bigInt_scanb(bigInt *const x, uint8_t base) {             //* Heap-allocated Temporary
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -2387,7 +2387,7 @@ dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocat
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sscan(bigInt *x) {
+dnml_status bigInt_sscan(bigInt *const x) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     dnml_arena *_DASI_SGET_ARENA = _USE_IO_ARENA();
@@ -2433,11 +2433,11 @@ dnml_status bigInt_sscan(bigInt *x) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_SGET_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         } if (tmp_buf.n == tmp_buf.cap && tmp_buf.limbs[tmp_buf.n - 1] > threshold) {
             // Overflow/Too small
-            arena_reset(_DASI_SGET_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_ARENA, tmp_mark);
             tmp_limbs = NULL; return BIGINT_ERR_RANGE;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2445,10 +2445,10 @@ dnml_status bigInt_sscan(bigInt *x) {
         current_char = getchar();
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_SGET_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_ARENA, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
+dnml_status bigInt_sscanb(bigInt *const x, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -2486,11 +2486,11 @@ dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_SGETB_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGETB_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         } if (tmp_buf.n == tmp_buf.cap && tmp_buf.limbs[tmp_buf.n - 1] > threshold) {
             // Overflow/Too small
-            arena_reset(_DASI_SGETB_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGETB_ARENA, tmp_mark);
             tmp_limbs = NULL; return BIGINT_ERR_RANGE;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2498,10 +2498,10 @@ dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
         current_char = getchar();
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_SGETB_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGETB_ARENA, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_tscan(bigInt *x) {
+dnml_status bigInt_tscan(bigInt *const x) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     dnml_arena *_DASI_TGET_ARENA = _USE_IO_ARENA();
@@ -2548,7 +2548,7 @@ dnml_status bigInt_tscan(bigInt *x) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_TGET_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         }
         // Not in the loop condition since
@@ -2560,10 +2560,10 @@ dnml_status bigInt_tscan(bigInt *x) {
     } dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_TGET_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_ARENA, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
-dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
+dnml_status bigInt_tscanb(bigInt *const x, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -2601,7 +2601,7 @@ dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_TGETB_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGETB_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         }
         // Not in the loop condition since
@@ -2613,11 +2613,11 @@ dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
     } dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_TGETB_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGETB_ARENA, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
 /* --------- Custom Stream INPUT ---------  */
-dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap-allocated Temporary
+dnml_status bigInt_fscan(FILE *stream, bigInt *const x) {                     //* Heap-allocated Temporary
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN); clearerr(stream);
     /* Whitespace */ uint16_t curr_char;
@@ -2691,7 +2691,7 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap-allocated Temporary
+dnml_status bigInt_fscanb(FILE *stream, bigInt *const x, uint8_t base) {      //* Heap-allocated Temporary
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE); clearerr(stream);
@@ -2757,7 +2757,7 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
+dnml_status bigInt_fsscan(FILE *stream, bigInt *const x) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     dnml_arena *_DASI_FSGET = _USE_IO_ARENA();
@@ -2815,10 +2815,10 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGET, tmp_mark);
+                    arena_rewind(_DASI_FSGET, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
-                    arena_reset(_DASI_FSGET, tmp_mark);
+                    arena_rewind(_DASI_FSGET, tmp_mark);
                     tmp_limbs = NULL; return BIGINT_ERR_RANGE;
                 }
                 __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2828,16 +2828,16 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGET, tmp_mark);
+                arena_rewind(_DASI_FSGET, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) end = 1;
         }
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGET, tmp_mark);
+    arena_rewind(_DASI_FSGET, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
+dnml_status bigInt_fsscanb(FILE *stream, bigInt *const x, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -2891,10 +2891,10 @@ dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGETB, tmp_mark);
+                    arena_rewind(_DASI_FSGETB, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
-                    arena_reset(_DASI_FSGETB, tmp_mark);
+                    arena_rewind(_DASI_FSGETB, tmp_mark);
                     tmp_limbs = NULL; return BIGINT_ERR_RANGE;
                 }
                 __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2904,16 +2904,16 @@ dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGETB, tmp_mark);
+                arena_rewind(_DASI_FSGETB, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) end = 1;
         }
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGETB, tmp_mark);
+    arena_rewind(_DASI_FSGETB, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
+dnml_status bigInt_ftscan(FILE *stream, bigInt *const x) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN); clearerr(stream);
     dnml_arena *_DASI_FSGET = _USE_IO_ARENA();
@@ -2969,7 +2969,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGET, tmp_mark);
+                    arena_rewind(_DASI_FSGET, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
                     // Ends the entire accumalation loop
@@ -2983,7 +2983,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGET, tmp_mark);
+                arena_rewind(_DASI_FSGET, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) break;
         }
@@ -2991,10 +2991,10 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
     dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGET, tmp_mark);
+    arena_rewind(_DASI_FSGET, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
-dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
+dnml_status bigInt_ftscanb(FILE *stream, bigInt *const x, uint8_t base) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -3047,7 +3047,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGETB, tmp_mark);
+                    arena_rewind(_DASI_FSGETB, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
                     // Termiante the whole accumalation loop
@@ -3061,7 +3061,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGETB, tmp_mark);
+                arena_rewind(_DASI_FSGETB, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) end = 1;
         }
@@ -3069,7 +3069,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
     dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGETB, tmp_mark);
+    arena_rewind(_DASI_FSGETB, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
 
@@ -3079,15 +3079,15 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
 //todo ================================= 4. SERIALIZATION & DESERIALIZATION ============================== *//
 /* --------- Binary INPUT/OUTPUT ---------  */
 dnml_status bigInt_fwrite(FILE *stream, const bigInt x) { return STR_INCOMPLETE; }
-dnml_status bigInt_fread(FILE *stream, bigInt *x) { return STR_INCOMPLETE; }
-dnml_status bigInt_fsread(FILE *stream, bigInt *x) { return STR_INCOMPLETE; }
-dnml_status bigInt_ftread(FILE *stream, bigInt *x) { return STR_INCOMPLETE; }
+dnml_status bigInt_fread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
+dnml_status bigInt_fsread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
+dnml_status bigInt_ftread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
 /* --------- SERIALIZATION ---------  */
 dnml_status bigInt_serialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
 dnml_status bigInt_tserialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
 dnml_status bigInt_sserialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
 /* -------- DESERIALIZATION --------  */
-dnml_status bigInt_deserialize(bigInt *x, const char* str, size_t len) { return STR_INCOMPLETE; }
+dnml_status bigInt_deserialize(bigInt *const x, const char* str, size_t len) { return STR_INCOMPLETE; }
 
 
 

@@ -52,14 +52,14 @@ size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size) {
 
 
 /* ----------------- ALGORITHMS FUNCTIONS ----------------- */
-void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx barett_ctx, dnml_status *err) {
+void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx barett_ctx, dnml_status *err) {
     //* ---- 1. PRECOMPUTATION - μ ---- *//
     dnml_status echeck;
     size_t barett_mark = scratch_mark(&barett_ctx), precomp_size = (n->n << 1) + 1;
     BIGINT_TEMP(numer, precomp_size, barett_ctx, barett_mark, echeck, err,); numer.n = precomp_size;
     BIGINT_TEMP(precomp, precomp_size, barett_ctx, barett_mark, echeck, err,);
     BIGINT_TEMP(tmp, n->n, barett_ctx, barett_mark, echeck, err,);
-    numer.limbs[(n->n << 1)] = 1; __BIGINT_DIV_DISPATCH__(&numer, n, &precomp, &tmp, barett_ctx, &echeck);
+    numer.limbs[(n->n << 1)] = 1; __BIGINT_DIV_DISP__(&numer, n, &precomp, &tmp, barett_ctx, &echeck);
     SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
 
 
@@ -78,26 +78,21 @@ void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx b
     //* ---- 3. FINAL CALCULATION ---- *//
     remlimbs = anumer.n - (n->n + 1); // This value can be shortened to a->n + 1
     memcpy(anumer.limbs, &anumer.limbs[n->n - 1], remlimbs * U64_BYTES);
-    limb_t *acopy_limbs = scratch_alloc(&barett_ctx, a->n, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
-    bigInt a_copy = {.limbs = acopy_limbs, .n = a->n, .cap = a->n, .sign = a->sign};
-    memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
+    BIGINT_TEMP(a_copy, a->n, barett_ctx, barett_mark, echeck, err,); 
+    a_copy.n = a->n; /**/ memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
     if (unlikely(precomp.cap >= remlimbs)) {
         precomp.n = 0; precomp.sign = 1;
-        __BIGINT_MUL_DISPATCH__(&anumer, n, &precomp, barett_ctx, &echeck);
-        SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
+        __BIGINT_MUL_DISPATCH__(&anumer, n, &precomp, barett_ctx, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
         __BIGINT_SUB_WB__(&a_copy, &a_copy, &precomp);
     } else {
-        limb_t *final_limb = scratch_alloc(&barett_ctx, remlimbs, &echeck);
-        SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
-        bigInt final_res = {.limbs = final_limb, .n = 0, .cap = remlimbs, .sign = 1};
-        __BIGINT_MUL_DISPATCH__(&anumer, n, &final_res, barett_ctx, &echeck); 
-        SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
+        BIGINT_TEMP(final_res, remlimbs, barett_ctx, barett_mark, echeck, err,);
+        __BIGINT_MUL_DISPATCH__(&anumer, n, &final_res, barett_ctx, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
         __BIGINT_SUB_WB__(&a_copy, &a_copy, &final_res);
     }
     while (__BIGINT_INTERNAL_COMP__(&a_copy, n) >= 0) __BIGINT_SUB_WB__(&a_copy, &a_copy, n);
     __BIGINT_INTERNAL_COPY__(rem, &a_copy); scratch_rewind(&barett_ctx, barett_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
+void __BIGINT_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
     uint64_t m, carry = 0;
     // Loop basically cancels k lowest limbs
     for (size_t i = 0; i < mredc_ctx.k; ++i) {
@@ -114,8 +109,8 @@ void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
     __BIGINT_INTERNAL_COPY__(rem, t);
 }
 void __BIGINT_MOD_DISPATCH__(
-    const bigInt *a, const bigInt *n, 
-    bigInt *rem, bigInt *tmp_quot,
+    PCONST_BIGINT a, PCONST_BIGINT n, 
+    P_BIGINT rem, P_BIGINT tmp_quot,
     calc_ctx mod_ctx, dnml_status *err
 ) {
     if (n->n < BIGINT_SHORT) { __BIGINT_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem); *err = BIGINT_SUCCESS; }
