@@ -40,14 +40,22 @@ extern "C" {
 
 /* Heap Allocation Convenience */
 void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt);
-#define BIHEAP_TEMP(name, size, echeck, err, alloc_list, alloc_cnt, ret_val) \
+#define BIHEAP_TEMP(name, size, echeck, err, early_list, early_cnt, alloc_list, alloc_cnt, ret_val) \
     bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
     if ((echeck) == DNML_ALLOC_OOM) { \
-        _free_alloc_list((alloc_list), (alloc_cnt)); \
+        _free_alloc_list((early_list), (early_cnt)); \
         *(err) = DNML_ALLOC_OOM; return ret_val; \
-    } (alloc_list)[(alloc_cnt)] = &(name); ++(alloc_cnt);
-#define HEAP_OOM(echeck, err, alloc_list, alloc_cnt, ret_val) if ((echeck) == DNML_ALLOC_OOM) { \
-    _free_alloc_list((alloc_list), (alloc_cnt)); \
+    } \
+    (early_list)[(early_cnt)++] = &(name); \
+    (alloc_list)[(alloc_cnt)++] = &(name);
+#define BIHEAP_RET(name, size, echeck, err, early_list, early_cnt, ret_val) \
+    bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
+    if ((echeck) == DNML_ALLOC_OOM) { \
+        _free_alloc_list((early_list), (early_cnt)); \
+        *(err) = DNML_ALLOC_OOM; return ret_val; \
+    } (early_list)[(early_cnt)++] = &(name);
+#define HEAP_OOM(echeck, err, early_list, early_cnt, ret_val) if ((echeck) == DNML_ALLOC_OOM) { \
+    _free_alloc_list((early_list), (early_cnt)); \
     *(err) = DNML_ALLOC_OOM; return ret_val; \
 }
 

@@ -20,16 +20,23 @@ limitations under the License.
 #include "../aconv_macros.h"
 #include "intrinsics.h"
 #include <stdint.h>
-
 const uint64_t inv3 = UINT64_C(0xAAAAAAAAAAAAAAAB);
+
 
 /* Safety & State Utilities */
 dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k) {
     if (x->limbs != NULL) return BIGINT_SUCCESS;
-    limb_t *__BUFFER_P = malloc(k * U64_BYTES);
+    limb_t *__BUFFER_P = calloc(k, U64_BYTES);
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->cap = k; x->n = 0; x->sign = 1;
     return BIGINT_SUCCESS;
+}
+dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k) {
+    if (x->cap >= k) return BIGINT_SUCCESS;
+    size_t new_cap = x->cap; while (new_cap < k) new_cap += new_cap;
+    limb_t *__BUFFER_P = realloc(x->limbs, new_cap * U64_BYTES);
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P ; x->cap = new_cap; return BIGINT_SUCCESS;
 }
 void __BIGINT_INTERNAL_FREE__(bigInt *x) { free(x->limbs); x->n = 1; x->cap = 0; x->sign = 0; }
 void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt) {

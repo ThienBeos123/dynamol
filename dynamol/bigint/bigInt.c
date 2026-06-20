@@ -2956,11 +2956,10 @@ dnml_status bigInt_reserve(bigInt *const x, size_t k) { //* Minimum Capacity
     size_t new_cap = x->cap;
     // Capacity doubles instead of incrementation,
     // ---> Ensure less reallocation ---> Enhanced performance
-    while (new_cap < k) new_cap *= 2;
+    while (new_cap < k) new_cap += new_cap;
     limb_t *__BUFFER_P = realloc(x->limbs, new_cap * sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
-    x->limbs = __BUFFER_P; x->cap = new_cap;
-    return BIGINT_SUCCESS;
+    x->limbs = __BUFFER_P; x->cap = new_cap; return BIGINT_SUCCESS;
 }
 dnml_status bigInt_shrink(bigInt *const x, size_t k) { //* Maximum Capacity
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
