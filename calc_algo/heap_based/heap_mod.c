@@ -2,44 +2,48 @@
 
 /* BigInt Barett Modular Reduction */
 void __BIHEAP_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, dnml_status *err) {
-    //* ---- 1. PRECOMPUTATION - μ ---- *//
-    dnml_status echeck; size_t precomp_size = (n->n << 1) + 1;
-    bigInt *alloc_list[7]; uint8_t alloc_cnt = 0;
-    BIHEAP_TEMP(numer, precomp_size, echeck, err, alloc_list, alloc_cnt,); numer.n = precomp_size;
-    BIHEAP_TEMP(precomp, precomp_size, echeck, err, alloc_list, alloc_cnt,);
-    BIHEAP_TEMP(tmp, n->n, echeck, err, alloc_list, alloc_cnt,);
+    // ONE NOTE: <<< is denoted as limb shift in base 2^64
+    /* ---- 1. PRECOMPUTATION - μ ---- */ dnml_status echeck = BIGINT_SUCCESS;
+    size_t precomp_size = (n->n << 1) + 1, remlimbs = a->n - (n->n - 1);
+    bigInt *alloc_list[3], *early_free[4]; uint8_t alloc_cnt = 0, early_cnt = 0;
+    BIHEAP_TEMP(numer, precomp_size + remlimbs, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,); numer.n = precomp_size;
+    BIHEAP_TEMP(precomp, precomp_size, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(tmp, max(n->n, precomp_size + remlimbs + 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     numer.limbs[(n->n << 1)] = 1; __BIHEAP_DIV_DISP__(&numer, n, &precomp, &tmp, &echeck);
 
 
-    //* ---- 2. NUMERATOR CALCULATION ---- *//
-    size_t remlimbs = a->n - (n->n - 1);;
-    BIHEAP_TEMP(a_after_shift, remlimbs, echeck, err, alloc_list, alloc_cnt,); a_after_shift.n = remlimbs;
-    BIHEAP_TEMP(anumer, (remlimbs + precomp.n), echeck, err, alloc_list, alloc_cnt,);
-    memcpy(a_after_shift.limbs, &a->limbs[n->n - 1], remlimbs * U64_BYTES);
+    //* ---- 2. NUMERATOR CALCULATION ---- *// 
+    memset(numer.limbs, 0, precomp_size * U64_BYTES); /**/ tmp.limbs[(n->n << 1)] = 0; tmp.n = remlimbs;
+    memcpy(tmp.limbs, &a->limbs[n->n - 1], remlimbs * U64_BYTES); // Now, tmp = a_after_shift (a >>> n->n - 1)
     // We copy starting from the n limbs, because:
     // - For instance: we want to limb right shift by 3 limbs:
     //  -----> Limbs [0] [1] [2] is lost
     //  -----> The remaining limbs start from 3;
-    __BIHEAP_MUL_DISP__(&a_after_shift, &precomp, &anumer, &echeck);
-    HEAP_OOM(echeck, err, alloc_list, alloc_cnt,);
+    __BIHEAP_MUL_DISP__(&tmp, &precomp, &numer, &echeck);
+    HEAP_OOM(echeck, err, early_free, early_cnt,);
 
 
     //* ---- 3. FINAL CALCULATION ---- *//
-    remlimbs = anumer.n - (n->n + 1); // This value can be shortened to a->n + 1
-    memcpy(anumer.limbs, &anumer.limbs[n->n - 1], remlimbs * U64_BYTES);
-    BIHEAP_TEMP(a_copy, a->n, echeck, err, alloc_list, alloc_cnt,);
-    memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
-    if (unlikely(precomp.cap >= remlimbs)) {
-        precomp.n = 0; precomp.sign = 1;
-        __BIHEAP_MUL_DISP__(&anumer, n, &precomp, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt,);
-        __BIGINT_SUB_WB__(&a_copy, &a_copy, &precomp);
-    } else {
-        BIHEAP_TEMP(final_res, remlimbs, echeck, err, alloc_list, alloc_cnt,);
-        __BIHEAP_MUL_DISP__(&anumer, n, &final_res, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt,);
-        __BIGINT_SUB_WB__(&a_copy, &a_copy, &final_res);
-    }
+    remlimbs = numer.n - (n->n + 1); // Represents the number of blocks of shifts
+    memcpy(numer.limbs, &numer.limbs[n->n - 1], remlimbs * U64_BYTES); __BIGINT_INTERNAL_TRIM_LZ__(&numer);
+    // Now the predicted size of numer is:
+    //
+    //      ((precomp_size + remlimbs) [from a_after_shift * precomp]) - ((n->n - 1) [subtracted from the right limb shift])
+    //
+    // Therefre, the size requirements of __BIGINT_MUL_DISPATCH__(numer, n) OR (numer * n) should be:
+    //
+    //      (precomp_size + remlimbs - n->n + 1) + n->n -------> (precomp_size + remlimbs + 1) ---> REUSE tmp
+    //
+    // DO NOTE FOR ANY DEVELOEPRS AND MAINTAINERS, THIS SIZE PREDICTION IS PURELY A MATHEMATICAL
+    // UPPERBOUND FROM SIZE-CALCULATION PRINCIPLES, AND MIGHT BE FRAGILE AND INCORRECT
+    
+
+    BIHEAP_RET(a_copy, a->n, echeck, err, early_free, early_cnt,); 
+    a_copy.n = a->n; /**/ memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
+    __BIHEAP_MUL_DISP__(&numer, n, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIGINT_SUB_WB__(&a_copy, &a_copy, &tmp);
     while (__BIGINT_INTERNAL_COMP__(&a_copy, n) >= 0) __BIGINT_SUB_WB__(&a_copy, &a_copy, n);
-    __BIGINT_INTERNAL_COPY__(rem, &a_copy); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_SWAP__(rem, &a_copy); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 
 

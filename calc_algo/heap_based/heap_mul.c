@@ -101,10 +101,11 @@ void __BIHEAP_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_stat
     * +) q(0)   = n0 (NO FULL TEMPORARY)    | +) q(-2)  = 2*(q(-1) + n2) - n0
     * +) q(1)   = qOuter + n1               | +) q(inf) = n2 (NO FULL TEMPORARY) 
     */
+    // q_neg2 will be used later in the recomposition step as the final product carrier
     BIHEAP_TEMP(q_outer, k + 1, echeck, err, early_free, early_cnt, alloc_arr, alloc_cnt,);
     BIHEAP_TEMP(q1,      k + 2, echeck, err, early_free, early_cnt, alloc_arr, alloc_cnt,);
     BIHEAP_TEMP(q_neg1,  k + 1, echeck, err, early_free, early_cnt, alloc_arr, alloc_cnt,);
-    BIHEAP_TEMP(q_neg2,  k + 2, echeck, err, early_free, early_cnt, alloc_arr, alloc_cnt,);
+    BIHEAP_TEMP(q_neg2, (k << 1) + 14, echeck, err, early_free, early_cnt, alloc_arr, alloc_cnt,); // Actual cap: k + 2
     // p(x) CALCULATIONS                            // q(x) CALCULATIONS
     __BIGINT_ADD_WC__(&p_outer, &m0, &m2);          __BIGINT_ADD_WC__(&q_outer, &m0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);          __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
@@ -149,13 +150,14 @@ void __BIHEAP_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_stat
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     // ------------------ RECOMPOSITION ------------------ //
     // <<< is equivalent to a left limb shift (__BIGINT_INTERNAL_LLSHIFT__)
-    BIHEAP_RET(final_res, (k << 1) + 14, echeck, err, early_free, early_cnt,);
-    __BIGINT_ADD_SHIFT__(&final_res, &rinf, 4); // final_res += (rinf <<< 4)
-    __BIGINT_ADD_SHIFT__(&final_res, &r_neg2, 3); // final_res += (r_neg2 <<< 3)
-    __BIGINT_ADD_SHIFT__(&final_res, &r_neg1, 2); // final_res += (r_neg1 <<< 2)
-    __BIGINT_ADD_SHIFT__(&final_res, &r1, 1); // final_res += (r1 <<< 1)
-    __BIGINT_ADD_WC__(&final_res, &final_res, &r0); // final_res += r0
-    __BIGINT_INTERNAL_SWAP__(res, &final_res); _free_alloc_list(alloc_arr, alloc_cnt); *err = BIGINT_SUCCESS;
+    // We now REUSE one random temporary from the point-based evaluation steps. 
+    // We chose q_neg2 for the least memory footprint due to it having the largest size in the evaluation step
+    __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, 4); // final_res += (rinf <<< 4)
+    __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, 3); // final_res += (r_neg2 <<< 3)
+    __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, 2); // final_res += (r_neg1 <<< 2)
+    __BIGINT_ADD_SHIFT__(&q_neg2, &r1, 1); // final_res += (r1 <<< 1)
+    __BIGINT_ADD_WC__(&q_neg2, &q_neg2, &r0); // final_res += r0
+    __BIGINT_INTERNAL_SWAP__(res, &q_neg2); _free_alloc_list(alloc_arr, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 
 
