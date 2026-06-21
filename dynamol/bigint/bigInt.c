@@ -18,8 +18,17 @@ limitations under the License.
 
 #include "bigInt_func.h"
 
+/**
+ * This variable acts as a switch from arena allocation to heap allocation
+ * for bigInt's algorithms. It will always be TRUE when _DNML_ALLOC_STRAT = 2 (Alloc Heap).
+ * It will also be TRUE going forward upon an incident of arena allocation overflow
+ * from incorrect workspace size estimation when _DNML_ALLOC_STRAT = 1 (Alloc balanced), switching
+ * from arena-allocations to the more stable but, perhaps slower, heap-allocations
+ */
+static const bool heap_switch = false;
 
-//todo ============================================ INTRODUCTION ============================================= */
+
+//todo ========================================= === INTRODUCTION ============================================= */
 /** 
   * Attribute Explanation:
   * +) sign     (uint8_t)       : Stores the sign (negative or positive)
@@ -1486,12 +1495,13 @@ static void __BIGINT_MAGMUL__(bigInt *const res, const bigInt *const a, const bi
     if (_DASI_MAGMUL_ARENA->cap < needed_size) {
         dnml_status echeck = arena_grow(_DASI_MAGMUL_ARENA, needed_size);
         test_assert_mut((echeck != DNML_ALLOC_OOM), alloc_oom, clear_arena, err, DNML_ALLOC_OOM,);
-    } dnml_status echeck = BIGINT_SUCCESS;
+    }
     calc_ctx magmul_ctx = {
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGMUL_ARENA
-    }; __BIGINT_MUL_DISPATCH__(a, b, res, magmul_ctx, &echeck);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_MUL_DISPATCH__(a, b, res, magmul_ctx, &echeck); darena_assert(); *err = echeck; *err = echeck;
 }
 static void __BIGINT_MAGDIV__(bigInt *const quot, bigInt *const tmp_rem, const bigInt *const a, const bigInt *const b, dnml_status *err) {
     dnml_arena *_DASI_MAGDIV_ARENA = _USE_LOW_ARENA();
@@ -1505,8 +1515,11 @@ static void __BIGINT_MAGDIV__(bigInt *const quot, bigInt *const tmp_rem, const b
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGDIV_ARENA
-    };
-    __BIGINT_DIV_DISPATCH__(a, b, quot, tmp_rem, magdivmod_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_DIV_DISP__(a, b, quot, tmp_rem, magdivmod_ctx, &echeck);
+    DNML_TEST_ASSERT(echeck != BIGINT_ERR_RANGE, "128-bit Limb Division Overflowed (-Ediv_overflow)", clear_arena);
+    DNML_TEST_ASSERT(echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", clear_arena);
+    *err = echeck;
 }
 static void __BIGINT_MAGMOD__(bigInt *const rem, bigInt *const tmp_quot, const bigInt *const a, const bigInt *const b, dnml_status *err) {
     dnml_arena *_DASI_MAGDIV_ARENA = _USE_LOW_ARENA();
@@ -1520,8 +1533,10 @@ static void __BIGINT_MAGMOD__(bigInt *const rem, bigInt *const tmp_quot, const b
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGDIV_ARENA
-    };
-    __BIGINT_MOD_DISPATCH__(a, b, rem, tmp_quot, magdivmod_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_MOD_DISPATCH__(a, b, rem, tmp_quot, magdivmod_ctx, &echeck);
+    DNML_TEST_ASSERT(echeck != BIGINT_ERR_RANGE, "128-bit Limb Division Overflowed (-Ediv_overflow)", clear_arena);
+    DNML_TEST_ASSERT(echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", clear_arena);
 }
 static void __BIGINT_MAGMUL_U64__(bigInt *const res, const bigInt *const x, const uint64_t val, dnml_status *err) {
     // Since the divisor size is small (n <= 1), we implement schoolbook multiplication
@@ -1563,7 +1578,8 @@ static void __BIGINT_MAGGCD__(bigInt *const res, const bigInt *const a, const bi
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGGCD_ARENA
-    }; __BIGINT_GCD_DISPATCH__(res, a, b, _maggcd_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS; 
+    __BIGINT_GCD_DISPATCH__(res, a, b, _maggcd_ctx, &echeck); darena_assert(); *err = echeck;
 }
 static void __BIGINT_MAGLCM__(bigInt *const res, const bigInt *const a, const bigInt *const b, dnml_status *err) {
     dnml_arena *_DASI_MAGLCM_ARENA = _USE_LOW_ARENA();
@@ -1582,7 +1598,7 @@ static void __BIGINT_MAGLCM__(bigInt *const res, const bigInt *const a, const bi
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGLCM_ARENA
-    };
+    }; dnml_status echeck = BIGINT_SUCCESS;
     size_t maglcm_mark = arena_mark(_DASI_MAGLCM_ARENA); dnml_status tmp_check;
     limb_t *gcdres_limbs = arena_alloc(_DASI_MAGLCM_ARENA, min(a->n, b->n), &tmp_check);
     limb_t *tmp_limbs = arena_alloc(_DASI_MAGLCM_ARENA, min(a->n, b->n), &tmp_check);
@@ -1590,9 +1606,9 @@ static void __BIGINT_MAGLCM__(bigInt *const res, const bigInt *const a, const bi
     bigInt gcd_res = { .limbs = gcdres_limbs, /**/ .n = 0, /**/ .cap = min(a->n, b->n), .sign = 1 };
     bigInt temp_rem = { .limbs = tmp_limbs, /**/ .n = 0, /**/ .cap = min(a->n, b->n), .sign = 1 };
     bigInt temp_quot = { .limbs = tmpq_limbs, /**/ .n = 0, /**/ .cap = a->n, .sign = 1 };
-    __BIGINT_GCD_DISPATCH__(&gcd_res, a, b, _maglcm_ctx);
-    __BIGINT_DIV_DISPATCH__(a, &gcd_res, &temp_quot, &temp_rem, _maglcm_ctx);
-    __BIGINT_MUL_DISPATCH__(&temp_quot, b, &gcd_res, _maglcm_ctx);
+    __BIGINT_GCD_DISPATCH__(&gcd_res, a, b, _maglcm_ctx, &echeck); darena_assert(); *err = echeck;
+    __BIGINT_DIV_DISP__(a, &gcd_res, &temp_quot, &temp_rem, _maglcm_ctx, &echeck); darena_assert(); *err = echeck;
+    __BIGINT_MUL_DISPATCH__(&temp_quot, b, &gcd_res, _maglcm_ctx, &echeck); darena_assert(); *err = echeck;
     tmp_check = bigInt_mut_ocopy(res, gcd_res); ocopy_check(tmp_check, _DASI_MAGLCM_ARENA);
     arena_rewind(_DASI_MAGLCM_ARENA, maglcm_mark);
 }
@@ -1615,11 +1631,11 @@ static void __BIGINT_MAGEMOD__(bigInt *const res, const bigInt *const a, const b
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGEMOD_ARENA
-    }; dnml_status tmp_check;
+    }; dnml_status echeck;
     size_t tmp_mark = arena_mark(_DASI_MAGEMOD_ARENA);
-    limb_t *tmp_limbs = arena_alloc(_DASI_MAGEMOD_ARENA, a->n, &tmp_check);
+    limb_t *tmp_limbs = arena_alloc(_DASI_MAGEMOD_ARENA, a->n, &echeck);
     bigInt tmp_quot = { .limbs = tmp_limbs, /**/ .n = 0, /**/ .cap = a->n, /**/ .sign = 1 };
-    __BIGINT_MOD_DISPATCH__(a, mod, res, &tmp_quot, magemod_ctx);
+    __BIGINT_MOD_DISPATCH__(a, mod, res, &tmp_quot, magemod_ctx, &echeck); darena_assert(); *err = echeck;
     arena_rewind(_DASI_MAGEMOD_ARENA, tmp_mark); tmp_limbs == NULL;
 }
 /* ----------------- MAGNITUDED MODULAR-ARITHMETIC ------------------ */
@@ -1643,7 +1659,8 @@ static void __BIGINT_MAGSQR__(bigInt *const res, const bigInt *const base, dnml_
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state  = _DASI_MAGSQR_ARENA
-    }; __BIGINT_MUL_DISPATCH__(base, base, res, magsqr_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_MUL_DISPATCH__(base, base, res, magsqr_ctx, &echeck); darena_assert(); *err = echeck;
 }
 static void __BIGINT_MAGPOW__(bigInt *const res, const bigInt *const base, const uint64_t pow, dnml_status *err) {
     dnml_arena *_DASI_MAGPOW_ARENA = _USE_LOW_ARENA();
@@ -1657,7 +1674,8 @@ static void __BIGINT_MAGPOW__(bigInt *const res, const bigInt *const base, const
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state  = _DASI_MAGPOW_ARENA
-    }; __BIGINT_EXP_DISPATCH__(res, base, pow, magpow_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_EXP_DISPATCH__(res, base, pow, magpow_ctx, &echeck); darena_assert(); *err = echeck;
 }
 static void __BIGINT_MAGSQRT__(bigInt *const res, const bigInt *const a, dnml_status *err) {
     dnml_arena *_DASI_MAGSQRT_ARENA = _USE_LOW_ARENA();
@@ -1671,7 +1689,8 @@ static void __BIGINT_MAGSQRT__(bigInt *const res, const bigInt *const a, dnml_st
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state  = _DASI_MAGSQRT_ARENA
-    }; __BIGINT_SQRT_DISPATCH__(res, a, magsqrt_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_SQRT_DISPATCH__(res, a, magsqrt_ctx, &echeck); darena_assert(); *err = echeck;
 }
 static void __BIGINT_MAGCBRT__(bigInt *const res, const bigInt *const a, dnml_status *err) {
     dnml_arena *_DASI_MAGCBRT_ARENA = _USE_LOW_ARENA();
@@ -1685,7 +1704,8 @@ static void __BIGINT_MAGCBRT__(bigInt *const res, const bigInt *const a, dnml_st
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state  = _DASI_MAGCBRT_ARENA
-    }; __BIGINT_CBRT_DISPATCH__(res, a, magcbrt_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_CBRT_DISPATCH__(res, a, magcbrt_ctx, &echeck); darena_assert(); *err = echeck;
 }
 static void __BIGINT_MAGNRT__(bigInt *const res, const bigInt *const a, const uint64_t root, dnml_status *err) {
     dnml_arena *_DASI_MAG_NROOT_ARENA = _USE_LOW_ARENA();
@@ -1699,7 +1719,8 @@ static void __BIGINT_MAGNRT__(bigInt *const res, const bigInt *const a, const ui
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state  = _DASI_MAG_NROOT_ARENA
-    }; __BIGINT_NRT_DISPATCH__(res, a, root, mag_nroot_ctx);
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    __BIGINT_NRT_DISPATCH__(res, a, root, mag_nroot_ctx, &echeck); darena_assert(); *err = echeck;
 }
 
 
@@ -1715,7 +1736,8 @@ dnml_status bigInt_mut_mulu64(bigInt *const x, const uint64_t val) {
     else if (val == 1);
     else if (!val) bigInt_reset(x);
     else if (x->n == 1 && x->limbs[0] == 1) bigInt_mut_copyu64(x, val);
-    else { dnml_status echeck = bigInt_reserve(x, x->n + 1); heap_alloc_oom(echeck);
+    else { 
+        dnml_status echeck = bigInt_reserve(x, x->n + 1); heap_alloc_oom(echeck);
         dnml_arena *_DASI_MUL_UI64_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUL_UI64_ARENA);
         size_t tmp_mark = arena_mark(_DASI_MUL_UI64_ARENA);
         limb_t *tmp_limbs = arena_galloc(_DASI_MUL_UI64_ARENA, x->n + 1, &echeck);
@@ -2377,7 +2399,9 @@ bool bigInt_is_prime(const bigInt x, dnml_status *err) {
         .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter,
         .state  = _DASI_LPRIME_ARENA
-    }; return (bool)(__BIGINT_PTEST_DISPATCH__(&x, _isprime_ctx));
+    }; dnml_status echeck = BIGINT_SUCCESS;
+    uint8_t ret = __BIGINT_PTEST_DISPATCH__(&x, _isprime_ctx, &echeck); darena_assert();
+    *err = echeck; return (bool)(ret);
 }
 /* ---------------- Modular Reduction ---------------- */
 dnml_status bigInt_mut_emodu64(bigInt *const x, const uint64_t mod) {

@@ -10,56 +10,70 @@
             "name": "fdev-unix",
             "hidden": true,
             "cacheVariables": { 
-                "CMAKE_C_FLAGS": "-g -O0 -Wall -Wextra -pedantic -Werror -fsanitize=address -fno-omit-frame-pointer -Wno-misleading-indentation -Wno-bitwise-instead-of-logical -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Wno-unused-value -Wno-unused-macros -Wno-unused-but-set-variable -Wno-unused-but-set-parameter -Wno-missing-field-initializers -D_DNML_DEBUG_MODE=1 -D_DNML_PERF_PROFILE=1 -D_DNML_PRIMALITY_STRATEGY=1 -D_DNML_MR_ROUNDS_DRYPTO=20"
+                "CMAKE_C_FLAGS": "-g -O0 -Wall -Wextra -pedantic -Werror -fsanitize=address -fno-omit-frame-pointer -Wno-misleading-indentation -Wno-bitwise-instead-of-logical -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Wno-unused-value -Wno-unused-macros -Wno-unused-but-set-variable -Wno-unused-but-set-parameter -Wno-missing-field-initializers -D_DNML_DEBUG_MODE=1 -D_DNML_PERF_PROFILE=2 -D_DNML_PRIMALITY_STRATEGY=1 -D_DNML_MR_ROUNDS_DRYPTO=20"
             }
         }, 
         {
             "name": "fdev-msvc",
             "hidden": true,
             "cacheVariables": { 
-                "CMAKE_C_FLAGS": "/Zi /Od /W4 /WX /permissive- /fsanitize=address /Oy /GS /guard:cf /wd4100 /wd4101 /wd4189 /wd4702 /wd4505 /D_DNML_DEBUG_MODE=1 /D_DNML_PERF_PROFILE=1 /D_DNML_PRIMALITY_STRATEGY=1 /D_DNML_MR_ROUNDS_DRYPTO=20"
+                "CMAKE_C_FLAGS": "/Zi /Od /W4 /WX /permissive- /fsanitize=address /Oy /GS /guard:cf /wd4100 /wd4101 /wd4189 /wd4702 /wd4505 /D_DNML_DEBUG_MODE=1 /D_DNML_PERF_PROFILE=2 /D_DNML_PRIMALITY_STRATEGY=1 /D_DNML_MR_ROUNDS_DRYPTO=20"
             }
         }, 
         {   
             "name": "drt-unix-flag",
             "hidden": true,
             "cacheVariables": { 
-                "CMAKE_C_FLAGS": "-w -O2 -fno-strict-aliasing -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fPIE -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=1 -D_DNML_PRIMALITY_STRATEGY=1 -D_DNML_MR_ROUNDS_DRYPTO=20"
+                "CMAKE_C_FLAGS": "-w -O2 -fno-strict-aliasing -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fPIE -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=2 -D_DNML_PRIMALITY_STRATEGY=1 -D_DNML_MR_ROUNDS_DRYPTO=20"
             }
         }, 
         {
             "name": "drt-msvc-flag",
             "hidden": true,
             "cacheVariables": { 
-                "CMAKE_C_FLAGS": "/W0 /O2 /GS /guard:cf /D_DNML_DEBUG_MODE=0 /D_DNML_PERF_PROFILE=1 /D_DNML_PRIMALITY_STRATEGY=1 /D_DNML_MR_ROUNDS_DRYPTO=20"
+                "CMAKE_C_FLAGS": "/W0 /O2 /GS /guard:cf /D_DNML_DEBUG_MODE=0 /D_DNML_PERF_PROFILE=2 /D_DNML_PRIMALITY_STRATEGY=1 /D_DNML_MR_ROUNDS_DRYPTO=20"
             }
         },
         {   
             "name": "pdnml-unix-flag",
             "hidden": true,
             "cacheVariables": { 
-                "CMAKE_C_FLAGS": "-w -O3 -flto -march=native -mtune=native -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=0 -D_DNML_HEAP_FALLBACK_ENABLED=0 -D_DNML_PRIMALITY_STRATEGY=0"
+                "CMAKE_C_FLAGS": "-w -O3 -flto -march=native -mtune=native -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=0 -D_DNML_PRIMALITY_STRATEGY=0"
             }
         }, 
         {
             "name": "pdnml-msvc-flag",
             "hidden": true,
             "cacheVariables": { 
-                "CMAKE_C_FLAGS": "/W0 /O2 /Oi /Ot /D_DNML_DEBUG_MODE=0 /D_DNML_PERF_PROFILE=0 /D_DNML_HEAP_FALLBACK_ENABLED=0 /D_DNML_PRIMALITY_STRATEGY=0"
+                "CMAKE_C_FLAGS": "/W0 /O2 /Oi /Ot /D_DNML_DEBUG_MODE=0 /D_DNML_PERF_PROFILE=0 /D_DNML_PRIMALITY_STRATEGY=0"
             }
         },
         {
-            "name": "sdnml-unix-flag",
+            "name": "bdnml-unix-flag",
             "hidden": true,
             "cacheVariables": {
                 "CMAKE_C_FLAGS": "-w -O3 -flto -march=native -mtune=native -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=1 -D_DNML_PRIMALITY_STRATEGY=0"
             }
         },
         {
-            "name": "sdnml-msvc-flag",
+            "name": "bdnml-msvc-flag",
             "hidden": true,
             "cacheVariables": {
                 "CMAKE_C_FLAGS": "/W0 /O3 /Oi /Ot /D_DNML_DEBUG_MODE=0 /D_DNML_PERF_PROFILE=1 /D_DNML_PRIMALITY_STRATEGY=0"
+            }
+        },
+        {
+            "name": "sdnml-unix-flag",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_FLAGS": "-w -O3 -flto -march=native -mtune=native -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=2 -D_DNML_PRIMALITY_STRATEGY=0"
+            }
+        },
+        {
+            "name": "sdnml-msvc-flag",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_FLAGS": "/W0 /O3 /Oi /Ot /D_DNML_DEBUG_MODE=0 /D_DNML_PERF_PROFILE=2 /D_DNML_PRIMALITY_STRATEGY=0"
             }
         },
 
@@ -95,8 +109,8 @@
             "binaryDir": "${sourceDir}/build-drypto/msvc",
             "inherits": "drt-msvc-flag"
         },
-        { 
-            "name": "dynamol-release-unix",
+        {
+            "name": "dynamol-max-unix",
             "displayName": "Dynamol Release Build (GCC/Clang) – Max Performance",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
@@ -104,12 +118,28 @@
             "inherits": "pdnml-unix-flag"
         },
         { 
-            "name": "dynamol-release-msvc",
+            "name": "dynamol-max-msvc",
             "displayName": "Dynamol Release Build (MSVC) – Max Performance",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build-dynamol-perf/msvc",
             "inherits": "pdnml-msvc-flag"
+        },
+        {
+            "name": "dynamol-release-unix",
+            "displayName": "Dynamol Release Build (GCC/Clang) – Mild Performance, Top Stability",
+            "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-dynamol-perf/unix",
+            "inherits": "bdnml-unix-flag"
+        },
+        { 
+            "name": "dynamol-release-msvc",
+            "displayName": "Dynamol Release Build (MSVC) – Mild Performance, Top Stability",
+            "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-dynamol-perf/msvc",
+            "inherits": "bdnml-msvc-flag"
         },
         {
             "name": "dynamol-stable-unix",
@@ -133,6 +163,8 @@
         { "name": "dev-msvc", "configurePreset": "dev-msvc" },
         { "name": "drypto-release-unix", "configurePreset": "drypto-release-unix" },
         { "name": "drypto-release-msvc", "configurePreset": "drypto-release-msvc" },
+        { "name": "dynamol-max-unix", "configurePreset": "dynamol-max-unix" },
+        { "name": "dynamol-max-msvc", "configurePreset": "dynamol-max-msvc" },
         { "name": "dynamol-release-unix", "configurePreset": "dynamol-release-unix" },
         { "name": "dynamol-release-msvc", "configurePreset": "dynamol-release-msvc" },
         { "name": "dynamol-stable-unix", "configurePreset": "dynamol-stable-unix" },

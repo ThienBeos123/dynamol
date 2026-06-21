@@ -128,7 +128,7 @@ void __BIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGIN
         uint64_t b0 = (n >= 2) ? b_copy.limbs[n - 2] : 0;       // 2nd highest limb of b (used to validate quotient estimation - DETECT OVERESTIMATION)
         uint64_t qhat, rhat; uint8_t overflow_check;
         qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat, &overflow_check);
-        if (overflow_check) { scratch_rewind(&knuth_ctx, knuth_mark); *err = DARENA_OVERFLOW; return; }
+        if (overflow_check) { scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_ERR_RANGE; return; }
 
         // Validating quotient estimation (Prevent overestimation before multi-limb subtraction)
         if (qhat == UINT64_MAX) --qhat; // Check if estimates quotient is too large

@@ -42,39 +42,47 @@ extern "C" {
  * _DNML_PERF_PROFILE values:
  *
  *   0 = MAX PERFORMANCE:
- *       - No heap fallback on DARENA_OVERFLOW (returns error instead)
- *       - Pure Miller-Rabin for primality (fastest)
- *       - Minimum MR rounds per profile
+ *       - Always arena-allocating, and no heap-fallbacks, ever
+ *       - Pure Miller-Rabin + Baillie-PSW dispatched (1 round)
  *       - Use only if you fully trust arena workspace pre-calculations
  *       - Suitable for: HPC benchmarks, controlled environments
  *
- *   1 = SECURE:
- *       - Heap fallback enabled
- *       - Always Baillie-PSW + high MR rounds
- *       - Slowest but highest certainty
- *       - Use for cryptography, formal verification, or when absolutely sure
+ *   1 = BALANCE:
+ *       - Arena-allocating ---> Heap-fallback upon release-build incidence
+ *       - Always Baillie-PSW + Miller-Rabin + low MR rounds (5)
+ *       - Still extremely fast, but will spike performance upon incidence for stability
+ *       - Used for release builds for user wanting a balance between performance and stability
+ *       - Also used in development builds for API testing and error handling
+ *
+ *   2 = STABLE:
+ *       - Always heap-allocating, even in release builds
+ *       - Always Baillie-PSW + Miller-Rabin + high MR Rounds (15-20)
+ *       - Much, much slower, trading performance for absolute stability
+ *       - Cryptographical Builds + Debugging and Development of Algorithms and Public-facing functions
+ *
  * ============================================================================ */
 #ifndef _DNML_PERF_PROFILE
-    #define _DNML_PERF_PROFILE 1  /* 0=MAX, 1=SECURE */
+    #define _DNML_PERF_PROFILE 1  /* 0=MAX, 1=BALANCE, 2=STABLE */
 #endif
 
-/* ============================================================================
- * HEAP FALLBACK: Allow heap allocation when arena pre-calc is insufficient
- * ============================================================================
- * If enabled and arena allocation fails (DARENA_OVERFLOW), the library
- * allocates temporaries on the heap instead, guaranteeing correctness at
- * the cost of performance. Release-build safety net against insufficient
- * workspace pre-calculations.
+/* ===================================================================================================
+ * ALLOCATION STTRATEGIES: How lib-dnnl handles algorithm's temporary allocations & allocation errors
+ * ===================================================================================================
+  * _DNML_ALLOC_STRAT values:
  *
- * Automatically disabled for _DNML_PERF_PROFILE = 0 (MAX PERFORMANCE).
- * Can be manually overridden here.
+ *   0 = ARENA-ALLOC: Algorithms always allocate on the arena (Dynamol)
+ *
+ *   1 = BALANCE: 
+ *       - Algorithms initially allocate on the arena
+ *       - Fallback to the heap on algorithm workspace estimation incorrectness,
+ *         and algorithms always allocate from the heap from then on
+ *
+ *   2 = STABLE: Algorithms are always heap-allocating (Dynamol)
+ *
  * ============================================================================ */
-#ifndef _DNML_HEAP_FALLBACK_ENABLED
-    #if _DNML_PERF_PROFILE == 0
-        #define _DNML_HEAP_FALLBACK_ENABLED 0
-    #else
-        #define _DNML_HEAP_FALLBACK_ENABLED 1
-    #endif
+#ifndef _DNML_ALLOC_STRAT
+    // The value of _DNML_ALLOC_STRAT corresponds to _DNML_PERF_PROFILE
+    #define _DNML_ALLOC_STRAT _DNML_PERF_PROFILE
 #endif
 
 /* ============================================================================
@@ -113,13 +121,21 @@ extern "C" {
  * Can be individually overridden at compile time.
  * ============================================================================ */
 #ifndef _DNML_MR_ROUNDS_DYNAMOL
-    #define _DNML_MR_ROUNDS_DYNAMOL  5   /* Scientific: 2^(-10) error */
+    #if _DNML_PERF_PROFILE == 1
+        #define _DNML_MR_ROUNDS_DYNAMOL  5 /* Scientific: 2^(-10) error */
+    #elif _DNML_PERF_PROFILE == 2
+        #define _DNML_MR_ROUNDS_DYNAMOL 15 /* Scientific: 2^(-30) error */
+    #endif
 #endif
 #ifndef _DNML_MR_ROUNDS_DBEDDED
-    #define _DNML_MR_ROUNDS_DBEDDED  5   /* Embedded: 2^(-10) error */
+    #define _DNML_MR_ROUNDS_DBEDDED 5 /* Embedded: 2^(-10) error */
 #endif
 #ifndef _DNML_MR_ROUNDS_DRYPTO
-    #define _DNML_MR_ROUNDS_DRYPTO   20  /* Cryptography: 2^(-40) error */
+    #if _DNML_PERF_PROFILE == 1
+        #define _DNML_MR_ROUNDS_DRYPTO 20 /* Cryptography: 2^(-40) error */
+    #elif _DNML_PERF_PROFILE == 2
+        #define _DNML_MR_ROUNDS_DRYPTO 30 /* Cryptography: 2^(-60) error */
+    #endif
 #endif
 
 #ifdef __cplusplus

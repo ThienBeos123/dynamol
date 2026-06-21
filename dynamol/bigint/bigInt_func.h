@@ -48,6 +48,7 @@ extern "C" {
 
 //? ======================= OUT-OF-MEMORY HANDLING MACROS ====================== ?//
 /* Functional Macros */
+#define darena_assert() DNML_TEST_ASSERT(echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", clear_arena);
 #define heap_alloc_oom(err_check) do { \
     test_assert((((err_check) != DNML_ALLOC_OOM)), alloc_oom, { \
             arena_clear(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_LOWLVL_ARENA_); \
