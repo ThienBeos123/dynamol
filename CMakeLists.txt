@@ -73,6 +73,9 @@ add_library(dnml_core STATIC
     
     calc_algo/algo_base/add_sub.c
     # 5a. Calculational Algorithms Files - PERF-BASED + ARENA
+    calc_algo/perf_based/mul_fft.c
+    calc_algo/perf_based/mul_toom_45.c
+    calc_algo/perf_based/mul_toom_p5.c
     calc_algo/perf_based/mul.c
     calc_algo/perf_based/div.c
     calc_algo/perf_based/mod.c
@@ -80,6 +83,8 @@ add_library(dnml_core STATIC
     calc_algo/perf_based/num_theory.c
     calc_algo/perf_based/pow_root.c
     # 5a. Calculational Algorithms Files - PERF-BASED + HEAP
+    calc_algo/heap_based/heap_mul_toom.c
+    calc_algo/heap_based/heap_mul_fft.c
     calc_algo/heap_based/heap_mul.c
     calc_algo/heap_based/heap_div.c
     calc_algo/heap_based/heap_mod.c
@@ -183,7 +188,11 @@ target_include_directories(dnml_core
         ${CMAKE_CURRENT_SOURCE_DIR}/util
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_float
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_float
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/crt_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/crt_float
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/algo_base
         ${CMAKE_CURRENT_SOURCE_DIR}/dynamol
         ${CMAKE_CURRENT_SOURCE_DIR}/dynamol/bigint

@@ -1,11 +1,29 @@
+/*
+Copyright (C) 2026 @ThienBeos123/@Poly-glon
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://apache.org
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+
 #include "heap_div.h"
 
 
 /* ------ MAIN ALGORITHMS HELPERS ------ */
 static void __heap_burk_3b2(
-    const bigInt *a1, const bigInt *a2, const bigInt *a3,
-    const bigInt *b1, const bigInt *b2, const bigInt *B,
-    bigInt *q, bigInt *r, dnml_status *err
+    PCONST_BIGINT a1, PCONST_BIGINT a2, PCONST_BIGINT a3,
+    PCONST_BIGINT b1, PCONST_BIGINT b2, PCONST_BIGINT B,
+    bigInt *q, P_BIGINT r, dnml_status *err
 ) {
     dnml_status echeck = BIGINT_SUCCESS, rec_err = BIGINT_SUCCESS;
     bigInt *alloc_list[1], *early_free[3]; uint8_t early_cnt = 0, alloc_cnt = 0;
@@ -20,12 +38,12 @@ static void __heap_burk_3b2(
     __BIGINT_ADD_WC__(&c, &c, a3);
     while (__BIGINT_INTERNAL_COMP__(&c, &d) == -1) {
         __BIGINT_SUB_WB__(&iq, &iq, &one); __BIGINT_ADD_WC__(&c, &c, B);
-    } __BIGINT_SUB_WB__(&c, &c, &d); __BIGINT_INTERNAL_SWAP__(q, &iq);
-    __BIGINT_INTERNAL_SWAP__(r, &c); *err = BIGINT_SUCCESS;
+    } __BIGINT_SUB_WB__(&c, &c, &d); __BIGINT_INTERNAL_MOVE__(q, &iq);
+    __BIGINT_INTERNAL_MOVE__(r, &c); *err = BIGINT_SUCCESS;
 }   
 
 /* --------- ALGORITHM FUNCTIONS ---------  */
-void __BIHEAP_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem) {
+void __BIHEAP_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIGINT rem) {
     uint64_t remainder = 0; uint8_t overflow_check;
     for (size_t i = a->n; i > 0; --i) {
         quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
@@ -37,7 +55,7 @@ void __BIHEAP_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt
     rem->n = (remainder) ? 1 : 0;
     rem->sign = 1;
 }
-void __BIHEAP_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err) {
+void __BIHEAP_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, dnml_status *err) {
     /* ---- Setup ---- */ dnml_status echeck;
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
     size_t m = a->n, n = b->n; bigInt *alloc_list[2], *early_free[2]; uint8_t early_cnt = 0, alloc_cnt = 0;
@@ -111,8 +129,8 @@ void __BIHEAP_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS; // Free all temporaries
 }
 void __BIHEAP_BURNIKEL__(
-    const bigInt *AH, const bigInt *AL,
-    const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err
+    PCONST_BIGINT AH, PCONST_BIGINT AL,
+    PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, dnml_status *err
 ) {
     if (b->n <= BIGINT_SHORT) { dnml_status echeck = BIGINT_SUCCESS; 
         // Setting up the full dividend a from AH & AL
@@ -164,13 +182,13 @@ void __BIHEAP_BURNIKEL__(
     ); HEAP_OOM(rec_err, err, early_free, early_cnt,);
 
     //* ---------- 3. RECOMPOSITION ---------- *//
-    __BIGINT_INTERNAL_SWAP__(quot, &q2); __BIGINT_INTERNAL_ENSCAP__(quot, quot->cap + q1.cap);
+    __BIGINT_INTERNAL_MOVE__(quot, &q2); __BIGINT_INTERNAL_ENSCAP__(quot, quot->cap + q1.cap);
     memcpy(quot->limbs + quot->cap, q1.limbs, q1.cap * U64_BYTES); quot->n = k << 1; 
-    __BIGINT_INTERNAL_TRIM_LZ__(quot); __BIGINT_INTERNAL_SWAP__(rem, &r);
+    __BIGINT_INTERNAL_TRIM_LZ__(quot); __BIGINT_INTERNAL_MOVE__(rem, &r);
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
-void __BIHEAP_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err) {}
-void __BIHEAP_DIV_DISP__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *tmp_rem, dnml_status *err) {
+void __BIHEAP_NEWTON__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, dnml_status *err) {}
+void __BIHEAP_DIV_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT tmp_rem, dnml_status *err) {
     if (b->n < BIGINT_SHORT) {  __BIHEAP_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem); *err = BIGINT_SUCCESS; }
     else if (b->n < BIGINT_KNUTH) __BIHEAP_KNUTH_D__(a, b, quot, tmp_rem, err);
     else if (b->n < BIGINT_BURNIKEL) { 

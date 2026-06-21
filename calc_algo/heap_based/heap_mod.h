@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_MOD_H
-#define DNML_MOD_H
+#ifndef DNML_HEAP_MOD_H
+#define DNML_HEAP_MOD_H
 
 
 #include <debug_util.h>
@@ -28,7 +28,6 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
-
 #include "../algo_base/add_sub.h"
 #include "heap_div.h"
 #include "heap_mul.h"
@@ -36,9 +35,9 @@ limitations under the License.
 #ifdef __cplusplus
 extern "C" {
 #endif
-void __BIHEAP_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, dnml_status *err);
-void __BIHEAP_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem);
-void __BIHEAP_MOD_DISP__(const bigInt *a, const bigInt *n, bigInt *rem, bigInt *tmp_quot, dnml_status *err);
+void __BIHEAP_BARETT__(const bigInt *const a, const bigInt *const n, bigInt *const rem, dnml_status *err);
+void __BIHEAP_MONT_REDC__(bigInt *const t, mont_ctx mredc_ctx, bigInt *const rem);
+void __BIHEAP_MOD_DISP__(const bigInt *const a, const bigInt *const n, bigInt *const rem, bigInt *const tmp_quot, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

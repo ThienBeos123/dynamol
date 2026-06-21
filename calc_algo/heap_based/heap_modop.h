@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_MOD_OP_H
-#define DNML_MOD_OP_H
+#ifndef DNML_HEAP_MODOP_H
+#define DNML_HEAP_MODOP_H
 
 
 
@@ -30,7 +30,6 @@ limitations under the License.
 #include <_libdnml_mem/_ctx.h>
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
-
 #include "../algo_base/add_sub.h"
 #include "heap_div.h"
 #include "heap_mul.h"
@@ -39,14 +38,14 @@ limitations under the License.
 #ifdef __cplusplus
 extern "C" {
 #endif
-void __BIHEAP_MONTMUL__(const bigInt *a, const bigInt *b, mont_ctx ctx, bigInt *res, dnml_status *err);
-void __BIHEAP_CMODMUL__(const bigInt *a, const bigInt *b, const bigInt *mod, bigInt *res, dnml_status *err);
-void __BIHEAP_BIN_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err);
-void __BIHEAP_MBIN_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err);
-void __BIHEAP_FIX_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err);
-void __BIHEAP_SLIDE_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err);
-void __BIHEAP_MODMUL_DISP__(const bigInt *a, const bigInt *b, const bigInt *mod, bigInt *res, dnml_status *err);
-void __BIHEAP_MODEXP_DISP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err);
+void __BIHEAP_MONTMUL__(const bigInt *const a, const bigInt *const b, mont_ctx ctx, bigInt *const res, dnml_status *err);
+void __BIHEAP_CMODMUL__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, dnml_status *err);
+void __BIHEAP_BIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
+void __BIHEAP_MBIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
+void __BIHEAP_FIX_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
+void __BIHEAP_SLIDE_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
+void __BIHEAP_MODMUL_DISP__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, dnml_status *err);
+void __BIHEAP_MODEXP_DISP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2026 @ThienBeos123/@Poly-glon
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://apache.org
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+
 #include "heap_mul.h"
 
 
@@ -59,7 +77,7 @@ void __BIHEAP_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, dnml_s
     //* ------------ 3. FINAL CALCULATION -------------- *//
     memset(tmp1.limbs, 0, tmp1_size * U64_BYTES);
     __BIGINT_ADD_SHIFT__(&tmp1, &z0, 0); __BIGINT_ADD_SHIFT__(&tmp1, &z1, m);
-    __BIGINT_ADD_SHIFT__(&tmp1, &z2, m << 1); __BIGINT_INTERNAL_SWAP__(res, &tmp1); 
+    __BIGINT_ADD_SHIFT__(&tmp1, &z2, m << 1); __BIGINT_INTERNAL_MOVE__(res, &tmp1); 
     _free_alloc_list(alloc_arr, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 
@@ -150,14 +168,14 @@ void __BIHEAP_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_stat
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     // ------------------ RECOMPOSITION ------------------ //
     // <<< is equivalent to a left limb shift (__BIGINT_INTERNAL_LLSHIFT__)
-    // We now REUSE one random temporary from the point-based evaluation steps. 
+    // We now REUSE one random temporary from the point-based evaluation steps.
     // We chose q_neg2 for the least memory footprint due to it having the largest size in the evaluation step
     __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, 4); // final_res += (rinf <<< 4)
     __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, 3); // final_res += (r_neg2 <<< 3)
     __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, 2); // final_res += (r_neg1 <<< 2)
     __BIGINT_ADD_SHIFT__(&q_neg2, &r1, 1); // final_res += (r1 <<< 1)
     __BIGINT_ADD_WC__(&q_neg2, &q_neg2, &r0); // final_res += r0
-    __BIGINT_INTERNAL_SWAP__(res, &q_neg2); _free_alloc_list(alloc_arr, alloc_cnt); *err = BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_MOVE__(res, &q_neg2); _free_alloc_list(alloc_arr, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 
 

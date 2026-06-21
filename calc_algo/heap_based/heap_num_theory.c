@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2026 @ThienBeos123/@Poly-glon
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://apache.org
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+
 #include "heap_num_theory.h"
 static const uint32_t dmr_bases[7] = { 2, 325, 9375, 28178, 450775, 9780504, 1794265022 };
 
@@ -38,7 +56,7 @@ void __BIHEAP_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_statu
         // Identity #3 - gcd(u, 2v) = gcd(u, v)
         i = __BIGINT_CTZ__(&u_copy); __BIGINT_INTERNAL_RSHIFT__(&u_copy, i);
         comp_res = __BIGINT_INTERNAL_COMP__(&u_copy, &v_copy);
-    } __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_SWAP__(res, &u_copy);
+    } __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_MOVE__(res, &u_copy);
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}

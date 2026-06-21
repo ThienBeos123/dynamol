@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2026 @ThienBeos123/@Poly-glon
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://apache.org
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+
 #include "heap_pow_root.h"
 
 
@@ -14,7 +32,7 @@ void __BIHEAP_BINARY_EXP__(bigInt *const res, const bigInt *const base, uint64_t
             __BIHEAP_MUL_DISP__(&tmp_res, &tmp_base, &tmp_res, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         } __BIHEAP_MUL_DISP__(&tmp_base, &tmp_base, &tmp_base, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,); 
         exp >>= 1; // Moving on to the next bit t evaluate
-    } __BIGINT_INTERNAL_SWAP__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_FIXED__(bigInt *const res, const bigInt *const base, uint64_t exp, uint8_t k, dnml_status *err) {
     /* --- 1. SETUP ---- */ dnml_status echeck = BIGINT_SUCCESS; 
@@ -47,7 +65,7 @@ void __BIHEAP_FIXED__(bigInt *const res, const bigInt *const base, uint64_t exp,
         for (uint8_t j = 1; j <= s; ++j) {
             __BIHEAP_MUL_DISP__(&tmp_res, &tmp_res, &tmp_res, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         }
-    } __BIGINT_INTERNAL_SWAP__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_SLIDING__(bigInt *const res, const bigInt *const base, uint64_t exp, uint8_t k, dnml_status *err) {
     /* --- 1. SETUP ---- */ dnml_status echeck = BIGINT_SUCCESS; 
@@ -81,7 +99,7 @@ void __BIHEAP_SLIDING__(bigInt *const res, const bigInt *const base, uint64_t ex
             } __BIHEAP_MUL_DISP__(&tmp_res, &table[(curr_chunk - 1) >> 1], &tmp_res, &echeck); 
             HEAP_OOM(echeck, err, early_free, early_cnt,); curr_pos = s - 1;
         }
-    } __BIGINT_INTERNAL_SWAP__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_HERON__(bigInt *const res, const bigInt *const a, dnml_status *err) {
     dnml_status echeck = BIGINT_SUCCESS; bigInt *alloc_list[2], *early_free[3]; uint8_t alloc_cnt = 0, early_cnt = 0;
@@ -97,7 +115,7 @@ void __BIHEAP_HERON__(bigInt *const res, const bigInt *const a, dnml_status *err
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break;
         __BIGINT_INTERNAL_SWAP__(&guess, &next);
-    } __BIGINT_INTERNAL_SWAP__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_NEWTON_CBRT__(bigInt *const res, const bigInt *const a, dnml_status *err) {
     dnml_status echeck = BIGINT_SUCCESS; bigInt *alloc_list[3], *early_free[4]; uint8_t alloc_cnt = 0, early_cnt = 0;
@@ -116,7 +134,7 @@ void __BIHEAP_NEWTON_CBRT__(bigInt *const res, const bigInt *const a, dnml_statu
         __BIGINT_ADD_WC__(&next, &next, &ratio); __BIGINT_DIV3__(&next);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/ __BIGINT_INTERNAL_SWAP__(&guess, &next);
-    } __BIGINT_INTERNAL_SWAP__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 uint64_t __UI64_NROOT__(uint64_t a, uint64_t root) {
     if (__IS_2POW__(root)) {
@@ -166,7 +184,7 @@ void __BIHEAP_NEWTON_2NRT__(bigInt *const res, const bigInt *const a, uint64_t r
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/  __BIGINT_INTERNAL_SWAP__(&guess, &next);
         __BIHEAP_EXP_DISPATCH__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
-    } __BIGINT_INTERNAL_SWAP__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t root, dnml_status *err) {
     dnml_status echeck = BIGINT_SUCCESS; bigInt *alloc_list[3], *early_free[4]; uint8_t alloc_cnt = 0, early_cnt = 0;
@@ -193,7 +211,7 @@ void __BIHEAP_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t ro
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/ __BIGINT_INTERNAL_SWAP__(&guess, &next);
         __BIHEAP_EXP_DISPATCH__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
-    } __BIGINT_INTERNAL_SWAP__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 
 
@@ -226,4 +244,3 @@ void __BIHEAP_NRT_DISPATCH__(bigInt *const res, const bigInt *const a, uint64_t 
         else __BIHEAP_NEWTON_NRT__(res, a, root, err);
     }
 }
-

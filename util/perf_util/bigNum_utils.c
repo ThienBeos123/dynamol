@@ -81,6 +81,10 @@ void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source) {
 void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) { while (x->n && x->limbs[x->n - 1] == 0) --(x->n); }
 void __BIGINT_INTERNAL_ZSET__(bigInt *x) { x->n = 0; x->sign = 1; }
 void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y) { bigInt tmp = *x; *x = *y; *y = tmp; }
+void __BIGINT_INTERNAL_MOVE__(bigInt *dst, bigInt *src) {
+    __BIGINT_INTERNAL_FREE__(dst); *dst = *src; // Assigning the new src struct header into dst
+    src->limbs = NULL; src->n = 0; src->cap = 0; src->sign = 0; // Clearing src's own header
+}
 size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
     if (!x->n || (x->n == 1 && x->limbs[0] == 0)) return 0; 
     size_t leading_bits = BIGINT_LIMBS_BITS - __CLZ_UI64__(x->limbs[x->n - 1]);

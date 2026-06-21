@@ -361,7 +361,7 @@ dnml_status bigInt_strnbinit(bigInt *const x, const char* str, size_t len, uint8
 //todo ================================= 2. CONVERSIONS & ASSIGNMENTS ================================= *//
 //* -------------------------- String Conversions -------------------------- *//
 /* Truncative BigInt --> String */
-dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
+dnml_status bigInt_tto_str(char* str, bigInt x, size_t *written) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
     size_t str_length = strlen(str); // Early segfault if no NULL-Terminator found
@@ -397,7 +397,7 @@ dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
     if (digit_needed > str_length) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
+dnml_status bigInt_tto_strb(char* str, bigInt x, uint8_t base, size_t *written) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -436,7 +436,7 @@ dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *wri
     if (digit_needed > str_length) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *written) {
+dnml_status bigInt_tto_strn(char* str, size_t len, bigInt x, size_t *written) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
     /* Special Case - Singular Character */
@@ -471,7 +471,7 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written) {
+dnml_status bigInt_tto_strnb(char* str, size_t len, bigInt x, uint8_t base, size_t *written) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -513,7 +513,7 @@ dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base
 }
 dnml_status bigInt_tto_strf(
     char* str, size_t len,
-    const bigInt x, uint8_t base,
+    bigInt x, uint8_t base,
     bool uppercase, size_t *written
 ) {
     /* Pre-operation validation & Static Analysis */
@@ -565,7 +565,7 @@ dnml_status bigInt_tto_strf(
     else return STR_SUCCESS;
 }
 /* Safe BigInt --> String */
-dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
+dnml_status bigInt_to_str(char* str, bigInt x, size_t *written) {
     /* Pre-operation Valdation & Static Analysis */
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -599,7 +599,7 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
     }  arena_rewind(_DASI_SET_STRING_ARENA, tmp_mark); return STR_SUCCESS;
 }
-dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
+dnml_status bigInt_to_strb(char* str, bigInt x, uint8_t base, size_t *written) {
     /* Pre-operation Validation & Static Analysis */
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -635,7 +635,7 @@ dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *writ
         _DIGIT_SEN_[numeric_value]; (*written)++;
     } arena_rewind(_DASI_SET_BASE_ARENA, tmp_mark); return STR_SUCCESS;
 }
-dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *written) {
+dnml_status bigInt_to_strn(char* str, size_t len, bigInt x, size_t *written) {
     /* Pre-operation Validation & Static Analysis */
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
@@ -669,7 +669,7 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
     }
     arena_rewind(_DASI_SET_STRNLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
-dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written) {
+dnml_status bigInt_to_strnb(char* str, size_t len, bigInt x, uint8_t base, size_t *written) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
@@ -707,7 +707,7 @@ dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base,
 }
 dnml_status bigInt_to_strf(
     char* str, size_t len,
-    const bigInt x, uint8_t base,
+    bigInt x, uint8_t base,
     bool uppercase, size_t *written
 ) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
@@ -1742,7 +1742,7 @@ dnml_status bigInt_sget_strnb(bigInt *const x, const char *str, size_t len, uint
 *      --------> Heap-allocation for size-owning buffers that can be easily grown.
 */
 /* --------- Decimal Instant OUTPUT ---------  */
-dnml_status bigInt_put(const bigInt x) {
+dnml_status bigInt_put(bigInt x) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
@@ -1765,7 +1765,7 @@ dnml_status bigInt_put(const bigInt x) {
         arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_putb(const bigInt x, uint8_t base) {
+dnml_status bigInt_putb(bigInt x, uint8_t base) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
@@ -1805,7 +1805,7 @@ dnml_status bigInt_putb(const bigInt x, uint8_t base) {
         arena_rewind(_DASI_PUTB_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_putf(bigInt x, uint8_t base, bool uppercase) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
@@ -1857,7 +1857,7 @@ dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
         arena_rewind(_DASI_PUTF_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_fput(FILE *stream, const bigInt x) {
+dnml_status bigInt_fput(FILE *stream, bigInt x) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     if (x.n == 0) fputc('0', stream);
     else if (x.n == 1) {
@@ -1880,7 +1880,7 @@ dnml_status bigInt_fput(FILE *stream, const bigInt x) {
         arena_rewind(_DASI_FPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
+dnml_status bigInt_fputb(FILE *stream, bigInt x, uint8_t base) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
@@ -1920,7 +1920,7 @@ dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
         arena_rewind(_DASI_FPUTB_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_fputf(FILE *stream, bigInt x, uint8_t base, bool uppercase) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
@@ -1975,7 +1975,7 @@ dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool upperc
     } return STR_SUCCESS;
 }
 /* --------- Decimal Buffered OUTPUT ---------  */
-dnml_status bigInt_sput(const bigInt x) {
+dnml_status bigInt_sput(bigInt x) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     if (x.n == 0) fputs("0\n", stdout);
     else if (x.n == 1) printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2005,7 +2005,7 @@ dnml_status bigInt_sput(const bigInt x) {
         arena_rewind(_DASI_SPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
+dnml_status bigInt_sputb(bigInt x, uint8_t base) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stdout);
@@ -2061,7 +2061,7 @@ dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
         arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_sputf(bigInt x, uint8_t base, bool uppercase) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stdout);
@@ -2134,7 +2134,7 @@ dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
         arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
+dnml_status bigInt_sfput(FILE *stream, bigInt x) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     if (x.n == 0) fputs("0\n", stream);
     else if (x.n == 1) fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2163,7 +2163,7 @@ dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
         arena_rewind(_DASI_SPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
+dnml_status bigInt_sfputb(FILE *stream, bigInt x, uint8_t base) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stream);
@@ -2218,7 +2218,7 @@ dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
         arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
+dnml_status bigInt_sfputf(FILE *stream, bigInt x, uint8_t base, bool uppercase) {
     test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stream);
@@ -3078,14 +3078,14 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *const x, uint8_t base) {
 
 //todo ================================= 4. SERIALIZATION & DESERIALIZATION ============================== *//
 /* --------- Binary INPUT/OUTPUT ---------  */
-dnml_status bigInt_fwrite(FILE *stream, const bigInt x) { return STR_INCOMPLETE; }
+dnml_status bigInt_fwrite(FILE *stream, bigInt x) { return STR_INCOMPLETE; }
 dnml_status bigInt_fread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
 dnml_status bigInt_fsread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
 dnml_status bigInt_ftread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
 /* --------- SERIALIZATION ---------  */
-dnml_status bigInt_serialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
-dnml_status bigInt_tserialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
-dnml_status bigInt_sserialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
+dnml_status bigInt_serialize(char *buf, size_t len, bigInt x, size_t *written) { return STR_INCOMPLETE; }
+dnml_status bigInt_tserialize(char *buf, size_t len, bigInt x, size_t *written) { return STR_INCOMPLETE; }
+dnml_status bigInt_sserialize(char *buf, size_t len, bigInt x, size_t *written) { return STR_INCOMPLETE; }
 /* -------- DESERIALIZATION --------  */
 dnml_status bigInt_deserialize(bigInt *const x, const char* str, size_t len) { return STR_INCOMPLETE; }
 
@@ -3093,7 +3093,7 @@ dnml_status bigInt_deserialize(bigInt *const x, const char* str, size_t len) { r
 
 
 //todo ====================================== 5. GENERAL UTILITIES ===================================== *//
-dnml_status bigInt_limb_dump(FILE *stream, const bigInt x) {
+dnml_status bigInt_limb_dump(FILE *stream, bigInt x) {
     test_assert(__BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     fputs  (        "--- DECIMAL LIMB DUMP --------------------------------------\n", stream);
     fprintf(stream, "Limbs' starting location: %p\n", (void*)(x.limbs));
@@ -3107,7 +3107,7 @@ dnml_status bigInt_limb_dump(FILE *stream, const bigInt x) {
     fputs(          "--------------------------------------------------------\n", stream);
     return STR_SUCCESS;
 }
-dnml_status bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase) {
+dnml_status bigInt_hexdump(FILE *stream, bigInt x, bool uppercase) {
     test_assert(__BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     fputs  (        "--- HEX LIMB DUMP --------------------------------------\n", stream);
     fprintf(stream, "Limbs' starting location: %p\n", (void*)(x.limbs));
@@ -3121,7 +3121,7 @@ dnml_status bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase) {
     fputs(          "--------------------------------------------------------\n", stream);
     return STR_SUCCESS;
 }
-dnml_status bigInt_bindump(FILE *stream, const bigInt x) {
+dnml_status bigInt_bindump(FILE *stream, bigInt x) {
     test_assert(__BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
     fputs  (        "--- BINARY LIMB DUMP ----------------------------------------------------------------------------------------\n", stream);
     fprintf(stream, "Limbs' starting location: %p\n", (void*)(x.limbs));
@@ -3141,7 +3141,7 @@ dnml_status bigInt_bindump(FILE *stream, const bigInt x) {
     fputs(          "-------------------------------------------------------------------------------------------------------------\n", stream);
     return STR_SUCCESS;
 }
-dnml_status bigInt_info(FILE *stream, const bigInt x) {
+dnml_status bigInt_info(FILE *stream, bigInt x) {
     fputs    (        "-------- [ BIGINT DEBUG INFO ] --------\n", stream);
     fprintf  (stream, "Address:  %p\n", (void*)x.limbs);
     fprintf  (stream, "Sign:         %" PRId8 " %s\n", x.sign, (x.sign == -1) ? "(Negative)" : "(Positive)");

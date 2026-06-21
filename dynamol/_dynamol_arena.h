@@ -26,16 +26,15 @@ limitations under the License.
 #include <_libdnml_mem/arena.h>
 
 /* Static Analysis Messages */
-#define arena_oom "CRITICAL ERROR: Arena initliaizationf failed due to OOM (-Ealloc_arena_oom)"
-#define alloc_oom "CRITICAL ERROR: Heap-Allocation Failure - OOM (-Ealloc_oom)"
-#define arena_poison_oom "Arena Poisoned: Arena Re-allocation witnessed an OOM error (-Earena_poison)"
+#define arena_ovf "Arena workspace sizing estimation incorrect, open an issue on GitHub (-Earena_ovf)"
+#define arena_oom "Arena initliaizationf failed due to OOM (-Ealloc_arena_oom)"
+#define alloc_oom "Heap-Allocation Failure - OOM (-Ealloc_oom)"
+#define arena_poison_oom "Arena Re-allocation witnessed an OOM error (-Earena_poison)"
 
 /* Arena & Functions Declarations */
 extern local_thread dnml_arena ___DASI_NUMERIC_ARENA_;
-extern local_thread dnml_arena ___DASI_LOWLVL_ARENA_;
 extern local_thread dnml_arena ___DASI_IO_ARENA_;
 dnml_arena* _USE_ARENA(void);
-dnml_arena* _USE_LOW_ARENA(void);
 dnml_arena* _USE_IO_ARENA(void);
 dnml_status _init_dynamol_bigint(void);
 void _cleanup_dynamol(void);
@@ -55,6 +54,14 @@ void _cleanup_dynamol(void);
         DNML_ALLOC_OOM /* Error Returns Parameters */ \
     ); \
 } while(0);
+#define arena_overflow(err_check, free_list, free_cnt) do { \
+    test_assert( \
+        /* Static Analysis - Assert Parameters */ \
+        (((err_check) != DARENA_OVERFLOW)), arena_ovf, \
+        { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
+        DARENA_OVERFLOW \
+    ) \
+} while(0);
 
 /* Mutative Macros */
 #define arena_alloc_oom_mut(err_check, arena_name, err) do { \
@@ -68,6 +75,14 @@ void _cleanup_dynamol(void);
         /* Static Analysis - Assert Parameters */ \
         (!((arena_name)->poisoined)), alloc_oom, { _cleanup_dynamol(); }, \
         (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+    ) \
+} while(0);
+#define arena_ovf_mut(err_check, err, free_list, free_cnt) do { \
+    test_assert_mut( \
+        /* Static Analysis - Assert Parameters */ \
+        (((err_check) != DARENA_OVERFLOW)), arena_ovf, \
+        { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
+        (err), DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
     ) \
 } while(0);
 

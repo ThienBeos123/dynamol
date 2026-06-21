@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_DIV_H
-#define DNML_DIV_H
+#ifndef DNML_HEAP_DIV_H
+#define DNML_HEAP_DIV_H
 
 
 #include <dnml_status.h>
@@ -26,10 +26,8 @@ limitations under the License.
 #include <include.h>
 #include <dnml_sys/sys.h>
 #include <_libdnml_config/numeric_config.h>
-
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
-
 #include "../algo_base/add_sub.h"
 #include "heap_mul.h"
 
@@ -38,14 +36,14 @@ limitations under the License.
 #ifdef __cplusplus
 extern "C" {
 #endif
-void __BIHEAP_SHORT_DIVISION__(const bigInt *a, uint64_t b, bigInt *quot, bigInt *rem);
-void __BIHEAP_KNUTH_D__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err);
+void __BIHEAP_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const quot, bigInt *const rem);
+void __BIHEAP_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err);
 void __BIHEAP_BURNIKEL__(
-    const bigInt *AH, const bigInt *AL,
-    const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err
+    const bigInt *const AH, const bigInt *const AL,
+    const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err
 );
-void __BIHEAP_NEWTON__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err);
-void __BIHEAP_DIV_DISP__(const bigInt *a, const bigInt *b, bigInt *quot, bigInt *rem, dnml_status *err);
+void __BIHEAP_NEWTON__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err);
+void __BIHEAP_DIV_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

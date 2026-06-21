@@ -1,7 +1,25 @@
+/*
+Copyright (C) 2026 @ThienBeos123/@Poly-glon
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://apache.org
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+
 #include "heap_mod.h"
 
 /* BigInt Barett Modular Reduction */
-void __BIHEAP_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, dnml_status *err) {
+void __BIHEAP_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, dnml_status *err) {
     // ONE NOTE: <<< is denoted as limb shift in base 2^64
     /* ---- 1. PRECOMPUTATION - μ ---- */ dnml_status echeck = BIGINT_SUCCESS;
     size_t precomp_size = (n->n << 1) + 1, remlimbs = a->n - (n->n - 1);
@@ -43,12 +61,12 @@ void __BIHEAP_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, dnml_statu
     __BIHEAP_MUL_DISP__(&numer, n, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     __BIGINT_SUB_WB__(&a_copy, &a_copy, &tmp);
     while (__BIGINT_INTERNAL_COMP__(&a_copy, n) >= 0) __BIGINT_SUB_WB__(&a_copy, &a_copy, n);
-    __BIGINT_INTERNAL_SWAP__(rem, &a_copy); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_MOVE__(rem, &a_copy); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 
 
 /* BigInt "Helper" Montgomery REDC */
-void __BIHEAP_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
+void __BIHEAP_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
     uint64_t m, carry = 0;
     // Loop basically cancels k lowest limbs
     for (size_t i = 0; i < mredc_ctx.k; ++i) {
@@ -67,7 +85,7 @@ void __BIHEAP_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
 
 
 /* Modular Reduction Algorithm Dispatcher */
-void __BIHEAP_MOD_DISP__(const bigInt *a, const bigInt *n, bigInt *rem, bigInt *tmp_quot, dnml_status *err) {
+void __BIHEAP_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, P_BIGINT tmp_quot, dnml_status *err) {
     if (n->n < BIGINT_SHORT) { __BIHEAP_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem); *err = BIGINT_SUCCESS; }
     else if (n->n < BIGINT_KNUTH) __BIHEAP_KNUTH_D__(a, n, tmp_quot, rem, err);
     else if (n->n < BIGINT_BARETT) __BIHEAP_BARETT__(a, n, rem, err);

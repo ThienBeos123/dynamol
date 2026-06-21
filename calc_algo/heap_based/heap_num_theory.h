@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_NUM_THEORY_H
-#define DNML_NUM_THEORY_H
+#ifndef DNML_HEAP_NUM_THEORY_H
+#define DNML_HEAP_NUM_THEORY_H
 
 
 #include <debug_util.h>
@@ -28,7 +28,6 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
-
 #include "../algo_base/add_sub.h"
 #include "heap_div.h"
 #include "heap_mul.h"

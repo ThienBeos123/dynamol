@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_MUL_H
-#define DNML_MUL_H
+#ifndef DNML_HEAP_MUL_H
+#define DNML_HEAP_MUL_H
 
 
 #include <debug_util.h>
@@ -36,16 +36,16 @@ limitations under the License.
 extern "C" {
 #endif
 /* BIGINT ALGORITHMS */
-void __BIHEAP_SCHOOLBOOK__(const bigInt *a, const bigInt *b, bigInt *res);
-void __BIHEAP_KARATSUBA__(const bigInt *x, const bigInt *y, bigInt *res, dnml_status *err);
-void __BIHEAP_TOOM_3__(const bigInt *m, const bigInt *n, bigInt *res, dnml_status *err);
-void __BIHEAP_TOOM_4__(const bigInt *m, const bigInt *n, bigInt *res, dnml_status *err);
-void __BIHEAP_TOOM_5__(const bigInt *m, const bigInt *n, bigInt *res, dnml_status *err);
-void __BIHEAP_TOOM_6p5__(const bigInt *m, const bigInt *n, bigInt *res, dnml_status *err);
-void __BIHEAP_TOOM_7p5__(const bigInt *m, const bigInt *n, bigInt *res, dnml_status *err);
-void __BIHEAP_TOOM_8p5__(const bigInt *m, const bigInt *n, bigInt *res, dnml_status *err);
-void __BIHEAP_FFT__(const bigInt *a, const bigInt *b, bigInt *res, dnml_status *err);
-void __BIHEAP_MUL_DISP__(const bigInt *a, const bigInt *b, bigInt *res, dnml_status *err);
+void __BIHEAP_SCHOOLBOOK__(const bigInt *const a, const bigInt *const b, bigInt *const res);
+void __BIHEAP_KARATSUBA__(const bigInt *const x, const bigInt *const y, bigInt *const res, dnml_status *err);
+void __BIHEAP_TOOM_3__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_TOOM_4__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_TOOM_5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_TOOM_6p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_TOOM_7p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_TOOM_8p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_FFT__(const bigInt *const a, const bigInt *const b, bigInt *const res, dnml_status *err);
+void __BIHEAP_MUL_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const res, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

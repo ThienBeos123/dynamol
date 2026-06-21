@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_POW_ROOT_H
-#define DNML_POW_ROOT_H
+#ifndef DNML_HEAP_POW_ROOT_H
+#define DNML_HEAP_POW_ROOT_H
 
 #include <dnml_status.h>
 #include <debug_util.h>
@@ -27,7 +27,6 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
-
 #include "../algo_base/add_sub.h"
 #include "heap_div.h"
 #include "heap_mul.h"

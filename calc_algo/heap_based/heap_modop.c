@@ -1,8 +1,26 @@
+/*
+Copyright (C) 2026 @ThienBeos123/@Poly-glon
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://apache.org
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+
 #include "heap_modop.h"
 limb_t a[1] = {1}; // NO FUNCTION SHOULD MODIFY THIS ARRAY, EVER
 
 /* BigInt Modular Multiplication AND Exponentiation Algorithms */
-void __BIHEAP_CMODMUL__(const bigInt *a, const bigInt *b, const bigInt *mod, bigInt *res, dnml_status *err) {
+void __BIHEAP_CMODMUL__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod, P_BIGINT res, dnml_status *err) {
     dnml_status echeck; bigInt *alloc_list[4], *early_free[4]; uint8_t alloc_cnt = 0, early_cnt = 0;
     BIHEAP_TEMP(prod, (a->n + b->n), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     BIHEAP_TEMP(tmp, (a->n + b->n), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
@@ -25,13 +43,13 @@ void __BIHEAP_CMODMUL__(const bigInt *a, const bigInt *b, const bigInt *mod, big
     __BIHEAP_MOD_DISP__(&prod, mod, res, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
-void __BIHEAP_MONTMUL__(const bigInt *a, const bigInt *b, mont_ctx ctx, bigInt *res, dnml_status *err) {
+void __BIHEAP_MONTMUL__(PCONST_BIGINT a, PCONST_BIGINT b, mont_ctx ctx, P_BIGINT res, dnml_status *err) {
     dnml_status echeck; bigInt *early_free[1]; uint8_t early_cnt = 0;
     BIHEAP_RET(t, (2*ctx.k + 1), echeck, err, early_free, early_cnt,);
     __BIHEAP_MUL_DISP__(a, b, &t, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     __BIHEAP_MONT_REDC__(&t, ctx, res); *err = BIGINT_SUCCESS;
 }
-void __BIHEAP_BIN_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err) {
+void __BIHEAP_BIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, dnml_status *err) {
     int8_t cmp_res = __BIGINT_INTERNAL_COMP__(base, mod);
     dnml_status echeck; bigInt *alloc_list[3], *early_free[4]; uint8_t alloc_cnt = 0, early_cnt = 0;
     BIHEAP_TEMP(tmp, base->n, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
@@ -49,9 +67,9 @@ void __BIHEAP_BIN_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *
             __BIHEAP_CMODMUL__(&tmp_res, &tmp_base, mod, &tmp_res, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         } __BIHEAP_CMODMUL__(&tmp_base, &tmp_base, mod, &tmp_base, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         __BIGINT_INTERNAL_RSHIFT__(&tmp_exp, 1);
-    } __BIGINT_INTERNAL_SWAP__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_MOVE__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
-void __BIHEAP_MBIN_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err) {
+void __BIHEAP_MBIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, dnml_status *err) {
     //* ----------- 1. SETUP ----------- *//
     dnml_status echeck; bigInt *alloc_list[6], *early_free[6]; uint8_t alloc_cnt = 0, early_cnt = 0;
     mont_ctx modexp_contx = { .n = mod, .nprime = __MODINV_UI64__(mod->limbs[0]), .k = mod->n }; 
@@ -85,11 +103,11 @@ void __BIHEAP_MBIN_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt 
     HEAP_OOM(echeck, err, early_free, early_cnt,); _free_alloc_list(alloc_list, alloc_cnt) ;*err = BIGINT_SUCCESS;
 }
 /* BigInt Modular Exponentiation - Windows Algorithms */
-void __BIHEAP_FIX_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err) {}
-void __BIHEAP_SLIDE_MODEXP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err) {}
+void __BIHEAP_FIX_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, dnml_status *err) {}
+void __BIHEAP_SLIDE_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, dnml_status *err) {}
 
 /* BigInt Algorithm Dispatchers */
-void __BIHEAP_MODMUL_DISP__(const bigInt *a, const bigInt *b, const bigInt *mod, bigInt *res, dnml_status *err) {
+void __BIHEAP_MODMUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod, P_BIGINT res, dnml_status *err) {
     if (mod->n <= BIGINT_CLASSICAL) __BIHEAP_CMODMUL__(a, b, mod, res, err);
     else { dnml_status echeck; bigInt *alloc_list[3], *early_free[3]; uint8_t alloc_cnt = 0, early_cnt = 0;
         mont_ctx modmul_disp_ctx = { .n = mod, .nprime = __MODINV_UI64__(mod->limbs[0]), .k = mod->n };
@@ -103,7 +121,7 @@ void __BIHEAP_MODMUL_DISP__(const bigInt *a, const bigInt *b, const bigInt *mod,
         _free_alloc_list(alloc_list, alloc_cnt); *err = (echeck == DNML_ALLOC_OOM) ? DNML_ALLOC_OOM : BIGINT_SUCCESS;
     }
 }
-void __BIHEAP_MODEXP_DISP__(const bigInt *base, const bigInt *exp, const bigInt *mod, bigInt *res, dnml_status *err) {           
+void __BIHEAP_MODEXP_DISP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, dnml_status *err) {           
     if (mod->n < BIGINT_MOD_BINARY) __BIHEAP_BIN_MODEXP__(base, exp, mod, res, err);
     else if (mod->n < BIGINT_MONT_BINARY) __BIHEAP_MBIN_MODEXP__(base, exp, mod, res, err);
     else if (mod->n < BIGINT_MOD_FIXED) __BIHEAP_FIX_MODEXP__(base, exp, mod, res, err);

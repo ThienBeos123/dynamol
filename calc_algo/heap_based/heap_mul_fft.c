@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2026 @ThienBeos123/@Poly-glon
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://apache.org
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+
 #include "heap_mul.h"
 
 
@@ -22,7 +40,7 @@ static size_t ___biheap_fft_best_metadata(size_t a_size, size_t b_size, size_t *
 static void ___biheap_cooley_tukey(limb_t *data, size_t omega_shift, size_t d, size_t n) {}
 static void ___biheap_ifft(limb_t *data, size_t omega_shift, size_t d, size_t n) {}
 /* ============ MAIN FUNCTIONS ============ */
-void __BIHEAP_FFT__(const bigInt *a, const bigInt *b, bigInt *res, dnml_status *err) {
+void __BIHEAP_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status *err) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) {
         __BIHEAP_SCHOOLBOOK__(a, b, res); return; // Base-case
     } //* -------- 1. SETUP & SPLIT -------- *//
