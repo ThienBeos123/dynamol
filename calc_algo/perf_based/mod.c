@@ -21,25 +21,16 @@ limitations under the License.
 /* ----------------- WORKSPACE FUNCTIONS ----------------- */
 size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size) {
     // Precomputation Temporaries
-    size_t numlimbs_size = (2 * n_size + 1);
-    size_t prelimbs_size = (2 * n_size + 1);
-    size_t tmp_size = n_size;
-    // Numerator Calculation Temporaries
-    size_t aaslimbs_size = (a_size - n_size + 1);
-    size_t anumerator_size = (a_size + n_size + 2);
-    // Final Calculation Temporaries
-    size_t acopy_size = a_size;
-    size_t additional_size = 0;
-    if (likely((2 * n_size + 1) < (a_size + 1))) additional_size = (a_size + 1);
+    size_t precomp_size = (n_size << 1) + 1, remlimbs = a_size - (n_size - 1);
+    size_t numer_cap = precomp_size + remlimbs; size_t precomp_cap = precomp_size;
+    size_t tmp_cap = max(n_size, precomp_size + remlimbs + 1); size_t acopy_cap = a_size;
     // Paddings & Low-level Arenas
     size_t mul_divmod_size = max(
-        __BIGINT_MUL_WS__(anumerator_size, n_size), max(
-            __BIGINT_MUL_WS__(aaslimbs_size, prelimbs_size),
-            __BIGINT_DIV_WS__(numlimbs_size, n_size)
+        __BIGINT_MUL_WS__(precomp_size + remlimbs - (n_size - 1), n_size), max(
+            __BIGINT_MUL_WS__(remlimbs, precomp_size),
+            __BIGINT_DIV_WS__(precomp_size, n_size)
         )
-    ); return numlimbs_size + prelimbs_size + tmp_size
-              + aaslimbs_size + anumerator_size
-              + acopy_size + additional_size + mul_divmod_size;
+    ); return 0;
 }
 size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size) {
     if (n_size < BIGINT_SHORT) return __BIGINT_SHORTDIV_WS__(a_size, n_size);
@@ -64,7 +55,7 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
 
 
     //* ---- 2. NUMERATOR CALCULATION ---- *//
-    memset(numer.limbs, 0, precomp_size * U64_BYTES); /**/ tmp.limbs[(n->n < 1)] = 0; tmp.n = remlimbs;
+    memset(tmp.limbs, 0, precomp_size * U64_BYTES); /**/ numer.limbs[(n->n << 1)] = 0; tmp.n = remlimbs;
     memcpy(tmp.limbs, &a->limbs[n->n - 1], remlimbs * U64_BYTES); // Now, tmp = a_after_shift (a >>> n->n - 1)
     // We copy starting from the n limbs, because:
     // - For instance: we want to limb right shift by 3 limbs:
@@ -74,11 +65,13 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
     SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
 
     //* ---- 3. FINAL CALCULATION ---- *//
+    // (2n + 1) + (a - n + 1) - (n - 1) = 2n+1 + a-n+1 - n+1 = (a + 3) (SIMPLIFIED SIZE OF NUMER AFTER RLSHIFT IN STEP 3)
+    // (a + 3) + n = (a + 3 + n) (SIZE OF TMP AFTER __BIGINT_MUL_DISPATCH(numer, n, tmp))
     remlimbs = numer.n + (n->n + 1); // Represents the number of blocks of shifts
     memcpy(numer.limbs, &numer.limbs[n->n - 1], remlimbs * U64_BYTES); __BIGINT_INTERNAL_TRIM_LZ__(&numer); 
     // Now the predicted size of numer is:
     //
-    //      ((precomp_size + remlimbs) [from a_after_shift * precomp]) - ((n->n - 1) [subtracted from the right limb shift])
+    //      ((precomp_size + remlimbs) [from a_after_shift * precomp]) - ((n->n - 1) [subtracted from the right limb shift])     
     //
     // Therefre, the size requirements of __BIGINT_MUL_DISPATCH__(numer, n) OR (numer * n) should be:
     //
@@ -91,7 +84,9 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
     BIGINT_TEMP(a_copy, a->n, barett_ctx, barett_mark, echeck, err,); 
     a_copy.n = a->n; /**/ memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
     __BIGINT_MUL_DISPATCH__(&numer, n, &tmp, barett_ctx, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
-    __BIGINT_SUB_WB__(&a_copy, &a_copy, &tmp);
+    __BIGINT_INTERNAL_TRIM_LZ__(&tmp); if (tmp.n > a_copy.n) { // Guaranteeing Barett's Invariant of tmp's size
+        scratch_rewind(&barett_ctx, barett_mark); *err = BIGINT_ERR_RANGE; return; 
+    } __BIGINT_SUB_WB__(&a_copy, &a_copy, &tmp);
     while (__BIGINT_INTERNAL_COMP__(&a_copy, n) >= 0) __BIGINT_SUB_WB__(&a_copy, &a_copy, n);
     __BIGINT_INTERNAL_COPY__(rem, &a_copy); scratch_rewind(&barett_ctx, barett_mark); *err = BIGINT_SUCCESS;
 }

@@ -62,7 +62,7 @@ void __BIHEAP_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem) {
     memcpy(&t->limbs[0], &t->limbs[mredc_ctx.k], (mredc_ctx.k) * U64_BYTES);
     t->n = mredc_ctx.k + 1; // From 2k + 1 (upperbound) ---> k + 1 (from the limb shift)
     if (__BIGINT_INTERNAL_COMP__(t, mredc_ctx.n) > 0) __BIGINT_SUB_WB__(t, t, mredc_ctx.n);
-    __BIGINT_INTERNAL_COPY__(rem, t);
+    __BIGINT_INTERNAL_SWAP__(t, rem);
 }
 
 
