@@ -216,6 +216,8 @@ void __BIGINT_NEWTON_CBRT__(P_BIGINT res, PCONST_BIGINT a, calc_ctx cbrt_ctx, dn
     for (;;) {
         __BIGINT_MUL_DISPATCH__(&guess, &guess, &next, cbrt_ctx, &echeck); SCRATCH_OVF(echeck, cbrt_ctx, cbrt_mark, err,);
         __BIGINT_DIV_DISP__(a, &next, &ratio, &tmp, cbrt_ctx, &echeck); SCRATCH_OVF(echeck, cbrt_ctx, cbrt_mark, err,);
+        // Can't use move semantics or whatever since we would LOSE next's buffers, losing usable memory,
+        // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess); __BIGINT_INTERNAL_LSHIFT__(&next, 1);
         __BIGINT_ADD_WC__(&next, &next, &ratio); __BIGINT_DIV3__(&next);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
@@ -265,6 +267,8 @@ void __BIGINT_NEWTON_2NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_c
     for (;;) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer;
         __BIGINT_DIV_DISP__(a, &xpow, &ratio, &next, _2nrt_ctx, &echeck); SCRATCH_OVF(echeck, _2nrt_ctx, _2nrt_mark, err,);
+        // Can't use move semantics or whatever since we would LOSE next's buffers, losing usable memory,
+        // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess); __BIGINT_INTERNAL_MUL_UI64__(&next, (root - 1));
         __BIGINT_ADD_WC__(&next, &next, &ratio); __BIGINT_INTERNAL_RSHIFT__(&next, shift);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
@@ -286,6 +290,8 @@ void __BIGINT_NEWTON_NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ct
     for (;;) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer;
         __BIGINT_DIV_DISP__(a, &xpow, &ratio, &next, nrt_ctx, &echeck); SCRATCH_OVF(echeck, nrt_ctx, nrt_mark, err,);
+        // Can't use move semantics or whatever since we would LOSE next's buffers, losing usable memory,
+        // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess);
         if (__IS_2POW__(root - 1)) __BIGINT_INTERNAL_LSHIFT__(&next, __CTZ_UI64__(root - 1));
         else __BIGINT_INTERNAL_MUL_UI64__(&next, (root - 1));

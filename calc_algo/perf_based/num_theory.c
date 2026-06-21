@@ -127,7 +127,8 @@ size_t __BIGINT_PTEST_WS__(size_t x_size) {
 }
 //* ======== Primality Testing - ALGORITHMS ======== *//
 // Helper functions
-void _randbase_fill(P_BIGINT x, xoshiro256_state *state) {
+static void _randbase_fill(P_BIGINT x, xoshiro256_state *state, size_t upper_size) {
+    x->n = __rng_range(state, 1, upper_size); 
     size_t i = 0; while (i < x->n) {
         uint64_t rand = xoshiro256pp_next(state);
         if (i == x->n - 1 && !rand) continue; /**/ ++i;
@@ -225,12 +226,12 @@ uint8_t __BIGINT_PTEST_DISPATCH__(PCONST_BIGINT x, calc_ctx ptest_ctx, dnml_stat
         xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
         __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
         __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
-        seed_xoshiro256(&ptmain_state, side_mix);
-        size_t ptest_mark = scratch_mark(&ptest_ctx);
-        size_t randsize = (size_t)(sqrtl((long double)x->n)) + 1;
-        BIGINT_TEMP(random_base, randsize, ptest_ctx, ptest_mark, echeck, err, 0);
+        seed_xoshiro256(&ptmain_state, side_mix); size_t ptest_mark = scratch_mark(&ptest_ctx);
+        size_t uppperbound = (size_t)(sqrtl((long double)x->n)) + 1;
+        size_t rand_upper = __rng_skrange(&ptmain_state, 6, uppperbound, 70.0f);
+        BIGINT_TEMP(random_base, rand_upper, ptest_ctx, ptest_mark, echeck, err, 0);
         for (size_t i = 0; i < _DNML_MR_ROUNDS_DYNAMOL; ++i) {
-            _randbase_fill(&random_base, &ptmain_state);
+            _randbase_fill(&random_base, &ptmain_state, rand_upper);
             uint8_t mrabin_ret = __BIGINT_MILLER_RABIN__(x, &random_base, ptest_ctx, &echeck);
             if (echeck == DARENA_OVERFLOW) { scratch_rewind(&ptest_ctx, ptest_mark); *err = DARENA_OVERFLOW; return 0; }
             if (!mrabin_ret) { scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 0; }

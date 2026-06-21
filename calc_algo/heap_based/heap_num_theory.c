@@ -14,14 +14,15 @@ uint64_t __BIHEAP_EUCLID__(uint64_t u, uint64_t v) {
 }
 void __BIHEAP_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {
     // Base case - Identity #1 - gcd(u, 0) = u
-    if (u->n == 0) { __BIGINT_INTERNAL_COPY__(res, v); return; }
-    else if (v->n == 0) { __BIGINT_INTERNAL_COPY__(res, u); return; }
+    if (u->n == 0) { __BIGINT_INTERNAL_LINIT__(res, v->n); __BIGINT_INTERNAL_COPY__(res, v); return; }
+    else if (v->n == 0) { __BIGINT_INTERNAL_LINIT__(res, u->n); __BIGINT_INTERNAL_COPY__(res, u); return; }
 
     // Setup - Identity #2 - gcd(2u, 2v) = gcd(u, v)
-    dnml_status echeck; bigInt *alloc_list[2]; uint8_t alloc_cnt = 0;
+    dnml_status echeck = BIGINT_SUCCESS;
+    bigInt *alloc_list[1], *early_free[2]; uint8_t alloc_cnt = 0, early_cnt = 0;
     size_t maxsize = max(u->n, v->n); // maxsize is used for SWAP
-    BIHEAP_TEMP(u_copy, maxsize, echeck, err, alloc_list, alloc_cnt,); u_copy.n = u->n;
-    BIHEAP_TEMP(v_copy, maxsize, echeck, err, alloc_list, alloc_cnt,); v_copy.n = v->n;
+    BIHEAP_RET(u_copy, maxsize, echeck, err, early_free, early_cnt,); u_copy.n = u->n;
+    BIHEAP_TEMP(v_copy, maxsize, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,); v_copy.n = v->n;
     memcpy(u_copy.limbs, u->limbs, u->n * U64_BYTES); memcpy(v_copy.limbs, v->limbs, v->n * U64_BYTES);
     size_t i = __BIGINT_CTZ__(u); __BIGINT_INTERNAL_RSHIFT__(&u_copy, i);
     size_t j = __BIGINT_CTZ__(v); __BIGINT_INTERNAL_RSHIFT__(&v_copy, j);
@@ -30,16 +31,14 @@ void __BIHEAP_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_statu
     // Procedure
     int8_t comp_res = __BIGINT_INTERNAL_COMP__(&u_copy, &v_copy);
     while (comp_res) {
-        if (comp_res == -1) __BIGINT_INTERNAL_SWAP__(&u_copy, &v_copy);
+        if (comp_res < 0) __BIGINT_INTERNAL_SWAP__(&u_copy, &v_copy);
         // Identity #4: gcd(u, v) = gcd(u, v - u)
-        //  WHEN: +) u & v is ODD
-        //        +) u <= v
+        //  WHEN: (u & v is ODD) AND (u <= v)
         __BIGINT_SUB_WB__(&u_copy, &u_copy, &v_copy);
         // Identity #3 - gcd(u, 2v) = gcd(u, v)
-        i = __BIGINT_CTZ__(&u_copy);
-        __BIGINT_INTERNAL_RSHIFT__(&u_copy, i);
+        i = __BIGINT_CTZ__(&u_copy); __BIGINT_INTERNAL_RSHIFT__(&u_copy, i);
         comp_res = __BIGINT_INTERNAL_COMP__(&u_copy, &v_copy);
-    } __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_COPY__(res, &u_copy);
+    } __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_SWAP__(res, &u_copy);
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}
@@ -48,7 +47,8 @@ void __BIHEAP_GCD_DISPATCH__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnm
 
 //* ======== Primality Testing - ALGORITHMS ======== *//
 // Helper functions
-void _randbase_fill(P_BIGINT x, xoshiro256_state *state) {
+static void _randbase_fill(P_BIGINT x, xoshiro256_state *state, size_t upper_size) {
+    x->n = __rng_range(state, 1, upper_size); 
     size_t i = 0; while (i < x->n) {
         uint64_t rand = xoshiro256pp_next(state);
         if (i == x->n - 1 && !rand) continue; /**/ ++i;
@@ -82,49 +82,48 @@ uint8_t __BIHEAP_SMALL_MRABIN__(uint64_t n) {
     } return 1;
 }
 uint8_t __BIHEAP_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, dnml_status *err) {
-    if (n->sign == -1) return 0;
-    if (!n->n || (n->n == 1 && n->limbs[1] == 1)) return 0;
-    dnml_status echeck; bigInt *alloc_list[6]; uint8_t alloc_cnt = 0;
-    uint8_t prim_status = 0; uint64_t a[1] = {1};
+    if (n->sign == -1) return 0; /**/ if (!n->n || (n->n == 1 && n->limbs[1] == 1)) return 0;
+    dnml_status echeck = BIGINT_SUCCESS; uint8_t prim_status = 0; uint64_t a[1] = {1};
+    bigInt *alloc_list[6], *early_free[6]; uint8_t alloc_cnt = 0, early_cnt = 0;
 
-    BIHEAP_TEMP(n_min1, n->n, echeck, err, alloc_list, alloc_cnt, 0); n_min1.n = n->n;
+    BIHEAP_TEMP(n_min1, n->n, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0); n_min1.n = n->n;
     memcpy(n_min1.limbs, n->limbs, n->n * U64_BYTES);
     bigInt constant_one = {.limbs = a, .n = 1, .cap = 1, .sign = 1 };
     __BIGINT_SUB_WB__(&n_min1, &n_min1, &constant_one);
     size_t s = (uint64_t)(__BIGINT_CTZ__(&n_min1));
-    BIHEAP_TEMP(d, n_min1.n, echeck, err, alloc_list, alloc_cnt, 0);
+    BIHEAP_TEMP(d, n_min1.n, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0);
     memcpy(d.limbs, n_min1.limbs, n_min1.n * U64_BYTES);
     __BIGINT_INTERNAL_RLSHIFT__(&d, (size_t)(s / U64_BITS));
     __BIGINT_INTERNAL_RSHIFT__(&d, (size_t)(s % U64_BITS));
 
     // 1st test: a^d mod(n)
-    BIHEAP_TEMP(x, n->n, echeck, err, alloc_list, alloc_cnt, 0);
-    __BIHEAP_MODEXP_DISP__(base, &d, n, &x, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
+    BIHEAP_TEMP(x, n->n, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0);
+    __BIHEAP_MODEXP_DISP__(base, &d, n, &x, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
     if (x.n == 1 && x.limbs[0] == 1) prim_status = 1; // a^d mod(n) = 1
     else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) prim_status = 1; // a^d mod(n) = n - 1
 
     // 2nd test: a^(2^r * d) mod(n)
     if (unlikely(n->n <= BIGINT_CLASSICAL)) {
         for (uint64_t mrr = 1; mrr < s; ++mrr) {
-            __BIHEAP_CMODMUL__(&x, &x, n, &x, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
+            __BIHEAP_CMODMUL__(&x, &x, n, &x, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
             if (x.n == 1 && x.limbs[0] == 1) { prim_status = 1; break; }
             else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) { prim_status = 1; break; }
         }
     } else {
         mont_ctx mont_ctx = {.n = n, .nprime = __MODINV_UI64__(n->limbs[0]), .k = n->n};
-        BIHEAP_TEMP(r, n->n << 1, echeck, err, alloc_list, alloc_cnt, 0); r.n = n->n + 1;
-        BIHEAP_TEMP(r_mod_n, n->n, echeck, err, alloc_list, alloc_cnt, 0);
-        BIHEAP_TEMP(tmp, n->n << 1, echeck, err, alloc_list, alloc_cnt, 0); r.limbs[n->n] = 1; 
-        __BIHEAP_MOD_DISP__(&r, n, &r_mod_n, &tmp, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
-        __BIHEAP_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
-        __BIHEAP_MOD_DISP__(&tmp, n, &tmp, &r, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
+        BIHEAP_TEMP(r, n->n << 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0); r.n = n->n + 1;
+        BIHEAP_TEMP(r_mod_n, n->n, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0);
+        BIHEAP_TEMP(tmp, n->n << 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0); r.limbs[n->n] = 1; 
+        __BIHEAP_MOD_DISP__(&r, n, &r_mod_n, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
+        __BIHEAP_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
+        __BIHEAP_MOD_DISP__(&tmp, n, &tmp, &r, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
         mont_ctx.r2 = &tmp;
         // Conversions
-        __BIHEAP_MONTMUL__(&x, mont_ctx.r2, mont_ctx, &x, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
-        __BIHEAP_MONTMUL__(&n_min1, mont_ctx.r2, mont_ctx, &n_min1, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
+        __BIHEAP_MONTMUL__(&x, mont_ctx.r2, mont_ctx, &x, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
+        __BIHEAP_MONTMUL__(&n_min1, mont_ctx.r2, mont_ctx, &n_min1, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
         // 1 in Montgomery form is just R mod(N), so we reuse r_mod_n
         for (uint64_t mrr = 1; mrr < s; ++mrr) {
-            __BIHEAP_MONTMUL__(&x, &x, mont_ctx, &x, &echeck); HEAP_OOM(echeck, err, alloc_list, alloc_cnt, 0);
+            __BIHEAP_MONTMUL__(&x, &x, mont_ctx, &x, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
             if (!__BIGINT_INTERNAL_COMP__(&x, &constant_one)) { prim_status = 1; break; }
             else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) { prim_status = 1; break; }
         }
@@ -137,19 +136,20 @@ uint8_t __BIHEAP_PTEST_DISPATCH__(PCONST_BIGINT x, dnml_status *err) {
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIHEAP_TRIAL_DIV__(x->limbs[0]);
         else return __BIHEAP_SMALL_MRABIN__(x->limbs[0]);
     } else {
-        dnml_status echeck; uint8_t bpsw_ret = __BIHEAP_BPSW__(x, &echeck);
+        dnml_status echeck = BIGINT_SUCCESS; uint8_t bpsw_ret = __BIHEAP_BPSW__(x, &echeck);
         if (echeck == DARENA_OVERFLOW) { *err = DARENA_OVERFLOW; return 0; }
         if (!bpsw_ret) { *err = BIGINT_SUCCESS; return 0; }
-        bigInt *alloc_list[1]; uint8_t alloc_cnt = 0; 
+        bigInt *alloc_list[1], *early_free[1]; uint8_t alloc_cnt = 0, early_cnt = 0; 
  
         xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
         __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
         __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
         seed_xoshiro256(&ptmain_state, side_mix);
-        size_t randsize = (size_t)(sqrtl((long double)x->n)) + 1;
-        BIHEAP_TEMP(random_base, randsize, echeck, err, alloc_list, alloc_cnt, 0);
+        size_t uppperbound = (size_t)(sqrtl((long double)x->n)) + 1;
+        size_t rand_upper = __rng_skrange(&ptmain_state, 6, uppperbound, 70.0f);
+        BIHEAP_TEMP(random_base, rand_upper, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0);
         for (size_t i = 0; i < _DNML_MR_ROUNDS_DYNAMOL; ++i) {
-            _randbase_fill(&random_base, &ptmain_state);
+            _randbase_fill(&random_base, &ptmain_state, rand_upper);
             uint8_t mrabin_ret = __BIHEAP_MILLER_RABIN__(x, &random_base, &echeck);
             if (echeck == DNML_ALLOC_OOM) { _free_alloc_list(alloc_list, alloc_cnt); *err = DNML_ALLOC_OOM; return 0; }
             if (!mrabin_ret) { _free_alloc_list(alloc_list, alloc_cnt); *err = DNML_ALLOC_OOM; return 0; }
