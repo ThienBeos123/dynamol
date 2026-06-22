@@ -1898,12 +1898,21 @@ dnml_status bigInt_mut_div(bigInt *const x, bigInt y) {
     else if (y.n == 1 && y.limbs[0] == 1) x->sign *= y.sign;
     else if (x->n == 1 && x->limbs[0] == 1) bigInt_reset(x);
     else if (x->n) {
-        bigInt tmp_rem; bigInt *free_list[3] = { x, &y, &tmp_rem };
-        dnml_status echeck = bigInt_snew(&tmp_rem, y.n); heap_alloc_oom(echeck);
-        if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGDIV__(x, &tmp_rem, x, &y, &echeck); arena_overflow(echeck, free_list, 3); } 
-        else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGDIV__(x, &tmp_rem, x, &y, &echeck);
-            if (echeck == DARENA_OVERFLOW) { __BIHEAP_DIV_DISP__(x, &y, x, &tmp_rem, &echeck); heap_alloc_oom(echeck);  }
-        } else if (_DNML_ALLOC_STRAT == 2) { __BIHEAP_DIV_DISP__(x, &y, x, &tmp_rem, &echeck); heap_alloc_oom(echeck); }
+        /**
+         * The double aliasing for __BIHEAP_DIV_DISP__ and __BIGINT_DIV_DISP__ is safe due
+         * to their dispatched aglorithms either finishing off quotient-based (short division, Knuth-D, ...),
+         * or don't modify/tamper with any remainder components at all (Burnikel-Ziegler), making the output
+         * being the remainder in such double-aliasing case.
+         *
+         * Additionally, Division Algorithms used in both dispatchers is safe to 
+         * have the dividend and the result buffers be aliased of each other, since they never mutate the
+         * operands, and only mutate the result buffers at the end (through copies or move-semantics)
+         */
+        bigInt *free_list[2] = { x, &y }; dnml_status echeck = BIGINT_SUCCESS;
+        if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGDIV__(x, x, x, &y, &echeck); arena_overflow(echeck, free_list, 2); } 
+        else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGDIV__(x, x, x, &y, &echeck);
+            if (echeck == DARENA_OVERFLOW) { __BIHEAP_DIV_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck);  }
+        } else if (_DNML_ALLOC_STRAT == 2) { __BIHEAP_DIV_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck); }
         x->sign *= y.sign; bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
@@ -1916,16 +1925,23 @@ dnml_status bigInt_mut_mod(bigInt *const x, bigInt y) {
         int8_t comp_res = __BIGINT_MAGCOMP__(x, &y);
         if (!comp_res) bigInt_reset(x);
         else if (comp_res > 0) {
-            bigInt tmp_quot; bigInt *free_list[3] = { x, &y, &tmp_quot };
-            dnml_status echeck = bigInt_snew(&tmp_quot, x->n); heap_alloc_oom(echeck);
-            if (!_DNML_ALLOC_STRAT) { 
-                __BIGINT_MAGMOD__(x, &tmp_quot, x, &y, &echeck);
-                arena_overflow(echeck, free_list, 3);
-            } else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGMOD__(x, &tmp_quot, x, &y, &echeck);
-                if (echeck == DARENA_OVERFLOW) goto heap_mut_mod_block;
-            } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_mod_block;
+            dnml_status echeck = BIGINT_SUCCESS; bigInt *free_list[2] = { x, &y };
+            if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGMOD__(x, x, x, &y, &echeck); arena_overflow(echeck, free_list, 2); } 
+            else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGMOD__(x, x, x, &y, &echeck);
+                if (echeck == DARENA_OVERFLOW) goto heap_mut_mod;
+            } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_mod;
 
-            heap_mut_mod_block: { __BIHEAP_MOD_DISP__(x, &y, x, &tmp_quot, &echeck); heap_alloc_oom(echeck); }
+            /** THIS NOTE ALSO APPLIES TO __BIGINT_MAGMOD__ above ^
+             * The double aliasing for __BIHEAP_MOD_DISP__ and __BIGINT_MOD_DISP__ is safe due
+             * to their dispatched aglorithms either finishing off remainder-based (short division, Knuth-D, ...),
+             * or don't modify/tamper with any quotient components at all (Barett Reduction), making the output
+             * being the remainder in such double-aliasing case. 
+             *
+             * Additionally, Division and Modular Reduction Algorithms used in both dispatchers is safe to 
+             * have the dividend and the result buffers be aliased of each other, since they never mutate the
+             * operands, and only mutate the result buffers at the end (through copies or move-semantics)
+             */
+            heap_mut_mod: { __BIHEAP_MOD_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck); }
         }
     } return BIGINT_SUCCESS;
 }
@@ -2129,10 +2145,10 @@ bigInt bigInt_mod(bigInt x, bigInt y, dnml_status *err) {
             if (!_DNML_ALLOC_STRAT) {
                 __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y, &echeck); arena_ovf_bi(echeck, err, free_list, 4);
             } else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y, &echeck); 
-                if (echeck == DARENA_OVERFLOW) goto heap_mod_block;
-            } else if (_DNML_ALLOC_STRAT == 2) goto heap_mod_block;
+                if (echeck == DARENA_OVERFLOW) goto heap_mod;
+            } else if (_DNML_ALLOC_STRAT == 2) goto heap_mod;
             
-            heap_mod_block: { __BIHEAP_MOD_DISP__(&x, &y, &rem, &tmp_quot, &echeck); heap_alloc_oom_bi(echeck, err); }
+            heap_mod: { __BIHEAP_MOD_DISP__(&x, &y, &rem, &tmp_quot, &echeck); heap_alloc_oom_bi(echeck, err); }
             bigInt_free(&tmp_quot);
         }
     } *err = BIGINT_SUCCESS; return rem;
@@ -2482,57 +2498,62 @@ bigInt bigInt_modinv(bigInt x, bigInt mod) { return (bigInt){0}; }
 
 //* ====================================== SIGNED ALGEBRAIC OPERATIONS ======================================= */
 /* -------------- MUTATIVE ALGEBRAIC -------------- */
-dnml_status bigInt_mut_sqr(bigInt *const x) {                           //TODO REFACTOR TO HAVE HEAP VS ARENA
+dnml_status bigInt_mut_sqr(bigInt *const x) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(bigInt_pvalidate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
     if (x->n == 1) {
         if (x->limbs[0] < UINT32_MAX) x->limbs[0] *= x->limbs[0];
         else if (x->limbs[0] != 1) {
             bigInt_reserve(x, 2);
-            x->limbs[0] = __MUL_UI64__(x->limbs[0], x->limbs[0], &x->limbs[1] );
+            x->limbs[0] = __MUL_UI64__(x->limbs[0], x->limbs[0], &x->limbs[1]);
             x->n = 2;
-        }
-        x->sign = 1;
+        } x->sign = 1;
     } else if (x->n) {
-        dnml_status echeck = bigInt_reserve(x, x->n << 1); heap_alloc_oom(echeck);
-        dnml_arena *_DASI_MUTSQR_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUTSQR_ARENA);
-        size_t mutsqr_mark = arena_mark(_DASI_MUTSQR_ARENA);
-        limb_t *tmp_limb = arena_galloc(_DASI_MUTSQR_ARENA, x->n * 2, &echeck);
-        arena_alloc_oom(echeck, _DASI_MUTSQR_ARENA);
+        bigInt tmp_res; dnml_status echeck = BIGINT_SUCCESS;
+        bigInt *free_list[2] = { x, &tmp_res }; uint8_t free_cnt = 2;
+        if (!_DNML_ALLOC_STRAT) {
+            echeck = __BIGINT_INTERNAL_LINIT__(&tmp_res, x->n << 1); heap_alloc_oom(echeck);
+            __BIGINT_MAGSQR__(&tmp_res, x, &echeck); darena_assert(echeck, free_list, free_cnt);
+            tmp_res.sign = 1; __BIGINT_INTERNAL_MOVE__(x, &tmp_res);
+        } 
+        else if (_DNML_ALLOC_STRAT == 1) {
+            echeck = __BIGINT_INTERNAL_LINIT__(&tmp_res, x->n << 1); heap_alloc_oom(echeck);
+            __BIGINT_MAGSQR__(&tmp_res, x, &echeck); if (echeck == DARENA_OVERFLOW) goto heap_mut_sqr;
+            __BIGINT_INTERNAL_MOVE__(x, &tmp_res);
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_sqr;
 
-        bigInt tmp_res = {.limbs = tmp_limb, .sign = 1, .n = 0, .cap = x->n * 2};
-        __BIGINT_MAGSQR__(&tmp_res, x, &echeck);
-        arena_alloc_oom(echeck, _DASI_MUTSQR_ARENA); tmp_res.sign = 1;
-        echeck = bigInt_mut_ocopy(x, tmp_res);
-        arena_rewind(_DASI_MUTSQR_ARENA, mutsqr_mark);
+        // Handling block for heap-based multiplication/squaring
+        heap_mut_sqr: { __BIHEAP_MUL_DISP__(x, x, &tmp_res, &echeck); heap_alloc_oom(echeck); }
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mut_pow(bigInt *const x, const uint64_t exp) {       //TODO REFACTOR TO HAVE HEAP VS ARENA
+dnml_status bigInt_mut_pow(bigInt *const x, const uint64_t exp) {
     test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
     test_assert(bigInt_pvalidate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
+    if (x->n == 1 && x->limbs[0] == 1) { x->sign = (!(exp & 1)) ? 1 : x->sign; }
     if (!exp) { bigInt_reset(x);
         x->limbs[0] = 1;
         x->n = 1; x->sign = 1;
     } if (!x->n || exp == 1) return BIGINT_SUCCESS;
-    if (exp == 2) return bigInt_mut_sqr(x);
-
-    /* More standard cases (computationally) */
-    if (x->n == 1 && x->limbs[0] == 1) x->sign = (!(exp & 1)) ? 1 : x->sign;
     else if (x->n == 1 && __SAFE_EXP__(x->limbs[0], exp)) {
         x->limbs[0] = (uint64_t)(pow((double)x->limbs[0], (double)exp));
         x->sign = (!(exp & 1)) ? 1 : x->sign;
-    } else {
-         dnml_status echeck = bigInt_reserve(x, x->n * exp); heap_alloc_oom(echeck);
-        dnml_arena *_DASI_MUTPOW_ARENA = _USE_ARENA(); arena_poisoined(_DASI_MUTPOW_ARENA);
-        size_t mutpow_mark = arena_mark(_DASI_MUTPOW_ARENA);
-        limb_t *tmp_limbs = arena_galloc(_DASI_MUTPOW_ARENA, x->n * exp, &echeck);
-        arena_alloc_oom(echeck, _DASI_MUTPOW_ARENA);
+    } 
+    else if (exp == 2) return bigInt_mut_sqr(x);
+    else {
+        bigInt tmp_res = {0}; bigInt *free_list[2] = { x, &tmp_res }; 
+        uint8_t free_cnt = 2;  dnml_status echeck = BIGINT_SUCCESS;
+        if (!_DNML_ALLOC_STRAT) {
+            echeck = __BIGINT_INTERNAL_LINIT__(&tmp_res, x->n * exp); heap_alloc_oom(echeck);
+            __BIGINT_MAGPOW__(&tmp_res, x, exp, &echeck); darena_assert(echeck, free_list, free_cnt);
+            tmp_res.sign = (!(exp & 1)) ? 1 : x->sign; __BIGINT_INTERNAL_MOVE__(x, &tmp_res);
+        }
+        else if (_DNML_ALLOC_STRAT == 1) {
+            echeck = __BIGINT_INTERNAL_LINIT__(&tmp_res, x->n * exp); heap_alloc_oom(echeck);
+            __BIGINT_MAGPOW__(&tmp_res, x, exp, &echeck); if (echeck == DARENA_OVERFLOW) goto heap_mut_pow;
+        }  else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_pow;
 
-        bigInt tmp_res = {.limbs = tmp_limbs, .sign = 1, .n = 0, .cap = x->n * exp};
-        __BIGINT_MAGPOW__(&tmp_res, x, exp, &echeck);
-        arena_alloc_oom(echeck, _DASI_MUTPOW_ARENA); tmp_res.sign = (!(exp & 1)) ? 1 : x->sign;
-        echeck = bigInt_mut_ocopy(x, tmp_res);
-        arena_rewind(_DASI_MUTPOW_ARENA, mutpow_mark);
+        // Handling block for heap-based exponentiation
+        heap_mut_pow: { __BIHEAP_EXP_DISP__(&tmp_res, x, exp, &echeck); heap_alloc_oom(echeck); }
     } return BIGINT_SUCCESS;
 }
 dnml_status bigInt_mut_sqrt(bigInt *const x) {                          //TODO REFACTOR TO HAVE HEAP VS ARENA
@@ -2593,7 +2614,7 @@ dnml_status bigInt_mut_nrt(bigInt *const x, const uint64_t root) {      //TODO R
     } return BIGINT_SUCCESS;
 }
 /* -------------- FUNCTIONAL ALGEBRAIC -------------- */
-bigInt bigInt_sqr(bigInt x, dnml_status *err) {                         //TODO REFACTOR TO HAVE HEAP VS ARENA
+bigInt bigInt_sqr(bigInt x, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x), bi_full_contract, clear_arena,
         err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
@@ -2609,12 +2630,21 @@ bigInt bigInt_sqr(bigInt x, dnml_status *err) {                         //TODO R
             res.n = 2;
         } res.sign = 1;
     } else {
-        if (bigInt_snew(&res, x.n * 2) == DNML_ALLOC_OOM) func_ret_oom(err)
-        dnml_status echeck; __BIGINT_MAGSQR__(&res, &x, &echeck);
-        arena_alloc_oom_mut(echeck, &___DASI_NUMERIC_ARENA_, err); res.sign = 1;
+        bigInt *free_list[2] = { &res, &x }; uint8_t free_cnt = 2; dnml_status echeck = BIGINT_SUCCESS;
+        if (!_DNML_ALLOC_STRAT) {
+            if (bigInt_snew(&res, x.n * 2) == DNML_ALLOC_OOM) func_ret_oom(err)
+            __BIGINT_MAGSQR__(&res, &x, &echeck); darena_biassert(echeck, err, free_list, free_cnt); res.sign = 1;
+        }
+        else if (_DNML_ALLOC_STRAT == 1) {
+            if (bigInt_snew(&res, x.n * 2) == DNML_ALLOC_OOM) func_ret_oom(err)
+            __BIGINT_MAGSQR__(&res, &x, &echeck); if (echeck == DARENA_OVERFLOW) goto heap_sqr;
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_sqr;
+
+        // Handling block for heap-based multiplication/squaring
+        heap_sqr: { __BIHEAP_MUL_DISP__(&x, &x, &res, &echeck); heap_alloc_oom_bi(echeck, err); }
     } return res;
 }
-bigInt bigInt_pow(bigInt x, const uint64_t exp, dnml_status *err) {     //TODO REFACTOR TO HAVE HEAP VS ARENA
+bigInt bigInt_pow(bigInt x, const uint64_t exp, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x), bi_full_contract, clear_arena,
         err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
@@ -2632,10 +2662,20 @@ bigInt bigInt_pow(bigInt x, const uint64_t exp, dnml_status *err) {     //TODO R
         res.sign = (!(exp & 1)) ? 1 : x.sign;
     }
     else if (exp == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else {
-        if (bigInt_snew(&res, x.n * exp) == DNML_ALLOC_OOM) func_ret_oom(err);
-        dnml_status echeck; __BIGINT_MAGPOW__(&res, &x, exp, &echeck);
-        arena_alloc_oom_mut(echeck, &___DASI_NUMERIC_ARENA_, err); res.sign = (!(exp & 1)) ? 1 : x.sign;
+    else { dnml_status echeck = BIGINT_SUCCESS;
+        bigInt *free_list[2] = { &res, &x }; uint8_t free_cnt = 2; 
+        if (!_DNML_ALLOC_STRAT) {
+            if (bigInt_snew(&res, x.n * exp) == DNML_ALLOC_OOM) func_ret_oom(err);
+            __BIGINT_MAGPOW__(&res, &x, exp, &echeck); darena_biassert(echeck, err, free_list, free_cnt);
+        }
+        else if (_DNML_ALLOC_STRAT == 1) {
+            if (bigInt_snew(&res, x.n * exp) == DNML_ALLOC_OOM) func_ret_oom(err);
+            __BIGINT_MAGPOW__(&res, &x, exp, &echeck); if (echeck == DARENA_OVERFLOW) goto heap_pow;
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_pow;
+
+        // Handling block for heap-based exponentiation:
+        heap_pow: { __BIHEAP_EXP_DISP__(&res, &x, exp, &echeck); heap_alloc_oom_bi(echeck, err); }
+        res.sign = (!(exp & 1)) ? 1 : x.sign;
     } return res;
 }
 bigInt bigInt_sqrt(bigInt x, dnml_status *err) {                        //TODO REFACTOR TO HAVE HEAP VS ARENA
