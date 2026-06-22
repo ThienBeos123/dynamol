@@ -61,7 +61,7 @@ void __BIHEAP_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_statu
 }
 void __BIHEAP_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}
 void __BIHEAP_HALF__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}
-void __BIHEAP_GCD_DISPATCH__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}
+void __BIHEAP_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}
 
 //* ======== Primality Testing - ALGORITHMS ======== *//
 // Helper functions
@@ -149,7 +149,7 @@ uint8_t __BIHEAP_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, dnml_status
 }
 uint8_t __BIHEAP_BPSW__(PCONST_BIGINT n, dnml_status *err) { return 0; }
 uint8_t __BIHEAP_ECPP__(PCONST_BIGINT n, dnml_status *err) { return 0; }
-uint8_t __BIHEAP_PTEST_DISPATCH__(PCONST_BIGINT x, dnml_status *err) {
+uint8_t __BIHEAP_PTEST_DISP__(PCONST_BIGINT x, dnml_status *err) {
     if (x->n < MIXED_MAIN) {
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIHEAP_TRIAL_DIV__(x->limbs[0]);
         else return __BIHEAP_SMALL_MRABIN__(x->limbs[0]);

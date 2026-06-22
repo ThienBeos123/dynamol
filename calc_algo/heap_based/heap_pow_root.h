@@ -48,10 +48,10 @@ void __BIHEAP_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t ro
 
 
 /* ----------------- DISPATCHES ----------------- */
-void __BIHEAP_EXP_DISPATCH__(bigInt *const res, const bigInt *const base, uint64_t exp, dnml_status *err);
-void __BIHEAP_SQRT_DISPATCH__(bigInt *const res, const bigInt *const a, dnml_status *err);
-void __BIHEAP_CBRT_DISPATCH__(bigInt *const res, const bigInt *const a, dnml_status *err);
-void __BIHEAP_NRT_DISPATCH__(bigInt *const res, const bigInt *const a, uint64_t root, dnml_status *err);
+void __BIHEAP_EXP_DISP__(bigInt *const res, const bigInt *const base, uint64_t exp, dnml_status *err);
+void __BIHEAP_SQRT_DISP__(bigInt *const res, const bigInt *const a, dnml_status *err);
+void __BIHEAP_CBRT_DISP__(bigInt *const res, const bigInt *const a, dnml_status *err);
+void __BIHEAP_NRT_DISP__(bigInt *const res, const bigInt *const a, uint64_t root, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

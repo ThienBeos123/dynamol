@@ -61,7 +61,7 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
     // - For instance: we want to limb right shift by 3 limbs:
     //  -----> Limbs [0] [1] [2] is lost
     //  -----> The remaining limbs start from 3;
-    __BIGINT_MUL_DISPATCH__(&tmp, &precomp, &numer, barett_ctx, &echeck);
+    __BIGINT_MUL_DISP__(&tmp, &precomp, &numer, barett_ctx, &echeck);
     SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
 
     //* ---- 3. FINAL CALCULATION ---- *//
@@ -73,7 +73,7 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
     //
     //      ((precomp_size + remlimbs) [from a_after_shift * precomp]) - ((n->n - 1) [subtracted from the right limb shift])     
     //
-    // Therefre, the size requirements of __BIGINT_MUL_DISPATCH__(numer, n) OR (numer * n) should be:
+    // Therefre, the size requirements of __BIGINT_MUL_DISP__(numer, n) OR (numer * n) should be:
     //
     //      (precomp_size + remlimbs - n->n + 1) + n->n -------> (precomp_size + remlimbs + 1) ---> REUSE tmp
     //
@@ -83,7 +83,7 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
 
     BIGINT_TEMP(a_copy, a->n, barett_ctx, barett_mark, echeck, err,); 
     a_copy.n = a->n; /**/ memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
-    __BIGINT_MUL_DISPATCH__(&numer, n, &tmp, barett_ctx, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
+    __BIGINT_MUL_DISP__(&numer, n, &tmp, barett_ctx, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
     __BIGINT_INTERNAL_TRIM_LZ__(&tmp); if (tmp.n > a_copy.n) { // Guaranteeing Barett's Invariant of tmp's size
         scratch_rewind(&barett_ctx, barett_mark); *err = BIGINT_ERR_RANGE; return; 
     } __BIGINT_SUB_WB__(&a_copy, &a_copy, &tmp);
@@ -106,13 +106,13 @@ void __BIGINT_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
     if (__BIGINT_INTERNAL_COMP__(t, mredc_ctx.n) > 0) __BIGINT_SUB_WB__(t, t, mredc_ctx.n);
     __BIGINT_INTERNAL_COPY__(rem, t);
 }
-void __BIGINT_MOD_DISPATCH__(
+void __BIGINT_MOD_DISP__(
     PCONST_BIGINT a, PCONST_BIGINT n, 
     P_BIGINT rem, P_BIGINT tmp_quot,
     calc_ctx mod_ctx, dnml_status *err
 ) {
-    if (n->n < BIGINT_SHORT) { __BIGINT_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem); *err = BIGINT_SUCCESS; }
-    else if (n->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, n, tmp_quot, rem, mod_ctx, err);
+    if (n->n < BIGINT_SHORT) { __RBIGINT_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem); *err = BIGINT_SUCCESS; }
+    else if (n->n < BIGINT_KNUTH) __RBIGINT_KNUTH_D__(a, n, tmp_quot, rem, mod_ctx, err);
     else if (n->n < BIGINT_BARETT) __BIGINT_BARETT__(a, n, rem, mod_ctx, err);
-    else __BIGINT_NEWTON__(a, n, tmp_quot, rem, mod_ctx, err);
+    else __RBIGINT_NEWTON__(a, n, tmp_quot, rem, mod_ctx, err);
 }

@@ -55,8 +55,8 @@ void __BIGINT_BIN_MODEXP__(const bigInt *const base, const bigInt *const exp, co
 void __BIGINT_MBIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx binexp_ctx, dnml_status *err);
 void __BIGINT_FIX_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx fix_ctx, dnml_status *err);
 void __BIGINT_SLIDE_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx slide_ctx, dnml_status *err);
-void __BIGINT_MODMUL_DISPATCH__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, calc_ctx modmul_ctx, dnml_status *err);
-void __BIGINT_MODEXP_DISPATCH__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx binexp_ctx, dnml_status *err);
+void __BIGINT_MODMUL_DISP__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, calc_ctx modmul_ctx, dnml_status *err);
+void __BIGINT_MODEXP_DISP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx binexp_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

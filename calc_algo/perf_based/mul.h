@@ -56,7 +56,7 @@ void __BIGINT_TOOM_6p5__(const bigInt *const m, const bigInt *const n, bigInt *c
 void __BIGINT_TOOM_7p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx toom_ctx, dnml_status *err);
 void __BIGINT_TOOM_8p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx toom_ctx, dnml_status *err);
 void __BIGINT_FFT__(const bigInt *const a, const bigInt *const b, bigInt *const res, calc_ctx fft_ctx, dnml_status *err);
-void __BIGINT_MUL_DISPATCH__(const bigInt *const a, const bigInt *const b, bigInt *const res, calc_ctx mul_ctx, dnml_status *err);
+void __BIGINT_MUL_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const res, calc_ctx mul_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

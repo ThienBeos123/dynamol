@@ -41,7 +41,7 @@ size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size);
 size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size);
 void __BIGINT_BARETT__(const bigInt *const a, const bigInt *const n, bigInt *const rem, calc_ctx barett_ctx, dnml_status *err);
 void __BIGINT_MONT_REDC__(bigInt *const t, mont_ctx mredc_ctx, bigInt *const rem);
-void __BIGINT_MOD_DISPATCH__(
+void __BIGINT_MOD_DISP__(
     const bigInt *const a, const bigInt *const n,
     bigInt *const rem, bigInt *const tmp_quot,
     calc_ctx mod_ctx, dnml_status *err

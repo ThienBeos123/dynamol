@@ -46,27 +46,63 @@ extern "C" {
 
 
 //? ======================= OUT-OF-MEMORY HANDLING MACROS ====================== ?//
-/* Functional Macros */
+//* =================== MAGNITUDED ALGORITHMIC ERROR HANDLER ============== *//
+//* ================== PUBLIC-FACING FUNCTIONS ERROR HANDLER ============== *//
+/* ---------- Functional Macros ---------- */
 #define clear_arena do { _cleanup_dynamol(); } while (0);
-#define darena_assert() DNML_TEST_ASSERT(echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", clear_arena);
 #define heap_alloc_oom(err_check) do { \
     test_assert((((err_check) != DNML_ALLOC_OOM)), alloc_oom, clear_arena, DNML_ALLOC_OOM); \
 } while(0);
+#define darena_assert(echeck, free_list, free_cnt) do { \
+    test_assert( \
+        echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
+        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
+        DARENA_OVERFLOW \
+    ); \
+} while(0);
 
-/* Mutative Macros */
+/* -------- Mutative Macros */
 #define heap_alloc_oom_void(err_check, err) do { \
     test_assert_mut((((err_check) != DNML_ALLOC_OOM)), alloc_oom, clear_arena, (err), DNML_ALLOC_OOM,); \
 } while(0);
-#define heap_alloc_oom_mut(err_check, err) do { \
+#define heap_alloc_oom_bi(err_check, err) do { \
     test_assert_mut( \
         (((err_check) != DNML_ALLOC_OOM)), alloc_oom, \
         clear_arena, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() \
     ); \
 } while(0);
-#define func_ret_oom(err) { *(err) = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
-#define ocopy_check(err_check, arena_name) DNML_TEST_ASSERT((((err_check) != BIGINT_ERR_RANGE)), inval_cap, clear_arena);
+#define heap_alloc_oom_mut(err_check, err, retval) do { \
+    test_assert_mut( \
+        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, \
+        clear_arena, (err), DNML_ALLOC_OOM, retval \
+    ); \
+} while(0);
 
-/* General Macros */
+
+#define func_ret_oom(err) { *(err) = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+#define darena_massert(echeck, err, free_list, free_cnt, retval) do { \
+    test_assert_mut( \
+        echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
+        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
+        err, DARENA_OVERFLOW, retval \
+    ); \
+} while(0);
+#define darena_biassert(echeck, err, free_list, free_cnt) do { \
+    test_assert_mut( \
+        echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
+        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
+        err, DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__(); \
+    ); \
+} while(0);
+#define darena_vassert(echeck, err, free_list, free_cnt) do { \
+    test_assert_mut( \
+        echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
+        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
+        err, DARENA_OVERFLOW, \
+    ); \
+} while(0);
+
+/* -------- General Macros -------- */
 #define mut_gret(err, err_code, ret) do { \
     if ((err) != NULL) *(err) = err_code; return ret; \
 } while(0)

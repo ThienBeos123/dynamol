@@ -78,7 +78,10 @@ void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source) {
     memcpy(dst->limbs, source->limbs, source->n * U64_BYTES);
     dst->n = source->n; /**/ dst->sign = source->sign;
 }
-void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) { while (x->n && x->limbs[x->n - 1] == 0) --(x->n); }
+void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) { 
+    while (x->n && x->limbs[x->n - 1] == 0) --(x->n);
+    if (!x->n) x->sign = 1;
+}
 void __BIGINT_INTERNAL_ZSET__(bigInt *x) { x->n = 0; x->sign = 1; }
 void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y) { bigInt tmp = *x; *x = *y; *y = tmp; }
 void __BIGINT_INTERNAL_MOVE__(bigInt *dst, bigInt *src) {

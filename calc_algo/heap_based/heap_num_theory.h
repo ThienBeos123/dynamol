@@ -42,7 +42,7 @@ uint64_t __BIHEAP_EUCLID__(uint64_t u, uint64_t v);
 void __BIHEAP_STEIN__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
 void __BIHEAP_LEHMER__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
 void __BIHEAP_HALF__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
-void __BIHEAP_GCD_DISPATCH__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
+void __BIHEAP_GCD_DISP__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
 
 //* ======== Primality Testing - ALGORITHMS ======== *//
 uint8_t __BIHEAP_TRIAL_DIV__(uint64_t x);
@@ -50,7 +50,7 @@ uint8_t __BIHEAP_SMALL_MRABIN__(uint64_t n);
 uint8_t __BIHEAP_MILLER_RABIN__(const bigInt *const n, const bigInt* base, dnml_status *err);
 uint8_t __BIHEAP_BPSW__(const bigInt *const n, dnml_status *err);
 uint8_t __BIHEAP_ECPP__(const bigInt *const n, dnml_status *err);
-uint8_t __BIHEAP_PTEST_DISPATCH__(const bigInt *const x, dnml_status *err);
+uint8_t __BIHEAP_PTEST_DISP__(const bigInt *const x, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

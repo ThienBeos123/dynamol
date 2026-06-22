@@ -173,7 +173,7 @@ void __BIHEAP_NEWTON_2NRT__(bigInt *const res, const bigInt *const a, uint64_t r
     guess.n = (guess_bits << 6) + 1;
     BIHEAP_TEMP(next, a->n * (root - 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     BIHEAP_TEMP(xpow, a->n * (root - 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
-    __BIHEAP_EXP_DISPATCH__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIHEAP_EXP_DISP__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     for (;;) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer;
         __BIHEAP_DIV_DISP__(a, &xpow, &ratio, &next, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
@@ -183,7 +183,7 @@ void __BIHEAP_NEWTON_2NRT__(bigInt *const res, const bigInt *const a, uint64_t r
         __BIGINT_ADD_WC__(&next, &next, &ratio); __BIGINT_INTERNAL_RSHIFT__(&next, shift);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/  __BIGINT_INTERNAL_SWAP__(&guess, &next);
-        __BIHEAP_EXP_DISPATCH__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_EXP_DISP__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     } __BIGINT_INTERNAL_MOVE__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t root, dnml_status *err) {
@@ -194,7 +194,7 @@ void __BIHEAP_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t ro
     guess.limbs[(guess_bits << 6)] = 1ULL << (guess_bits % 64); guess.n = (guess_bits << 6) + 1;
     BIHEAP_TEMP(next, a->n * (root - 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     BIHEAP_TEMP(xpow, a->n * (root - 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
-    __BIHEAP_EXP_DISPATCH__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIHEAP_EXP_DISP__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     for (;;) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer;
         __BIHEAP_DIV_DISP__(a, &xpow, &ratio, &next, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
@@ -210,28 +210,28 @@ void __BIHEAP_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t ro
         __BIHEAP_SHORT_DIVISION__(&next, root, &next, &ratio);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/ __BIGINT_INTERNAL_SWAP__(&guess, &next);
-        __BIHEAP_EXP_DISPATCH__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_EXP_DISP__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     } __BIGINT_INTERNAL_MOVE__(res, &guess); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 
 
 
 /* ----------------- DISPATCHES ----------------- */
-void __BIHEAP_EXP_DISPATCH__(bigInt *const res, const bigInt *const base, uint64_t exp, dnml_status *err) {
+void __BIHEAP_EXP_DISP__(bigInt *const res, const bigInt *const base, uint64_t exp, dnml_status *err) {
     uint8_t pow_bits = U64_BITS - __CLZ_UI64__(exp);
     if (pow_bits <= BIGINT_BINARY) __BIHEAP_BINARY_EXP__(res, base, exp, err);
     else if (pow_bits <= BIGINT_FIXED) __BIHEAP_FIXED__(res, base, exp, 4, err);
     else __BIHEAP_SLIDING__(res, base, exp, 3, err);
 }
-void __BIHEAP_SQRT_DISPATCH__(bigInt *const res, const bigInt *const a, dnml_status *err) {
+void __BIHEAP_SQRT_DISP__(bigInt *const res, const bigInt *const a, dnml_status *err) {
     if (a->n <= BIGINT_NAIVE) { res->limbs[0] = (uint64_t)(sqrtl((long double)a->limbs[0])); res->n = 1; }
     else __BIHEAP_HERON__(res, a, err);
 }
-void __BIHEAP_CBRT_DISPATCH__(bigInt *const res, const bigInt *const a, dnml_status *err) {
+void __BIHEAP_CBRT_DISP__(bigInt *const res, const bigInt *const a, dnml_status *err) {
     if (a->n <= BIGINT_NAIVE) { res->limbs[0] = (uint64_t)(cbrtl((long double)a->limbs[0])); res->n = 1; }
     else __BIHEAP_NEWTON_CBRT__(res, a, err);
 }
-void __BIHEAP_NRT_DISPATCH__(bigInt *const res, const bigInt *const a, uint64_t root, dnml_status *err) {
+void __BIHEAP_NRT_DISP__(bigInt *const res, const bigInt *const a, uint64_t root, dnml_status *err) {
     if (a->n <= BIGINT_NAIVE) {
         if (root == 2) res->limbs[0] = (uint64_t)(sqrtl((long double)a->limbs[0]));
         else if (root == 3) res->limbs[0] = (uint64_t)(cbrtl((long double)a->limbs[0]));

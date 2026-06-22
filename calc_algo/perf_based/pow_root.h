@@ -65,10 +65,10 @@ size_t __BIGINT_EXP_WS__(size_t base_size, uint64_t pow);
 size_t __BIGINT_SQRT_WS__(size_t a_size);
 size_t __BIGINT_CBRT_WS__(size_t a_size);
 size_t __BIGINT_NRT_WS__(size_t a_size, uint64_t root);
-void __BIGINT_EXP_DISPATCH__(bigInt *const res, const bigInt *const base, uint64_t exp, calc_ctx exp_ctx, dnml_status *err);
-void __BIGINT_SQRT_DISPATCH__(bigInt *const res, const bigInt *const a, calc_ctx sqrt_ctx, dnml_status *err);
-void __BIGINT_CBRT_DISPATCH__(bigInt *const res, const bigInt *const a, calc_ctx cbrt_ctx, dnml_status *err);
-void __BIGINT_NRT_DISPATCH__(bigInt *const res, const bigInt *const a, uint64_t root, calc_ctx nroot_ctx, dnml_status *err);
+void __BIGINT_EXP_DISP__(bigInt *const res, const bigInt *const base, uint64_t exp, calc_ctx exp_ctx, dnml_status *err);
+void __BIGINT_SQRT_DISP__(bigInt *const res, const bigInt *const a, calc_ctx sqrt_ctx, dnml_status *err);
+void __BIGINT_CBRT_DISP__(bigInt *const res, const bigInt *const a, calc_ctx cbrt_ctx, dnml_status *err);
+void __BIGINT_NRT_DISP__(bigInt *const res, const bigInt *const a, uint64_t root, calc_ctx nroot_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

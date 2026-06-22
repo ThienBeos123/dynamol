@@ -77,12 +77,23 @@ void _cleanup_dynamol(void);
         (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
     ) \
 } while(0);
-#define arena_ovf_mut(err_check, err, free_list, free_cnt) do { \
+
+
+
+#define arena_ovf_bi(err_check, err, free_list, free_cnt) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
         (((err_check) != DARENA_OVERFLOW)), arena_ovf, \
         { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
         (err), DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+    ) \
+} while(0);
+#define arena_ovf_mut(err_check, err, free_list, free_cnt, retval) do { \
+    test_assert_mut( \
+        /* Static Analysis - Assert Parameters */ \
+        (((err_check) != DARENA_OVERFLOW)), arena_ovf, \
+        { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
+        (err), DARENA_OVERFLOW, retval /* Error Returns Parameters */ \
     ) \
 } while(0);
 

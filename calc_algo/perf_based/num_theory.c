@@ -31,15 +31,22 @@ size_t __BIGINT_GCD_WS__(size_t u_size, size_t v_size) {
     else return __BIGINT_HALF_WS__(u_size, v_size);
 }
 /* ======== GCD - ALGORITHMS ======== */
-uint64_t __BIGINT_EUCLID__(uint64_t u, uint64_t v) {
-    uint64_t remainder = (u < v) ? u : v;
-    uint64_t dividend = (u >= v) ? u : v;
-    uint64_t old_remainder;
-    while (remainder) {
-        old_remainder = remainder;
-        remainder = dividend % remainder;
-        dividend = old_remainder;
-    } return dividend;
+uint64_t __BINARY_GCDU64__(uint64_t u, uint64_t v) {
+    // GCD(u, 0) == u && GCD(0, v) == v
+    if (!u) return v; /**/ if (!v) return u;
+    // GCD(2u, 2v) = GCD(u, v)
+    uint8_t i = __CTZ_UI64__(u); u >>= i;
+    uint8_t j = __CTZ_UI64__(v); v >>= j;
+    uint8_t k = min(i, j);
+
+    while (u != v) {
+        if (u < v) { 
+            // Swapping u and v with eachother
+            uint64_t tmp = v; u = v; v = u; 
+        }
+        u -= v; // gcd(u, v) == gcd(u, v - u) WHEN (u & v == ODD) && (u <= v)
+        u >>= __CTZ_UI64__(u); // gcd(u, 2v) == gcd(u, v)
+    } return u;
 }
 void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx stein_ctx, dnml_status *err) {
     // Base case - Identity #1 - gcd(u, 0) = u
@@ -60,11 +67,10 @@ void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx s
     int8_t comp_res = __BIGINT_INTERNAL_COMP__(&u_copy, &v_copy);
     while (comp_res) {
         if (comp_res == -1) __BIGINT_INTERNAL_SWAP__(&u_copy, &v_copy);
-        // Identity #4: gcd(u, v) = gcd(u, v - u)
-        //  WHEN: +) u & v is ODD
-        //        +) u <= v
+        // Identity #4: gcd(u, v) == gcd(u, v - u)
+        //  WHEN: (u & v is ODD) && (u <= v)
         __BIGINT_SUB_WB__(&u_copy, &u_copy, &v_copy);
-        // Identity #3 - gcd(u, 2v) = gcd(u, v)
+        // Identity #3 - gcd(u, 2v) == gcd(u, v)
         i = __BIGINT_CTZ__(&u_copy);
         __BIGINT_INTERNAL_RSHIFT__(&u_copy, i);
         comp_res = __BIGINT_INTERNAL_COMP__(&u_copy, &v_copy);
@@ -74,9 +80,9 @@ void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx s
 }
 void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx lehmer_ctx, dnml_status *err) {}
 void __BIGINT_HALF__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx half_ctx, dnml_status *err) {}
-void __BIGINT_GCD_DISPATCH__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx gcd_ctx, dnml_status *err) {
+void __BIGINT_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx gcd_ctx, dnml_status *err) {
     size_t op_size = min(u->n, v->n);
-    if (u->n == 1 && v->n == 1) { res->limbs[0] = __BIGINT_EUCLID__(u->limbs[0], v->limbs[0]); res->n = 1; }
+    if (u->n == 1 && v->n == 1) { res->limbs[0] = __BINARY_GCDU64__(u->limbs[0], v->limbs[0]); res->n = 1; }
     else if (op_size <= BIGINT_STEIN) __BIGINT_STEIN__(res, u, v, gcd_ctx, err);
     else if (op_size <= BIGINT_LEHMER) __BIGINT_LEHMER__(res, u, v, gcd_ctx, err);
     else __BIGINT_HALF__(res, u, v, gcd_ctx, err);
@@ -180,7 +186,7 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
 
     // 1st test: a^d mod(n)
     BIGINT_TEMP(x, n->n, rabin_ctx, mrabin_mark, echeck, err, 0);
-    __BIGINT_MODEXP_DISPATCH__(base, &d, n, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+    __BIGINT_MODEXP_DISP__(base, &d, n, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
     if (x.n == 1 && x.limbs[0] == 1) prim_status = 1; // a^d mod(n) = 1
     else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) prim_status = 1; // a^d mod(n) = n - 1
 
@@ -196,9 +202,9 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
         BIGINT_TEMP(r, n->n << 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.n = n->n + 1;
         BIGINT_TEMP(r_mod_n, n->n, rabin_ctx, mrabin_mark, echeck, err, 0);
         BIGINT_TEMP(tmp, n->n << 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.limbs[n->n] = 1; 
-        __BIGINT_MOD_DISPATCH__(&r, n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
-        __BIGINT_MUL_DISPATCH__(&r_mod_n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
-        __BIGINT_MOD_DISPATCH__(&tmp, n, &tmp, &r, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MOD_DISP__(&r, n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MOD_DISP__(&tmp, n, &tmp, &r, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
         mont_ctx.r2 = &tmp;
         // Conversions
         __BIGINT_MONTMUL__(&x, mont_ctx.r2, mont_ctx, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
@@ -214,7 +220,7 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
 }
 uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx bpsw_ctx, dnml_status *err) { return 0; }
 uint8_t __BIGINT_ECPP__(PCONST_BIGINT n, calc_ctx ecpp_ctx, dnml_status *err) { return 0; }
-uint8_t __BIGINT_PTEST_DISPATCH__(PCONST_BIGINT x, calc_ctx ptest_ctx, dnml_status *err) {
+uint8_t __BIGINT_PTEST_DISP__(PCONST_BIGINT x, calc_ctx ptest_ctx, dnml_status *err) {
     if (x->n < MIXED_MAIN) {
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIGINT_TRIAL_DIV__(x->limbs[0]);
         else return __BIGINT_SMALL_MRABIN__(x->limbs[0]);
