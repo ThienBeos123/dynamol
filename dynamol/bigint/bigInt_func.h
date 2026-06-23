@@ -31,7 +31,6 @@ limitations under the License.
 #include "../../intrinsics/intrinsics.h"
 #include "../../util/util.h"
 #include "../../calc_algo/perf_calc.h"
-#include "../_dynamol_arena.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -113,6 +112,8 @@ extern "C" {
 
 
 /* -------- General Macros -------- */
+#define _tmp_heap(name, size, echeck, free_list, free_cnt) echeck = __BIGINT_INTERNAL_LINIT__(&(name), size); heap_alloc_oom(echeck, free_list, free_cnt); free_list[(free_cnt)++] = (list_bi){&(name),1};
+#define _tmp_heap_mut(name, size, echeck, err, free_list, free_cnt) echeck = __BIGINT_INTERNAL_LINIT__(&(name), size); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); free_list[(free_cnt)++] = (list_bi){&(name),1};
 #define mut_gret(err, err_code, ret) do { \
     if ((err) != NULL) *(err) = err_code; return ret; \
 } while(0)

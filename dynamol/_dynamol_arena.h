@@ -45,7 +45,7 @@ void _cleanup_dynamol(void);
         /* Static Analysis - Assert Parameters */ \
         (((echeck) != DARENA_OVERFLOW)), arena_ovf, \
         { _cleanup_dynamol(); _FREE_ALL_BI__(free_list, free_cnt); }, \
-        { arena_rewind(arena_name, arena_mark); _FREE_RET_BI__(free_list, free_cnt); }, DARENA_OVERFLOW \
+        { arena_rewind(arena_name, mark); _FREE_RET_BI__(free_list, free_cnt); }, DARENA_OVERFLOW \
     ) \
 } while(0);
 
@@ -67,20 +67,22 @@ void _cleanup_dynamol(void);
     ) \
 } while(0);
 
-#define arena_ovf_bi(echeck, err, free_list, free_cnt) do { \
+#define arena_ovf_bi(echeck, err, free_list, free_cnt, arena_name, mark) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
         (((echeck) != DARENA_OVERFLOW)), arena_ovf, \
-        { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
-        (err), DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+        { _cleanup_dynamol(); _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { arena_rewind(arena_name, mark); _FREE_RET_BI__(free_list, free_cnt); }, \
+        (err), DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__() \
     ) \
 } while(0);
 #define arena_ovf_mut(echeck, err, free_list, free_cnt, retval) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
         (((echeck) != DARENA_OVERFLOW)), arena_ovf, \
-        { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
-        (err), DARENA_OVERFLOW, retval /* Error Returns Parameters */ \
+        { _cleanup_dynamol(); _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { arena_rewind(arena_name, mark); _FREE_RET_BI__(free_list, free_cnt); }, \
+        (err), DARENA_OVERFLOW, retval \
     ) \
 } while(0);
 

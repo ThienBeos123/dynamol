@@ -17,6 +17,7 @@ limitations under the License.
 
 
 #include "bigInt_func.h"
+#include "../_dynamol_arena.h"
 
 /**
  * This variable acts as a switch from arena allocation to heap allocation
@@ -42,6 +43,10 @@ static const bool heap_switch = false;
   *     -) Creates a new variable with the value of the expression (Eg: int x = 5 + 10; )
   *     -) This transfer ownership of the allocated limbs to the caller,
   *        forcing a manual deletion of the object
+  *
+  * Macro Usages:
+  * +) "_dynamol_arena.h"'s MACROS: ONLY USED TO CLEANUP WHEN THE PUBLIC-FUNCTION ALSO ALLOCATES ON THE ARENA
+  * +) "_bi_macrso.h"'s MACROS: Used for more general tasks with minimal cleanup upon errors
   */
 
 
@@ -1981,12 +1986,11 @@ dnml_status bigInt_mut_add(bigInt *const x, bigInt y) {
         bigInt_pvalidate(x) && bigInt_validate(y), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(x); __BIGINT_INTERNAL_FREE__(&y); }, {}, BIGINT_ERR_INVAL
     );
-    if (!y.n);
-    else if (!x->n) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; }
+    if (!x->n) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; }
     else if (x->sign == y.sign) { 
         dnml_status echeck = __BIGINT_INTERNAL_ENSCAP__(x, max(x->n, y.n) + 1); list_bi dummy = {0};
         heap_alloc_oom(echeck, &dummy, 0); __BIGINT_MAGADD__(x, x, &y);
-    } else {
+    } else if (y.n) {
         int8_t comp_res = __BIGINT_MAGCOMP__(x, &y);
         if (!comp_res) bigInt_reset(x);
         else if (comp_res > 0) __BIGINT_MAGSUB__(x, x, &y);
@@ -2002,8 +2006,7 @@ dnml_status bigInt_mut_sub(bigInt *const x, bigInt y) {
         bigInt_pvalidate(x) && bigInt_validate(y), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(x); __BIGINT_INTERNAL_FREE__(&y); }, {}, BIGINT_ERR_INVAL
     );
-    if (!y.n) return BIGINT_SUCCESS;
-    else if (!x->n) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; x->sign = -y.sign; }
+    if (!x->n) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; x->sign = -y.sign; }
     else if (x->sign == y.sign) {
         int8_t comp_res = __BIGINT_MAGCOMP__(x, &y);
         if (!comp_res) bigInt_reset(x);
@@ -2012,12 +2015,12 @@ dnml_status bigInt_mut_sub(bigInt *const x, bigInt y) {
             dnml_status echeck = __BIGINT_INTERNAL_ENSCAP__(x, y.n); list_bi dummy = {0};
             heap_alloc_oom(echeck, &dummy, 0); __BIGINT_MAGSUB__(x, &y, x); x->sign = -x->sign;
         }
-    } else {
+    } else if (y.n) {
         dnml_status echeck = __BIGINT_INTERNAL_ENSCAP__(x, max(x->n, y.n) + 1); list_bi dummy = {0};
         heap_alloc_oom(echeck, &dummy, 0); __BIGINT_MAGADD__(x, x, &y);
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mut_mul(bigInt *const x, bigInt y) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+dnml_status bigInt_mut_mul(bigInt *const x, bigInt y) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
     test_assert(
         bigInt_pvalidate(x) && bigInt_validate(y), bi_full_contract, 
@@ -2028,21 +2031,22 @@ dnml_status bigInt_mut_mul(bigInt *const x, bigInt y) {       //TODO REFORMAT FO
     else if (!y.n) bigInt_reset(x);
     else if (x->n == 1 && x->limbs[0] == 1) { if (bigInt_mut_copy(x, y) == DNML_ALLOC_OOM) return DNML_ALLOC_OOM; }
     else {
-        // The free_list is only used for debugging and testing, freeing the input bigInt to save the most memory
-        uint8_t free_cnt = 3; bigInt prod; list_bi *free_list[3] = { x, &y, &prod }; 
+        bigInt prod = {0}; dnml_status echeck = BIGINT_SUCCESS;
+        list_bi free_list[3] = {(list_bi){x,0}, (list_bi){&y,0}}; uint8_t free_cnt = 2;
         if (!_DNML_ALLOC_STRAT) {
-            dnml_status echeck = __BIGINT_INTERNAL_LINIT__(&prod, x->n + y.n); heap_alloc_oom(echeck);
-            echeck = __BIGINT_MAGMUL__(&prod, x, &y); arena_overflow(echeck, free_list, 2); 
+            _tmp_heap(prod, x->n + y.n, echeck, free_list, free_cnt); /**/ echeck = __BIGINT_MAGMUL__(&prod, x, &y); 
+            darena_assert(echeck, free_list, free_cnt);
         }
-        else if (_DNML_ALLOC_STRAT == 1) {
-            dnml_status echeck = __BIGINT_INTERNAL_LINIT__(&prod, x->n + y.n); heap_alloc_oom(echeck);
-            echeck = __BIGINT_MAGMUL__(&prod, x, &y);
-            if (echeck == DARENA_OVERFLOW) { __BIHEAP_MUL_DISP__(x, &y, &prod, &echeck); heap_alloc_oom(echeck); }
-        } else if (_DNML_ALLOC_STRAT == 2) { __BIHEAP_MUL_DISP__(x, &y, &prod, &echeck); heap_alloc_oom(echeck); }
+        else if (_DNML_ALLOC_STRAT == 1) { 
+            _tmp_heap(prod, x->n + y.n, echeck, free_list, free_cnt); /**/ echeck = __BIGINT_MAGMUL__(&prod, x, &y);
+            if (echeck == DARENA_OVERFLOW) goto heap_mut_mul;
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_mul;
+        heap_mut_mul: { __BIHEAP_MUL_DISP__(x, &y, &prod, &echeck); heap_alloc_oom(echeck, free_list, free_cnt); }
+
         __BIGINT_INTERNAL_MOVE__(x, &prod);
     } x->sign *= y.sign; return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mut_div(bigInt *const x, bigInt y) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+dnml_status bigInt_mut_div(bigInt *const x, bigInt y) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
     test_assert(
         bigInt_pvalidate(x) && bigInt_validate(y), bi_full_contract, 
@@ -2062,15 +2066,17 @@ dnml_status bigInt_mut_div(bigInt *const x, bigInt y) {       //TODO REFORMAT FO
          * have the dividend and the result buffers be aliased of each other, since they never mutate the
          * operands, and only mutate the result buffers at the end (through copies or move-semantics)
          */
-        bigInt *free_list[2] = { x, &y }; dnml_status echeck = BIGINT_SUCCESS;
-        if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGDIV__(x, x, x, &y, &echeck); arena_overflow(echeck, free_list, 2); } 
-        else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGDIV__(x, x, x, &y, &echeck);
-            if (echeck == DARENA_OVERFLOW) { __BIHEAP_DIV_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck);  }
-        } else if (_DNML_ALLOC_STRAT == 2) { __BIHEAP_DIV_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck); }
+        list_bi free_list[2] = {(list_bi){x,0},(list_bi){&y,0}}; dnml_status echeck = BIGINT_SUCCESS;
+        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGDIV__(x, x, x, &y); darena_assert(echeck, free_list, 2); } 
+        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGDIV__(x, x, x, &y);
+            if (echeck == DARENA_OVERFLOW) goto heap_mut_div;
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_div;
+        heap_mut_div: { __BIHEAP_DIV_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2); }
+
         x->sign *= y.sign; bigInt_normalize(x);
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mut_mod(bigInt *const x, bigInt y) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+dnml_status bigInt_mut_mod(bigInt *const x, bigInt y) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
     test_assert(
         bigInt_pvalidate(x) && bigInt_validate(y), bi_full_contract, 
@@ -2082,9 +2088,9 @@ dnml_status bigInt_mut_mod(bigInt *const x, bigInt y) {       //TODO REFORMAT FO
         int8_t comp_res = __BIGINT_MAGCOMP__(x, &y);
         if (!comp_res) bigInt_reset(x);
         else if (comp_res > 0) {
-            dnml_status echeck = BIGINT_SUCCESS; bigInt *free_list[2] = { x, &y };
-            if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGMOD__(x, x, x, &y, &echeck); arena_overflow(echeck, free_list, 2); } 
-            else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGMOD__(x, x, x, &y, &echeck);
+            dnml_status echeck = BIGINT_SUCCESS; list_bi free_list[2] = {(list_bi){x,0},(list_bi){&y,0}};
+            if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGMOD__(x, x, x, &y); darena_assert(echeck, free_list, 2); } 
+            else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGMOD__(x, x, x, &y);
                 if (echeck == DARENA_OVERFLOW) goto heap_mut_mod;
             } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_mod;
 
@@ -2098,7 +2104,7 @@ dnml_status bigInt_mut_mod(bigInt *const x, bigInt y) {       //TODO REFORMAT FO
              * have the dividend and the result buffers be aliased of each other, since they never mutate the
              * operands, and only mutate the result buffers at the end (through copies or move-semantics)
              */
-            heap_mut_mod: { __BIHEAP_MOD_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck); }
+            heap_mut_mod: { __BIHEAP_MOD_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2); }
         }
     } return BIGINT_SUCCESS;
 }
@@ -2155,7 +2161,7 @@ bigInt bigInt_modu64(bigInt x, const uint64_t val, dnml_status *err) {
             dnml_arena *_DASI_MODU_ARENA = _USE_ARENA(); arena_poison_bi(_DASI_MODU_ARENA, err, free_list, free_cnt);
             size_t modu64_mark = arena_mark(_DASI_MODU_ARENA);
             limb_t *tquot_limbs = arena_alloc(_DASI_MODU_ARENA, x.n, &echeck); 
-            arena_overflow(echeck, free_list, free_cnt, _DASI_MODU_ARENA, modu64_mark);
+            arena_ovf_bi(echeck, err, free_list, free_cnt, _DASI_MODU_ARENA, modu64_mark);
 
             // Main operation
             bigInt tmp_quot = { .limbs = tquot_limbs, .n = 0, .cap = x.n, .sign = 1 };
@@ -2219,7 +2225,7 @@ bigInt bigInt_modi64(bigInt x, const int64_t val, dnml_status *err) {
             dnml_arena *_DASI_MODI_ARENA = _USE_ARENA(); arena_poison_bi(_DASI_MODI_ARENA, err, free_list, free_cnt);
             size_t modi64_mark = arena_mark(_DASI_MODI_ARENA);
             limb_t *trem_limbs = arena_alloc(_DASI_MODI_ARENA, x.n, &echeck);
-            arena_overflow(echeck, free_list, free_cnt, _DASI_MODI_ARENA, modi64_mark);
+            arena_ovf_bi(echeck, err, free_list, free_cnt, _DASI_MODI_ARENA, modi64_mark);
 
             // Main Operaition
             bigInt tmp_quot = { .limbs = trem_limbs, .n = 0, .cap = x.n, .sign = 1 };
@@ -2235,15 +2241,15 @@ bigInt bigInt_add(bigInt x, bigInt y, dnml_status *err) {
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&y); },
         {}, err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
-    bigInt sum;
-    if (!y.n) { if (bigInt_binew(&sum, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else if (!x.n) { if (bigInt_binew(&sum, &y) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    bigInt sum = {0}; dnml_status echeck = BIGINT_SUCCESS; list_bi free_list[2] = {(list_bi){&x,0},(list_bi){&y,0}};
+    if (!y.n) { echeck = bigInt_binew(&sum, &x); heap_alloc_oom_bi(echeck, err, free_list, 2); }
+    else if (!x.n) { echeck = bigInt_binew(&sum, &y); heap_alloc_oom_bi(echeck, err, free_list, 2);  }
     else if (x.sign == y.sign) {
-        if (__BIGINT_INTERNAL_LINIT__(&sum, 0) == DNML_ALLOC_OOM) func_ret_oom(err);
-        dnml_status echeck; __BIGINT_MAGADD__(&sum, &x, &y); sum.sign = x.sign;
+        echeck = __BIGINT_INTERNAL_LINIT__(&sum, 0); heap_alloc_oom_bi(echeck, err, free_list, 2); 
+        __BIGINT_MAGADD__(&sum, &x, &y); sum.sign = x.sign;
     } else {
-        dnml_status echeck; int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
-        if (__BIGINT_INTERNAL_LINIT__(&sum, 0) == DNML_ALLOC_OOM) func_ret_oom(err);
+        int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
+        echeck = __BIGINT_INTERNAL_LINIT__(&sum, 0); heap_alloc_oom_bi(echeck, err, free_list, 2); 
         if (comp_res > 0) { __BIGINT_MAGSUB__(&sum, &x, &y); sum.sign = x.sign; }
         else if (comp_res < 0) { __BIGINT_MAGSUB__(&sum, &y, &x); sum.sign = y.sign; }
     } return sum;
@@ -2254,89 +2260,103 @@ bigInt bigInt_sub(bigInt x, bigInt y, dnml_status *err) {
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&y); },
         {}, err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
-    bigInt diff;
-    if (!y.n) { if (bigInt_binew(&diff, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else if (!x.n) { if (bigInt_binew(&diff, &y) == DNML_ALLOC_OOM) func_ret_oom(err); diff.sign = -y.sign; }
+    bigInt diff = {0}; dnml_status echeck = DNML_ALLOC_OOM; list_bi free_list[2] = {(list_bi){&x,0},(list_bi){&y,0}};
+    if (!y.n) { echeck = bigInt_binew(&diff, &x); heap_alloc_oom_bi(echeck, err, free_list, 2); }
+    else if (!x.n) { echeck = bigInt_binew(&diff, &y); heap_alloc_oom_bi(echeck, err, free_list, 2); diff.sign = -y.sign; }
     else if (x.sign == y.sign) {
-        dnml_status echeck; int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
-        if (__BIGINT_INTERNAL_LINIT__(&diff, 0) == DNML_ALLOC_OOM) func_ret_oom(err)
+        int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
+        echeck = __BIGINT_INTERNAL_LINIT__(&diff, 0); heap_alloc_oom_bi(echeck, err, free_list, 2); 
         if (comp_res > 0) { __BIGINT_MAGSUB__(&diff, &x, &y); diff.sign =  x.sign; } 
         else if (comp_res < 0) { __BIGINT_MAGSUB__(&diff, &y, &x); diff.sign = -x.sign; }
     } else {
-        if (__BIGINT_INTERNAL_LINIT__(&diff, 0) == DNML_ALLOC_OOM) func_ret_oom(err)
-        dnml_status echeck; __BIGINT_MAGADD__(&diff, &x, &y); diff.sign = x.sign;
+        echeck = __BIGINT_INTERNAL_LINIT__(&diff, 0); heap_alloc_oom_bi(echeck, err, free_list, 2); 
+    __BIGINT_MAGADD__(&diff, &x, &y); diff.sign = x.sign;
     } return diff;
 }
-bigInt bigInt_mul(bigInt x, bigInt y, dnml_status *err) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_mul(bigInt x, bigInt y, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x) && bigInt_validate(y), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&y); },
         {}, err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
-    bigInt res = {0};
-    if (!x.n || !y.n) { if (__BIGINT_INTERNAL_LINIT__(&res, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
-    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_binew(&res, &y) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else if (y.n == 1 && y.limbs[0] == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    bigInt res = {0}; dnml_status echeck = BIGINT_SUCCESS;
+    list_bi free_list[3] = {(list_bi){&x,0}, (list_bi){&y,0}}; uint8_t free_cnt = 2;
+    if (!x.n || !y.n) { echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
+    else if (x.n == 1 && x.limbs[0] == 1) { echeck = bigInt_binew(&res, &y); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);  }
+    else if (y.n == 1 && y.limbs[0] == 1) { echeck = bigInt_binew(&res, &x); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);  }
     else {
-        if (__BIGINT_INTERNAL_LINIT__(&res, x.n + y.n) == DNML_ALLOC_OOM) func_ret_oom(err)
-        bigInt *free_list[3] = { &res, &x, &y }; dnml_status echeck;
-        if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGMUL__(&res, &x, &y, &echeck); arena_ovf_bi(echeck, err, free_list, 3); }
-        else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGMUL__(&res, &x, &y, &echeck);
-            if (echeck == DARENA_OVERFLOW) { __BIHEAP_MUL_DISP__(&res, &x, &y, &echeck); heap_alloc_oom_bi(echeck, err); }
-        } else if (_DNML_ALLOC_STRAT == 2) { __BIHEAP_MUL_DISP__(&res, &x, &y, &echeck); heap_alloc_oom_bi(echeck, err); }
+        _tmp_heap_mut(res, x.n + y.n, echeck, err, free_list, free_cnt);
+        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGMUL__(&res, &x, &y); darena_biassert(echeck, err, free_list, free_cnt); }
+        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGMUL__(&res, &x, &y);
+            if (echeck == DARENA_OVERFLOW) goto heap_mul;
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_mul;
+        heap_mul: { __BIHEAP_MUL_DISP__(&res, &x, &y, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
+
     } res.sign = x.sign * y.sign; return res;
 }
-bigInt bigInt_div(bigInt x, bigInt y, dnml_status *err) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_div(bigInt x, bigInt y, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x) && bigInt_validate(y), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&y); },
         {}, err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
-    if (!y.n) mut_err(err, BIGINT_ERR_DOMAIN); /**/ bigInt quot = {0};
-    if (!x.n) { if (__BIGINT_INTERNAL_LINIT__(&quot, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
+    if (!y.n) mut_err(err, BIGINT_ERR_DOMAIN);
+    bigInt quot = {0}; dnml_status echeck = BIGINT_SUCCESS;
+    list_bi free_list[4] = {(list_bi){&x,0},(list_bi){&y,0}}; uint8_t free_cnt = 2;
+    if (!x.n) { echeck = __BIGINT_INTERNAL_LINIT__(&quot, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
     else if (y.n == 1 && y.limbs[0] == 1) {
-        if (bigInt_binew(&quot, &x) == DNML_ALLOC_OOM) func_ret_oom(err);  quot.sign *= y.sign;
-    } else if (x.n == 1 && x.limbs[0] == 1) { if (__BIGINT_INTERNAL_LINIT__(&quot, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
-    else {
-        bigInt tmp_rem; bigInt *free_list[4] = { &x, &y, &quot, &tmp_rem }; dnml_status echeck;
-        if (__BIGINT_INTERNAL_LINIT__(&quot, x.n) == DNML_ALLOC_OOM) func_ret_oom(err)
-        if (__BIGINT_INTERNAL_LINIT__(&tmp_rem, y.n) == DNML_ALLOC_OOM) func_ret_oom(err);
-        if (!_DNML_ALLOC_STRAT) { 
-            __BIGINT_MAGDIV__(&quot, &tmp_rem, &x, &y, &echeck); 
-            arena_ovf_bi(echeck, err, free_list, 4); 
-        }
-        else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGDIV__(&quot, &tmp_rem, &x, &y, &echeck); 
+        echeck = bigInt_binew(&quot, &x); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); quot.sign *= y.sign;
+    } 
+    else if (x.n == 1 && x.limbs[0] == 1) {
+        echeck = __BIGINT_INTERNAL_LINIT__(&quot, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+    } else {
+        bigInt tmp_rem = {0};
+        _tmp_heap_mut(quot, x.n, echeck, err, free_list, free_cnt);
+        _tmp_heap_mut(tmp_rem, y.n, echeck, err, free_list, free_cnt);
+        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGDIV__(&quot, &tmp_rem, &x, &y); darena_biassert(echeck, err, free_list, free_cnt); }
+        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGDIV__(&quot, &tmp_rem, &x, &y); 
             if (echeck == DARENA_OVERFLOW) goto heap_div_block;
         } else if (_DNML_ALLOC_STRAT == 2) goto heap_div_block;
-        heap_div_block: { __BIHEAP_DIV_DISP__(&x, &y, &quot, &tmp_rem, &echeck); heap_alloc_oom_bi(echeck, err); }
+        heap_div_block: { 
+            __BIHEAP_DIV_DISP__(&x, &y, &quot, &tmp_rem, &echeck); 
+            heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+        }
 
         __BIGINT_INTERNAL_FREE__(&tmp_rem);
     } *err = BIGINT_SUCCESS; return quot;
 }
-bigInt bigInt_mod(bigInt x, bigInt y, dnml_status *err) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_mod(bigInt x, bigInt y, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x) && bigInt_validate(y), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&y); },
         {}, err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
-    if (!y.n) mut_err(err, BIGINT_ERR_DOMAIN); /**/ bigInt rem = {0};
-    if (!x.n) { if (__BIGINT_INTERNAL_LINIT__(&rem, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
-    else if (y.n == 1 && y.limbs[0] == 1) { if (__BIGINT_INTERNAL_LINIT__(&rem, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
+    if (!y.n) mut_err(err, BIGINT_ERR_DOMAIN);
+    bigInt rem = {0};  dnml_status echeck = BIGINT_SUCCESS;
+    list_bi free_list[4] = {(list_bi){&x,0},(list_bi){&y,0}}; uint8_t free_cnt = 2;
+    if (!x.n) { echeck = __BIGINT_INTERNAL_LINIT__(&rem, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
+    else if (y.n == 1 && y.limbs[0] == 1) { 
+        echeck = __BIGINT_INTERNAL_LINIT__(&rem, 0);
+        heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+    }
     else {
         int8_t comp_res = __BIGINT_MAGCOMP__(&x, &y);
-        if (comp_res < 0) { if (bigInt_binew(&rem, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
-        else if (!comp_res) { if (__BIGINT_INTERNAL_LINIT__(&rem, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
+        if (comp_res < 0) { echeck = bigInt_binew(&rem, &x); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
+        else if (!comp_res) { echeck = __BIGINT_INTERNAL_LINIT__(&rem, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
         else {
-            bigInt tmp_quot; bigInt *free_list[4] = { &x, &y, &rem, &tmp_quot }; dnml_status echeck;
-            if (__BIGINT_INTERNAL_LINIT__(&rem, y.n) == DNML_ALLOC_OOM) func_ret_oom(err);
-            if (__BIGINT_INTERNAL_LINIT__(&tmp_quot, x.n) == DNML_ALLOC_OOM) func_ret_oom(err);
+            bigInt tmp_quot = {0};
+            _tmp_heap_mut(rem, y.n, echeck, err, free_list, free_cnt);
+            _tmp_heap_mut(tmp_quot, x.n, echeck, err, free_list, free_cnt);
             if (!_DNML_ALLOC_STRAT) {
-                __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y, &echeck); arena_ovf_bi(echeck, err, free_list, 4);
-            } else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y, &echeck); 
+                echeck = __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y); darena_biassert(echeck, err, free_list, free_cnt);
+            } else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y); 
                 if (echeck == DARENA_OVERFLOW) goto heap_mod;
             } else if (_DNML_ALLOC_STRAT == 2) goto heap_mod;
-            
-            heap_mod: { __BIHEAP_MOD_DISP__(&x, &y, &rem, &tmp_quot, &echeck); heap_alloc_oom_bi(echeck, err); }
+            heap_mod: { 
+                __BIHEAP_MOD_DISP__(&x, &y, &rem, &tmp_quot, &echeck);
+                heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+            }
+
             __BIGINT_INTERNAL_FREE__(&tmp_quot);
         }
     } *err = BIGINT_SUCCESS; return rem;
@@ -2348,50 +2368,52 @@ bigInt bigInt_mod(bigInt x, bigInt y, dnml_status *err) {       //TODO REFORMAT 
 
 //* ======================================== SIGNED NUMBER THEORETIC ========================================= */
 /* -------------- Pure Number Theoretic -------------- */
-bigInt bigInt_gcdu64(bigInt x, const uint64_t val, dnml_status *err) {      //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_gcdu64(bigInt x, const uint64_t val, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); }, {},
         err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
     if (!val) return x;
-    bigInt res = {0};
-    if (!x.n) { if (bigInt_newu64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else if (x.n == 1) { if (bigInt_newu64(&res, __BINARY_GCDU64__(x.limbs[0], val)) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    bigInt res = {0}; dnml_status echeck = BIGINT_SUCCESS; list_bi free_list[1] = {(list_bi){&x,0}};
+    if (!x.n) { echeck = bigInt_newu64(&res, val); heap_alloc_oom_bi(echeck, err, free_list, 1); }
+    else if (x.n == 1) { 
+        echeck = bigInt_newu64(&res, __BINARY_GCDU64__(x.limbs[0], val)); 
+        heap_alloc_oom_bi(echeck, err, free_list, 1);
+    }
     else {
-        list_bi free_list[1] = { (list_bi){&x, 0} };
-        dnml_status echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, 1);
+        echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, 1);
         dnml_arena *_DASI_GCDU64_ARENA = _USE_ARENA(); size_t gcdu64_mark = arena_mark(_DASI_GCDU64_ARENA);
         limb_t *xcopy_limbs = arena_galloc(_DASI_GCDU64_ARENA, x.n, &echeck); 
-        arena_alloc_oom_mut(echeck, _DASI_GCDU64_ARENA, err);
+        arena_ovf_bi(echeck, err, free_list, 1, _DASI_GCDU64_ARENA, gcdu64_mark);
         uint64_t ret = __BIGINT_MAGGCD_U64__(&(bigInt){ .limbs = xcopy_limbs, .n = x.n, .cap = x.n, .sign = 1 }, val);
         res.limbs[0] = ret; res.n = !!(ret); res.sign = 1; arena_rewind(_DASI_GCDU64_ARENA, gcdu64_mark);
     } return res;
 }
-bigInt bigInt_gcdi64(bigInt x, const int64_t val, dnml_status *err) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_gcdi64(bigInt x, const int64_t val, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); }, {},
         err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
     if (!val) return x;
-    bigInt res = {0};
-    if (!x.n) { if (bigInt_newu64(&res, __MAG_I64__(val)) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    bigInt res = {0}; dnml_status echeck = BIGINT_SUCCESS; list_bi free_list[1] = {(list_bi){&x,0}};
+    if (!x.n) { echeck = bigInt_newu64(&res, __MAG_I64__(val)); heap_alloc_oom_bi(echeck, err, free_list, 1); }
     else if (x.n == 1) {
-        dnml_status echeck = bigInt_newu64(&res, __BINARY_GCDU64__(x.limbs[0], __MAG_I64__(val)));
-        if (echeck == DNML_ALLOC_OOM) func_ret_oom(err);
-    } else {
-        list_bi free_list[1] = { (list_bi){&x, 0} };
-        dnml_status echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, 1);
+        echeck = bigInt_newu64(&res, __BINARY_GCDU64__(x.limbs[0], __MAG_I64__(val))); 
+        heap_alloc_oom_bi(echeck, err, free_list, 1);
+    } 
+    else {
+        echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, 1);
         dnml_arena *_DASI_GCDI64_ARENA = _USE_ARENA(); size_t gcdi64_mark = arena_mark(_DASI_GCDI64_ARENA);
         limb_t *xcopy_limbs = arena_galloc(_DASI_GCDI64_ARENA, x.n, &echeck); 
-        arena_alloc_oom_mut(echeck, _DASI_GCDI64_ARENA, err);
+        arena_ovf_bi(echeck, err, free_list, 1, _DASI_GCDI64_ARENA, gcdi64_mark);
         bigInt x_copy = { .limbs = xcopy_limbs, .n = x.n, .cap = x.n, .sign = 1 };
         uint64_t ret = __BIGINT_MAGGCD_U64__(&x_copy, __MAG_I64__(val));
         res.limbs[0] = ret; res.n = !!(ret); res.sign = 1; arena_rewind(_DASI_GCDI64_ARENA, gcdi64_mark);
     } return res;
 }
-bigInt bigInt_gcd(bigInt x, bigInt y, dnml_status *err) {                   //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_gcd(bigInt x, bigInt y, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x) && bigInt_validate(y), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&y); },
@@ -2399,65 +2421,65 @@ bigInt bigInt_gcd(bigInt x, bigInt y, dnml_status *err) {                   //TO
     );
     if (!x.n) return y;
     else if (y.n == 0) return x;
-    bigInt res = {0};
+    bigInt res = {0}; dnml_status echeck = BIGINT_SUCCESS; 
+    list_bi free_list[3] = {(list_bi){&x,0},(list_bi){&y,0}}; uint8_t free_cnt = 2;
     if (x.n == 1 && y.n == 1) {
-        dnml_status echeck = bigInt_newu64(&res, __BINARY_GCDU64__(x.limbs[0], y.limbs[0]));
-        if (echeck == DNML_ALLOC_OOM) func_ret_oom(err);
+        echeck = bigInt_newu64(&res, __BINARY_GCDU64__(x.limbs[0], y.limbs[0]));
+        heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
     } else {
-        bigInt *free_list[3] = { &res, &x, &y }; dnml_status echeck;
-        if (__BIGINT_INTERNAL_LINIT__(&res, min(x.n, y.n)) == DNML_ALLOC_OOM) func_ret_oom(err);
-        if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGGCD__(&res, &x, &y, &echeck); arena_ovf_bi(echeck, err, free_list, 3); }
-        else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGGCD__(&res, &x, &y, &echeck);
-            if (echeck == DARENA_OVERFLOW) { __BIHEAP_GCD_DISP__(&res, &x, &y, &echeck); heap_alloc_oom_bi(echeck, err); }
-        } else if (_DNML_ALLOC_STRAT == 2) { __BIHEAP_GCD_DISP__(&res, &x, &y, &echeck); heap_alloc_oom_bi(echeck, err); }
+        _tmp_heap_mut(res, min(x.n, y.n), echeck, err, free_list, free_cnt);
+        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGGCD__(&res, &x, &y); darena_biassert(echeck, err, free_list, free_cnt); }
+        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGGCD__(&res, &x, &y);
+            if (echeck == DARENA_OVERFLOW) goto heap_gcd;
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_gcd;
+        
 
+        heap_gcd: { __BIHEAP_GCD_DISP__(&res, &x, &y, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
     } return res;
 }
-bigInt bigInt_lcmu64(bigInt x, const uint64_t val, dnml_status *err) {      //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_lcmu64(bigInt x, const uint64_t val, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); }, {},
         err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
-    bigInt res = {0};
-    if (!val || !x.n) { if (__BIGINT_INTERNAL_LINIT__(&res, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
-    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_newu64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else if (x.n == 1 && x.limbs[0] == val) { if (bigInt_newu64(&res, val) == DNML_ALLOC_OOM) func_ret_oom(err); }
-    else if (val == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    bigInt res = {0}; dnml_status echeck = BIGINT_SUCCESS; list_bi free_list[1] = {(list_bi){&x,0}};
+    if (!val || !x.n) { echeck - __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, 1); }
+    else if (x.n == 1 && x.limbs[0] == 1) { echeck = bigInt_newu64(&res, val); heap_alloc_oom_bi(echeck, err, free_list, 1); }
+    else if (x.n == 1 && x.limbs[0] == val) { echeck = bigInt_newu64(&res, val); heap_alloc_oom_bi(echeck, err, free_list, 1); }
+    else if (val == 1) { echeck = bigInt_binew(&res, &x); heap_alloc_oom_bi(echeck, err, free_list, 1); }
     else {
-        dnml_status echeck = BIGINT_SUCCESS; dnml_arena *_DASI_LCMU64_ARENA = _USE_ARENA(); 
-        size_t lcmu64_mark = arena_mark(_DASI_LCMU64_ARENA);
+        dnml_arena *_DASI_LCMU64_ARENA = _USE_ARENA(); size_t lcmu64_mark = arena_mark(_DASI_LCMU64_ARENA);
         limb_t *xcopy_limbs = arena_galloc(_DASI_LCMU64_ARENA, x.n, &echeck); 
-        arena_alloc_oom_mut(echeck, _DASI_LCMU64_ARENA, err);
-        __BIGINT_MAGLCM_U64__(&res, &(bigInt){ .limbs = xcopy_limbs, .n = x.n, .cap = x.n, .sign = 1 }, val, &echeck);
-        heap_alloc_oom_bi(echeck, err); arena_rewind(_DASI_LCMU64_ARENA, lcmu64_mark);
-    }
-    return res;
+        arena_ovf_bi(echeck, err, free_list, 1, _DASI_GCDI64_ARENA, lcmu64_mark);
+        echeck = __BIGINT_MAGLCM_U64__(&res, &(bigInt){ .limbs = xcopy_limbs, .n = x.n, .cap = x.n, .sign = 1 }, val);
+        heap_alloc_oom_bi(echeck, err, free_list, 1); arena_rewind(_DASI_LCMU64_ARENA, lcmu64_mark);
+    } return res;
 }
-bigInt bigInt_lcmi64(bigInt x, const int64_t val, dnml_status *err) {       //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_lcmi64(bigInt x, const int64_t val, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); }, {},
         err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
     );
-    bigInt res = {0}; uint64_t mag_val = __MAG_I64__(val);
-    if (!mag_val || !x.n) { if (__BIGINT_INTERNAL_LINIT__(&res, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
-    else if (x.n == 1 && x.limbs[0] == 1) { if (bigInt_newu64(&res, mag_val) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    bigInt res = {0}; dnml_status echeck = BIGINT_SUCCESS;
+    uint64_t mag_val = __MAG_I64__(val); /**/ list_bi free_list[1] = {(list_bi){&x,0}};
+    if (!mag_val || !x.n) { echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, 1); }
+    else if (x.n == 1 && x.limbs[0] == 1) { echeck = bigInt_newu64(&res, mag_val); heap_alloc_oom_bi(echeck, err, free_list, 1); }
     else if (x.n == 1 && _lib_crt_ispos(val) &&  x.limbs[0] == __MAG_I64__(val)) { 
-        if (bigInt_newu64(&res, mag_val) == DNML_ALLOC_OOM) func_ret_oom(err);
+        echeck = bigInt_newu64(&res, mag_val); heap_alloc_oom_bi(echeck, err, free_list, 1);
     }
-    else if (mag_val == 1) { if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err); }
+    else if (mag_val == 1) { echeck = bigInt_binew(&res, &x); heap_alloc_oom_bi(echeck, err, free_list, 1); }
     else {
-        dnml_status echeck = BIGINT_SUCCESS; dnml_arena *_DASI_LCMU64_ARENA = _USE_ARENA(); 
-        size_t lcmi64_mark = arena_mark(_DASI_LCMU64_ARENA);
+        dnml_arena *_DASI_LCMU64_ARENA = _USE_ARENA(); size_t lcmi64_mark = arena_mark(_DASI_LCMU64_ARENA);
         limb_t *xcopy_limbs = arena_galloc(_DASI_LCMU64_ARENA, x.n, &echeck); 
-        arena_alloc_oom_mut(echeck, _DASI_LCMU64_ARENA, err);
+        arena_ovf_bi(echeck, err, free_list, 1, _DASI_LCMU64_ARENA, lcmi64_mark)
         bigInt x_copy = { .limbs = xcopy_limbs, .n = x.n, .cap = x.n, .sign = 1 };
-        __BIGINT_MAGLCM_U64__(&res, &x_copy, __MAG_I64__(val), &echeck);
-        heap_alloc_oom_bi(echeck, err); arena_rewind(_DASI_LCMU64_ARENA, lcmi64_mark);
+        echeck = __BIGINT_MAGLCM_U64__(&res, &x_copy, __MAG_I64__(val));
+        heap_alloc_oom_bi(echeck, err, free_list, 1); arena_rewind(_DASI_LCMU64_ARENA, lcmi64_mark);
     } return res;
 }
-bigInt bigInt_lcm(bigInt x, bigInt y, dnml_status *err) {                   //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_lcm(bigInt x, bigInt y, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x) && bigInt_validate(y), bi_full_contract, 
         { clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&y); },
@@ -2466,21 +2488,25 @@ bigInt bigInt_lcm(bigInt x, bigInt y, dnml_status *err) {                   //TO
     if (x.n == 1 && x.limbs[0] == 1) return y; // lcm(1, y) = y
     else if (y.n == 1 && y.limbs[0] == 1) return x; // lcm(x, 1) = x
     else if (!__BIGINT_MAGCOMP__(&x, &y)) return x; // lcm(x, y) = x WHEN x = y
-    bigInt res = {0}; 
-    if (!y.n || !x.n) { if (__BIGINT_INTERNAL_LINIT__(&res, 0) == DNML_ALLOC_OOM) func_ret_oom(err) } // lcm(0, x) || lcm(x, 0) = 0
+    bigInt res = {0}; dnml_status echeck = BIGINT_SUCCESS; 
+    list_bi free_list[3] = {(list_bi){&x,0},(list_bi){&y,0}}; uint8_t free_cnt = 2;
+    if (!y.n || !x.n) { echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
     else {
-        bigInt *free_list[3] = { &x, &y, &res }; uint8_t free_cnt = 3; dnml_status echeck = BIGINT_SUCCESS;
-        if (!_DNML_ALLOC_STRAT) { __BIGINT_MAGLCM__(&res, &x, &y, &echeck);
-            /* The Ultimate and of course definitely not unnecessary name of a title catalog of LCM possible errors */
-            darena_massert(echeck, err, free_list, free_cnt, __BIGINT_ERROR_VALUE__());
-            heap_alloc_oom_bi(echeck, err); // Update to have memory freeing handling later
+        free_list[free_cnt] = (list_bi){&res,1};
+        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGLCM__(&res, &x, &y);
+            darena_biassert(echeck, err, free_list, free_cnt); // Checking for arena overflow (estimation errors)
+            heap_alloc_oom_bi(echeck, err, free_list, free_cnt); // May occur when failed to initialize for res internally
         } 
-        else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGLCM__(&res, &x, &y, &echeck); heap_alloc_oom_bi(echeck, err);
-            if (echeck == DARENA_OVERFLOW) { __BIHEAP_MAGLCM__(&x, &y, &res, &echeck); heap_alloc_oom_bi(echeck, err); }
-        } else if (_DNML_ALLOC_STRAT == 2) { __BIHEAP_MAGLCM__(&x, &y, &res, &echeck); heap_alloc_oom_bi(echeck, err); }
+        else if (_DNML_ALLOC_STRAT == 1) { 
+            echeck = __BIGINT_MAGLCM__(&res, &x, &y); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+            if (echeck == DARENA_OVERFLOW) goto heap_lcm;
+        } else if (_DNML_ALLOC_STRAT == 2) goto heap_lcm;
+
+
+        heap_lcm: { echeck = __BIHEAP_MAGLCM__(&x, &y, &res); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
     } return res;
 }
-bool bigInt_is_prime(bigInt x, dnml_status *err) {                          //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bool bigInt_is_prime(bigInt x, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x), bi_full_contract, 
         {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, 
@@ -2495,15 +2521,17 @@ bool bigInt_is_prime(bigInt x, dnml_status *err) {                          //TO
         else if (x.limbs[0] % 10 == 5 || !(x.limbs[0] % 10)) return true;
     }
     /* -------- ALLLOCATION MODES DISPATCHING -------- */ 
-    dnml_status echeck = BIGINT_SUCCESS; bool ret = false;
+    dnml_status echeck = BIGINT_SUCCESS; bool ret = 0;
+    list_bi free_list[1] = { (list_bi){&x, 0} };
     if (!_DNML_ALLOC_STRAT) {
-        bigInt *free_list[1] = {&x}; /**/ ret = __BIGINT_PTEST_RAW__(&x, &echeck); 
-        arena_ovf_mut(echeck, err, free_list, 1, 0); /**/ return ret;
-    } else if (_DNML_ALLOC_STRAT == 1) { bool ret = __BIGINT_PTEST_RAW__(&x, &echeck);
+        ret = __BIGINT_PTEST_RAW__(&x, &echeck); 
+        darena_massert(echeck, err, free_list, 1, 0); /**/ return (bool)ret;
+    } 
+    else if (_DNML_ALLOC_STRAT == 1) { ret = __BIGINT_PTEST_RAW__(&x, &echeck);
         if (echeck == DARENA_OVERFLOW) goto heap_ptest;
     } else if (_DNML_ALLOC_STRAT == 2) goto heap_ptest;
     
-    heap_ptest: { ret = (bool)__BIHEAP_PTEST_DISP__(&x, &echeck); heap_alloc_oom_mut(echeck, err, false); }
+    heap_ptest: { ret = (bool)__BIHEAP_PTEST_DISP__(&x, &echeck); heap_alloc_oom_mut(echeck, err, free_list, 1, false); }
     return ret;
 }
 /* ---------------- Modular Reduction ---------------- */
@@ -2537,29 +2565,34 @@ dnml_status bigInt_mut_emodi64(bigInt *const x, const int64_t mod) {
         } x->limbs[0] = res_rem; x->sign = 1;
     } return BIGINT_SUCCESS;
 }
-dnml_status bigInt_mut_emod(bigInt *const x, bigInt mod) {                  //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+dnml_status bigInt_mut_emod(bigInt *const x, bigInt mod) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
-    test_assert(bigInt_pvalidate(x) && bigInt_validate(mod), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
+    test_assert(
+        bigInt_pvalidate(x) && bigInt_validate(mod), bi_full_contract, 
+        { clear_arena; __BIGINT_INTERNAL_FREE__(x); __BIGINT_INTERNAL_FREE__(&mod); }, 
+        {}, BIGINT_ERR_INVAL
+    );
     if (!mod.n) return BIGINT_ERR_INVAL;
     else if (!x->n);
     else if (mod.n == 1 && mod.limbs[0] == 1) bigInt_reset(x);
     else if (__BIGINT_MAGCOMP__(x, &mod) == -1 && x->sign == 1);
     else { 
-        dnml_status echeck = BIGINT_SUCCESS; 
-        bigInt *free_list[2] = { x, &mod }; uint8_t free_cnt = 2;
+        dnml_status echeck = BIGINT_SUCCESS;
+        list_bi free_list[2] = {(list_bi){x,0},(list_bi){&mod,0}};
         if (!_DNML_ALLOC_STRAT) {
-            __BIGINT_MAGEMOD__(x, x, &mod, &echeck); darena_assert(echeck, free_list, free_cnt);
+            echeck = __BIGINT_MAGEMOD__(x, x, &mod); darena_assert(echeck, free_list, 2);
             if (x->sign == -1 && x->n) { __BIGINT_MAGSUB__(x, &mod, x);
-                __BIGINT_MAGEMOD__(x, x, &mod, &echeck); darena_assert(echeck, free_list, free_cnt);
+                echeck = __BIGINT_MAGEMOD__(x, x, &mod); darena_assert(echeck, free_list, 2);
             } __BIGINT_INTERNAL_MOVE__(x, x);
-        } else if (_DNML_ALLOC_STRAT == 1) { __BIGINT_MAGEMOD__(x, x, &mod, &echeck); 
+        } else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGEMOD__(x, x, &mod); 
             if (echeck == DARENA_OVERFLOW) goto mut_emod_heap; /**/ uint8_t fallback_mod_heap = false;
             if (x->sign == -1 && x->n) {  __BIGINT_MAGSUB__(x, &mod, x);
-                if (fallback_mod_heap) { __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck); } 
-                else { __BIGINT_MAGEMOD__(x, x, &mod, &echeck); 
+                if (fallback_mod_heap) { __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2); } 
+                else { 
+                    echeck = __BIGINT_MAGEMOD__(x, x, &mod); 
                     if (echeck == DNML_ALLOC_OOM) { 
                         __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); 
-                        heap_alloc_oom(echeck); fallback_mod_heap = true; 
+                        heap_alloc_oom(echeck, free_list, 2); fallback_mod_heap = true;
                     } 
                 }
             }
@@ -2573,10 +2606,10 @@ dnml_status bigInt_mut_emod(bigInt *const x, bigInt mod) {                  //TO
              * dispatched algorithms are designed to be remainder-biased, which mean the final results
              * in a double-aliasing scenario will be the remainder
              */
-            __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck);
+            __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2);
             if (x->sign == -1 && x->n) { __BIGINT_MAGSUB__(x, &mod, x);
                 // Same here, double-aliasing is safe for the reason uptop
-                __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck);
+                __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2);
             }
         }
     } return BIGINT_SUCCESS;
@@ -2603,45 +2636,49 @@ uint64_t bigInt_emodi64(bigInt x, const int64_t mod, dnml_status *err) {
     if (!mod) mut_gret(err, BIGINT_ERR_INVAL, -1);
     else if (mod == 1 || mod == -1 || !x.n) mut_gret(err, BIGINT_SUCCESS, 0);
     else if (x.n == 1 && x.limbs[0] < __MAG_I64__(mod) && x.sign == 1) mut_gret(err, BIGINT_SUCCESS, x.limbs[0]);
-    uint64_t res = 0; /**/ __BIGINT_MAGEMOD_U64__(&res, &x, __MAG_I64__(mod));
-    if (x.sign == -1 && res) res = (mag_mod - res) % mag_mod;
+    uint64_t res = 0; uint64_t mag_mod = __MAG_I64__(mod); /**/ __BIGINT_MAGEMOD_U64__(&res, &x, mag_mod);
+    if (x.sign == -1 && res) res = (__MAG_I64__(mod) - res) % mag_mod;
     *err = BIGINT_SUCCESS; return res; // Return a uint64_t to holds |INT64_MIN|
 }
-bigInt bigInt_emod(bigInt x, bigInt mod, dnml_status *err) {                //TODO REFORMAT FOR MULTI-CASE ERROR HANDLING
+bigInt bigInt_emod(bigInt x, bigInt mod, dnml_status *err) {
     test_assert_mut(
         bigInt_validate(x) && bigInt_validate(mod), bi_full_contract, 
         {clear_arena; __BIGINT_INTERNAL_FREE__(&x); __BIGINT_INTERNAL_FREE__(&mod);},
         {}, err, BIGINT_ERR_INVAL, __BIGINT_ERROR_VALUE__()
-    );
+    ); 
     if (!mod.n) mut_err(err, BIGINT_ERR_INVAL);
-    bigInt res = {0}; if (!x.n) { if (__BIGINT_INTERNAL_LINIT__(&res, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
-    else if (mod.n == 1 && mod.limbs[0] == 1) { if (__BIGINT_INTERNAL_LINIT__(&res, 0) == DNML_ALLOC_OOM) func_ret_oom(err) }
+    bigInt res = {0}; dnml_status echeck; list_bi free_list[3] = {(list_bi){&x,0},(list_bi){&mod,0}}; uint8_t free_cnt = 2;
+    if (!x.n) { echeck = __BIGINT_INTERNAL_LINIT__(&res, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
+    else if (mod.n == 1 && mod.limbs[0] == 1) { 
+        echeck = __BIGINT_INTERNAL_LINIT__(&res, 0);
+        heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+    } 
     else if (__BIGINT_MAGCOMP__(&x, &mod) == -1  && x.sign == 1) {
-        if (bigInt_binew(&res, &x) == DNML_ALLOC_OOM) func_ret_oom(err);
+        echeck = bigInt_binew(&res, &x); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
     } else {
-        dnml_status echeck = BIGINT_SUCCESS;
-        bigInt *free_list[3] = { &x, &mod, &res }; uint64_t free_cnt = 3;
+        free_list[free_cnt++] = (list_bi){&res, 1};
         if (!_DNML_ALLOC_STRAT) {
-            if (__BIGINT_INTERNAL_LINIT__(&res, mod.n) == DNML_ALLOC_OOM) func_ret_oom(err);
-            dnml_status echeck; __BIGINT_MAGEMOD__(&res, &x, &mod, &echeck); 
-            darena_biassert(echeck, err, free_list, free_cnt);
-            if (x.sign == -1 && res.n) {
+            echeck = __BIGINT_INTERNAL_LINIT__(&res, mod.n); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+            echeck = __BIGINT_MAGEMOD__(&res, &x, &mod); darena_biassert(echeck, err, free_list, free_cnt);
+            if (x.sign == -1 && res.n) { 
                 __BIGINT_MAGSUB__(&res, &mod, &res); 
-                __BIGINT_MAGEMOD__(&res, &res, &mod, &echeck); 
-                darena_biassert(echeck, err, free_list, free_cnt);
+                echeck = __BIGINT_MAGEMOD__(&res, &res, &mod); darena_biassert(echeck, err, free_list, free_cnt);
             }
-        } else if (_DNML_ALLOC_STRAT == 1) { if (__BIGINT_INTERNAL_LINIT__(&res, mod.n) == DNML_ALLOC_OOM) func_ret_oom(err);
-            dnml_status echeck; __BIGINT_MAGEMOD__(&res, &x, &mod, &echeck); 
-            if (echeck == DARENA_OVERFLOW) goto emod_heap; /**/ uint8_t fallback_mod_heap = false;
-            if (x.sign == -1 && res.n) { __BIGINT_MAGSUB__(&res, &mod, &res);
+        } else if (_DNML_ALLOC_STRAT == 1) {
+            echeck = __BIGINT_INTERNAL_LINIT__(&res, mod.n); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+            echeck = __BIGINT_MAGEMOD__(&res, &x, &mod);  if (echeck == DARENA_OVERFLOW) goto emod_heap;
+            uint8_t fallback_mod_heap = false;
+            if (x.sign == -1 && res.n) { 
+                __BIGINT_MAGSUB__(&res, &mod, &res);
                 if (fallback_mod_heap) {
                     __BIHEAP_MOD_DISP__(&res, &mod, &res, &res, &echeck); 
-                    heap_alloc_oom_bi(echeck, err);
+                    heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
                 }
-                else { __BIGINT_MAGEMOD__(&res, &res, &mod, &echeck);
+                else { 
+                    echeck =__BIGINT_MAGEMOD__(&res, &res, &mod);
                     if (echeck == DNML_ALLOC_OOM) {
                         __BIHEAP_MOD_DISP__(&res, &mod, &res, &res, &echeck);
-                        heap_alloc_oom_bi(echeck, err); fallback_mod_heap = true;
+                        heap_alloc_oom_bi(echeck, err, free_list, free_cnt); fallback_mod_heap = true;
                     }
                 }
             } 
@@ -2655,10 +2692,10 @@ bigInt bigInt_emod(bigInt x, bigInt mod, dnml_status *err) {                //TO
              * dispatched algorithms are designed to be remainder-biased, which mean the final results
              * in a double-aliasing scenario will be the remainder
              */
-            __BIHEAP_MOD_DISP__(&x, &mod, &res, &res, &echeck); heap_alloc_oom_bi(echeck, err);
+            __BIHEAP_MOD_DISP__(&x, &mod, &res, &res, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
             if (x.sign == -1 && res.n) { __BIGINT_MAGSUB__(&res, &mod, &res);
                 // Same here, double-aliasing is safe for the reason uptop
-                __BIHEAP_MOD_DISP__(&res, &mod, &res, &res, &echeck); heap_alloc_oom_bi(echeck, err);
+                __BIHEAP_MOD_DISP__(&res, &mod, &res, &res, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
             }
         }
     } *err = BIGINT_SUCCESS; return res;

@@ -83,7 +83,7 @@ static inline void* arena_galloc(dnml_arena *a, size_t space, dnml_status *err) 
 static inline void arena_clear(dnml_arena *a) { a->offset = 0; }
 static inline size_t arena_mark(dnml_arena *a) { return a->offset; }
 static inline void arena_rewind(dnml_arena *a, size_t mark) {
-    if (mark <= a->offset)  a->offset = mark;
+    if (a == NULL) return; /**/ if (mark <= a->offset) a->offset = mark;
 }
 
 //* ================== ADAPTERS ===================== *//
