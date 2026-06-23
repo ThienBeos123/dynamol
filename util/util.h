@@ -110,6 +110,14 @@ void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k);
 void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs);
 void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs);
 
+// Cleanup helper for upfront cleanup
+typedef struct list_bi { bigInt *x; uint8_t ret_clean; } list_bi;
+static inline void _FREE_ALL_BI__(list_bi *free_list, uint8_t len) {
+    for (uint8_t i = 0; i < len; ++i) __BIGINT_INTERNAL_FREE__(free_list[i].x);
+}
+static inline void _FREE_RET_BI__(list_bi *free_list, uint8_t len) {
+    for (uint8_t i = 0; i < len; ++i) { if (free_list[i].ret_clean) __BIGINT_INTERNAL_FREE__(free_list[i].x); }
+}
 
 
 #ifdef __cplusplus

@@ -38,69 +38,79 @@ extern "C" {
 #endif
 //? ======================= COMMON !TEST! ASSERT ERRORS CATALOG ====================== ?//
 // Invariant Enforcement
-#define bi_full_contract "Validation Error: Input BigInt violates the full invariant contract (-Ebigint_inval)"
-#define bi_state_contract "Validation Error: Input BigInt violates contract's state invariants (-Ebigint_sinval)"
-#define bi_storage_inval "Validation Error: Input BigInt violates contract's storage invariants (-EbigInt_err_store_in)"
-#define bi_aliased_limbs "Validation Error: Input BigInts contain aliased limb pointers (-Ebigint_alias_limb)"
+#define bi_full_contract "BigInt violates the full invariant contract (-Ebigint_inval)"
+#define bi_state_contract "BigInt violates contract's state invariants (-Ebigint_state)"
+#define bi_storage_inval "BigInt violates contract's storage invariants (-EbigInt_store)"
+#define bi_aliased_limbs "BigInts contain aliased limb pointers (-Ebigint_alias)"
 
 
 
 //? ======================= OUT-OF-MEMORY HANDLING MACROS ====================== ?//
-//* =================== MAGNITUDED ALGORITHMIC ERROR HANDLER ============== *//
-//* ================== PUBLIC-FACING FUNCTIONS ERROR HANDLER ============== *//
 /* ---------- Functional Macros ---------- */
 #define clear_arena do { _cleanup_dynamol(); } while (0);
-#define heap_alloc_oom(err_check) do { \
-    test_assert((((err_check) != DNML_ALLOC_OOM)), alloc_oom, clear_arena, DNML_ALLOC_OOM); \
+#define heap_alloc_oom(echeck, free_list, free_cnt) do { \
+    test_assert( \
+        echeck != DNML_ALLOC_OOM, "Heap allocation failed due to OOM (-Ealloc_oom)", \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt); }, DNML_ALLOC_OOM \
+    ) \
 } while(0);
 #define darena_assert(echeck, free_list, free_cnt) do { \
     test_assert( \
-        echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
-        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
-        DARENA_OVERFLOW \
+        echeck != DARENA_POISON, "Arena posioned due to OOM upon growth (-Earena_poison)", \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt); }, DARENA_OVERFLOW \
+    ); \
+    test_assert( \
+        echeck != DARENA_OVERFLOW, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt); }, DARENA_OVERFLOW \
     ); \
 } while(0);
+#define mag_ovf(echeck, arena_p, mark) if (echeck == DARENA_OVERFLOW) { arena_rewind(arena_p, mark); return DARENA_OVERFLOW; }
+#define mag_oom(echeck, arena_p, mark) if (echeck == DNML_ALLOC_OOM) { arena_rewind(arena_p, mark); return DNML_ALLOC_OOM; }
+#define mag_heap_oom(echeck, free_list, free_cnt) if (echeck == DNML_ALLOC_OOM) { _free_alloc_list(free_list, free_cnt); return DNML_ALLOC_OOM; }
 
-/* -------- Mutative Macros */
-#define heap_alloc_oom_void(err_check, err) do { \
-    test_assert_mut((((err_check) != DNML_ALLOC_OOM)), alloc_oom, clear_arena, (err), DNML_ALLOC_OOM,); \
-} while(0);
-#define heap_alloc_oom_bi(err_check, err) do { \
+
+
+/* -------------- Mutative Macros -------------- */
+#define heap_alloc_oom_bi(echeck, err, free_list, free_cnt) do { \
     test_assert_mut( \
-        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, \
-        clear_arena, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() \
+        echeck != DNML_ALLOC_OOM, "Heap allocation failed due to OOM (-Ealloc_oom)", \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt); }, err, echeck, __BIGINT_ERROR_VALUE__() \
     ); \
 } while(0);
-#define heap_alloc_oom_mut(err_check, err, retval) do { \
+#define heap_alloc_oom_mut(echeck, err, free_list, free_cnt, retval) do { \
     test_assert_mut( \
-        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, \
-        clear_arena, (err), DNML_ALLOC_OOM, retval \
+        echeck != DNML_ALLOC_OOM, "Heap allocation failed due to OOM (-Ealloc_oom)", \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt); }, err, echeck, retval \
     ); \
 } while(0);
-
-
-#define func_ret_oom(err) { *(err) = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
 #define darena_massert(echeck, err, free_list, free_cnt, retval) do { \
     test_assert_mut( \
         echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
-        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
-        err, DARENA_OVERFLOW, retval \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt) }, err, DARENA_OVERFLOW, retval \
     ); \
 } while(0);
 #define darena_biassert(echeck, err, free_list, free_cnt) do { \
     test_assert_mut( \
         echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
-        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
-        err, DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__(); \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt) }, err, DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__(); \
     ); \
 } while(0);
 #define darena_vassert(echeck, err, free_list, free_cnt) do { \
     test_assert_mut( \
         echeck == BIGINT_SUCCESS, "Workspace Size Estimation Incorrect (-Earena_overflow)", \
-        { clear_arena for (uint8_t i = 0; i < free_cnt; ++i) bigInt_free(free_list[i]); }, \
-        err, DARENA_OVERFLOW, \
+        { clear_arena; _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt) }, err, DARENA_OVERFLOW, \
     ); \
 } while(0);
+
+
 
 /* -------- General Macros -------- */
 #define mut_gret(err, err_code, ret) do { \
@@ -113,17 +123,16 @@ extern "C" {
 
 
 
-
 //todo ===================================== NUMERIC FUNCTIONALITIES ===================================== todo//
 dnml_status _init_dynamol_bigint(void);
 //* ------------- CONSTRUCTORS & DESCTRUCTORS -------------- */
-void bigInt_free(bigInt *const x); // Destructor
+dnml_status bigInt_free(bigInt *const x); // Destructor
 dnml_status bigInt_new(bigInt *const x); // Default Constructor
 dnml_status bigInt_snew(bigInt *const x, size_t n);
 dnml_status bigInt_binew(bigInt *const x, bigInt *const y);
-dnml_status bigInt_new_u64(bigInt *const x, const uint64_t in);
-dnml_status bigInt_new_i64(bigInt *const x, const int64_t in);
-dnml_status bigInt_new_f128(bigInt *const x, long double in);
+dnml_status bigInt_newu64(bigInt *const x, const uint64_t in);
+dnml_status bigInt_newi64(bigInt *const x, const int64_t in);
+dnml_status bigInt_newf128(bigInt *const x, long double in);
 
 
 

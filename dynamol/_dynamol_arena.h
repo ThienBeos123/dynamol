@@ -40,58 +40,45 @@ dnml_status _init_dynamol_bigint(void);
 void _cleanup_dynamol(void);
 
 /* Functional Macros */
-#define arena_poisoined(arena_name) do { \
+#define arena_overflow(echeck, free_list, free_cnt, arena_name, mark) do { \
     test_assert( \
         /* Static Analysis - Assert Parameters */ \
-        (!((arena_name)->poisoined)), alloc_oom, { _cleanup_dynamol(); }, \
-        DNML_ALLOC_OOM /* Error Returns Parameters */ \
-    ) \
-} while(0);
-#define arena_alloc_oom(err_check, arena_name) do { \
-    test_assert( \
-        /* Static Analysis - Assert Parameters */ \
-        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, { _cleanup_dynamol(); }, \
-        DNML_ALLOC_OOM /* Error Returns Parameters */ \
-    ); \
-} while(0);
-#define arena_overflow(err_check, free_list, free_cnt) do { \
-    test_assert( \
-        /* Static Analysis - Assert Parameters */ \
-        (((err_check) != DARENA_OVERFLOW)), arena_ovf, \
-        { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
-        DARENA_OVERFLOW \
+        (((echeck) != DARENA_OVERFLOW)), arena_ovf, \
+        { _cleanup_dynamol(); _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { arena_rewind(arena_name, arena_mark); _FREE_RET_BI__(free_list, free_cnt); }, DARENA_OVERFLOW \
     ) \
 } while(0);
 
 /* Mutative Macros */
-#define arena_alloc_oom_mut(err_check, arena_name, err) do { \
-    test_assert_mut( \
-        (((err_check) != DNML_ALLOC_OOM)), alloc_oom, { _cleanup_dynamol(); }, \
-        (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
-    ); \
-} while(0);
-#define arena_poison_mut(arena_name, err) do { \
+#define arena_poison_mut(arena_name, err, free_list, free_cnt, retval) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
-        (!((arena_name)->poisoined)), alloc_oom, { _cleanup_dynamol(); }, \
-        (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
+        (!((arena_name)->poisoined)), alloc_oom, \
+        { _cleanup_dynamol(); _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt); }, (err), DNML_ALLOC_OOM, retval \
+    ) \
+} while(0);
+#define arena_poison_bi(arena_name, err, free_list, free_cnt) do { \
+    test_assert_mut( \
+        /* Static Analysis - Assert Parameters */ \
+        (!((arena_name)->poisoined)), alloc_oom, \
+        { _cleanup_dynamol(); _FREE_ALL_BI__(free_list, free_cnt); }, \
+        { _FREE_RET_BI__(free_list, free_cnt); }, (err), DNML_ALLOC_OOM, __BIGINT_ERROR_VALUE__() \
     ) \
 } while(0);
 
-
-
-#define arena_ovf_bi(err_check, err, free_list, free_cnt) do { \
+#define arena_ovf_bi(echeck, err, free_list, free_cnt) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
-        (((err_check) != DARENA_OVERFLOW)), arena_ovf, \
+        (((echeck) != DARENA_OVERFLOW)), arena_ovf, \
         { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
         (err), DARENA_OVERFLOW, __BIGINT_ERROR_VALUE__() /* Error Returns Parameters */ \
     ) \
 } while(0);
-#define arena_ovf_mut(err_check, err, free_list, free_cnt, retval) do { \
+#define arena_ovf_mut(echeck, err, free_list, free_cnt, retval) do { \
     test_assert_mut( \
         /* Static Analysis - Assert Parameters */ \
-        (((err_check) != DARENA_OVERFLOW)), arena_ovf, \
+        (((echeck) != DARENA_OVERFLOW)), arena_ovf, \
         { _cleanup_dynamol(); for (uint8_t i = 0; i < free_cnt; ++i) __BIGINT_INTERNAL_FREE__(free_list[i]); }, \
         (err), DARENA_OVERFLOW, retval /* Error Returns Parameters */ \
     ) \

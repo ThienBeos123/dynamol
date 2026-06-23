@@ -35,14 +35,14 @@ dnml_arena* _USE_IO_ARENA(void) {
 
 dnml_status _init_dynamol_bigint(void) {
     test_assert( // Initializing Arena for Numerical Computations
-        init_arena(&___DASI_NUMERIC_ARENA_, 128) != DNML_ALLOC_OOM, arena_oom, {
-        arena_clear(&___DASI_NUMERIC_ARENA_);
-    }, DNML_ALLOC_OOM);
+        init_arena(&___DASI_NUMERIC_ARENA_, 128) != DNML_ALLOC_OOM, arena_oom, 
+        { arena_clear(&___DASI_NUMERIC_ARENA_); }, { arena_clear(&___DASI_NUMERIC_ARENA_); }, DNML_ALLOC_OOM
+    );
     test_assert( // Initializing Arena for I/O use cases
-        init_arena(&___DASI_IO_ARENA_, 128) != DNML_ALLOC_OOM, arena_oom, {
-        arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_);                                           
-        arena_clear(&___DASI_IO_ARENA_);
-    }, DNML_ALLOC_OOM);
+        init_arena(&___DASI_IO_ARENA_, 128) != DNML_ALLOC_OOM, arena_oom,
+        { arena_clear(&___DASI_NUMERIC_ARENA_); arena_destruct(&___DASI_NUMERIC_ARENA_); arena_clear(&___DASI_IO_ARENA_); },
+        { arena_clear(&___DASI_IO_ARENA_); }, DNML_ALLOC_OOM
+    );
     return DARENA_SUCCESS;
 }
 void _cleanup_dynamol(void) {

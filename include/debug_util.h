@@ -46,14 +46,14 @@ and is generally unsafe for production-use for the user */
 
 
 // Pre-opreration evaluation asserts
-#define test_assert(cond, err_msg, cleanup, err_code) do { \
+#define test_assert(cond, err_msg, cleanup, ret_cleanup, err_code) do { \
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
-        if (!(cond)) return err_code; \
+        if (!(cond)) { ret_cleanup; return err_code; } \
     } \
 } while (0);
-#define test_assert_mut(cond, err_msg, cleanup, err, err_code, retval) do { \
+#define test_assert_mut(cond, err_msg, cleanup, ret_cleanup, err, err_code, retval) do { \
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \
