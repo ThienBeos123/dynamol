@@ -17,10 +17,7 @@ limitations under the License.
 
 
 #include "cryptInt_func.h"
-#include "dnml_status.h"
-#include "include.h"
-#include "intrinsics.h"
-#include "libdnml_types.h"
+#include "_crint_macros.h"
 
 
 

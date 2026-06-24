@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "cryptInt_func.h"
 #include "crint_algo_core.h"
+#include "_crint_macros.h"
 
 
 //* ========================================= MAGNITUDE MATHEMATICA ========================================== *//

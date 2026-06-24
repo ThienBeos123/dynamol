@@ -63,7 +63,7 @@ and is generally unsafe for production-use for the user */
         } \
     } \
 } while (0);
-#define test_assert_pre(cond, err_msg, cleanup, err, err_code, baseout, base, retsize ) do { \
+#define test_assert_pre(cond, err_msg, cleanup, ret_cleanup, err, err_code, baseout, base, retsize) do { \
     if (_DNML_DEBUG_MODE) { \
         DNML_TEST_ASSERT(cond, err_msg, cleanup); \
     } else { \

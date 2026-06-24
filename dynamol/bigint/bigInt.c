@@ -17,7 +17,7 @@ limitations under the License.
 
 
 #include "bigInt_func.h"
-#include "../_dynamol_arena.h"
+#include "_bi_macros.h"
 
 /**
  * This variable acts as a switch from arena allocation to heap allocation
