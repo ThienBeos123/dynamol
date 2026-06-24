@@ -18,6 +18,8 @@ limitations under the License.
 
 // Providing for
 #include "bigInt_func.h"
+#include <char_tables.h>
+#include <debug_util.h>
 #include "_bi_macros.h"
 static local_thread char ___DASI_IO_CHUNKBUF_[___DASI_IO_BUFSIZE];
 

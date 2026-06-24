@@ -32,8 +32,7 @@ typedef uintptr_t ptr_t;
 
 //* ======================================= DYNAMOL DEFINITION ========================================= *//
 #define BIGINT_LIMBS_BITS 64
-#define DASI_OVERFLOW_THRES10                                                  \
-  1844677407370955161 // 1,844,674,407,370,955,161 (UINT64_MAX / 10)
+#define DASI_OVERFLOW_THRES10 1844677407370955161 // 1,844,674,407,370,955,161 (UINT64_MAX / 10)
 typedef uint64_t limb_t;
 typedef struct {
     size_t n; size_t cap;

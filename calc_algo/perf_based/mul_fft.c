@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "mul.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 /* Sizing Function */
 size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) { return 0; }
 

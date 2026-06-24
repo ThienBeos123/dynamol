@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "heap_mul.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 
 /* ============== BIGINT ALGORITHMS ============== */

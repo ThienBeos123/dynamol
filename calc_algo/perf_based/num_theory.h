@@ -20,7 +20,6 @@ limitations under the License.
 #define DNML_NUM_THEORY_H
 
 
-#include <debug_util.h>
 #include <dnml_status.h>
 #include <libdnml_types.h>
 #include <include.h>

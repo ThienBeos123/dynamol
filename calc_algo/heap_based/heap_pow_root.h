@@ -19,7 +19,6 @@ limitations under the License.
 #ifndef DNML_HEAP_POW_ROOT_H
 #define DNML_HEAP_POW_ROOT_H
 
-#include <dnml_status.h>
 #include <debug_util.h>
 #include <libdnml_types.h>
 #include <include.h>

@@ -11,6 +11,7 @@
 #include <_libdnml_mem/arena.h>
 #include "../../util/util.h"
 #include "../_dynamol_arena.h"
+#include "../../util/aconv_macros.h"
 
 #ifdef __cplusplus
 extern "C" {

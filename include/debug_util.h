@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef ___DNML_DEBUG_UTIL_H
-#define ___DNML_DEBUG_UTIL_H
+#ifndef ___DNML_DEBUG_UTIL_H___
+#define ___DNML_DEBUG_UTIL_H___
 
 
 #include "_libdnml_config/settings.h"

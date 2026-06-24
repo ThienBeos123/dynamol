@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "mod.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 /* ----------------- WORKSPACE FUNCTIONS ----------------- */
 size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size) {

@@ -26,7 +26,6 @@ limitations under the License.
 #include <_libdnml_mem/_ctx.h>
 #include <dnml_status.h>
 #include "../intrinsics/intrinsics.h"
-#include "aconv_macros.h"
 
 #ifdef __cplusplus
 extern "C" {

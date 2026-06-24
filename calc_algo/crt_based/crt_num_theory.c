@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "crt_num_theory.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 /* ------------- GCD ALGORITHMS ------------- */
 uint64_t __CRINT_EUCLID__(uint64_t u, uint64_t v) { return 1; }

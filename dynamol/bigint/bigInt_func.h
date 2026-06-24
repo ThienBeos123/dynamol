@@ -21,10 +21,8 @@ limitations under the License.
 
 
 #include <dnml_status.h>
-#include <debug_util.h>
 #include <libdnml_types.h>
 #include <include.h>
-#include <char_tables.h>
 #include <dnml_sys/sys.h>
 #include <_libdnml_config/settings.h>
 #include <_libdnml_mem/arena.h>

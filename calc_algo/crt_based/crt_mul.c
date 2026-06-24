@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "crt_mul.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 /* CRYPTINT ALGORITHMS */
 dnml_status __CRINT_SCHOOLBOOK__(crint *a, crint *b, crint *res) {

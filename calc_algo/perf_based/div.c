@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "div.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 
 //* NOTE: +) THE WORKSPACE SIZE FUNCTION IS A SAFE UPPERBOUND

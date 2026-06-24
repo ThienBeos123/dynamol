@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "crt_div.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 /* CRYPTINT ALGORITHMS */
 dnml_status __CRINT_SHORT_DIVISION__(crint *a, uint64_t b, crint *quot, crint *rem) {

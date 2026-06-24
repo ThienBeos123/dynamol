@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "mul.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 
 size_t __BIGINT_TOOM_4_WS__(size_t m_size, size_t n_size) { return 0; }

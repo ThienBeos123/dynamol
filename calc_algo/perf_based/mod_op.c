@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "mod_op.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 
 //* ----- WORKSPACE FUNCTIONS ---- *//

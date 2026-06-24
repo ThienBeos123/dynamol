@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "crt_mod.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 
 /* CRYPTINT ALGORITHMS */

@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "heap_mod.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 /* BigInt Barett Modular Reduction */
 void __BIHEAP_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, dnml_status *err) {

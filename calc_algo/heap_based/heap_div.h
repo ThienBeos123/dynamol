@@ -21,7 +21,6 @@ limitations under the License.
 
 
 #include <dnml_status.h>
-#include <debug_util.h>
 #include <libdnml_types.h>
 #include <include.h>
 #include <dnml_sys/sys.h>

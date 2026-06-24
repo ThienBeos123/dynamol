@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "add_sub.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 //* =============== ADDITION ARITHMETIC ENGINE =============== *//
 void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {

@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef ___DNMLin_CHAR_TABLES_H____
-#define ___DNMLin_CHAR_TABLES_H____
+#ifndef ___DNML_CHAR_TABLES_H____
+#define ___DNML_CHAR_TABLES_H____
 
 #ifdef __cplusplus
 extern "C" {

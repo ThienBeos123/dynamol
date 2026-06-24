@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "bigInt_func.h"
+#include <char_tables.h>
+#include <debug_util.h>
 #include "_bi_macros.h"
 
 /**

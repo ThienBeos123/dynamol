@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "num_theory.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 static const uint32_t dmr_bases[7] = { 2, 325, 9375, 28178, 450775, 9780504, 1794265022 };
 
 //* ======== GCD - WORKSPACE RETURNER ======== */
