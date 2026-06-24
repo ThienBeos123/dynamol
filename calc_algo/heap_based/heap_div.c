@@ -171,7 +171,8 @@ void __BIHEAP_BURNIKEL__(PCONST_BIGINT AH, PCONST_BIGINT AL, PCONST_BIGINT b, P_
     ); HEAP_OOM(rec_err, err, early_free, early_cnt,);
     bigInt r1 = {.limbs = r.limbs,      .sign = 1, .n = k,       .cap = k};
     bigInt r2 = {.limbs = r.limbs + k,  .sign = 1, .n = r.n - k, .cap = r.n - k};
-    __BIGINT_INTERNAL_ENSCAP__(&r, k << 1); // Ensures r has enough capacity to be the remainder (2k limbs)
+    // Ensures r has enough capacity to be the remainder (2k limbs)
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&r, k << 1); HEAP_OOM(echeck, err, early_free, early_cnt,);
     __heap_burk_3b2(
         &r1, &r2, &a4,  // Dividends
         &b1, &b2, b,    // Divisors
@@ -180,7 +181,7 @@ void __BIHEAP_BURNIKEL__(PCONST_BIGINT AH, PCONST_BIGINT AL, PCONST_BIGINT b, P_
 
     //* ---------- 3. RECOMPOSITION ---------- *//
     __BIGINT_INTERNAL_MOVE__(rem, &r); __BIGINT_INTERNAL_MOVE__(quot, &q2); 
-    __BIGINT_INTERNAL_ENSCAP__(quot, quot->cap + q1.cap);
+    __BIGINT_INTERNAL_ENSCAP__(quot, quot->cap + q1.cap); HEAP_OOM(echeck, err, early_free, early_cnt,);
     memcpy(quot->limbs + quot->cap, q1.limbs, q1.cap * U64_BYTES); 
     quot->n = k << 1; /**/ __BIGINT_INTERNAL_TRIM_LZ__(quot); 
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
