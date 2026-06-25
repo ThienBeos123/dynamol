@@ -19,14 +19,11 @@ limitations under the License.
 #include "mul.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-/* Sizing Function */
+/* ------- Sizing Function ------- */
 size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) { return 0; }
 
 
-
-
 /* ------------- Helper function ------------- */
-static size_t _tmpbuf_req_(size_t nlimbs) { return nlimbs + 1; }
 static size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
     size_t max_bits = max(a_size * U64_BITS, b_size * U64_BITS);
     size_t k = 2, d = 0, m = 0, n = 0;
@@ -432,9 +429,7 @@ static void _bigint_ctk_ifft(
 
 
 
-/** ---------------- Main Orchestrating Function ----------------
- * 
- */
+/* ---------------- Main Orchestrating Function ---------------- */
 void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft_ctx, dnml_status *err) {
     if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) {
         __BIGINT_SCHOOLBOOK__(a, b, res); return; // Base-case
@@ -467,7 +462,7 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
     // 2. Looping over D of each windows and Pre-scale them through Negacyclic Convolutions
     // Allocating two flat, contiguous memory blocks for all D windows at once
     // (improve Cache Locality and Prefetch Efficiency)
-    size_t total_limbs_needed = (nlimbs + 1) << 1;
+    size_t total_limbs_needed = (nlimbs + 1) << k; // d(nlimbs + 1)
     RAW_TEMP(flat_limbs_a, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
     RAW_TEMP(flat_limbs_b, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
     for (size_t i = 0; i < d; ++i) {
