@@ -37,13 +37,12 @@ static size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, si
         ++k; // Increasing k until satisfies condition
     } *outd = d; *outm = m; *outn = n; return k;
 }
-static void __add_mod_fermat(bigInt *const out, const limb_t *const a, const limb_t *const b, size_t n, size_t nlimbs) {
+static void __add_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
     uint8_t carry = 0, nonzero_lows = 0;
-    for (size_t i = 0; i < nlimbs; ++i) {
-        // The loop internally is a oneliner due to the ring-element
-        // a and b being mandated to be the same length (mlimbs), and hence
-        // doesn't mandate multiplexing as seen in __BIGINT_ADD_WC__
-        out->limbs[i] = __ADD_UI64__(a[i], b[i], &carry);
+    for (size_t i = 0; i < max(a->n, b->n); ++i) {
+        limb_t x = (i < a->n) ? a->limbs[i] : 0;
+        limb_t y = (i < b->n) ? b->limbs[i] : 0;
+        out->limbs[i] = __ADD_UI64__(x, y, &carry);
         // Set the flag for lower-limbs being non-zero for correction later
         nonzero_lows |= out->limbs[i];
     }
@@ -52,7 +51,7 @@ static void __add_mod_fermat(bigInt *const out, const limb_t *const a, const lim
     // if the value is strictly > 2^n (bit n set AND low bits nonzero).
     size_t top_bit = n & ((UINT16_C(1) << 6) - 1); // Modulo 64
     if (((out->limbs[nlimbs - 1] >> top_bit) & 1) && nonzero_lows) {
-        out->limbs[nlimbs - 1] &= ~(UINT64_C(1) << top_bit); // clear bit n
+        out->limbs[nlimbs - 1] &= ~(UINT16_C(1) << top_bit); // clear bit n
         uint64_t borrow = 1;
         for (size_t i = 0; i < nlimbs && borrow; ++i) {
             uint64_t prev = out->limbs[i];
@@ -61,18 +60,15 @@ static void __add_mod_fermat(bigInt *const out, const limb_t *const a, const lim
         }
     }
 }
-static void __sub_mod_fermat(bigInt *const out, const limb_t *const a, const limb_t *const b, size_t n, size_t nlimbs) {
-    bigInt a_view = {.limbs = (limb_t*)a, .n = nlimbs, .cap = nlimbs, .sign = 1};
-    bigInt b_view = {.limbs = (limb_t*)b, .n = nlimbs, .cap = nlimbs, .sign = 1};
-    __BIGINT_SUB_SAW__(out, &a_view, &b_view);
-
+static void __sub_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
+    __BIGINT_SUB_SAW__(out, a, b);
     //* Modular Correction upon underflow (out_view < 0)
     //  We would achieve via subtraction of 2^n + 1 by the negative value,
     //  as -b + a == a - b. We would do this by having prefixed dummy values
     //  representing the first and last limb of a simulated bigInt == 2^n + 1
     if (out->sign < 0) {
         size_t bit_pos = n & ((UINT16_C(1) << 6) - 1); // Modulo 64
-        limb_t first_limb = 0; /**/ limb_t last_limb = (UINT64_C(1) << bit_pos); 
+        limb_t first_limb = 0; /**/ limb_t last_limb = (UINT16_C(1) << bit_pos); 
         limb_t curr_limb = 0; /**/ uint8_t borrow = 0;
         size_t top_nonzero = 0;
         // Main subtraction operation
@@ -95,7 +91,7 @@ static void __negate_mod_fermat(bigInt *const out, const bigInt *in, size_t n, s
      */
     // The correction sequence for -in mod (2^n + 1) is just (2^n + 1) - in
     size_t bit_pos = n & ((UINT16_C(1) << 6) - 1); // Modulo 64
-    limb_t first_limb = 0; /**/ limb_t last_limb = (UINT64_C(1) << bit_pos); 
+    limb_t first_limb = 0; /**/ limb_t last_limb = (UINT16_C(1) << bit_pos); 
     limb_t curr_limb = 0; /**/ uint8_t borrow = 0;
     size_t top_nonzero = 0;
     // Main subtraction operation
@@ -130,28 +126,31 @@ static void __negate_mod_fermat(bigInt *const out, const bigInt *in, size_t n, s
  *  -->      hi * 2^n ≡ -hi
  *  --> lo + hi * 2^n ≡ lo + (-hi)         -------> [x ≡ lo - hi]
  */
+static inline size_t _reduct_lo_req_(size_t n) { return (n >> 6) + !!(n & ((UINT16_C(1) << 6) - 1)); }
+static inline size_t _reduct_hi_req_(size_t n) { return (n >> 6) + !!(n & ((UINT16_C(1) << 6) - 1)); }
 static void __reduce_mod_fermat(
-    bigInt *const out, const limb_t *const in, 
-    limb_t *const lo_buf, limb_t *const hi_buf,
-    size_t n, size_t nlimbs
+    bigInt *const out, const bigInt *const in, 
+    limb_t *const lo_buf, limb_t *const hi_buf, size_t n
 ) {
     size_t top_limb = n >> 6; // Division by 64
-    size_t top_bit = n & ((UINT64_C(1) << 6) - 1); // Modulo 64
-    memset(lo_buf + top_limb, 0, (nlimbs - top_limb) * U64_BYTES);
-    memset(hi_buf + top_limb, 0, (nlimbs - top_limb) * U64_BYTES);
+    size_t top_bit = n & ((UINT16_C(1) << 6) - 1); // Modulo 64
+    memset(lo_buf + top_limb, 0, (top_limb + !!(top_bit)) * U64_BYTES);
+    memset(hi_buf + top_limb, 0, (top_limb + !!(top_bit)) * U64_BYTES);
 
     // Copying into lo from in (bit range: [0:n])
     memcpy(lo_buf, in, top_limb * U64_BYTES);
-    if (top_bit) lo_buf[top_limb] = in[top_limb] & ((UINT64_C(1) << top_bit) - 1);
+    if (top_bit) lo_buf[top_limb] = in->limbs[top_limb] & ((UINT16_C(1) << top_bit) - 1);
     // Copying into hi from in (bit range: [n+1:...])
-    if (top_bit == 0) memcpy(hi_buf, in + top_limb, nlimbs * sizeof(limb_t));
+    if (top_bit == 0) memcpy(hi_buf, in + top_limb, top_limb * sizeof(limb_t));
     else {
-        for (size_t i = 0; i < nlimbs - 1; ++i) {
-            hi_buf[i] = (in[i + top_limb] >> top_bit) | (in[i + top_limb + 1] << (64 - top_bit));\
-        } hi_buf[nlimbs-1] = in[nlimbs + top_limb - 1] >> top_bit;
+        for (size_t i = 0; i < top_limb - 1; ++i) {
+            hi_buf[i] = (in->limbs[i + top_limb] >> top_bit) | (in->limbs[i + top_limb + 1] << (64 - top_bit));
+        } hi_buf[top_limb - 1] = in->limbs[(top_limb << 1) - 1] >> top_bit;
     }
     // Final step: in mod(2^n + 1) ≡ lo - hi
-    __sub_mod_fermat(out, lo_buf, hi_buf, n, nlimbs);
+    bigInt lo_view = { .limbs = lo_buf, .n = (top_limb + !!(top_bit)), .cap = (top_limb + !!(top_bit)), .sign = 1 };
+    bigInt hi_view = { .limbs = hi_buf, .n = (top_limb + !!(top_bit)), .cap = (top_limb + !!(top_bit)), .sign = 1 };
+    __sub_mod_fermat(out, &lo_view, &hi_view, n, top_limb);
 }
 
 
@@ -173,6 +172,12 @@ static void __reduce_mod_fermat(
  *              = lo * 2^s  +  hi * 2^n
  *              ≡ lo * 2^s  -  hi
  */
+static inline size_t _cshift_buf_req_(size_t s, size_t n, size_t nlimbs, size_t *out_hi) {
+    size_t lo_bits = n - s;
+    size_t lo_limbs = lo_bits >> 6;
+    size_t lo_top_bit = (lo_bits & ((UINT16_C(1) << 6) - 1));
+    *out_hi = (nlimbs - lo_limbs); return lo_limbs;
+}
 static void __cyclic_shift_mod(
     bigInt *const out, const limb_t *const x, 
     limb_t *const lo_buf, limb_t *const hi_buf,
@@ -188,33 +193,31 @@ static void __cyclic_shift_mod(
     // Size pre-calculations
     size_t lo_bits = n - s; // lo = x[0 : (n-s)] bits
     size_t lo_limbs = lo_bits >> 6; // Dividing by 64
-    size_t lo_top_bit = lo_bits & ((UINT64_C(1) << 6) - 1); // Modulo 64
+    size_t lo_top_bit = lo_bits & ((UINT16_C(1) << 6) - 1); // Modulo 64
     size_t hi_limbs = (nlimbs - lo_limbs);
 
-    // Clearing lo_buf & hi_buf AND Extracting from x into lo
-    memset(lo_buf + lo_limbs, 0, nlimbs - lo_limbs * U64_BYTES);
-    memset(hi_buf + hi_limbs, 0, (nlimbs - hi_limbs) * U64_BYTES);
+    // Extracting from x into lo
     memcpy(lo_buf, x, lo_limbs * U64_BYTES); // Copying the first nlimbs-worth of bits
-    if (lo_top_bit) lo_buf[lo_limbs] = x[lo_limbs] & ((UINT64_C(1) << lo_top_bit) - 1); // Copy the remaining bits
+    if (lo_top_bit) lo_buf[lo_limbs] = x[lo_limbs] & ((UINT16_C(1) << lo_top_bit) - 1); // Copy the remaining bits
 
-    // Extraction of x into hi
+    // Extracting from x into hi
     if (!lo_top_bit) memcpy(hi_buf, x, hi_limbs * U64_BYTES);
     else {
         for (size_t i = 0; i + lo_limbs < nlimbs - 1; ++i) {
             hi_buf[i] = (x[i + lo_limbs] >> lo_top_bit) | (x[i + lo_limbs + 1] << (U64_BITS - lo_top_bit));
         } hi_buf[nlimbs - lo_limbs - 1] = x[nlimbs - 1] >> lo_top_bit;
-    }
+    } bigInt hi_view = { .limbs = hi_buf, .n = hi_limbs, .cap = hi_limbs, .sign = 1 };
 
     // Final Calculations
-    size_t s_llshift = s >> 6, s_lshift = s & ((UINT64_C(1) << 6) - 1);
+    size_t s_llshift = s >> 6, s_lshift = s & ((UINT16_C(1) << 6) - 1);
     memcpy(out->limbs, lo_buf, (lo_limbs + !!(lo_top_bit)) * U64_BYTES); out->n = (lo_limbs + !!(lo_top_bit));
     __BIGINT_INTERNAL_LLSHIFT__(out, s_llshift); __BIGINT_INTERNAL_LSHIFT__(out, s_lshift);
-    __sub_mod_fermat(out, out->limbs, hi_buf, n, nlimbs); // out = (lo * 2^s) - hi mod(2^n + 1)
+    __sub_mod_fermat(out, out, &hi_view, n, nlimbs); // out = (lo * 2^s) - hi mod(2^n + 1)
     __BIGINT_INTERNAL_TRIM_LZ__(out); if (!out->n) out->sign = 1;
-    // This negation of out upon s >= n is due to 2n being the full-period, and hence n being the half-period
-    // If the full-period has the identity 2^(2n) = 1 mod(2^n + 1), then the half-period has an indentity
-    // of 2^n = -1 mod(2^n + 1). Therefore, Multiplying by 2^s, where s is normalized to be period-normalized
-    // under 2n and larger than n, can only mean multiplying by -2^(s-n).
+    // This negation of out upon s >= n is due to 2n being the full-period in Z/(2^n + 1)Z, 
+    // and hence n being the half-period. If the full-period has the identity 2^(2n) = 1 mod(2^n + 1),
+    // and the half-period has an indentity of 2^n = -1 mod(2^n + 1). Therefore, Multiplying by 2^s, 
+    // where s is normalized to be period-normalized under 2n and larger than n, can only mean multiplying by -2^(s-n).
     if (s >= n && !(out->n)) __negate_mod_fermat(out, out, n, nlimbs);
 }
 
