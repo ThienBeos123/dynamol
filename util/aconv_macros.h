@@ -65,6 +65,9 @@ void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt);
     limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count), (&(err_check))); \
     if ((err_check) != (DARENA_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); *err = DARENA_OVERFLOW; return ret_val; } \
     bigInt name = {.limbs = name##_limbs, .sign = 1, .n = 0, .cap = (limb_count)};
+#define RAW_TEMP(name, limb_count, ctx, ctx_mark, echeck, err, retval) \
+    limb_t *name = scratch_alloc(&(ctx), (limb_count), (&(echeck))); \
+    if ((echeck) != (DARENA_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); *err = DARENA_OVERFLOW; return retval; }
 #define SCRATCH_OVF(err_check, ctx, mark, err, ret_val) if ((err_check) == DARENA_OVERFLOW) { \
     scratch_rewind(&(ctx), (mark)); (*(err)) = DARENA_OVERFLOW; return ret_val; \
 }

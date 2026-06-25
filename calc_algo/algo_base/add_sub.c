@@ -32,7 +32,7 @@ void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     if (carry) res->limbs[max] = carry; // If there is still a carry
     res->n = max + (carry != 0);
 }
-void __BIGINT_ADD_SHIFTED__(bigInt *dst, const bigInt *src, size_t limb_shift) {
+void __BIGINT_ADD_SHIFT__(bigInt *dst, const bigInt *src, size_t limb_shift) {
     uint8_t carry = 0;
     for (size_t i = 0; i < src->n; ++i) {
         size_t di = i + limb_shift;
