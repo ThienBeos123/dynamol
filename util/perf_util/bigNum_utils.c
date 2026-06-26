@@ -109,7 +109,9 @@ size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
     long double bits_per_digit = log2l(base);
     return (size_t)(total_log2 / bits_per_digit) + 1;
 }
-size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) { return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1; }
+size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) { 
+    return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1; 
+}
 size_t __BIGINT_LIMBS_NEEDED__(size_t bits) { 
     if (!bits) return 0;
     return (size_t)((bits + BIGINT_LIMBS_BITS - 1) / BIGINT_LIMBS_BITS);

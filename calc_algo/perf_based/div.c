@@ -19,12 +19,6 @@ limitations under the License.
 #include "div.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
-
-//* NOTE: +) THE WORKSPACE SIZE FUNCTION IS A SAFE UPPERBOUND
-//*       +) THE WORKSPACE SIZE FUNCTION DOES NOT COMPUTE EXACTLY THE
-//*          CORRECT SIZE WITH CORRECT ALIGNMENT PADDINGS TAKEN INTO ACCOUNT
-
 /* ------ WORKSPACE FUNCTIONS ------ */
 size_t __BIGINT_SHORTDIV_WS__(size_t a_size, size_t b_size) { return 0; }
 size_t __BIGINT_KNUTH_WS__(size_t a_size, size_t b_size) { return (a_size + 1 + b_size) + (a_size + b_size); }
@@ -40,7 +34,6 @@ size_t __BIGINT_BURNIKEL_WS__(size_t a_size, size_t b_size) {
     return 3*(q1_q2_size + rsize + csize + iq_size + dsize) + a_size;
     // a_size has been updated/halved from recursion.
 }
-size_t __BIGINT_NEWTON_WS__(size_t a_size, size_t b_size) { return 0; }
 size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size) {
     if      (b_size < BIGINT_SHORT) return __BIGINT_SHORTDIV_WS__(a_size, b_size);
     else if (b_size < BIGINT_KNUTH) return __BIGINT_KNUTH_WS__(a_size, b_size);
@@ -263,7 +256,6 @@ void __BIGINT_BURNIKEL__(
     __BIGINT_INTERNAL_COPY__(rem, &r); __BIGINT_INTERNAL_COPY__(quot, &q2);
     scratch_rewind(&burk_ctx, burk_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_NEWTON__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, calc_ctx newton_ctx, dnml_status *err) {}
 /* ------ ALGORITHMS FUNCTIONS - REMAINDER BIASED ------ */
 // Only algorithms included in the modulo dispatching function is included here
 void __RBIGINT_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIGINT rem) {
@@ -403,7 +395,6 @@ void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGI
     __BIGINT_INTERNAL_COPY__(quot, &ret_quot); __BIGINT_INTERNAL_COPY__(rem, &ret_rem); 
     scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS; // Free all temporaries
 }
-void __RBIGINT_NEWTON__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, calc_ctx newton_ctx, dnml_status *err) {}
 /* --------------- ALGORITHM DISPATCHER --------------- */
 void __BIGINT_DIV_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT tmp_rem, calc_ctx div_ctx, dnml_status *err) {
     if (b->n < BIGINT_SHORT) {  __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem); *err = BIGINT_SUCCESS; }

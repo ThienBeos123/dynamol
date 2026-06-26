@@ -24,13 +24,10 @@ limitations under the License.
 void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     size_t max = max(a->n, b->n); uint8_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
-        uint64_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
-        uint64_t y = (i < b->n) ? b->limbs[i] : 0; // Assigning limb at position i of b to x
+        limb_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
+        limb_t y = (i < b->n) ? b->limbs[i] : 0; // Assigning limb at position i of b to x
         res->limbs[i] = __ADD_UI64__(x, y, &carry); // Do single-limb addition with carry (if have)
-        // Stores the carry
-    }
-    if (carry) res->limbs[max] = carry; // If there is still a carry
-    res->n = max + (carry != 0);
+    } res->n = max; /**/ if (carry) res->limbs[res->n++] = carry;
 }
 void __BIGINT_ADD_SHIFT__(bigInt *dst, const bigInt *src, size_t limb_shift) {
     uint8_t carry = 0;
@@ -66,7 +63,7 @@ void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b) {
     uint8_t borrow = 0; size_t top_nonzero = 0;
     for (size_t i = 0; i < a->n; ++i) {
-        uint64_t y = (i < b->n) ? b->limbs[i] : 0;
+        limb_t y = (i < b->n) ? b->limbs[i] : 0;
         res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
         // Do single-limb subtraction with borrow ---> Stores the borrow
         if (!(res->limbs[i])) top_nonzero = i;
@@ -95,9 +92,9 @@ dnml_status __CRINT_ADD_WC__(crint *res, crint *a, crint *b) {
     // Main Algorithms
     size_t max = crtmax(a->n, b->n); uint8_t carry = 0;
     for (size_t i = 0; _lib_crt_lt(i, max); ++i) {
-        uint64_t a_curr = a->limbs[i], b_curr = b->limbs[i], x, y;
-        // uint64_t x = (i < a->n) ? a->limbs[i] : 0;
-        // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
+        limb_t a_curr = a->limbs[i], b_curr = b->limbs[i], x, y;
+        // limb_t x = (i < a->n) ? a->limbs[i] : 0;
+        // limb_t y = (i < b->n) ? b->limbs[i] : 0;
         CHOOSE_OPTION(x, (_lib_crt_lt(i, a->n)), a_curr, 0);
         CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), b_curr, 0);
         res->limbs[i] = __CRT_ADD_U64__(x, y, &carry);
@@ -110,8 +107,8 @@ dnml_status __CRINT_SUB_WC__(crint *res, crint *a, crint *b) {
     // Main Algorithms
     uint8_t borrow = 0;
     for (size_t i = 0; _lib_crt_lt(i, a->n); ++i) {
-        uint64_t curr = b->limbs[i], y;
-        // uint64_t y = (i < b->n) ? b->limbs[i] : 0;
+        limb_t curr = b->limbs[i], y;
+        // limb_t y = (i < b->n) ? b->limbs[i] : 0;
         CHOOSE_OPTION(y, (_lib_crt_lt(i, b->n)), curr, 0);
         res->limbs[i] = __CRT_SUB_U64__(a->limbs[i], y, &borrow);
         curr = 0; borrow = 0;
