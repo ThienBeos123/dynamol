@@ -39,6 +39,14 @@ dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k) {
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P ; x->cap = new_cap; return BIGINT_SUCCESS;
 }
+dnml_status __BIGINT_INTERNAL_SHRINK__(bigInt *x, size_t k) {
+    k = (!k) ? 1 : k; if (x->cap <= k) return BIGINT_SUCCESS;
+    limb_t *__BUFFER_P = realloc(x->limbs, k * sizeof(limb_t));
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P; x->cap = k;
+    if (x->n < x->cap) x->n = x->cap;
+    return BIGINT_SUCCESS;
+}
 void __BIGINT_INTERNAL_FREE__(bigInt *x) { free(x->limbs); x->n = 1; x->cap = 0; x->sign = 0; }
 void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt) {
     for (uint8_t i = 0; i < alloc_cnt; ++i) __BIGINT_INTERNAL_FREE__(alloc_list[i]);
