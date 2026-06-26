@@ -20,10 +20,6 @@ limitations under the License.
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 /* ------- Sizing Function ------- */
-size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) { return 0; }
-
-
-/* ------------- Helper function ------------- */
 static size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
     size_t max_bits = max(a_size * U64_BITS, b_size * U64_BITS);
     size_t k = 2, d = 0, m = 0, n = 0;
@@ -35,6 +31,29 @@ static size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, si
         ++k; // Increasing k until satisfies condition
     } *outd = d; *outm = m; *outn = n; return k;
 }
+size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) { 
+    if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0; // Base-case
+    // Pre-buffer calculation metadatas
+    size_t d = 0, m = 0, n = 0, k = __fft_best_metadata(a_size, b_size, &d, &m, &n);
+    size_t mlimbs = (m + U64_BITS - 1) >> 6;
+    size_t nlimbs = (n + U64_BITS) >> 6;
+    // Main temporary buffer sizing
+    size_t local_tmp = (
+        // lo_buf, hi_buf, tbuf, usave
+        ((nlimbs + 1) << 1) + (nlimbs + 1) + (nlimbs + 2)
+      + ((((nlimbs + 1) << k) << 1)) // flat_evala + flat_evalb
+      + (nlimbs << 1) + 2 + a_size + b_size // prod_tmp + tmp_res
+    );
+    size_t downstream_size = __BIGINT_FFT_WS__(nlimbs, nlimbs);
+    return local_tmp + downstream_size;
+    // THE SIZING FOR FFT MIGHT BE MORE COMPUTATIONALLY STRESSFUL THAN THAT OF KARATSUBA
+    // OR TOOM-COOK DUE TO SCHONHAGE-STRASSEN SPLITTING INPUTS INTO VARIABLE-AMOUNT OF WINDOWS,
+    // AND THEREFORE CAN HARDLY BE EXPRESSED AS A FIXED, CONVERGENT INFINITE SUM/SERIES, 
+    // AND THEREFORE REQUIRES ACTUAL LIVE RECURSIVE SIZE CALCULATION
+}
+
+
+/* ------------- Helper function ------------- */
 static void __add_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
     uint8_t carry = 0, nonzero_lows = 0;
     for (size_t i = 0; i < max(a->n, b->n); ++i) {
@@ -463,11 +482,11 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
     // Allocating two flat, contiguous memory blocks for all D windows at once
     // (improve Cache Locality and Prefetch Efficiency)
     size_t total_limbs_needed = (nlimbs + 1) << k; // d(nlimbs + 1)
-    RAW_TEMP(flat_limbs_a, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
-    RAW_TEMP(flat_limbs_b, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
+    RAW_TEMP(flat_evala, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
+    RAW_TEMP(flat_evalb, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
     for (size_t i = 0; i < d; ++i) {
-        eval_a[i] = (bigInt){ .limbs = flat_limbs_a + (i * (nlimbs + 1)), .n = nlimbs, .cap = nlimbs + 1, .sign = 1 };
-        eval_b[i] = (bigInt){ .limbs = flat_limbs_b + (i * (nlimbs + 1)), .n = nlimbs, .cap = nlimbs + 1, .sign = 1 };
+        eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (nlimbs + 1)), .n = nlimbs, .cap = nlimbs + 1, .sign = 1 };
+        eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (nlimbs + 1)), .n = nlimbs, .cap = nlimbs + 1, .sign = 1 };
         // Perform cyclic shifts straight into these perfectly localized targets
         size_t weight_exp = i * psi_step;
         __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, n, nlimbs);
