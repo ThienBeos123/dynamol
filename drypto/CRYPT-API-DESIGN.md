@@ -153,9 +153,8 @@ post-operation cleanup block before the function returns. See §6.
 |--------------------|-----------------------|--------------------------------------------------------------------|
 | NULL pointer input | **Yes**               | Metadata only; no secret data on the stack yet                     |
 | Invalid struct     | **Yes**               | No secret, valid data is loaded + invalid data is virtually usless |
+| OOM                | **Yes**               | Failed allocation (OOM) leaks system state, no operation state     |
 | Poisoned input     | **No**                | Timing of poison check leaks operand state                         |
-| OOM                | **No**                | Timing of failed alloc leaks operand size                          |
-| Division by zero   | **No**                | Must propagate without branching on operand                        |
 
 NULL pointer and invalid-struct early returns **must** zeroize any pass-by-value
 parameters before returning:
@@ -176,18 +175,6 @@ The result is always returned as poisoned with NULL limbs.
 
 ```c
 CHOOSE_OPTION((ret_stat), (x->poisoned & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))), (CRINT_POISON), (ret_stat));
-```
-
-### OOM Propagation
-
-OOM on a temporary allocation sets `ret_stat = DNML_ALLOC_OOM` and redirects
-to pre-allocated fake buffers. The real operands are untouched.
-
-```c
-CHOOSE_OPTION((ret_stat),
-    (_lib_crt_eq(snew_stat, DNML_ALLOC_OOM) & (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
-    (DNML_ALLOC_OOM), (ret_stat)
-);
 ```
 
 ---
@@ -393,4 +380,4 @@ However, for normal 64-bit exclusive and below operations (`+, -, *, /, %`), suc
 | x86-64       | SysV AMD64 + WIN64  | `_x86_(sysv/win64)_arith.S`  | Full     |
 | ARM64        | AAPCS64 + Darwin    | `_arm64_arith.S`             | Full     |
 | RISC-V 64    | RV64 psABI (LP64)   | `_rv64_arith.S`              | Full     |
-| Other        | N/A                 | `_vanillc_arith.c`           | Fallback |
+| Other        | N/A                 | `_crt_vanillc_arith.c`       | Fallback |

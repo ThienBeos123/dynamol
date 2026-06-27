@@ -32,7 +32,7 @@ static size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, si
     } *outd = d; *outm = m; *outn = n; return k;
 }
 size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) { 
-    if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0; // Base-case
+    if (a_size <= BIGINT_SCHOOLBOOK || b_size <= BIGINT_SCHOOLBOOK) return 0; // Base-case
     // Pre-buffer calculation metadatas
     size_t d = 0, m = 0, n = 0, k = __fft_best_metadata(a_size, b_size, &d, &m, &n);
     size_t mlimbs = (m + U64_BITS - 1) >> 6;
@@ -450,7 +450,7 @@ static void _bigint_ctk_ifft(
 
 /* ---------------- Main Orchestrating Function ---------------- */
 void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft_ctx, dnml_status *err) {
-    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) {
+    if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) {
         __BIGINT_SCHOOLBOOK__(a, b, res); return; // Base-case
     } //* -------- 1. SETUP & SPLIT -------- *//
     // Splitting and Convolution Variables
@@ -542,7 +542,6 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
             } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
             __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
         }
-    }
-    __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(res, &tmp_res);
+    } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(res, &tmp_res);
     scratch_rewind(&fft_ctx, fft_mark); *err = BIGINT_SUCCESS;
 }

@@ -19,8 +19,6 @@ limitations under the License.
 #include "heap_mul.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
-
 /* ============== BIGINT ALGORITHMS ============== */
 /* BigInt Schoolbook Multiplication - Heap-allocating */
 void __BIHEAP_SCHOOLBOOK__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res) {
@@ -38,7 +36,7 @@ void __BIHEAP_SCHOOLBOOK__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res) {
 
 /* BigInt Karatsuba Multiplication - Heap-allocating */
 void __BIHEAP_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, dnml_status *err) {
-    if (x->n <= BIGINT_SCHOOLBOOK && y->n <= BIGINT_SCHOOLBOOK) {
+    if (x->n <= BIGINT_SCHOOLBOOK || y->n <= BIGINT_SCHOOLBOOK) {
         dnml_status echeck = __BIGINT_INTERNAL_LINIT__(res, x->n + y->n);
         if (echeck == DNML_ALLOC_OOM) { *err = DNML_ALLOC_OOM; return; }
         __BIHEAP_SCHOOLBOOK__(x, y, res); *err = BIGINT_SUCCESS; return;
@@ -86,7 +84,7 @@ void __BIHEAP_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, dnml_s
 
 /* BigInt Toom 3-way Multiplication - Heap-allocating */
 void __BIHEAP_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {
-    if (m->n <= BIGINT_SCHOOLBOOK && n->n <= BIGINT_SCHOOLBOOK) {
+    if (m->n <= BIGINT_SCHOOLBOOK || n->n <= BIGINT_SCHOOLBOOK) {
         dnml_status echeck = __BIGINT_INTERNAL_LINIT__(res, m->n + n->n);
         if (echeck == DNML_ALLOC_OOM) { *err = DNML_ALLOC_OOM; return; }
         __BIHEAP_SCHOOLBOOK__(m, n, res); *err = BIGINT_SUCCESS; return;
@@ -187,7 +185,7 @@ void __BIHEAP_TOOM_4__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_stat
 
 /* BigInt Heap-allocating Multiplication Algorithm Dispatching */
 void __BIHEAP_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status *err) {
-    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) { __BIHEAP_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
+    if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) { __BIHEAP_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
     else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) { __BIHEAP_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
     else if (a->n <= BIGINT_KARATSUBA && b->n <= BIGINT_KARATSUBA) __BIHEAP_KARATSUBA__(a, b, res, err);
     else if (a->n <= BIGINT_TOOM_3 && b->n <= BIGINT_TOOM_3) __BIHEAP_TOOM_3__(a, b, res, err);

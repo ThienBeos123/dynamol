@@ -17,6 +17,7 @@ limitations under the License.
 
 
 #include "_dynamol_arena.h"
+#define arena_oom "Arena initialization occured an Out-of-Memory error (-Ealloc_oom)"
 
 local_thread dnml_arena ___DASI_NUMERIC_ARENA_;
 dnml_arena* _USE_ARENA(void) {

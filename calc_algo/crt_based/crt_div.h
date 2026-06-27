@@ -38,7 +38,7 @@ extern "C" {
 
 /* CRYPTINT ALGORITHMS */
 dnml_status __CRINT_SHORT_DIVISION__(crint *a, uint64_t b, crint *quot, crint *rem);
-dnml_status __CRINT_NEWTON_RECP__(crint *a, crint *b, crint *quot, crint *rem);
+dnml_status __CRINT_BURK__(crint *a, crint *b, crint *quot, crint *rem);
 dnml_status __CRINT_DIV_DISP__(crint *a, crint *b, crint *quot, crint *rem);
 #ifdef __cplusplus
 }

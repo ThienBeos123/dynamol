@@ -77,6 +77,7 @@ add_library(dnml_core STATIC
     calc_algo/perf_based/mul_toom_45.c
     calc_algo/perf_based/mul_toom_p5.c
     calc_algo/perf_based/mul.c
+    calc_algo/perf_based/div_newton.c
     calc_algo/perf_based/div.c
     calc_algo/perf_based/mod.c
     calc_algo/perf_based/mod_op.c
@@ -86,6 +87,7 @@ add_library(dnml_core STATIC
     calc_algo/heap_based/heap_mul_toom.c
     calc_algo/heap_based/heap_mul_fft.c
     calc_algo/heap_based/heap_mul.c
+    calc_algo/heap_based/heap_div_newt.c
     calc_algo/heap_based/heap_div.c
     calc_algo/heap_based/heap_mod.c
     calc_algo/heap_based/heap_modop.c

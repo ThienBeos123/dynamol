@@ -427,7 +427,7 @@ static void _biheap_ctk_ifft(
 
 /* ---------------- Main Orchestrating Function ---------------- */
 void __BIHEAP_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status *err) {
-    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) { // Base-case
+    if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) { // Base-case
         dnml_status echeck = BIGINT_SUCCESS;
         if (res->limbs != NULL) echeck = __BIGINT_INTERNAL_ENSCAP__(res, a->n + b->n);
         else echeck = __BIGINT_INTERNAL_LINIT__(res, a->n + b->n);

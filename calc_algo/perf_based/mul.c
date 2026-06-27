@@ -43,7 +43,7 @@ size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
-    if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0; // Doesn't need any
+    if (a_size <= BIGINT_SCHOOLBOOK || b_size <= BIGINT_SCHOOLBOOK) return 0; // Doesn't need any
     else if (min(a_size, b_size) * 4 <= max(a_size, b_size)) return 0;
     else if (a_size < BIGINT_KARATSUBA && b_size < BIGINT_KARATSUBA) return __BIGINT_KARATSUBA_WS__(a_size, b_size);             
     else if (a_size < BIGINT_TOOM_3 && b_size < BIGINT_TOOM_3) return __BIGINT_TOOM_3_WS__(a_size, b_size);
@@ -70,8 +70,9 @@ void __BIGINT_SCHOOLBOOK__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res) {
     } res->n = a->n + b->n; __BIGINT_INTERNAL_TRIM_LZ__(res);
 }
 void __BIGINT_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, calc_ctx karat_ctx, dnml_status *err) {
-    if (x->n <= BIGINT_SCHOOLBOOK && y->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(x, y, res); *err = BIGINT_SUCCESS; return; } 
-    //* ---- 1. SETUP ---- *?/
+    if (x->n <= BIGINT_SCHOOLBOOK || y->n <= BIGINT_SCHOOLBOOK) { 
+        __BIGINT_SCHOOLBOOK__(x, y, res); /**/ *err = BIGINT_SUCCESS; return; 
+    } //* ---- 1. SETUP ---- *?/
     size_t m = (size_t)(max(x->n, y->n) / 2);
     size_t  x0_range = m,  x1_range = x->n - m;
     size_t  y0_range = m,  y1_range = y->n - m;
@@ -112,8 +113,9 @@ void __BIGINT_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, calc_c
     *err = BIGINT_SUCCESS;
 }
 void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {
-    if (m->n <= BIGINT_SCHOOLBOOK && n->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(m, n, res); *err = BIGINT_SUCCESS; return; }
-    //* -------- 1. SETUP & SPLITTING -------- *//
+    if (m->n <= BIGINT_SCHOOLBOOK || n->n <= BIGINT_SCHOOLBOOK) { 
+        __BIGINT_SCHOOLBOOK__(m, n, res); /**/ *err = BIGINT_SUCCESS; return; 
+    } //* -------- 1. SETUP & SPLITTING -------- *//
     size_t k = (size_t)(max(m->n, n->n) / 3) + 1;
     size_t m2size = (m->n > (k << 1)) ? (m->n - (k << 1)) : 0;
     size_t n2size = (n->n > (k << 1)) ? (n->n - (k << 1)) : 0;
@@ -185,7 +187,7 @@ void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx 
     __BIGINT_INTERNAL_COPY__(res, &final_res); scratch_rewind(&toom_ctx, toom_mark); *err = BIGINT_SUCCESS;
 }                                 
 void __BIGINT_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx mul_ctx, dnml_status *err) {
-    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
+    if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
     else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
     else if (a->n <= BIGINT_KARATSUBA && b->n <= BIGINT_KARATSUBA) __BIGINT_KARATSUBA__(a, b, res, mul_ctx, err);
     else if (a->n <= BIGINT_TOOM_3 && b->n <= BIGINT_TOOM_3) __BIGINT_TOOM_3__(a, b, res, mul_ctx, err);

@@ -40,12 +40,8 @@ uint64_t __BINARY_GCDU64__(uint64_t u, uint64_t v) {
     uint8_t i = __CTZ_UI64__(u); u >>= i;
     uint8_t j = __CTZ_UI64__(v); v >>= j;
     uint8_t k = min(i, j);
-
     while (u != v) {
-        if (u < v) { 
-            // Swapping u and v with eachother
-            uint64_t tmp = v; u = v; v = u; 
-        }
+        if (u < v) { uint64_t tmp = v; u = v; v = u; }
         u -= v; // gcd(u, v) == gcd(u, v - u) WHEN (u & v == ODD) && (u <= v)
         u >>= __CTZ_UI64__(u); // gcd(u, 2v) == gcd(u, v)
     } return u;
@@ -80,7 +76,9 @@ void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx s
     __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_COPY__(res, &u_copy);
     scratch_rewind(&stein_ctx, stein_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx lehmer_ctx, dnml_status *err) {}
+void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx lehmer_ctx, dnml_status *err) {
+    
+}
 void __BIGINT_HALF__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx half_ctx, dnml_status *err) {}
 void __BIGINT_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx gcd_ctx, dnml_status *err) {
     size_t op_size = min(u->n, v->n);
