@@ -77,7 +77,7 @@ void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx s
     scratch_rewind(&stein_ctx, stein_mark); *err = BIGINT_SUCCESS;
 }
 void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx lehmer_ctx, dnml_status *err) {
-    
+     
 }
 void __BIGINT_HALF__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx half_ctx, dnml_status *err) {}
 void __BIGINT_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx gcd_ctx, dnml_status *err) {

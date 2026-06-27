@@ -142,7 +142,7 @@ void __BIGINT_MBIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT
     memset(&r_mod_n.limbs[1], 0, r_mod_n.n * U64_BYTES); // both bigInts have the same capacity requirements of mod->n
     BIGINT_TEMP(tmp_exp, exp->n, bin_ctx, binexp_mark, echeck, err,);
     BIGINT_TEMP(tmp_base, mod->n, bin_ctx, binexp_mark, echeck, err,);
-    r_mod_n.limbs[0] = 1; memcpy(tmp_exp.limbs, exp->limbs, exp->n * U64_BYTES);
+    r_mod_n.limbs[0] = 1; r_mod_n.n = 1; r_mod_n.sign = 1; memcpy(tmp_exp.limbs, exp->limbs, exp->n * U64_BYTES);
     if (cmp_res < 0) memcpy(tmp_base.limbs, base->limbs, base->n * U64_BYTES);
     else if (cmp_res > 0) {
         __BIGINT_MOD_DISP__(base, mod, &tmp_base, &r, bin_ctx, &echeck); SCRATCH_OVF(echeck, bin_ctx, binexp_mark, err,);
@@ -157,10 +157,76 @@ void __BIGINT_MBIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT
         SCRATCH_OVF(echeck, bin_ctx, binexp_mark, err,); __BIGINT_INTERNAL_RSHIFT__(&tmp_exp, 1);
     } uint64_t a[1] = {1};
     __BIGINT_MONTMUL__(&r_mod_n, &(bigInt){.limbs = a, .n = 1, .cap = 1, .sign = 1}, modexp_contx, res, bin_ctx, &echeck); 
-    SCRATCH_OVF(echeck, bin_ctx, binexp_mark, err,); scratch_rewind(&bin_ctx, binexp_mark); *err = BIGINT_SUCCESS;
+    SCRATCH_OVF(echeck, bin_ctx, binexp_mark, err,); __BIGINT_INTERNAL_COPY__(res, &r_mod_n);
+    scratch_rewind(&bin_ctx, binexp_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_FIX_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx fix_ctx, dnml_status *err) {}
-void __BIGINT_SLIDE_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx slide_ctx, dnml_status *err) {}
+void __BIGINT_FIX_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, uint8_t k, calc_ctx fix_ctx, dnml_status *err) {
+    /* --- 1. MONTGOMERY DOMAIN SETUP ---- */ dnml_status echeck = BIGINT_SUCCESS;
+    mont_ctx modexp_contx = { .n = mod, .nprime = __MODINV_UI64__(mod->limbs[0]), .k = mod->n }; 
+    size_t fixexp_mark = scratch_mark(&fix_ctx), max_tsize = max((mod->n << 1), max(base->n, exp->n));
+    int8_t cmp_res = __BIGINT_INTERNAL_COMP__(base, mod);
+    BIGINT_TEMP(r, max_tsize, fix_ctx, fixexp_mark, echeck, err,); r.n = mod->n + 1;
+    BIGINT_TEMP(r_mod_n, mod->n, fix_ctx, fixexp_mark, echeck, err,);
+    BIGINT_TEMP(tmp, max_tsize, fix_ctx, fixexp_mark, echeck, err,); r.limbs[mod->n] = 1; 
+    __BIGINT_MOD_DISP__(&r, mod, &r_mod_n, &tmp, fix_ctx, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+    __BIGINT_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp, fix_ctx, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+    __BIGINT_MOD_DISP__(&tmp, mod, &tmp, &r, fix_ctx, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+    modexp_contx.r2 = &tmp;
+
+    //* -------- 2. PRECOMPUTATION TABLE SETUP -------- *//
+    size_t table_size = UINT64_C(1) << (k - 1); bigInt table[table_size];
+    __BIGINT_MOD_DISP__(base, mod, &r_mod_n, &r, fix_ctx, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,); 
+    table[0] = r; /**/ BIGINT_TEMP(x2_mod, mod->n, fix_ctx, fixexp_mark, echeck, err,);
+    __BIGINT_MONTMUL__(base, base, modexp_contx, &x2_mod, fix_ctx, &echeck);
+    for (size_t i = 1; i < table_size; ++i) {
+        table[i].limbs = scratch_alloc(&fix_ctx, mod->n, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+        table[i].cap = mod->n; table[i].sign = 1; table[i].n = 0;
+        __BIGINT_MONTMUL__(&table[i-1], &x2_mod, modexp_contx, &table[i], fix_ctx, &echeck);
+        SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+    }
+
+    //* ------------- 3. MAIN LOOP ------------- *//
+    // Quick setup before the loop
+    const bigInt *const r2 = modexp_contx.r2; // Do this for memory safety + r_mod_n we will be used inplace for tmp_res
+    memset(&r_mod_n.limbs[1], 0, r_mod_n.n * U64_BYTES); // in which both bigInts have the same cap as mod->n
+    r_mod_n.limbs[0] = 1; r_mod_n.n = 1; r_mod_n.sign = 1;
+    __BIGINT_MONTMUL__(&r_mod_n, r2, modexp_contx, &r_mod_n, fix_ctx, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+    size_t total_bits = (exp->n << 6) - __CLZ_UI64__(exp->limbs[exp->n - 1]); /**/ size_t bit_idx = total_bits - 1;
+    while (bit_idx > 0) {
+        // Square tmp_res curr_k times
+        uint8_t curr_k = (bit_idx < k) ? (uint8_t)(bit_idx) : k; /**/ bit_idx -= curr_k;
+        for (uint8_t s = 0; s < curr_k; ++s) {
+            __BIGINT_MONTMUL__(&r_mod_n, &r_mod_n, modexp_contx, &r_mod_n, fix_ctx, &echeck);
+            SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+        }
+
+        // Extracting the k-sized window from exp
+        size_t limb_idx = (size_t)(bit_idx + 1) >> 6;
+        uint8_t bit_offset = (uint8_t)((bit_idx + 1) & 63);
+        uint64_t winval = exp->limbs[limb_idx] >> bit_offset;
+        if (bit_offset + curr_k > U64_BITS && limb_idx + 1 < exp->n) {
+            winval |= exp->limbs[limb_idx + 1] << (U64_BITS - bit_offset);
+        } winval &= ((UINT64_C(1) << curr_k) - 1);
+
+        // Perform table-lookup multiplication (IF THE TABLE IS NON-ZERO)
+        if (winval) { 
+            // Optimize by skipping trailing zeros
+            uint8_t winval_ctz = __CTZ_UI64__(winval); /**/ winval >> winval_ctz;
+            size_t lookup_idx = (size_t)(winval >> 1);
+            __BIGINT_MONTMUL__(&r_mod_n, &table[lookup_idx], modexp_contx, &r_mod_n, fix_ctx, &echeck);
+            SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);    
+            // Re-apply the trailign zeros factors back (each 0 indicates a power of 2)
+            for (uint8_t s = 0; s < winval_ctz; ++s) { 
+                __BIGINT_MONTMUL__(&r_mod_n, &r_mod_n, modexp_contx, &r_mod_n, fix_ctx, &echeck);
+                SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+            }
+        }
+    } uint64_t a[1] = {1};
+    __BIGINT_MONTMUL__(&r_mod_n, &(bigInt){.limbs = a, .n = 1, .cap = 1, .sign = 1}, modexp_contx, res, fix_ctx, &echeck);
+    SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,); __BIGINT_INTERNAL_COPY__(res, &r_mod_n);
+    scratch_rewind(&fix_ctx, fixexp_mark); *err = BIGINT_SUCCESS;
+}
+void __BIGINT_SLIDE_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, uint8_t k, calc_ctx slide_ctx, dnml_status *err) {}
 void __BIGINT_MODMUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod, P_BIGINT res, calc_ctx modmul_ctx, dnml_status *err) {
     if (mod->n <= BIGINT_CLASSICAL) __BIGINT_CMODMUL__(a, b, mod, res, modmul_ctx, err);
     else { dnml_status echeck = BIGINT_SUCCESS;
@@ -180,6 +246,6 @@ void __BIGINT_MODMUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod,
 void __BIGINT_MODEXP_DISP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx modexp_ctx, dnml_status *err) {
     if (mod->n < BIGINT_MOD_BINARY) __BIGINT_BIN_MODEXP__(base, exp, mod, res, modexp_ctx, err);
     else if (mod->n < BIGINT_MONT_BINARY) __BIGINT_MBIN_MODEXP__(base, exp, mod, res, modexp_ctx, err);
-    else if (mod->n < BIGINT_MOD_FIXED) __BIGINT_FIX_MODEXP__(base, exp, mod, res, modexp_ctx, err);
-    else __BIGINT_SLIDE_MODEXP__(base, exp, mod, res, modexp_ctx, err);
+    else if (mod->n < BIGINT_MOD_FIXED) __BIGINT_FIX_MODEXP__(base, exp, mod, res, 7, modexp_ctx, err);
+    else __BIGINT_SLIDE_MODEXP__(base, exp, mod, res, 6, modexp_ctx, err);
 }
