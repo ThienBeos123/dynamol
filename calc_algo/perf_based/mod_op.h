@@ -42,8 +42,8 @@ size_t __BIGINT_CMODMUL_WS__(size_t a_size, size_t b_size, size_t mod_size);
 size_t __BIGINT_MONTMUL_WS__(size_t a_size, size_t b_size, mont_ctx ctx);
 size_t __BIGINT_BIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
 size_t __BIGINT_MBIN_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
-size_t __BIGINT_FIX_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
-size_t __BIGINT_SLIDE_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
+size_t __BIGINT_FIX_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size, uint8_t k);
+size_t __BIGINT_SLIDE_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size, uint8_t k);
 size_t __BIGINT_MODMUL_WS__(size_t a_size, size_t b_size, size_t mod_size);
 size_t __BIGINT_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
 

@@ -29,7 +29,8 @@ size_t __BIGINT_FIXED_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
     // RAW OBJECTS
     size_t table_size = 1 << (ksize - 1);
     size_t raw_outside = (base_size << 1) + (base_size * pow);
-    size_t table_pows = (base_size * table_size) * (table_size + 1);
+    size_t table_pows = 0;
+    for (size_t i = 1; i < table_size; ++i) table_pows += base_size * ((i << 1) + 1);
     // FUNCTION CALL WORKSPACE
     size_t outside_fcalls = __BIGINT_MUL_WS__(base_size, base_size);
     size_t table_loop_fcalls = __BIGINT_MUL_WS__((base_size * (((table_size - 1) << 1) + 1)), (base_size << 1));
@@ -37,9 +38,7 @@ size_t __BIGINT_FIXED_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
     size_t main_loop_odd = __BIGINT_MUL_WS__(
         (base_size * pow - base_size),
         (base_size * ((table_size << 1) + 1))
-    ); size_t max_fcall = max(outside_fcalls,
-                              max(table_loop_fcalls,
-                                  max(main_loop_even, main_loop_odd)));
+    ); size_t max_fcall = max(outside_fcalls, max(table_loop_fcalls, max(main_loop_even, main_loop_odd)));
     return raw_outside + table_pows + max_fcall;
 }
 size_t __BIGINT_SLIDIN_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
