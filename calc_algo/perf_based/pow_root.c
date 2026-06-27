@@ -156,26 +156,24 @@ void __BIGINT_SLIDING__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, uint8_t 
         table[i].limbs = scratch_alloc(&slide_ctx, base->n * ((i << 1) + 1) * U64_BYTES, &echeck);
         SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
         table[i].cap = base->n * ((i << 1) + 1); table[i].sign = 1;
-        __BIGINT_MUL_DISP__(&table[i-1], &x2, &table[i], slide_ctx, &echeck);
-        SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
+        __BIGINT_MUL_DISP__(&table[i-1], &x2, &table[i], slide_ctx, &echeck); SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
     }
 
     //* ------------ 3. MAIN LOOP ------------ *//
     BIGINT_TEMP(tmp_res, base->n * exp, slide_ctx, slide_mark, echeck, err,);
-    tmp_res.limbs[0] = 1; tmp_res.n = 1; tmp_res.sign = 1;
-    uint8_t curr_pos = U64_BITS - (__CLZ_UI64__(exp)) - 1;
-    while (curr_pos + 1 > 0) {
+    tmp_res.limbs[0] = 1; tmp_res.n = 1; tmp_res.sign = 1; /**/ uint8_t curr_pos = U64_BITS - (__CLZ_UI64__(exp)) - 1;
+    while (curr_pos + 1) {
         uint8_t curr_bit = exp & (UINT64_C(1) << (curr_pos - 1));
-        if (!curr_bit) { 
+        if (!curr_bit) { // Bit is 0 ---> Square (because 0-bits indicates powers of 2)
             __BIGINT_MUL_DISP__(&tmp_res, &tmp_res, &tmp_res, slide_ctx, &echeck);
-            SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
-        } else {
+            SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,); --curr_pos;
+        } else { // Bit is 1 --> Odd power
             int8_t s = max(((int8_t)(curr_pos - 1) - (int8_t)k + 1), 0);
             uint64_t mask = (UINT64_C(1) << (curr_pos - k)) - 1;
             uint64_t curr_chunk = (exp >> s) & mask;
             curr_chunk >>= curr_pos - k; curr_chunk = (uint8_t)(curr_chunk);
             uint8_t tz = __CTZ_UI64__(curr_chunk); s -= tz; curr_chunk >>= tz;
-            for (uint8_t i = 0; i <= curr_bit - s; ++i) {
+            for (uint8_t i = 0; i <= curr_pos - s + 1; ++i) {
                 __BIGINT_MUL_DISP__(&tmp_res, &tmp_res, &tmp_res, slide_ctx, &echeck);
                 SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
             } 
