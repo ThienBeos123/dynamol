@@ -188,8 +188,8 @@ void __BIGINT_HERON__(P_BIGINT res, PCONST_BIGINT a, calc_ctx heron_ctx, dnml_st
     BIGINT_TEMP(guess, a->n, heron_ctx, heron_mark, echeck, err,);
     BIGINT_TEMP(ratio, a->n, heron_ctx, heron_mark, echeck, err,);
     BIGINT_TEMP(next, a->n + 1, heron_ctx, heron_mark, echeck, err,);
-    guess.limbs[(guess_bits << 6)] = UINT64_C(1) << (guess_bits % 64);
-    guess.n = (guess_bits << 6) + 1;
+    guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63);
+    guess.n = (guess_bits >> 6) + 1;
     for (;;) {
         // next in DIVMOD_DISPATCH acts as a temporary buffer
         __BIGINT_DIV_DISP__(a, &guess, &ratio, &next, heron_ctx, &echeck); SCRATCH_OVF(echeck, heron_ctx, heron_mark, err,);
@@ -206,7 +206,7 @@ void __BIGINT_NEWTON_CBRT__(P_BIGINT res, PCONST_BIGINT a, calc_ctx cbrt_ctx, dn
     BIGINT_TEMP(ratio,   a->n + 1,        cbrt_ctx, cbrt_mark, echeck, err,);
     BIGINT_TEMP(next,   (a->n + 1) << 1,  cbrt_ctx, cbrt_mark, echeck, err,);
     BIGINT_TEMP(tmp,    (a->n + 1) << 1,  cbrt_ctx, cbrt_mark, echeck, err,);
-    guess.limbs[(guess_bits << 6)] = UINT64_C(1) << (guess_bits % 64); guess.n = (guess_bits << 6) + 1;
+    guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63); guess.n = (guess_bits >> 6) + 1;
     for (;;) {
         __BIGINT_MUL_DISP__(&guess, &guess, &next, cbrt_ctx, &echeck); SCRATCH_OVF(echeck, cbrt_ctx, cbrt_mark, err,);
         __BIGINT_DIV_DISP__(a, &next, &ratio, &tmp, cbrt_ctx, &echeck); SCRATCH_OVF(echeck, cbrt_ctx, cbrt_mark, err,);
@@ -253,8 +253,8 @@ void __BIGINT_NEWTON_2NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_c
     size_t _2nrt_mark = scratch_mark(&_2nrt_ctx);
     BIGINT_TEMP(guess, a->n * (root - 1), _2nrt_ctx, _2nrt_mark, echeck, err,);
     BIGINT_TEMP(ratio, a->n, _2nrt_ctx, _2nrt_mark, echeck, err,);
-    guess.limbs[(guess_bits << 6)] = UINT64_C(1) << (guess_bits % 64);
-    guess.n = (guess_bits << 6) + 1;
+    guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63);
+    guess.n = (guess_bits >> 6) + 1;
     BIGINT_TEMP(next, a->n * (root - 1), _2nrt_ctx, _2nrt_mark, echeck, err,);
     BIGINT_TEMP(xpow, a->n * (root - 1), _2nrt_ctx, _2nrt_mark, echeck, err,);
     __BIGINT_EXP_DISP__(&xpow, &guess, (root - 1), _2nrt_ctx, &echeck); SCRATCH_OVF(echeck, _2nrt_ctx, _2nrt_mark, err,);
@@ -277,7 +277,7 @@ void __BIGINT_NEWTON_NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ct
     size_t nrt_mark = scratch_mark(&nrt_ctx);
     BIGINT_TEMP(guess, a->n * (root - 1), nrt_ctx, nrt_mark, echeck, err,);
     BIGINT_TEMP(ratio, a->n, nrt_ctx, nrt_mark, echeck, err,);
-    guess.limbs[(guess_bits << 6)] = UINT64_C(1) << (guess_bits % 64); guess.n = (guess_bits << 6) + 1;
+    guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63); guess.n = (guess_bits >> 6) + 1;
     BIGINT_TEMP(next, a->n * (root - 1), nrt_ctx, nrt_mark, echeck, err,);
     BIGINT_TEMP(xpow, a->n * (root - 1), nrt_ctx, nrt_mark, echeck, err,);
     __BIGINT_EXP_DISP__(&xpow, &guess, (root - 1), nrt_ctx, &echeck); SCRATCH_OVF(echeck, nrt_ctx, nrt_mark, err,);

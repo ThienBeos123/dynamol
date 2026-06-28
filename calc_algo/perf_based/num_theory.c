@@ -22,8 +22,19 @@ limitations under the License.
 static const uint32_t dmr_bases[7] = { 2, 325, 9375, 28178, 450775, 9780504, 1794265022 };
 
 //* ======== GCD - WORKSPACE RETURNER ======== */
-size_t __BIGINT_STEIN_WS__(size_t u_size, size_t v_size) { return u_size + v_size; }
-size_t __BIGINT_LEHMER_WS__(size_t u_size, size_t v_size) { return 0; } 
+size_t __BIGINT_STEIN_WS__(size_t u_size, size_t v_size) { 
+    // This function doesn't utilize any external function call 
+    // requiring arena allocation for temporaries
+    return u_size + v_size;
+}
+size_t __BIGINT_LEHMER_WS__(size_t u_size, size_t v_size) {
+    // This function doesn't utilize any external function call 
+    // requiring arena allocation for temporaries
+    size_t max_size = max(u_size + 1, v_size + 1) + 1;
+    size_t u_tmps = (max_size << 1) + (u_size + 1);
+    size_t v_tmps = (max_size << 1) + (v_size + 1);
+    return u_tmps + v_tmps;
+} 
 size_t __BIGINT_HALF_WS__(size_t u_size, size_t v_size) { return 0; }
 size_t __BIGINT_GCD_WS__(size_t u_size, size_t v_size) {
     if (u_size == 1 && v_size == 1) return 0; // Euclid 64 bit doesn't require arena
@@ -77,7 +88,67 @@ void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx s
     scratch_rewind(&stein_ctx, stein_mark); *err = BIGINT_SUCCESS;
 }
 void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx lehmer_ctx, dnml_status *err) {
-     
+    if (u->n == 0) { __BIGINT_INTERNAL_COPY__(res, v); return; }
+    else if (v->n == 0) { __BIGINT_INTERNAL_COPY__(res, u); return; }
+
+    // Setup
+    dnml_status echeck; size_t lehmer_mark = scratch_mark(&lehmer_ctx);
+    size_t max_size = max(u->n + 1, v->n + 1) + 1;
+    BIGINT_TEMP(u_copy, max_size, lehmer_ctx, lehmer_mark, echeck, err,);
+    BIGINT_TEMP(u_tmp1, u->n + 1, lehmer_ctx, lehmer_mark, echeck, err,);
+    BIGINT_TEMP(u_tmp2, max_size, lehmer_ctx, lehmer_mark, echeck, err,);
+    BIGINT_TEMP(v_copy, max_size, lehmer_ctx, lehmer_mark, echeck, err,);
+    BIGINT_TEMP(v_tmp1, v->n + 1, lehmer_ctx, lehmer_mark, echeck, err,);
+    BIGINT_TEMP(v_tmp2, max_size, lehmer_ctx, lehmer_mark, echeck, err,);
+    memcpy(u_copy.limbs, u->limbs, u->n << 6); u_copy.n = u->n;
+    memcpy(v_copy.limbs, v->limbs, v->n << 6); v_copy.n = v->n;
+
+    // Main Loop
+    while (u_copy.n && v_copy.n) {
+        limb_t uhat = u_copy.limbs[u_copy.n - 1];
+        limb_t vhat = v_copy.limbs[v_copy.n - 1];
+        limb_t a = 1, b = 0, c = 0, d = 1;
+        // Identity matrix:
+        //      [1, 0, uhat]
+        //      [0, 1, vhat]
+        while (uhat + c && vhat + d) {
+            limb_t w1 = (uhat + a) / (vhat + c); // Absolute top quotient (uhat + 1) / (vhat + 1)
+            limb_t w2 = (uhat + b) / (vhat + d); // Absolute bottom quotient (uhat) / (vhat)
+            if (w1 != w2) break; // Top limb approximation diverges --> Correction NOW
+
+            // Updating the single-word limb variables
+            // Matrix Product:
+            // [0,  1] . [A, B, uhat] = [   C,      D,        vhat     ]
+            // [1, -w]   [C, D, vhat]   [ A - wC, B - wD, uhat - Wvhat ]
+            limb_t uhat_tmp = vhat, /**/ vhat_tmp = uhat - w1 * vhat;
+            uhat = uhat_tmp; /**/ vhat = vhat_tmp;
+            // Updating the matrix approximation variables
+            limb_t new_a = c, /**/ new_b = d;
+            limb_t new_c = a - w1 * c;
+            limb_t new_d = b - w1 * d;
+            a = new_a; b = new_b; c = new_c; d = new_d;
+        }
+
+        // u_copy = (u_copy * a) + (v_copy * b)
+        // v_copy = (u_copy * c) + (v_copy * d)
+        bigInt matrix_view = { .limbs = &a, .n = !!(a), .cap = 1, .sign = 1 }; // A, B, C, and D share this
+        /* Updating matrix views -> Store in u_tmp2 */
+        __BIGINT_SCHOOLBOOK__(&u_copy, &matrix_view, &u_tmp1); matrix_view.limbs = &b; matrix_view.n = !!(b); 
+        __BIGINT_SCHOOLBOOK__(&v_copy, &matrix_view, &v_tmp1); __BIGINT_ADD_WC__(&u_tmp1, &v_tmp1, &u_tmp2);
+        /* Updating matrix views -> Store in v_tmp2 */ matrix_view.limbs = &c; matrix_view.n = !!(c);
+        __BIGINT_SCHOOLBOOK__(&u_copy, &matrix_view, &u_tmp1); matrix_view.limbs = &d; matrix_view.n = !!(d);
+        __BIGINT_SCHOOLBOOK__(&v_copy, &matrix_view, &v_tmp1); __BIGINT_ADD_WC__(&u_tmp1, &v_tmp1, &v_tmp2);
+
+        /* Updating u_copy and v_copy from u_tmp2 and v_tmp2 */
+        // Shallow struct swaps here is desirable and safe due to u_copy and u_tmp2 (and therefore
+        // subsequently v_cpopy and v_tmp2) sharing the same arena buffer size, and we're
+        // basically trashing away the buffer values inside u_tmp2 and v_tmp2 after operation anyways
+        __BIGINT_INTERNAL_SWAP__(&u_copy, &u_tmp2); __BIGINT_INTERNAL_SWAP__(&v_copy, &v_tmp2);
+    }
+    // Whatever non-zero value remains is the GCD (according to Euclidean GCD algo)
+    if (!u_copy.n) __BIGINT_INTERNAL_COPY__(res, &u_copy);
+    else __BIGINT_INTERNAL_COPY__(res, &v_copy);
+    scratch_rewind(&lehmer_ctx, lehmer_mark); *err = BIGINT_SUCCESS;
 }
 void __BIGINT_HALF__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx half_ctx, dnml_status *err) {}
 void __BIGINT_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx gcd_ctx, dnml_status *err) {
@@ -191,13 +262,13 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
     else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) prim_status = 1; // a^d mod(n) = n - 1
 
     // 2nd test: a^(2^r * d) mod(n)
-    if (unlikely(n->n <= BIGINT_CLASSICAL)) {
+    if (unlikely(n->n <= BIGINT_CLASSICAL) && (!prim_status)) {
         for (uint64_t mrr = 1; mrr < s; ++mrr) {
             __BIGINT_CMODMUL__(&x, &x, n, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
             if (x.n == 1 && x.limbs[0] == 1) { prim_status = 1; break; }
             else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) { prim_status = 1; break; }
         }
-    } else {
+    } else if (!prim_status) {
         mont_ctx mont_ctx = {.n = n, .nprime = __MODINV_UI64__(n->limbs[0]), .k = n->n};
         BIGINT_TEMP(r, n->n << 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.n = n->n + 1;
         BIGINT_TEMP(r_mod_n, n->n, rabin_ctx, mrabin_mark, echeck, err, 0);

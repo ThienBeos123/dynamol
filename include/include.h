@@ -20,7 +20,7 @@ limitations under the License.
 #define ___DNMLin_INCLUDE_H___
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" 
 #endif
 
 // Core libc STD headers
@@ -49,7 +49,7 @@ typedef unsigned char uchar;
 
 
 #ifdef __cplusplus
-}
+
 #endif
 
 #endif
