@@ -42,9 +42,42 @@ size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     size_t res_alias = (k << 1) + 14;
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
+size_t __BIGINT_ASYM_MUL_WS__(size_t a_size, size_t b_size) {
+    // Metadata pre-calculations - slices
+    size_t Bsize = min(a_size, b_size); // Beta size lol
+    size_t Asize = max(a_size, b_size); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1);
+    size_t slice = (Asize / splits), last_slice = Asize - slice;
+    size_t res_slices = Bsize + max(slice, last_slice);
+    size_t tres_size = a_size + b_size;
+
+    size_t last_ws = 0; // Workspace requirement for the last slice
+    if (Asize <= BIGINT_SCHOOLBOOK || last_slice <= BIGINT_SCHOOLBOOK) last_ws = 0; // Doesn't need any
+    else if (Asize < BIGINT_KARATSUBA && last_slice < BIGINT_KARATSUBA) last_ws = __BIGINT_KARATSUBA_WS__(Asize, last_slice);             
+    else if (Asize < BIGINT_TOOM_3 && last_slice < BIGINT_TOOM_3) last_ws = __BIGINT_TOOM_3_WS__(Asize, last_slice);
+    // else if (Asize <= BIGINT_TOOM_4 && last_slice <= BIGINT_TOOM_4) last_ws = __BIGINT_TOOM_4_WS__(Asize, last_slice);
+    // else if (Asize <= BIGINT_TOOM_5 && last_slice <= BIGINT_TOOM_5) last_ws = __BIGINT_TOOM_5_WS__(Asize, last_slice);
+    // else if (Asize <= BIGINT_TOOM_6p5 && last_slice <= BIGINT_TOOM_6p5) last_ws = __BIGINT_TOOM_6p5_WS__(Asize, last_slice);           
+    // else if (Asize <= BIGINT_TOOM_7p5 && last_slice <= BIGINT_TOOM_7p5) last_ws = __BIGINT_TOOM_7p5_WS__(Asize, last_slice);
+    // else if (Asize <= BIGINT_TOOM_8p5 && last_slice <= BIGINT_TOOM_8p5) last_ws = __BIGINT_TOOM_8p5_WS__(Asize, last_slice);
+    else last_ws = __BIGINT_FFT_WS__(a_size, last_slice);
+
+    size_t slice_ws = 0; // Workspace requirement for normal slices
+    if (Asize <= BIGINT_SCHOOLBOOK || slice <= BIGINT_SCHOOLBOOK) slice_ws = 0; // Doesn't need any
+    else if (min(a_size, b_size) * 2 <= max(a_size, b_size)) slice_ws = 0; // Resort to BIGINT_SCHOOLBOOK anyway
+    else if (Asize < BIGINT_KARATSUBA && slice < BIGINT_KARATSUBA) slice_ws = __BIGINT_KARATSUBA_WS__(Asize, slice);             
+    else if (Asize < BIGINT_TOOM_3 && slice < BIGINT_TOOM_3) slice_ws = __BIGINT_TOOM_3_WS__(Asize, slice);
+    // else if (Asize <= BIGINT_TOOM_4 && slice <= BIGINT_TOOM_4) slice_ws = __BIGINT_TOOM_4_WS__(Asize, slice);
+    // else if (Asize <= BIGINT_TOOM_5 && slice <= BIGINT_TOOM_5) slice_ws = __BIGINT_TOOM_5_WS__(Asize, slice);
+    // else if (Asize <= BIGINT_TOOM_6p5 && slice <= BIGINT_TOOM_6p5) slice_ws = __BIGINT_TOOM_6p5_WS__(Asize, slice);           
+    // else if (Asize <= BIGINT_TOOM_7p5 && slice <= BIGINT_TOOM_7p5) slice_ws = __BIGINT_TOOM_7p5_WS__(Asize, slice);
+    // else if (Asize <= BIGINT_TOOM_8p5 && slice <= BIGINT_TOOM_8p5) slice_ws = __BIGINT_TOOM_8p5_WS__(Asize, slice);
+    else slice_ws = __BIGINT_FFT_WS__(a_size, slice);
+    return res_slices + tres_size + max(last_ws, slice_ws);
+}
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
     if (a_size <= BIGINT_SCHOOLBOOK || b_size <= BIGINT_SCHOOLBOOK) return 0; // Doesn't need any
-    else if (min(a_size, b_size) * 4 <= max(a_size, b_size)) return 0;
+    else if (min(a_size, b_size) * 2 <= max(a_size, b_size)) return __BIGINT_ASYM_MUL_WS__(a_size, b_size);
     else if (a_size < BIGINT_KARATSUBA && b_size < BIGINT_KARATSUBA) return __BIGINT_KARATSUBA_WS__(a_size, b_size);             
     else if (a_size < BIGINT_TOOM_3 && b_size < BIGINT_TOOM_3) return __BIGINT_TOOM_3_WS__(a_size, b_size);
     // else if (a_size <= BIGINT_TOOM_4 && b_size <= BIGINT_TOOM_4) return __BIGINT_TOOM_4_WS__(a_size, b_size);
@@ -54,6 +87,8 @@ size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
     // else if (a_size <= BIGINT_TOOM_8p5 && b_size <= BIGINT_TOOM_8p5) return __BIGINT_TOOM_8p5_WS__(a_size, b_size);
     else return __BIGINT_FFT_WS__(a_size, b_size);
 }
+
+
 
 /* BIGINT ALGORITHMS */
 void __BIGINT_SCHOOLBOOK__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res) {
@@ -185,9 +220,71 @@ void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx 
     __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
     __BIGINT_INTERNAL_COPY__(res, &final_res); scratch_rewind(&toom_ctx, toom_mark); *err = BIGINT_SUCCESS;
 }
+
+
+
+/* BIGINT MULTIPLICATION ALGORITHM DISPATCHER */
+void __BIGINT_ASYM_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx mul_ctx, dnml_status *err) {
+    size_t Bsize = min(a->n, b->n); // Beta size lol
+    size_t Asize = max(a->n, b->n); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1);
+    size_t slice = (Asize / splits), last_slice = Asize - slice;
+    size_t tmp_size = Bsize + max(slice, last_slice);
+    
+    // Setup
+    size_t asym_mark = scratch_mark(&mul_ctx); dnml_status echeck = BIGINT_SUCCESS;
+    BIGINT_TEMP(tmp, tmp_size, mul_ctx, asym_mark, echeck, err,);
+    BIGINT_TEMP(tmp_res, a->n + b->n, mul_ctx, asym_mark, echeck, err,);
+    const bigInt *const beta = (a->n < b->n) ? a : b;
+    const bigInt *const alpha = (a->n < b->n) ? b : a;
+
+
+    // Processing the (splits - 1) intermediate slices
+    bigInt window = {0}; size_t offset = 0;
+    for (size_t i = 0; i < splits - 1; ++i) { 
+        // Just multiplication
+        offset = i * slice; /**/ window = (bigInt){.limbs = alpha->limbs + offset, .n = slice, .cap = slice, .sign = 1};
+        if (Asize <= BIGINT_SCHOOLBOOK || slice <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(beta, &window, &tmp); echeck = BIGINT_SUCCESS; }
+        else if (Asize < BIGINT_KARATSUBA && slice < BIGINT_KARATSUBA) { __BIGINT_KARATSUBA__(beta, &window, &tmp, mul_ctx, &echeck); }
+        else if (Asize < BIGINT_TOOM_3 && slice < BIGINT_TOOM_3) { __BIGINT_TOOM_3__(beta, &window, &tmp, mul_ctx, &echeck); }
+        // else if (Asize <= BIGINT_TOOM_4 && slice <= BIGINT_TOOM_4) { __BIGINT_TOOM_4__(beta, &window, &tmp, mul_ctx, &echeck); }
+        // else if (Asize <= BIGINT_TOOM_5 && slice <= BIGINT_TOOM_5) { __BIGINT_TOOM_5__(beta, &window, &tmp, mul_ctx, &echeck); }
+        // else if (Asize <= BIGINT_TOOM_6p5 && slice <= BIGINT_TOOM_6p5) { __BIGINT_TOOM_6p5__(beta, &window, &tmp, mul_ctx, &echeck); }
+        // else if (Asize <= BIGINT_TOOM_7p5 && slice <= BIGINT_TOOM_7p5) { __BIGINT_TOOM_7p5__(beta, &window, &tmp, mul_ctx, &echeck); }
+        // else if (Asize <= BIGINT_TOOM_8p5 && slice <= BIGINT_TOOM_8p5) { __BIGINT_TOOM_8p5__(beta, &window, &tmp, mul_ctx, &echeck); }
+        else { __BIGINT_FFT__(beta, &window, &tmp, mul_ctx, &echeck); }
+        SCRATCH_OVF(echeck, mul_ctx, asym_mark, err,);
+
+        // Accumulating result into tmp_res
+        // Same principle as normal SchoolBook but cooler, I guess
+        __BIGINT_INTERNAL_LLSHIFT__(&tmp_res, slice); // Shift left by slice limbs (expand in base 2^64) for accumulation
+        __BIGINT_ADD_WC__(&tmp_res, &tmp_res, &tmp); // (tmp_res <<< slice) + tmp (Accumulating the product as a sum)
+    }
+
+
+    // Processing the last_slice ultimate slice
+    offset = (splits - 1) * slice;
+    window = (bigInt){.limbs = alpha->limbs + offset, .n = last_slice, .cap = last_slice, .sign = 1};
+    if (Asize <= BIGINT_SCHOOLBOOK || last_slice <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(beta, &window, &tmp); echeck = BIGINT_SUCCESS; }
+    else if (Asize < BIGINT_KARATSUBA && last_slice < BIGINT_KARATSUBA) { __BIGINT_KARATSUBA__(beta, &window, &tmp, mul_ctx, &echeck); }
+    else if (Asize < BIGINT_TOOM_3 && last_slice < BIGINT_TOOM_3) { __BIGINT_TOOM_3__(beta, &window, &tmp, mul_ctx, &echeck); }
+    // else if (Asize <= BIGINT_TOOM_4 && last_slice <= BIGINT_TOOM_4) { __BIGINT_TOOM_4__(beta, &window, &tmp, mul_ctx, &echeck); }
+    // else if (Asize <= BIGINT_TOOM_5 && last_slice <= BIGINT_TOOM_5) { __BIGINT_TOOM_5__(beta, &window, &tmp, mul_ctx, &echeck); }
+    // else if (Asize <= BIGINT_TOOM_6p5 && last_slice <= BIGINT_TOOM_6p5) { __BIGINT_TOOM_6p5__(beta, &window, &tmp, mul_ctx, &echeck); }
+    // else if (Asize <= BIGINT_TOOM_7p5 && last_slice <= BIGINT_TOOM_7p5) { __BIGINT_TOOM_7p5__(beta, &window, &tmp, mul_ctx, &echeck); }
+    // else if (Asize <= BIGINT_TOOM_8p5 && last_slice <= BIGINT_TOOM_8p5) { __BIGINT_TOOM_8p5__(beta, &window, &tmp, mul_ctx, &echeck); }
+    else { __BIGINT_FFT__(beta, &window, &tmp, mul_ctx, &echeck); }
+    SCRATCH_OVF(echeck, mul_ctx, asym_mark, err,);
+
+    // Accumulating result into tmp_res
+    // Same principle as normal SchoolBook but cooler, I guess
+    __BIGINT_INTERNAL_LLSHIFT__(&tmp_res, slice); // Shift left by slice limbs (expand in base 2^64) for accumulation
+    __BIGINT_ADD_WC__(&tmp_res, &tmp_res, &tmp); // (tmp_res <<< slice) + tmp (Accumulating the product as a sum)
+    __BIGINT_INTERNAL_COPY__(res, &tmp_res); scratch_rewind(&mul_ctx, asym_mark); *err = BIGINT_SUCCESS;
+}
 void __BIGINT_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx mul_ctx, dnml_status *err) {
     if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
-    else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
+    else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) __BIGINT_ASYM_MUL_DISP__(a, b, res, mul_ctx, err);
     else if (a->n <= BIGINT_KARATSUBA && b->n <= BIGINT_KARATSUBA) __BIGINT_KARATSUBA__(a, b, res, mul_ctx, err);
     else if (a->n <= BIGINT_TOOM_3 && b->n <= BIGINT_TOOM_3) __BIGINT_TOOM_3__(a, b, res, mul_ctx, err);
     // else if (a->n <= BIGINT_TOOM_4 && b->n <= BIGINT_TOOM_4) __BIGINT_TOOM_4__(a, b, res, mul_ctx);

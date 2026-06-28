@@ -54,6 +54,7 @@ static void __hgcd2_base(
  *      a_new = Aa + Bb     WHERE A, B, C, D ∈ [A, B]   AND a,b ∈ [a]
  *      b_new = Ca + Db                        [C, D]             [b]
  */
+static inline size_t __hgcd_asym_matmul_ws(struct rt_matrix *T, size_t a_size, size_t b_size) { return 0; } // For future-use
 static inline size_t __hgcd_matmul_ws(struct rt_matrix *T, size_t a_size, size_t b_size) {
     if ( // Toom-cook 3-way
         a_size <= BIGINT_TOOM_3 && b_size <= BIGINT_TOOM_3 && 
@@ -112,7 +113,7 @@ static dnml_status __hgcd_matmul(
     bigInt *const a, bigInt *const b, 
     struct rt_matrix *T
 ) {
-    
+
     return BIGINT_SUCCESS;
 }
 
