@@ -79,7 +79,7 @@ void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt);
     if ((echeck) != (DARENA_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); return echeck; } \
     bigInt name = {.limbs = name##_limbs, .sign = 1, .n = 0, .cap = (limb_count)};
 #define RAW_FTEMP(name, limb_count, ctx, ctx_mark, echeck) \
-    imb_t *name = scratch_alloc(&(ctx), (limb_count), (&(echeck))); \
+    limb_t *name = scratch_alloc(&(ctx), (limb_count), (&(echeck))); \
     if ((echeck) != (DARENA_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); return echeck; }
 #define SCRATCH_FOVF(echeck, ctx, mark) if ((echeck) == DARENA_OVERFLOW) { \
     scratch_rewind(&(ctx), (mark)); return echeck; \

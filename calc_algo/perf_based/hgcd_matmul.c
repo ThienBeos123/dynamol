@@ -33,10 +33,34 @@ limitations under the License.
  * of a single linear-combination pair of the form xz + yw (as utilized by hgcd)
  */
 /* ------------ Sizing Function ------------ */
-size_t __BIGINT_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
+size_t __BIGINT_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
+    // Calculate based on the maximum multiplication branch --> Correct
+    size_t k = max((size_t)(max(x_size, z_size) / 3) + 1, (size_t)(max(y_size, w_size) / 3) + 1);
+    size_t total_points_p = ((k << 2) + 6); size_t total_points_q = ((k << 2) + 6);
+    size_t total_points_r = ((k << 3) + (k << 1) + 32); size_t res_alias = (k << 1) + 14;
+    return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
+}
 size_t __BIGINT_MAT_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
 size_t __BIGINT_MAT_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __BIGINT_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
+size_t __BIGINT_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
+    // Pre-buffer calculation metadatas
+    size_t xz_d, xz_m, xz_n, xz_k = __fft_best_metadata(x_size, z_size, &xz_d, &xz_m, &xz_n);
+    size_t yw_d, yw_m, yw_n, yw_k = __fft_best_metadata(y_size, w_size, &yw_d, &yw_m, &yw_n);
+    size_t max_d = max(xz_d, yw_d); size_t max_m = max(xz_m, yw_m);
+    size_t max_n = max(xz_n, yw_n); size_t max_k = max(xz_k, yw_k);
+    // Limbs/whole-word counterparts
+    size_t max_mlimbs = max((xz_m + U64_BITS - 1) >> 6, (yw_m + U64_BITS - 1) >> 6);
+    size_t max_nlimbs = max((xz_n + U64_BITS) >> 6,     (yw_n + U64_BITS) >> 6);
+    // Main temporary buffer sizing
+    size_t local_tmp = (
+        // lo_buf, hi_buf, tbuf, usave
+        ((max_nlimbs + 1) << 1) + (max_nlimbs + 1) + (max_nlimbs + 2)
+      + ((((max_nlimbs + 1) << max_k) << 1)) // flat_evala + flat_evalb
+      + (max_nlimbs << 1) + 2 + max(x_size + z_size, y_size + w_size) // prod_tmp + tmp_res
+    );
+    size_t downstream_size = __BIGINT_FFT_WS__(max_nlimbs, max_nlimbs);
+    return local_tmp + downstream_size;
+}
 
 
 
@@ -71,7 +95,7 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     BIGINT_FTEMP(p_outer, max_k + 1, toom_ctx, toom_mark, echeck); p_outer.cap = xz_k + 1;
     BIGINT_FTEMP(p1,      max_k + 2, toom_ctx, toom_mark, echeck); p1.cap = xz_k + 2;
     BIGINT_FTEMP(p_neg1,  max_k + 1, toom_ctx, toom_mark, echeck); p_neg1.cap = xz_k + 1;
-    BIGINT_FTEMP(p_neg2,  max_k + 1, toom_ctx, toom_mark, echeck); p_neg2.cap = xz_k + 1;
+    BIGINT_FTEMP(p_neg2,  max_k + 2, toom_ctx, toom_mark, echeck); p_neg2.cap = xz_k + 1;
     // q(x) TEMPORARIES
     //  +) qOuter   = n0 + n2                           |   +) q(-1)    = qOuter - n1
     //  +) q(0)     = n0          (NO FULL TEMPORARY)   |   +) q(-2)    = 2*(q(-1) + n2) - n0
@@ -79,7 +103,7 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     BIGINT_FTEMP(q_outer, max_k + 1, toom_ctx, toom_mark, echeck); q_outer.cap = xz_k + 1;
     BIGINT_FTEMP(q1,      max_k + 2, toom_ctx, toom_mark, echeck); q1.cap = xz_k + 2;
     BIGINT_FTEMP(q_neg1,  max_k + 1, toom_ctx, toom_mark, echeck); q_neg1.cap = xz_k + 1;
-    BIGINT_FTEMP(q_neg2,  max_k + 1, toom_ctx, toom_mark, echeck); q_neg2.cap = xz_k + 1;
+    BIGINT_FTEMP(q_neg2,  max_k + 2, toom_ctx, toom_mark, echeck); q_neg2.cap = xz_k + 2;
     // p(x) CALCULATIONS                                // q(x) CALCULATIONS
     __BIGINT_ADD_WC__(&p_outer, &m0, &m2);              __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);              __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
@@ -144,7 +168,7 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     *   +) p(inf) = m2          (NO FULL TEMPORARY) | +) q(inf) = n2          (NO FULL TEMPORARY) */
     // p(x) TEMPORARIES + CALCULATIONS              // q(x) TEMPORARIES + CALCULATIONS
     p_outer.cap = yw_k + 1; p1.cap = yw_k + 2;      /**/ q_outer.cap = xz_k + 1; q1.cap = xz_k + 2;
-    p_neg1.cap = yw_k + 1; p_neg2.cap = yw_k + 1;   /**/ q_neg1.cap = xz_k + 1; q_neg2.cap = xz_k + 1;
+    p_neg1.cap = yw_k + 1; p_neg2.cap = yw_k + 2;   /**/ q_neg1.cap = xz_k + 1; q_neg2.cap = xz_k + 2;
     __BIGINT_ADD_WC__(&p_outer, &m0, &m2);              __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);              __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
     __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);         __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
@@ -188,20 +212,193 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __BIGINT_MATMUL_TOOM4__(P_BIGINT x, P_BIGINT z, P_BIGINT y, P_BIGINT w, calc_ctx toom_ctx, dnml_status *echeck) { return BIGINT_SUCCESS; }
+dnml_status __BIGINT_MATMUL_TOOM4__(
+    P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+) { return BIGINT_SUCCESS; }
 
 
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __BIGINT_MATMUL_TOOM5__(P_BIGINT x, P_BIGINT z, P_BIGINT y, P_BIGINT w, calc_ctx toom_ctx, dnml_status *echeck) { return BIGINT_SUCCESS; }
+dnml_status __BIGINT_MATMUL_TOOM5__(
+    P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+) { return BIGINT_SUCCESS; }
 
 
 
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __BIGINT_MATMUL_SSA__(P_BIGINT x, P_BIGINT z, P_BIGINT y, P_BIGINT w, calc_ctx fft_ctx, dnml_status *echeck) { return BIGINT_SUCCESS; }
+dnml_status __BIGINT_MATMUL_SSA__(
+    P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx fft_ctx
+) {
+    size_t fft_mark = scratch_mark(&fft_ctx); dnml_status echeck = BIGINT_SUCCESS;
+    size_t xz_d, xz_m, xz_n, xz_k = __fft_best_metadata(x->n, z->n, &xz_d, &xz_m, &xz_n);
+    size_t yw_d, yw_m, yw_n, yw_k = __fft_best_metadata(y->n, w->n, &yw_d, &yw_m, &yw_n);
+    size_t max_d = max(xz_d, yw_d); size_t max_m = max(xz_m, yw_m);
+    size_t max_n = max(xz_n, yw_n); size_t max_k = max(xz_k, yw_k);
+    //* ================================ X and Z MULTIPLICATION PAIR ================================ *//
+    /* ------------- 1a. Setup & Split ------------- */
+    size_t xz_mlimbs = (xz_m + U64_BITS - 1) >> 6; /**/ size_t xz_nlimbs = (xz_n + U64_BITS) >> 6;
+    size_t yw_mlimbs = (yw_m + U64_BITS - 1) >> 6; /**/ size_t yw_nlimbs = (yw_n + U64_BITS) >> 6;
+    size_t max_mlimbs = max(xz_mlimbs, yw_mlimbs); /**/ size_t max_nlimbs = max(xz_nlimbs, yw_nlimbs);
+    bigInt a_windows[max_d], b_windows[max_d];
+    for (size_t i = 0; i < xz_d; ++i) {
+        size_t a_offset = i * xz_mlimbs; size_t a_len = (a_offset < x->n) ? min(xz_mlimbs, x->n - a_offset) : 0;
+        size_t b_offset = i * xz_mlimbs; size_t b_len = (b_offset < z->n) ? min(xz_mlimbs, z->n - b_offset) : 0;
+        a_windows[i] = (bigInt){ .limbs = x->limbs + a_offset, .n = a_len, .cap = xz_mlimbs, .sign = 1 };
+        b_windows[i] = (bigInt){ .limbs = z->limbs + b_offset, .n = b_len, .cap = xz_mlimbs, .sign = 1 };
+    }
+
+    /* ---------- 2a+3a. PRE-EVALUATION NEGACYCLIC OPTIMIZATION + FFT EVALUATION ---------- */
+    bigInt eval_a[max_d], eval_b[max_d]; // Each of the D elements requires an array of limbs of size 'nlimbs'
+    RAW_FTEMP(lo_buf, max_nlimbs + 1, fft_ctx, fft_mark, echeck);
+    RAW_FTEMP(hi_buf, max_nlimbs + 1, fft_ctx, fft_mark, echeck); 
+    RAW_FTEMP(tbuf,   max_nlimbs + 2, fft_ctx, fft_mark, echeck); // Will be used later in recomposition
+    RAW_FTEMP(usave,  max_nlimbs + 1, fft_ctx, fft_mark, echeck);
+    size_t psi_step = xz_n >> xz_k; // Exponent step for negacyclic weight: ψ = 2^(n/D)
+
+    // 2. Looping over D of each windows and Pre-scale them through Negacyclic Convolutions
+    // Allocating two flat, contiguous memory blocks for all D windows at once
+    // (improve Cache Locality and Prefetch Efficiency)
+    size_t total_limbs_needed = (max_nlimbs + 1) << max_k; // d(nlimbs + 1)
+    RAW_FTEMP(flat_evala, total_limbs_needed, fft_ctx, fft_mark, echeck);
+    RAW_FTEMP(flat_evalb, total_limbs_needed, fft_ctx, fft_mark, echeck);
+    for (size_t i = 0; i < xz_d; ++i) {
+        eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
+        eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
+        // Perform cyclic shifts straight into these perfectly localized targets
+        size_t weight_exp = i * psi_step;
+        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, xz_n, xz_nlimbs);
+        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf, hi_buf, weight_exp, xz_n, xz_nlimbs);
+    }
+    // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
+    _bigint_ctk_fft(eval_a, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
+    _bigint_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
+
+    /* ----------- 4a. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS ----------- */
+    // Output of multiplication is up to 2 * nlimbs long before reduction
+    BIGINT_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, fft_ctx, fft_mark, echeck); prod_tmp.cap = (xz_nlimbs << 1) + 2;
+    for (size_t i = 0; i < xz_d; ++i) {
+        // Recursive Multiply step: eval_a[i] * eval_b[i]
+        __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
+        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, xz_n, xz_nlimbs);
+        // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
+    }
+
+    /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
+    // Execute Inverse NTT (eval_a now holds the point-wise products)
+    _bigint_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
+    for (size_t i = 0; i < xz_d; ++i) {
+        // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
+        size_t wexp = i * psi_step;
+        size_t iwexp = ((xz_n << 1) - wexp) % (xz_n << 1); // Exponent cycle of 2n;
+        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, xz_n, xz_nlimbs);
+    }
+    // Clear and prepare your final destination container
+    BIGINT_FTEMP(tmp_res, max(x->n + z->n, y->n + w->n), fft_ctx, fft_mark, echeck); tmp_res.cap = x->n + z->n;
+    bigInt tbuf_view = { .limbs = tbuf, .n = 0, .cap = xz_nlimbs + 2, .sign = 1 };
+    memset(tmp_res.limbs, 0, max(x->n + z->n, y->n + w->n) * U64_BYTES);
+    // Overlap-Add Recomposition into Final ab PRODUCT
+    for (size_t i = 0; i < xz_d; ++i) {
+        if (!eval_a[i].n) continue;
+        size_t total_bshift = i * xz_m;
+        size_t mlimb_shift = total_bshift >> 6;
+        size_t m_bshift = total_bshift & 63;
+
+        // Actual recomposition operations
+        if (!m_bshift) __BIGINT_ADD_SHIFT__(&tmp_res, &eval_a[i], mlimb_shift);
+        else {
+            // Copy + Shift fused together
+            // This part only handles the modularly-reduced single machine-word bit shifts
+            tbuf_view.n = eval_a[i].n;
+            uint64_t discarded_bits = 0, mask = U64_BITS - m_bshift;
+            for (size_t j = 0; j < tbuf_view.n; ++j) {
+                uint64_t tmp = eval_a[i].limbs[j];
+                tbuf_view.limbs[j] = (tmp << m_bshift) | discarded_bits;
+                discarded_bits = tmp >> mask;
+            } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
+            __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
+        }
+    } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(xz_res, &tmp_res);
+
+
+
+
+
+    //* ================================ Y and W MULTIPLICATION PAIR ================================ *//
+    /* ----------------- 1b+2b. Window Splits + Pre-evaluation Negacylic Ooptimization ----------------- */
+    for (size_t i = 0; i < yw_d; ++i) {
+        size_t a_offset = i * yw_mlimbs; size_t a_len = (a_offset < y->n) ? min(yw_mlimbs, y->n - a_offset) : 0;
+        size_t b_offset = i * yw_mlimbs; size_t b_len = (b_offset < w->n) ? min(yw_mlimbs, w->n - b_offset) : 0;
+        a_windows[i] = (bigInt){ .limbs = y->limbs + a_offset, .n = a_len, .cap = yw_mlimbs, .sign = 1 };
+        b_windows[i] = (bigInt){ .limbs = w->limbs + b_offset, .n = b_len, .cap = yw_mlimbs, .sign = 1 };
+    } psi_step = yw_n >> yw_k; // Exponent step for negacylic weight: ψ = 2^(n/D)
+
+    // 2. Looping over D of each windows and Pre-scale them through Negacyclic Convolutions
+    // Allocating two flat, contiguous memory blocks for all D windows at once
+    // (improve Cache Locality and Prefetch Efficiency)
+    for (size_t i = 0; i < xz_d; ++i) {
+        eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
+        eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
+        // Perform cyclic shifts straight into these perfectly localized targets
+        size_t weight_exp = i * psi_step;
+        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, yw_n, yw_nlimbs);
+        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf, hi_buf, weight_exp, yw_n, yw_nlimbs);
+    }
+
+    /* ------------ 3b+4b. FFT Evaluation + Point-Wise Multiplication of Ring Elements ------------ */
+    // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
+    _bigint_ctk_fft(eval_a, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
+    _bigint_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
+    // Output of multiplication is up to 2 * nlimbs long before reduction
+    prod_tmp.cap = (yw_nlimbs << 1) + 2;
+    for (size_t i = 0; i < xz_d; ++i) {
+        // Recursive Multiply step: eval_a[i] * eval_b[i]
+        __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
+        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, yw_n, yw_nlimbs);
+        // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
+    }
+
+    /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
+    // Execute Inverse NTT (eval_a now holds the point-wise products)
+    _bigint_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
+    for (size_t i = 0; i < yw_d; ++i) {
+        // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
+        size_t wexp = i * psi_step;
+        size_t iwexp = ((yw_n << 1) - wexp) % (yw_n << 1); // Exponent cycle of 2n;
+        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, yw_n, yw_nlimbs);
+    }
+    // Clear and prepare your final destination container
+    tmp_res.cap = y->n + w->n; /**/ memset(tmp_res.limbs, 0, tmp_res.cap * U64_BYTES);
+    tbuf_view = (bigInt){ .limbs = tbuf, .n = 0, .cap = yw_nlimbs + 2, .sign = 1 };
+    // Overlap-Add Recomposition into Final ab PRODUCT
+    for (size_t i = 0; i < yw_d; ++i) {
+        if (!eval_a[i].n) continue;
+        size_t total_bshift = i * yw_n;
+        size_t mlimb_shift = total_bshift >> 6;
+        size_t m_bshift = total_bshift & 63;
+
+        // Actual recomposition operations
+        if (!m_bshift) __BIGINT_ADD_SHIFT__(&tmp_res, &eval_a[i], mlimb_shift);
+        else {
+            // Copy + Shift fused together
+            // This part only handles the modularly-reduced single machine-word bit shifts
+            tbuf_view.n = eval_a[i].n;
+            uint64_t discarded_bits = 0, mask = U64_BITS - m_bshift;
+            for (size_t j = 0; j < tbuf_view.n; ++j) {
+                uint64_t tmp = eval_a[i].limbs[j];
+                tbuf_view.limbs[j] = (tmp << m_bshift) | discarded_bits;
+                discarded_bits = tmp >> mask;
+            } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
+            __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
+        }
+    } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(yw_res, &tmp_res); 
+    scratch_rewind(&fft_ctx, fft_mark); return BIGINT_SUCCESS;
+}
 
 
 

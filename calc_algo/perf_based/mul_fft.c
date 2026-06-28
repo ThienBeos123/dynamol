@@ -454,7 +454,7 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
         __BIGINT_SCHOOLBOOK__(a, b, res); return; // Base-case
     } //* -------- 1. SETUP & SPLIT -------- *//
     // Splitting and Convolution Variables
-    size_t fft_mark = scratch_mark(&fft_ctx); dnml_status echeck;
+    size_t fft_mark = scratch_mark(&fft_ctx); dnml_status echeck = BIGINT_SUCCESS;
     size_t d = 0, m = 0, n = 0, k = __fft_best_metadata(a->n, b->n, &d, &m, &n);
     size_t mlimbs = (m + U64_BITS - 1) >> 6; // Limbs per D-splitted Windows - ceil(M / U64_BITS)
     size_t nlimbs = (n + U64_BITS) >> 6; // Upperbound limit of ring-element in ℤ/(2^n+1)ℤ
@@ -468,10 +468,7 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
 
 
     //* -------- 2+3. PRE-EVALUATION NEGACYCLIC OPTIMIZATIONS + FFT EVALUATION -------- *//
-    // Allocate scratch memory for the forward/inverse evaluation points
-    // Each of the D elements requires an array of limbs of size 'nlimbs'
-    bigInt eval_a[d], eval_b[d];
-    // Allocate temporary scratch spaces required by your ring helper functions
+    bigInt eval_a[d], eval_b[d]; // Each of the D elements requires an array of limbs of size 'nlimbs'
     RAW_TEMP(lo_buf, nlimbs + 1, fft_ctx, fft_mark, echeck, err,);
     RAW_TEMP(hi_buf, nlimbs + 1, fft_ctx, fft_mark, echeck, err,);
     RAW_TEMP(tbuf,   nlimbs + 2, fft_ctx, fft_mark, echeck, err,); // Will be used later in recomposition
@@ -501,8 +498,8 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
     // Output of multiplication is up to 2 * nlimbs long before reduction
     BIGINT_TEMP(prod_tmp, (nlimbs << 1) + 2, fft_ctx, fft_mark, echeck, err,);
     for (size_t i = 0; i < d; ++i) {
-        dnml_status mul_err = BIGINT_SUCCESS; // Recursive Multiply step: eval_a[i] * eval_b[i]
-        __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &mul_err);
+        // Recursive Multiply step: eval_a[i] * eval_b[i]
+        __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_OVF(echeck, fft_ctx, fft_mark, err,);
         __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, n, nlimbs);
         // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
     }
