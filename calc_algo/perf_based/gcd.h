@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_NUM_THEORY_H
-#define DNML_NUM_THEORY_H
+#ifndef DNML_GCD_H
+#define DNML_GCD_H
 
 
 #include <dnml_status.h>
@@ -33,7 +33,6 @@ limitations under the License.
 #include "div.h"
 #include "mul.h"
 #include "mod.h"
-#include "mod_op.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,28 +40,14 @@ extern "C" {
 //* ======== GCD - WORKSPACE RETURNER ======== */
 size_t __BIGINT_STEIN_WS__(size_t u_size, size_t v_size);
 size_t __BIGINT_LEHMER_WS__(size_t u_size, size_t v_size);
-size_t __BIGINT_HALF_WS__(size_t u_size, size_t v_size);
+size_t __BIGINT_SUBQ_WS__(size_t u_size, size_t v_size);
 size_t __BIGINT_GCD_WS__(size_t u_size, size_t v_size);
 /* ======== GCD - ALGORITHMS ======== */
 uint64_t __BINARY_GCDU64__(uint64_t u, uint64_t v);
 void __BIGINT_STEIN__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx stein_ctx, dnml_status *err);
 void __BIGINT_LEHMER__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx lehmer_ctx, dnml_status *err);
-void __BIGINT_HALF__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx half_ctx, dnml_status *err);
+void __BIGINT_SUBQ__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx half_ctx, dnml_status *err);
 void __BIGINT_GCD_DISP__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx gcd_ctx, dnml_status *err);
-
-
-//* ======== Primality Testing - WORKSPACE RETURNER ======== */
-size_t __BIGINT_MRABIN_WS__(size_t n_size, size_t base_size);
-size_t __BIGINT_BPSW_WS__(size_t n_size);
-size_t __BIGINT_ECPP_WS__(size_t n_size);
-size_t __BIGINT_PTEST_WS__(size_t x_size);
-/* ======== Primality Testing - ALGORITHMS ======== */
-uint8_t __BIGINT_TRIAL_DIV__(uint64_t x);
-uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n);
-uint8_t __BIGINT_MILLER_RABIN__(const bigInt *const n, const bigInt *const base, calc_ctx rabin_ctx, dnml_status *err);
-uint8_t __BIGINT_BPSW__(const bigInt *const n, calc_ctx bpsw_ctx, dnml_status *err);
-uint8_t __BIGINT_ECPP__(const bigInt *const n, calc_ctx ecpp_ctx, dnml_status *err);
-uint8_t __BIGINT_PTEST_DISP__(const bigInt *const x, calc_ctx ptest_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

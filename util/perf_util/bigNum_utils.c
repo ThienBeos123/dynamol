@@ -83,6 +83,7 @@ bigInt __BIGINT_ERROR_VALUE__(void) {
 
 /* General Utilities */
 void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source) {
+    if (dst == NULL || dst->limbs == NULL) return; // IMPORTANT FOR DIVISION AND MODULO DISTINCTIONS
     if (source->limbs == NULL || !source->n) { __BIGINT_INTERNAL_ZSET__(dst); return; }
     memcpy(dst->limbs, source->limbs, source->n * U64_BYTES);
     dst->n = source->n; /**/ dst->sign = source->sign;

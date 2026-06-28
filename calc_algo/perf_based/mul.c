@@ -98,11 +98,10 @@ void __BIGINT_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, calc_c
     //  z2 = x1 * y1
     //  z0 = x0 * y0
     //  z1 = z3 - z2 - z1
-    dnml_status rec_err = DARENA_SUCCESS;
-    __BIGINT_KARATSUBA__(&x0, &y0, &z0, karat_ctx, &rec_err); SCRATCH_OVF(echeck, karat_ctx, karat_mark, err,);
-    __BIGINT_KARATSUBA__(&x1, &y1, &z2, karat_ctx, &rec_err); SCRATCH_OVF(echeck, karat_ctx, karat_mark, err,);
+    __BIGINT_KARATSUBA__(&x0, &y0, &z0, karat_ctx, &echeck); SCRATCH_OVF(echeck, karat_ctx, karat_mark, err,);
+    __BIGINT_KARATSUBA__(&x1, &y1, &z2, karat_ctx, &echeck); SCRATCH_OVF(echeck, karat_ctx, karat_mark, err,);
     __BIGINT_ADD_WC__(&tmp1, &x1, &x0); __BIGINT_ADD_WC__(&tmp2, &y1, &y0);
-    __BIGINT_KARATSUBA__(&tmp1, &tmp2, &z1, karat_ctx, &rec_err); 
+    __BIGINT_KARATSUBA__(&tmp1, &tmp2, &z1, karat_ctx, &echeck); 
     SCRATCH_OVF(echeck, karat_ctx, karat_mark, err,);
     __BIGINT_SUB_WB__(&z1, &z1, &z2); __BIGINT_SUB_WB__(&z1, &z1, &z0);
 
@@ -142,33 +141,33 @@ void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx 
     BIGINT_TEMP(p_neg1,  k + 1, toom_ctx, toom_mark, echeck, err,); BIGINT_TEMP(q_neg1,  k + 1, toom_ctx, toom_mark, echeck, err,);
     BIGINT_TEMP(p_neg2,  k + 2, toom_ctx, toom_mark, echeck, err,); BIGINT_TEMP(q_neg2,  k + 2, toom_ctx, toom_mark, echeck, err,);
     // p(x) CALCULATIONS                                            // q(x) CALCULATIONS
-    __BIGINT_ADD_WC__(&p_outer, &m0, &m2);                          __BIGINT_ADD_WC__(&q_outer, &m0, &n2);
+    __BIGINT_ADD_WC__(&p_outer, &m0, &m2);                          __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);                          __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
     __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);                     __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
     __BIGINT_ADD_SAW__(&p_neg2, &p_neg1, &m2);                      __BIGINT_ADD_SAW__(&q_neg2, &q_neg1, &n2);
     __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);                         __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
     __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);                      __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
     /* ------------ POINT-WISE MULTIPLICATION ------------
-    *   +) r(0)   = p(0)   * q(0)
-    *   +) r(1)   = p(1)   * q(1)
-    *   +) r(-1)  = p(-1)  * q(-1)
-    *   +) r(-2)  = p(-2)  * q(-2)
-    *   +) r(inf) = p(inf) * q(inf) */
-    dnml_status rec_err = BIGINT_SUCCESS;
-    BIGINT_TEMP(r0,     (k << 1),       toom_ctx, toom_mark, echeck, err,); // 2k
-    BIGINT_TEMP(r1,     (k << 1) + 9,   toom_ctx, toom_mark, echeck, err,); // 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
-    BIGINT_TEMP(r_neg1, (k << 1) + 9,   toom_ctx, toom_mark, echeck, err,); // 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
-    BIGINT_TEMP(r_neg2, (k << 1) + 10,  toom_ctx, toom_mark, echeck, err,); // 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
-    BIGINT_TEMP(rinf,    m2size + n2size + 4, toom_ctx, toom_mark, echeck, err,); // 2k (original) ---> 2k + 4 (bit-shifts accounted)
-    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &rec_err); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
-    __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &rec_err); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
-    __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &rec_err); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
-    __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &rec_err); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
-    __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &rec_err); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
+    *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
+    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
+    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 9 (interpolation - r2 + llshift)
+    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    */
+    BIGINT_TEMP(r0,     (k << 1),       toom_ctx, toom_mark, echeck, err,);
+    BIGINT_TEMP(r1,     (k << 1) + 9,   toom_ctx, toom_mark, echeck, err,);
+    BIGINT_TEMP(r_neg1, (k << 1) + 9,   toom_ctx, toom_mark, echeck, err,);
+    BIGINT_TEMP(r_neg2, (k << 1) + 10,  toom_ctx, toom_mark, echeck, err,);
+    BIGINT_TEMP(rinf,    m2size + n2size + 4, toom_ctx, toom_mark, echeck, err,);
+    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
+    __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
+    __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
+    __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &echeck); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
+    __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &echeck); SCRATCH_OVF(echeck, toom_ctx, toom_mark, err,);
 
 
     //* ------------- 3. INTERPOLATION & RECOMPOSITION ---------------- *//
-    // ------------------ INTERPOLATION ------------------ //
+    /* ------------------ INTERPOLATION ------------------ */
     /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
     /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
     /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
@@ -185,7 +184,7 @@ void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx 
     __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
     __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
     __BIGINT_INTERNAL_COPY__(res, &final_res); scratch_rewind(&toom_ctx, toom_mark); *err = BIGINT_SUCCESS;
-}                                 
+}
 void __BIGINT_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx mul_ctx, dnml_status *err) {
     if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
     else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }

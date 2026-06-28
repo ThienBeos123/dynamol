@@ -125,18 +125,19 @@ void __BIHEAP_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_stat
     BIHEAP_TEMP(q_neg1,  k + 1, echeck, err, early_free, early_cnt, alloc_arr, alloc_cnt,);
     BIHEAP_TEMP(q_neg2, (k << 1) + 14, echeck, err, early_free, early_cnt, alloc_arr, alloc_cnt,); // Actual cap: k + 2
     // p(x) CALCULATIONS                            // q(x) CALCULATIONS
-    __BIGINT_ADD_WC__(&p_outer, &m0, &m2);          __BIGINT_ADD_WC__(&q_outer, &m0, &n2);
+    __BIGINT_ADD_WC__(&p_outer, &m0, &m2);          __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);          __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
     __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);     __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
     __BIGINT_ADD_SAW__(&p_neg2, &p_neg1, &m2);      __BIGINT_ADD_SAW__(&q_neg2, &q_neg1, &n2);
     __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);         __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
     __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);      __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
     /* ------------ POINT-WISE MULTIPLICATION ------------
-    *   +) r(0)   = p(0)   * q(0)
-    *   +) r(1)   = p(1)   * q(1) ------> p(1)  *= q(1)
-    *   +) r(-1)  = p(-1)  * q(-1) -----> p(-1) *= q(-1)
-    *   +) r(-2)  = p(-2)  * q(-2) -----> p(-2) *= q(-2)
-    *   +) r(inf) = p(inf) * q(inf) */
+    *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
+    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
+    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
+    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    */
     dnml_status rec_err = BIGINT_SUCCESS;
     bigInt r0 = {0}, r1 = {0}, r_neg1 = {0}, r_neg2 = {0}, rinf = {0};
     alloc_arr[alloc_cnt++] = &r0; early_free[early_cnt++] = &r0;
@@ -149,10 +150,10 @@ void __BIHEAP_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_stat
     __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &rec_err); HEAP_OOM(echeck, err, early_free, early_cnt,);
     __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &rec_err); HEAP_OOM(echeck, err, early_free, early_cnt,);
     __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &rec_err); HEAP_OOM(echeck, err, early_free, early_cnt,);
-    __BIGINT_INTERNAL_ENSCAP__(&r1, (k << 1) + 8); HEAP_OOM(echeck, err, early_free, early_cnt,); // 2k + 4 (original) --> 2k + 8 (interpolation - r1)
-    __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (k << 1) + 7); HEAP_OOM(echeck, err, early_free, early_cnt,); // 2k + 2 (original) --> 2k + 7 (interpolation - r2)
-    __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (k << 1) + 7); HEAP_OOM(echeck, err, early_free, early_cnt,); // 2k + 4 (original) --> 2k + 7 (interpolation - r3)
-    __BIGINT_INTERNAL_ENSCAP__(&rinf, m2size + n2size + 4); HEAP_OOM(echeck, err, early_free, early_cnt,); // 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    __BIGINT_INTERNAL_ENSCAP__(&r1, (k << 1) + 8); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (k << 1) + 7); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (k << 1) + 7); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIGINT_INTERNAL_ENSCAP__(&rinf, m2size + n2size + 4); HEAP_OOM(echeck, err, early_free, early_cnt,);
 
 
     //* ------------- 3. INTERPOLATION & RECOMPOSITION ---------------- *//

@@ -91,8 +91,10 @@ void __BIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT
     size_t k = (d->n << 6) - __CLZ_UI64__(dtop); // Bit length of d
     limb_t rinit = (UINT64_MAX) / dtop; // Initial guess of a single machine word
 
-    // 2. Converging correction of Fixed/Scaled Reciprocal of D
+    // 2. Converging correction of Scaled Reciprocal of D
     //  - Our goal here is to compute 2^k / D using Newton's root-approximation method
+    //  - The reason we don't do 1 / D as detailed by Wikipedia's description of
+    //    floating-point Newton-Raphson division is because that would always equal to 0 due to integer flooring
     dnml_status echeck = BIGINT_SUCCESS; /**/ size_t newton_mark = scratch_mark(&newton_ctx);
     BIGINT_TEMP(r, n->n, newton_ctx, newton_mark, echeck, err,); r.cap = d->n;
     BIGINT_TEMP(dr, ((k << 1) + 1) >> 6, newton_ctx, newton_mark, echeck, err,);
@@ -144,8 +146,10 @@ void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGIN
     size_t k = (d->n << 6) - __CLZ_UI64__(dtop); // Bit length of d
     limb_t rinit = (UINT64_MAX) / dtop; // Initial guess of a single machine word
 
-    // 2. Converging correction of Fixed/Scaled Reciprocal of D
+    // 2. Converging correction of Scaled Reciprocal of D
     //  - Our goal here is to compute 2^k / D using Newton's root-approximation method
+    //  - The reason we don't do 1 / D as detailed by Wikipedia's description of
+    //    floating-point Newton-Raphson division is because that would always equal to 0 due to integer flooring
     dnml_status echeck = BIGINT_SUCCESS; /**/ size_t newton_mark = scratch_mark(&newton_ctx);
     BIGINT_TEMP(r, n->n, newton_ctx, newton_mark, echeck, err,); r.cap = d->n;
     BIGINT_TEMP(dr, ((k << 1) + 1) >> 6, newton_ctx, newton_mark, echeck, err,);

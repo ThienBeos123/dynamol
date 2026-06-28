@@ -20,7 +20,7 @@ limitations under the License.
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 /* ------- Sizing Function ------- */
-static size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
+size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
     size_t max_bits = max(a_size * U64_BITS, b_size * U64_BITS);
     size_t k = 2, d = 0, m = 0, n = 0;
     for (;;) {
@@ -54,7 +54,7 @@ size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) {
 
 
 /* ------------- Helper function ------------- */
-static void __add_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
+void __add_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
     uint8_t carry = 0, nonzero_lows = 0;
     for (size_t i = 0; i < max(a->n, b->n); ++i) {
         limb_t x = (i < a->n) ? a->limbs[i] : 0;
@@ -77,7 +77,7 @@ static void __add_mod_fermat(bigInt *const out, const bigInt *const a, const big
         }
     }
 }
-static void __sub_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
+void __sub_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
     __BIGINT_SUB_SAW__(out, a, b);
     //* Modular Correction upon underflow (out_view < 0)
     //  We would achieve via subtraction of 2^n + 1 by the negative value,
@@ -99,7 +99,7 @@ static void __sub_mod_fermat(bigInt *const out, const bigInt *const a, const big
         } out->sign = 1; out->n = top_nonzero;
     }
 }
-static void __negate_mod_fermat(bigInt *const out, const bigInt *in, size_t n, size_t nlimbs) {
+void __negate_mod_fermat(bigInt *const out, const bigInt *in, size_t n, size_t nlimbs) {
     /**
      * This function is specifically designed to negate positive ins into negative, 
      * and is strictly advised to not use this on negative bigInt's ever inside this file.
@@ -143,7 +143,7 @@ static void __negate_mod_fermat(bigInt *const out, const bigInt *in, size_t n, s
  *  -->      hi * 2^n ≡ -hi
  *  --> lo + hi * 2^n ≡ lo + (-hi)         -------> [x ≡ lo - hi]
  */
-static void __reduce_mod_fermat(
+void __reduce_mod_fermat(
     bigInt *const out, const bigInt *const in, 
     limb_t *const lo_buf, limb_t *const hi_buf,
     size_t n, size_t nlimbs
@@ -188,7 +188,7 @@ static void __reduce_mod_fermat(
  *              = lo * 2^s  +  hi * 2^n
  *              ≡ lo * 2^s  -  hi
  */
-static void __cyclic_shift_mod(
+void __cyclic_shift_mod(
     bigInt *const out, const bigInt *const x, 
     limb_t *const lo_buf, limb_t *const hi_buf,
     size_t s, size_t n, size_t nlimbs
@@ -251,14 +251,14 @@ static void __cyclic_shift_mod(
  * __sub_mod_fermat, __cyclic_shift_mod, etc). We also transform the Primitive Root of Unity (as well
  * as the Inverse Primitive Root of Unity) to be an integer in ℤ(2^n + 1)ℤ, as displayed and annotated below.
  */
-static size_t __bit_reverse(size_t in, size_t k) {
+size_t __bit_reverse(size_t in, size_t k) {
     size_t r = 0;
     for (size_t i = 0; i < k; i++) { 
         r = (r << 1) | (in & 1);
         in >>= 1;
     } return r;
 }
-static void _bigint_ctk_fft(
+void _bigint_ctk_fft(
     bigInt *const evalp, 
     limb_t *const tbuf, limb_t *const usave_buf,
     limb_t *const lo_buf, limb_t *const hi_buf,
@@ -370,7 +370,7 @@ static void _bigint_ctk_fft(
  *              |        WHEN x ∈ ℤ/(2^n + 1)ℤ AND x IS ODD |
  *              |-------------------------------------------|
  */
-static void _bigint_ctk_ifft(
+void _bigint_ctk_ifft(
     bigInt *const evalp, 
     limb_t *const tbuf, limb_t *const usave_buf,
     limb_t *const lo_buf, limb_t *const hi_buf,
