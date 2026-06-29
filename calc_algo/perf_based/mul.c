@@ -281,8 +281,7 @@ void __BIGINT_ASYM_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, ca
 
         // Accumulating result into tmp_res
         // Same principle as normal SchoolBook but cooler, I guess
-        __BIGINT_INTERNAL_LLSHIFT__(&tmp_res, slice); // Shift left by slice limbs (expand in base 2^64) for accumulation
-        __BIGINT_ADD_WC__(&tmp_res, &tmp_res, &tmp); // (tmp_res <<< slice) + tmp (Accumulating the product as a sum)
+        __BIGINT_ADD_SHIFT__(&tmp_res, &tmp, offset); // (tmp_res <<<= slice) + tmp (Accumulating the product as a sum)
     }
 
 
