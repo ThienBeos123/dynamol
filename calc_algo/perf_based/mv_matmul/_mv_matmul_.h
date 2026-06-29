@@ -71,7 +71,7 @@ size_t __SYM_MATMUL_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size
 size_t __SYM_MATMUL_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
 size_t __SYM_MATMUL_TOOM6p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
 size_t __SYM_MATMUL_TOOM7p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
-size_t __SYM_MAT_TOOM8p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __SYM_MATMUL_TOOM8p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
 
 
 /* --------------- Algorithm Functions - Symmetrical  --------------- */
@@ -111,8 +111,8 @@ dnml_status __SYM_MATMUL_SSA__(bigInt *const x, bigInt *const z, /**/ bigInt *co
 
 
 /* ---------------- Dispatchers ---------------- */
-size_t __MV_ASYM_MATMUL_WS__(struct rt_matrix *T, size_t a_size, size_t b_size);
-size_t __MV_MATMUL_WS__(struct rt_matrix *T, size_t a_size, size_t b_size);
+size_t __MV_ASYM_MATMUL_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __MV_MATMUL_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
 dnml_status __MV_ASYM_MATMUL_21__(
     bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w,
     bigInt *const xz_res, bigInt *const yw_res, calc_ctx mul_ctx
