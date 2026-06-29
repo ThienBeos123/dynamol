@@ -22,7 +22,7 @@ limitations under the License.
 #include "../../util/aconv_macros.h"
 #include "mul_fft.c"
 
-/**
+/** ----------- Matrix-Vector Multiplication Linear Combination -----------
  * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS FOR MATRIX MULTIPLICATION:
  *
  *      - Toom-cook 3-way 
@@ -31,7 +31,10 @@ limitations under the License.
  *      - Schonhage-Strassen
  *
  * In which they would be structurally modify to accompany the multiplications
- * of a single linear-combination pair of the form xz + yw (as utilized by hgcd)
+ * of a single linear-combination pair of the form xz + yw (as utilized by hgcd).
+ * This file is a specialization version of the generic, balance-assuming version in 
+ * "_matmul_fft.c", where algorithms here assume arguments of x and z are unbalanced,
+ * with a size difference magnitudes of larger than 2 (>2x), while y and w is balanced
  */
 /* ------------ Sizing Function ------------ */
 size_t __ASYMXZ_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
@@ -376,8 +379,3 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
     } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(yw_res, &tmp_res); 
     scratch_rewind(&fft_ctx, fft_mark); return BIGINT_SUCCESS;
 }
-
-
-
-
-

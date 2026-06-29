@@ -19,8 +19,28 @@ limitations under the License.
 #include "gcd.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
-//* ======== GCD - WORKSPACE RETURNER ======== */
+/** ----------- General BigInt Greatest Cmmmon Divisor -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - 64-bit Binary GCD (64-bit operands only)
+ *      - Binary/Stein GCd (General)
+ *      - Lehmer GCD (General)
+ *
+ * This file is generally the main algorithm file for bigInt multiplication, containing
+ * the multiplication algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ * It only contains the 2 simplest multiplication algorithms to keep its focus of being the central,
+ * simple point of authority, and delegation of complexity is in other files, including:
+ *
+ *      - gcd_subq.c (Implementation of Subquadratic GCD through Half-GCD)
+ *      - mv_matmul/_mv_matmul_disp.c (Algorithm Dispatcher of Matrix-Vector Multiplication Algorithms)
+ *      - mv_matmul/_mv_matmul_ws.c (Workspace Size Returning Dispatcher of Matrix-Vector Multiplication Algorithms)
+ *      - ...
+ *
+ * For the ... at the end, it basically means that every single file inside /mv_matmul is, considerably,
+ * under the direct implementation scope of GCD, as it was initially implemented as efficient
+ * algorithms for calculating the transformation matrix T for Half-GCD, but was then generalized for future uses (xGCD)
+ */
+/* ======== GCD - WORKSPACE RETURNER ======== */
 size_t __BIGINT_STEIN_WS__(size_t u_size, size_t v_size) { 
     // This function doesn't utilize any external function call 
     // requiring arena allocation for temporaries

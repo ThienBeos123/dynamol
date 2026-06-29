@@ -19,6 +19,25 @@ limitations under the License.
 #include "heap_mul.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
+/** ----------- General BigInt Multiplication -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - Schoolbook Multiplication (General)
+ *      - Karatsuba Multiplication (General)
+ *      - Toom-cook 3-way (General)
+ *      - Toom-cook 4-way (General)
+ *
+ * This file is generally the main algorithm file for bigInt multiplication, containing
+ * the multiplication algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ * It only contains the 3-simplest multiplication algorithms to keep its focus of being the central,
+ * simple point of authority, and delegation of complexity is in other files, including:
+ *
+ *      - heap_mul_fft.c (Implementation of Schonhage-Strassen Algorithm)
+ *      - heap_mul_toom.c (implementation of Toom-cook 5, 6.5, 7.5, and 8.5-way)
+ */
+// TODO: Finish unbalanced operating balancing variants of Karatsuba AND Toom-cook 3-way
+// TODO: Refactor Asymmetrical Dispatchers to be purely algorithm dispatchers and nothing more
+
 /* ============== BIGINT ALGORITHMS ============== */
 /* BigInt Schoolbook Multiplication - Heap-allocating */
 void __BIHEAP_SCHOOLBOOK__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res) {

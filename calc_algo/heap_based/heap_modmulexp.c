@@ -16,7 +16,7 @@ limitations under the License.
 
 
 
-#include "heap_modop.h"
+#include "heap_modmulexp.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 limb_t a[1] = {1}; // NO FUNCTION SHOULD MODIFY THIS ARRAY, EVER

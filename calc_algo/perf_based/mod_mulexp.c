@@ -16,12 +16,26 @@ limitations under the License.
 
 
 
-#include "mod_op.h"
+#include "mod_mulexp.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
-
-//* ----- WORKSPACE FUNCTIONS ---- *//
+/** ----------- General BigInt Modular Multiplication And Exponentiation -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS + OPERATIONS:
+ *
+ *  Operations:
+ *      - Modular Multiplication
+ *      - Modular Exponentiation
+ *  Algorithms:
+ *      - Montgomery Modular Multiplication (Modular)
+ *      - Binary Exponentiation (Modular)
+ *      - Fixed-Window/k-ary Exponentiation (Modular)
+ *      - Sliding-window Exponentiation (Modular)
+ *
+ * This file is generally the main and only algorithm file for bigInt modular multiplication and 
+ * exponentiation, containing the modular multiplication and exponentiation algorithm dispatcher, 
+ * as well as the workspace sizing function dispatcher.
+ */
+/* ---------- WORKSPACE FUNCTIONS ------ */
 size_t __BIGINT_CMODMUL_WS__(size_t a_size, size_t b_size, size_t mod_size) {
     size_t raw_size = (a_size + b_size) << 1;
     size_t fcall_size = max(

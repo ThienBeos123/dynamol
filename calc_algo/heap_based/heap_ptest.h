@@ -31,18 +31,11 @@ limitations under the License.
 #include "heap_div.h"
 #include "heap_mul.h"
 #include "heap_mod.h"
-#include "heap_modop.h"
+#include "heap_modmulexp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-//* ======== GCD - ALGORITHMS RETURNER ======== */
-uint64_t __BIHEAP_EUCLID__(uint64_t u, uint64_t v);
-void __BIHEAP_STEIN__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
-void __BIHEAP_LEHMER__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
-void __BIHEAP_HALF__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
-void __BIHEAP_GCD_DISP__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
-
 //* ======== Primality Testing - ALGORITHMS ======== *//
 uint8_t __BIHEAP_TRIAL_DIV__(uint64_t x);
 uint8_t __BIHEAP_SMALL_MRABIN__(uint64_t n);

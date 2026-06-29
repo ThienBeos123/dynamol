@@ -20,7 +20,17 @@ limitations under the License.
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 static const uint32_t dmr_bases[7] = { 2, 325, 9375, 28178, 450775, 9780504, 1794265022 };
-
+/** ----------- General BigInt Primality Testing -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS + OPERATIONS:
+ *
+ *      - 64-bit Trial Division (<= 207936)
+ *      - 64-bit Deterministic Miller-Rabin (64-bit ONLY)
+ *      - Probabilistic Miller-Rabin (General)
+ *      - Unproven Probabilistic Baillie-PSW (General)
+ *
+ * This file is generally the main and only algorithm file for bigInt primality testing, 
+ * containing the primality testing algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ */
 
 
 //* ======== Primality Testing - WORKSPACE RETURNER ======== */

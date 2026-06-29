@@ -19,6 +19,25 @@ limitations under the License.
 #include "mul.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
+/** ----------- General BigInt Multiplication -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - Schoolbook Multiplication (General)
+ *      - Karatsuba Multiplication (General)
+ *      - Toom-cook 3-way (General)
+ *
+ * This file is generally the main algorithm file for bigInt multiplication, containing
+ * the multiplication algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ * It only contains the 3-simplest multiplication algorithms to keep its focus of being the central,
+ * simple point of authority, and delegation of complexity is in other files, including:
+ *
+ *      - mul_fft.c (Implementation of Schonhage-Strassen Algorithm)
+ *      - mul_toom_45.c (Implementation of Toom-cook 4 and 5-way)
+ *      - mul_toom_p5.c (implementation of Toom-cook 6.5, 7.5, and 8.5-way)
+ */
+// TODO: Finish unbalanced operating balancing variants of Karatsuba AND Toom-cook 3-way
+// TODO: Refactor Asymmetrical Dispatchers to be purely algorithm dispatchers and nothing more
+
 
 
 /* BIGINT WORKSPACE SIZE */
@@ -42,7 +61,9 @@ size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     size_t res_alias = (k << 1) + 14;
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
-size_t __BIGINT_ASYM_MUL_WS__(size_t a_size, size_t b_size) {
+size_t __BIGINT_ASYM_KARAT_WS__(size_t x_size, size_t y_size) { return 0; }
+size_t __BIGINT_ASYM_TOOM3_WS__(size_t m_size, size_t n_size) { return 0; }
+size_t __BIGINT_ASYM_MUL_WS__(size_t a_size, size_t b_size) { 
     // Metadata pre-calculations - slices
     size_t Bsize = min(a_size, b_size); // Beta size lol
     size_t Asize = max(a_size, b_size); // Alpha chad size lol
@@ -90,7 +111,8 @@ size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
 
 
 
-/* BIGINT ALGORITHMS */
+
+/* BIGINT ALGORITHMS - BALANCED */
 void __BIGINT_SCHOOLBOOK__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res) {
     memset(res->limbs, 0, a->n + b->n);
     for (size_t i = 0; i < a->n; ++i) {
@@ -220,7 +242,9 @@ void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx 
     __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
     __BIGINT_INTERNAL_COPY__(res, &final_res); scratch_rewind(&toom_ctx, toom_mark); *err = BIGINT_SUCCESS;
 }
-
+/* BIGINT ALGORITHMS - UNBALANCED */
+void __BIGINT_ASYM_KARAT__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, calc_ctx karat_ctx, dnml_status *err) {}
+void __BIGINT_ASYM_TOOM3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
 
 
 /* BIGINT MULTIPLICATION ALGORITHM DISPATCHER */

@@ -19,8 +19,23 @@ limitations under the License.
 #include "heap_pow_root.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
-
+/** ----------- Heap-based BigInt Exponentiation and Roots -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS + OPERATIONS:
+ *
+ *  Operations:
+ *      - Exponentiation/Powers
+ *      - Roots
+ *  Algorithms:
+ *      - Binary Exponentiation (General)
+ *      - Fixed-Window/k-ary Exponentiation (General)
+ *      - Sliding-window Exponentiation (General)
+ *      - Heron's Square Root Method (Specialization of Newton-Raphson's method)
+ *      - Newton-Raphson's Root Approximation Method (Quadratic Generalization)
+ *
+ * This file is generally the main and only algorithm file for bigInt roots and 
+ * exponentiation, containing the roots and exponentiation algorithm dispatcher, 
+ * as well as the workspace sizing function dispatcher.
+ */
 /* ----------------- ALGORITHMS ----------------- */
 void __BIHEAP_BINARY_EXP__(bigInt *const res, const bigInt *const base, uint64_t exp, dnml_status *err) {
     // SETUP

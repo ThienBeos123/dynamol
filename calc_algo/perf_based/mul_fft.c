@@ -19,6 +19,18 @@ limitations under the License.
 #include "mul.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
+/** ----------- BigInt Fast Fourier Transform Multiplication -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - Schonhage-Strassen (General, NTT-based)
+ *
+ * This file is a complexity-delegated file, specifically containing the implementation
+ * of the algorithm as detailed above. Other bigInt algorithm multiplication files include
+ *
+ *      - mul.c (Algorithm Dispathcer + Implementation of Schoolbook, Karatsuba, and Toom-cook 3-way)
+ *      - mul_toom_p5.c (implementation of Toom-cook 6.5, 7.5, and 8.5-way)
+ *      - mul_toom_45.c (implementation of Toom-cook 4-way and Toom-cook 5-way)
+ */
 /* ------- Sizing Function ------- */
 size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
     size_t max_bits = max(a_size * U64_BITS, b_size * U64_BITS);

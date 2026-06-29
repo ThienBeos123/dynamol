@@ -19,8 +19,20 @@ limitations under the License.
 #include "heap_div.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
-
+/** ------------------- Heap-based BigInt Division -------------------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - Short Division (64-bit Divisor ONLY)
+ *      - Knuth Algorithm D (General)
+ *      - Burnikel-Ziegler Division (General)
+ *
+ * This file is generally the main algorithm file for bigInt division, containnig
+ * the division algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ * It only contains the 3-simplest division algorithms to keep its focus on being the central,
+ * simple point of authority, and delegation of complexity is in other files, including:
+ *
+ *      - heap_div_newt.c (Implementation of Newton-Raphson Scaled-Reciprocal Division)
+ */
 /* ------ MAIN ALGORITHMS HELPERS ------ */
 static void __heap_burk_3b2(
     PCONST_BIGINT a1, PCONST_BIGINT a2, PCONST_BIGINT a3,

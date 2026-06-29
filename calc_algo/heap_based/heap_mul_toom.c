@@ -19,8 +19,20 @@ limitations under the License.
 #include "heap_mul.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
-
+/** ----------- BigInt Fast Fourier Transform Multiplication -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - Toom-cook 5-way (General)
+ *      - Toom-cook 6.5-way (General)
+ *      - Toom-cook 7.5-way (General)
+ *      - Toom-cook 8.5-way (General)
+ *
+ * This file is a complexity-delegated file, specifically containing the implementation
+ * of the algorithm as detailed above. Other bigInt algorithm multiplication files include
+ *
+ *      - heap_mul.c (Algorithm Dispathcer + Implementation of Schoolbook, Karatsuba, Toom-cook 3-way, and 4-way)
+ *      - mul_fft.c (Implementation of Schonhage-Strassen Algorithm)
+ */
 /* BigInt Toom 5-way Multiplication - Heap-allocating */
 void __BIHEAP_TOOM_5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
 

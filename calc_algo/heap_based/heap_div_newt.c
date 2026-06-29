@@ -19,6 +19,20 @@ limitations under the License.
 #include "heap_div.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
+/** ------------------- Heap-based BigInt Division -------------------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - Newton-Raphson scaled-reciprocal (General)
+ *
+ * This file is the complexity-delegated file, specifically containing the implementation
+ * of the algorithm as detailed above. Other bigInt division files include:
+ *
+ *      - heap_div.c:
+ *          + Algorithm Dispatcher
+ *          + Short-division Implementation
+ *          + Knuth Algorithm D Implementation
+ *          + Burnikel-Zielger Division Implementation
+ */
 /* ------ WORKSPACE + HELPER FUNCTIONS ------ */
 size_t __BIGINT_NEWTON_WS__(size_t n_size, size_t d_size) {
     size_t k = (d_size << 6); // The maximum, not subtracting any bits from the top

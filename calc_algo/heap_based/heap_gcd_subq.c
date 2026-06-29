@@ -13,14 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-
-
 #include "gcd.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-#include "mv_matmul/_mv_matmul_.h"
-/** ----------- General BigInt Greatest Common Divisor -----------
+#include "hmv_matmul/_hmv_matmul_.h"
+/** ----------- Heap-based BigInt Greatest Common Divisor -----------
  * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
  *
  *      - Half-GCD (Helper, Size-reducing algorithm)
@@ -38,15 +35,10 @@ limitations under the License.
  * under the direct implementation scope of GCD, as it was initially implemented as efficient
  * algorithms for calculating the transformation matrix T for Half-GCD, but was then generalized for future uses (xGCD)
  */
-// Workspace Returner
-static inline size_t __BIGINT_HALF_WS__(size_t a_size, size_t b_size) { return 0; }
-size_t __BIGINT_SUBQ_WS__(size_t u_size, size_t v_size) { return 0; }
 
 
 
-
-
-/** ------------ 2-limb Base-case Half-GCD ------------
+ /** ------------ 2-limb Base-case Half-GCD ------------
  * This function, for all intend and purposes, is exclusively an internal function
  * utilized inside the "gcd_subq.c" file as the base-case of __hgcd_reduct().
  * This function computes the base-case of __hgcd_reduct() to compute the Half-GCD
@@ -97,8 +89,8 @@ static void _hgcd_reduct(
 
 
 /* ---------- Main Orchestrating Function ---------- */
-void __BIGINT_SUBQ__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx subq_ctx, dnml_status *err) {
-
+void __BIHEAP_SUBQ__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx subq_ctx, dnml_status *err) {
+    
 
 
 }

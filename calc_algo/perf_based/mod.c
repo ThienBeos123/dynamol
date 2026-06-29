@@ -19,7 +19,15 @@ limitations under the License.
 #include "mod.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-
+/** ----------- General BigInt Modular Reduction -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS + OPERATIONS:
+ *
+ *      - Barett Reduction (Modular)
+ *      - Montgomery REDC (Helper + Modular) -> [Montgomery Modular Multiplication]
+ *
+ * This file is generally the main and only algorithm file for bigInt modular reduction, 
+ * containing the modular reduction algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ */
 /* ----------------- WORKSPACE FUNCTIONS ----------------- */
 size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size) {
     // Precomputation Temporaries

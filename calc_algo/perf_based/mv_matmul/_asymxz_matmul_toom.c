@@ -19,7 +19,7 @@ limitations under the License.
 #include "_mv_matmul_.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-/**
+/** ----------- Matrix-Vector Multiplication Linear Combination -----------
  * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS FOR MATRIX MULTIPLICATION:
  *
  *      - Toom-cook 6.5-way
@@ -28,6 +28,9 @@ limitations under the License.
  *
  * In which they would be structurally modify to accompany the multiplications
  * of a single linear-combination pair of the form xz + yw (as utilized by hgcd)
+ * This file is a specialization version of the generic, balance-assuming version in 
+ * "_matmul_toom.c", where algorithms here assume arguments of x and z are unbalanced,
+ * with a size difference magnitudes of larger than 2 (>2x), while y and w is balanced
  */
 /* ---------- Function Workspace Size Returners ---------- */
 size_t __ASYMXZ_MAT_TOOM6p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
@@ -68,4 +71,3 @@ dnml_status __ASYMXZ_MATMUL_TOOM8p5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }
-

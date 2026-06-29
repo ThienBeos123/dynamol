@@ -17,7 +17,7 @@ limitations under the License.
 
 
 
-#include "_mv_matmul_.h"
+#include "_hmv_matmul_.h"
 #include <debug_util.h>
 #include "../../../util/aconv_macros.h"
 #include "mul_fft.c"
@@ -32,40 +32,8 @@ limitations under the License.
  * In which they would be structurally modify to accompany the multiplications
  * of a single linear-combination pair of the form xz + yw (as utilized by hgcd)
  */
-/* ------------ Sizing Function ------------ */
-size_t __BIGINT_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
-    // Calculate based on the maximum multiplication branch --> Correct
-    size_t k = max((size_t)(max(x_size, z_size) / 3) + 1, (size_t)(max(y_size, w_size) / 3) + 1);
-    size_t total_points_p = ((k << 2) + 6); size_t total_points_q = ((k << 2) + 6);
-    size_t total_points_r = ((k << 3) + (k << 1) + 32); size_t res_alias = (k << 1) + 14;
-    return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
-}
-size_t __BIGINT_MAT_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __BIGINT_MAT_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __BIGINT_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
-    // Pre-buffer calculation metadatas
-    size_t xz_d, xz_m, xz_n, xz_k = __fft_best_metadata(x_size, z_size, &xz_d, &xz_m, &xz_n);
-    size_t yw_d, yw_m, yw_n, yw_k = __fft_best_metadata(y_size, w_size, &yw_d, &yw_m, &yw_n);
-    size_t max_d = max(xz_d, yw_d); size_t max_m = max(xz_m, yw_m);
-    size_t max_n = max(xz_n, yw_n); size_t max_k = max(xz_k, yw_k);
-    // Limbs/whole-word counterparts
-    size_t max_mlimbs = max((xz_m + U64_BITS - 1) >> 6, (yw_m + U64_BITS - 1) >> 6);
-    size_t max_nlimbs = max((xz_n + U64_BITS) >> 6,     (yw_n + U64_BITS) >> 6);
-    // Main temporary buffer sizing
-    size_t local_tmp = (
-        // lo_buf, hi_buf, tbuf, usave
-        ((max_nlimbs + 1) << 1) + (max_nlimbs + 1) + (max_nlimbs + 2)
-      + ((((max_nlimbs + 1) << max_k) << 1)) // flat_evala + flat_evalb
-      + (max_nlimbs << 1) + 2 + max(x_size + z_size, y_size + w_size) // prod_tmp + tmp_res
-    );
-    size_t downstream_size = __BIGINT_FFT_WS__(max_nlimbs, max_nlimbs);
-    return local_tmp + downstream_size;
-}
-
-
-
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __BIGINT_MATMUL_TOOM3__(
+dnml_status __BIHEAP_MATMUL_TOOM3__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) {
@@ -212,7 +180,7 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __BIGINT_MATMUL_TOOM4__(
+dnml_status __BIHEAP_MATMUL_TOOM4__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }
@@ -221,7 +189,7 @@ dnml_status __BIGINT_MATMUL_TOOM4__(
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __BIGINT_MATMUL_TOOM5__(
+dnml_status __BIHEAP_MATMUL_TOOM5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }
@@ -231,7 +199,7 @@ dnml_status __BIGINT_MATMUL_TOOM5__(
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __BIGINT_MATMUL_SSA__(
+dnml_status __BIHEAP_MATMUL_SSA__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx fft_ctx
 ) {

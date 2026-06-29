@@ -32,7 +32,7 @@ limitations under the License.
 #include "div.h"
 #include "mul.h"
 #include "mod.h"
-#include "mod_op.h"
+#include "mod_mulexp.h"
 
 #ifdef __cplusplus
 extern "C" {

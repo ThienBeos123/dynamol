@@ -19,6 +19,15 @@ limitations under the License.
 #include "heap_mod.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
+/** ----------- Heap-based BigInt Modular Reduction -----------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS + OPERATIONS:
+ *
+ *      - Barett Reduction (Modular)
+ *      - Montgomery REDC (Helper + Modular) -> [Montgomery Modular Multiplication]
+ *
+ * This file is generally the main and only algorithm file for bigInt modular reduction, 
+ * containing the modular reduction algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ */
 
 /* BigInt Barett Modular Reduction */
 void __BIHEAP_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, dnml_status *err) {

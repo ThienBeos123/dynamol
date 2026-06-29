@@ -16,7 +16,7 @@ limitations under the License.
 
 
 
-#include "_mv_matmul_.h"
+#include "_hmv_matmul_.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 /** ----------- Matrix-Vector Multiplication Linear Combination -----------
@@ -29,20 +29,8 @@ limitations under the License.
  * In which they would be structurally modify to accompany the multiplications
  * of a single linear-combination pair of the form xz + yw (as utilized by hgcd)
  */
-/* ---------- Function Workspace Size Returners ---------- */
-size_t __BIGINT_MAT_TOOM6p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __BIGINT_MAT_TOOM7p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __BIGINT_MAT_TOOM8p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-
-
-
-
-
-
-
-
 /* ----------- BigInt Matrix Multiplication Toom-cook 6.5-way ----------- */
-dnml_status __BIGINT_MATMUL_TOOM6p5__(
+dnml_status __BIHEAP_MATMUL_TOOM6p5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }
@@ -53,7 +41,7 @@ dnml_status __BIGINT_MATMUL_TOOM6p5__(
 
 
 /* ----------- BigInt Matrix Multiplication Toom-cook 6.5-way ----------- */
-dnml_status __BIGINT_MATMUL_TOOM7p5__(
+dnml_status __BIHEAP_MATMUL_TOOM7p5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }
@@ -64,7 +52,7 @@ dnml_status __BIGINT_MATMUL_TOOM7p5__(
 
 
 /* ----------- BigInt Matrix Multiplication Toom-cook 6.5-way ----------- */
-dnml_status __BIGINT_MATMUL_TOOM8p5__(
+dnml_status __BIHEAP_MATMUL_TOOM8p5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }

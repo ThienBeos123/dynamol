@@ -19,6 +19,20 @@ limitations under the License.
 #include "div.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
+/** ------------------- General BigInt Division -------------------
+ * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
+ *
+ *      - Short Division (64-bit Divisor ONLY)
+ *      - Knuth Algorithm D (General)
+ *      - Burnikel-Ziegler Division (General)
+ *
+ * This file is generally the main algorithm file for bigInt division, containnig
+ * the division algorithm dispatcher, as well as the workspace sizing function dispatcher.
+ * It only contains the 3-simplest division algorithms to keep its focus on being the central,
+ * simple point of authority, and delegation of complexity is in other files, including:
+ *
+ *      - div_newton.c (Implementation of Newton-Raphson Scaled-Reciprocal Division)
+ */
 /* ------ WORKSPACE FUNCTIONS ------ */
 size_t __BIGINT_SHORTDIV_WS__(size_t a_size, size_t b_size) { return 0; }
 size_t __BIGINT_KNUTH_WS__(size_t a_size, size_t b_size) { return (a_size + 1 + b_size) + (a_size + b_size); }
