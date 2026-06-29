@@ -50,8 +50,8 @@ dnml_status __ASYMXZ_MATMUL_TOOM3__(
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) {
     // Metadata pre-calculations - slices
-    size_t Bsize = min(x->n, y->n); // Beta size lol
-    size_t Asize = max(x->n, y->n); // Alpha chad size lol
+    size_t Bsize = min(x->n, z->n); // Beta size lol
+    size_t Asize = max(x->n, z->n); // Alpha chad size lol
     size_t splits = ((size_t)(Asize / Bsize) + 1);
     size_t slice = (Asize / splits); size_t last_slice = Asize - slice;
     bigInt *alpha = (Asize == x->n) ? x : z; /**/ bigInt *beta = (Bsize == z->n) ? z : x;
@@ -258,8 +258,8 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx fft_ctx
 ) {
     size_t fft_mark = scratch_mark(&fft_ctx); dnml_status echeck = BIGINT_SUCCESS;
-    size_t Bsize = min(x->n, y->n); // Beta size lol
-    size_t Asize = max(x->n, y->n); // Alpha chad size lol
+    size_t Bsize = min(x->n, z->n); // Beta size lol
+    size_t Asize = max(x->n, z->n); // Alpha chad size lol
     size_t splits = ((size_t)(Asize / Bsize) + 1);
     size_t slice = (Asize / splits); size_t last_slice = Asize - slice;
     bigInt *alpha = (Asize == x->n) ? x : z; /**/ bigInt *beta = (Bsize == z->n) ? z : x;
@@ -398,7 +398,7 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
     // 2. Looping over D of each windows and Pre-scale them through Negacyclic Convolutions
     // Allocating two flat, contiguous memory blocks for all D windows at once
     // (improve Cache Locality and Prefetch Efficiency)
-    for (size_t i = 0; i < xz_d; ++i) {
+    for (size_t i = 0; i < yw_d; ++i) {
         eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
         eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
         // Perform cyclic shifts straight into these perfectly localized targets
@@ -413,7 +413,7 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
     _bigint_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
     // Output of multiplication is up to 2 * nlimbs long before reduction
     prod_tmp.cap = (yw_nlimbs << 1) + 2;
-    for (size_t i = 0; i < xz_d; ++i) {
+    for (size_t i = 0; i < yw_d; ++i) {
         // Recursive Multiply step: eval_a[i] * eval_b[i]
         __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
         __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, yw_n, yw_nlimbs);
