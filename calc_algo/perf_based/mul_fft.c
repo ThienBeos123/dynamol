@@ -521,8 +521,7 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
     // 5. Execute Inverse NTT (eval_a now holds the point-wise products)
     _bigint_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, d, k, n, nlimbs);
     for (size_t i = 0; i < d; ++i) {
-        // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
-        size_t wexp = i * psi_step;
+        size_t wexp = i * psi_step; // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
         size_t iwexp = ((n << 1) - wexp) % (n << 1); // Exponent cycle of 2n
         __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, n, nlimbs);
     }
