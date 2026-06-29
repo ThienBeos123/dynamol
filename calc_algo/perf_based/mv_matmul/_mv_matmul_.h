@@ -64,7 +64,14 @@ size_t __ASYMYW_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t
 size_t __ASYMYW_MAT_TOOM6p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
 size_t __ASYMYW_MAT_TOOM7p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
 size_t __ASYMYW_MAT_TOOM8p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
-
+/* ---------- Sizing Functions - Symmetrical Asymmetrical ---------- */
+size_t __SYM_MATMUL_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __SYM_MATMUL_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __SYM_MATMUL_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __SYM_MATMUL_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __SYM_MATMUL_TOOM6p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __SYM_MATMUL_TOOM7p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
+size_t __SYM_MAT_TOOM8p5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size);
 
 
 /* --------------- Algorithm Functions - Symmetrical  --------------- */
@@ -91,6 +98,14 @@ dnml_status __ASYMYW_MATMUL_TOOM6p5__(bigInt *const x, bigInt *const z, /**/ big
 dnml_status __ASYMYW_MATMUL_TOOM7p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __ASYMYW_MATMUL_TOOM8p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __ASYMYW_MATMUL_SSA__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx fft_ctx);
+/* ------------- Algorithm Functions - Symmetrical Asymmetrical ------------- */
+dnml_status __SYM_MATMUL_TOOM3__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __SYM_MATMUL_TOOM4__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __SYM_MATMUL_TOOM5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __SYM_MATMUL_TOOM6p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __SYM_MATMUL_TOOM7p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __SYM_MATMUL_TOOM8p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __SYM_MATMUL_SSA__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx fft_ctx);
 
 
 

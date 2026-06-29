@@ -55,9 +55,11 @@ size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size) {
 }
 size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     size_t k = (size_t)(max(m_size, n_size) / 3) + 1;
+    size_t m2size = (m_size > (k << 1)) ? (m_size - (k << 1)) : 0;
+    size_t n2size = (n_size > (k << 1)) ? (n_size - (k << 1)) : 0;
     size_t total_points_p = ((k << 2) + 6);
     size_t total_points_q = ((k << 2) + 6);
-    size_t total_points_r = ((k << 3) + (k << 1) + 32);
+    size_t total_points_r = ((k << 3) + (m2size + n2size) + 32);
     size_t res_alias = (k << 1) + 14;
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
@@ -253,11 +255,10 @@ void __BIGINT_ASYM_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, ca
     size_t Asize = max(a->n, b->n); // Alpha chad size lol
     size_t splits = ((size_t)(Asize / Bsize) + 1);
     size_t slice = (Asize / splits), last_slice = Asize - slice;
-    size_t tmp_size = Bsize + max(slice, last_slice);
     
     // Setup
     size_t asym_mark = scratch_mark(&mul_ctx); dnml_status echeck = BIGINT_SUCCESS;
-    BIGINT_TEMP(tmp, tmp_size, mul_ctx, asym_mark, echeck, err,);
+    BIGINT_TEMP(tmp, Bsize + slice, mul_ctx, asym_mark, echeck, err,);
     BIGINT_TEMP(tmp_res, a->n + b->n, mul_ctx, asym_mark, echeck, err,);
     const bigInt *const beta = (a->n < b->n) ? a : b;
     const bigInt *const alpha = (a->n < b->n) ? b : a;

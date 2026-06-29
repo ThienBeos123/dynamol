@@ -19,6 +19,7 @@ limitations under the License.
 #include "_mv_matmul_.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
+#define THRESHOLD(a_size, b_size, threshold) (a_size <= threshold && b_size <= threshold)
 /** ----------- Matrix-Vector Multiplication Linear Combination -----------
  * This files contains the following function:
  *
@@ -35,7 +36,7 @@ limitations under the License.
 
 
 
-
+/* --------------- Asymmetrical Dispatcher --------------- */
 dnml_status __MV_ASYM_MATMUL_21__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx mul_ctx
@@ -45,7 +46,17 @@ dnml_status __MV_ASYM_MATMUL_21__(
 
 
 
+/* -------------- Main Function -------------- */
 dnml_status __MV_MATMUL_21__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx mul_ctx
-) { return BIGINT_SUCCESS; }
+) {
+    if ((min(x->n, z->n) * 2 <= max(x->n, z->n)) || (min(y->n, w->n) * 2 <= max(y->n, w->n))) return __MV_ASYM_MATMUL_21__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_3) || THRESHOLD(y->n, w->n, BIGINT_TOOM_3)) return __BIGINT_MATMUL_TOOM3__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_4) || THRESHOLD(y->n, w->n, BIGINT_TOOM_4)) return __BIGINT_MATMUL_TOOM4__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_5)) return __BIGINT_MATMUL_TOOM5__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_6p5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_6p5)) return __BIGINT_MATMUL_TOOM6p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_7p5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_7p5)) return __BIGINT_MATMUL_TOOM7p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_8p5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_8p5)) return __BIGINT_MATMUL_TOOM8p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    else return __BIGINT_MATMUL_SSA__(x, z, y, w, xz_res, yw_res, mul_ctx);
+}

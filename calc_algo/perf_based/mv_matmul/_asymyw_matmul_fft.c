@@ -37,10 +37,48 @@ limitations under the License.
  * with a size difference magnitudes of larger than 2 (>2x), while x and z is balanced
  */
 /* ------------ Sizing Function ------------ */
-size_t __ASYMXZ_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
+size_t __ASYMXZ_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
+    // Metadata pre-calculations - slices
+    size_t Bsize = min(y_size, w_size); // Beta size lol
+    size_t Asize = max(y_size, w_size); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1);
+    size_t slice = (Asize / splits); size_t last_slice = Asize - slice;
+    // Maximum k-value calculation + Splitting Sizes
+    size_t xz_k = (size_t)(max(x_size, z_size) / 3) + 1;
+    size_t yw_k = (size_t)(max(slice, Bsize) / 3) + 1;
+    size_t max_k = max(xz_k, yw_k);
+    size_t x2size = (x_size > (xz_k << 1)) ? (x_size - (xz_k << 1)) : 0;
+    size_t z2size = (y_size > (xz_k << 1)) ? (z_size - (xz_k << 1)) : 0;
+    size_t A2size = (slice > (yw_k << 1)) ? (slice - (yw_k << 1)) : 0;
+    size_t B2size = (Bsize > (yw_k << 1)) ? (Bsize - (yw_k << 1)) : 0;
+    size_t max_m2size = max(x2size, A2size); size_t max_n2size = max(z2size, B2size);
+    // Raw buffer lengths
+    size_t eval_bufs = (max_k << 3) + 12;
+    size_t ptmul_bufs = ((max_k << 3) + (max_m2size + max_n2size) + 32);
+    size_t fres_size = (max_k << 1) + 14; size_t xz_tres_size = x_size + z_size;
+    return (3*(eval_bufs + ptmul_bufs + fres_size) >> 1) + xz_tres_size; // Follows the path of the largest input size
+}
 size_t __ASYMXZ_MAT_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
 size_t __ASYMXZ_MAT_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __ASYMXZ_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
+size_t __ASYMXZ_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
+    // Pre-operation Operand Slicing Calculations
+    size_t Bsize = min(y_size, w_size); // Beta size lol
+    size_t Asize = max(y_size, w_size); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1);
+    size_t slice = (Asize / splits); size_t last_slice = Asize - slice;
+    // Pre-operaiton Allocation Size Calculations
+    size_t xz_n, xz_k = __fft_best_metadata(x_size, z_size, NULL, NULL, &xz_n);
+    size_t yw_n, yw_k = __fft_best_metadata(Bsize, slice, NULL, NULL, &yw_n);
+    size_t max_n = max(xz_n, yw_n); size_t max_k = max(xz_k, yw_k);
+    size_t xz_nlimbs = (xz_n + U64_BITS) >> 6; size_t yw_nlimbs = (yw_n + U64_BITS) >> 6;
+    size_t max_nlimbs = max(xz_nlimbs, yw_nlimbs);
+    // Raw buffer size requirements
+    size_t tmp_bufs = (max_nlimbs << 2) + 5;
+    size_t flat_bufs = ((max_nlimbs + 1) << max_k) << 1; // d(nlimbs + 1) * 2;
+    size_t tres_size = max(x_size + z_size, Bsize + slice); /**/ size_t ptmp_size = (max_nlimbs << 1) + 2;
+    size_t downstream_size = __BIGINT_FFT_WS__(max_nlimbs, max_nlimbs);
+    return tmp_bufs + flat_bufs + tres_size + ptmp_size + y_size + z_size + downstream_size;
+}
 
 
 
@@ -62,10 +100,10 @@ dnml_status __ASYMXZ_MATMUL_TOOM3__(
     size_t yw_k = (size_t)(max(slice, Bsize) / 3) + 1;
     size_t max_k = max(xz_k, yw_k);
     /* -------- 1a. Setup and Splitting Metadatas -------- */
-    size_t x2size = (slice > (xz_k << 1)) ? (x->n - (xz_k << 1)) : 0;
-    size_t z2size = (Bsize > (xz_k << 1)) ? (z->n - (xz_k << 1)) : 0;
-    size_t A2size = (y->n > (yw_k << 1)) ? (slice - (yw_k << 1)) : 0;
-    size_t B2size = (w->n > (yw_k << 1)) ? (Bsize - (yw_k << 1)) : 0;
+    size_t x2size = (x->n > (xz_k << 1)) ? (x->n - (xz_k << 1)) : 0;
+    size_t z2size = (z->n > (xz_k << 1)) ? (z->n - (xz_k << 1)) : 0;
+    size_t A2size = (slice > (yw_k << 1)) ? (slice - (yw_k << 1)) : 0;
+    size_t B2size = (Bsize > (yw_k << 1)) ? (Bsize - (yw_k << 1)) : 0;
     size_t max_m2size = max(x2size, A2size); size_t max_n2size = max(z2size, B2size);
     bigInt m0 = {0}; bigInt m1 = {0}; bigInt m2 = {0}; /**/ bigInt n0 = {0}; bigInt n1 = {0}; bigInt n2 = {0};
     /* --------- 2a. Evaluation & Point-wise Multiplication ---------
@@ -91,7 +129,7 @@ dnml_status __ASYMXZ_MATMUL_TOOM3__(
     BIGINT_FTEMP(r1,     (max_k << 1) + 9,   toom_ctx, toom_mark, echeck);
     BIGINT_FTEMP(r_neg1, (max_k << 1) + 9,   toom_ctx, toom_mark, echeck);
     BIGINT_FTEMP(r_neg2, (max_k << 1) + 10,  toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(rinf, max_m2size + max_m2size + 4, toom_ctx, toom_mark, echeck);
+    BIGINT_FTEMP(rinf, max_m2size + max_n2size + 4, toom_ctx, toom_mark, echeck);
     /* ---------------- 3a. INTERPOLATION & RECOMPOSITION ---------------- */
     BIGINT_FTEMP(final_res, (max_k << 1) + 14, toom_ctx, toom_mark, echeck);
     BIGINT_FTEMP(yw_tres, y->n + w->n, toom_ctx, toom_mark, echeck);

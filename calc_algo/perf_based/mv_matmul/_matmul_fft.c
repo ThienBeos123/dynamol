@@ -35,22 +35,26 @@ limitations under the License.
 /* ------------ Sizing Function ------------ */
 size_t __BIGINT_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
     // Calculate based on the maximum multiplication branch --> Correct
-    size_t k = max((size_t)(max(x_size, z_size) / 3) + 1, (size_t)(max(y_size, w_size) / 3) + 1);
-    size_t total_points_p = ((k << 2) + 6); size_t total_points_q = ((k << 2) + 6);
-    size_t total_points_r = ((k << 3) + (k << 1) + 32); size_t res_alias = (k << 1) + 14;
+    size_t xz_k = (size_t)(max(x_size, z_size) / 3) + 1;
+    size_t yw_k = (size_t)(max(y_size, w_size) / 3) + 1; /**/ size_t max_k = max(xz_k, yw_k);
+    size_t x2size = (x_size > (xz_k << 1)) ? (x_size - (xz_k << 1)) : 0;
+    size_t z2size = (z_size > (xz_k << 1)) ? (z_size - (xz_k << 1)) : 0;
+    size_t y2size = (y_size > (yw_k << 1)) ? (y_size - (yw_k << 1)) : 0;
+    size_t w2size = (w_size > (yw_k << 1)) ? (w_size - (yw_k << 1)) : 0;
+    size_t max_m2size = max(x2size, y2size); size_t max_n2size = max(z2size, w2size);
+    size_t total_points_p = ((max_k << 2) + 6); size_t total_points_q = ((max_k << 2) + 6);
+    size_t total_points_r = ((max_k << 3) + (max_m2size + max_n2size) + 32); 
+    size_t res_alias = (max_k << 1) + 14;
+    // Follows the path of the largest input size
     return 3*(total_points_p + total_points_p + total_points_r + res_alias) >> 1;
 }
 size_t __BIGINT_MAT_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
 size_t __BIGINT_MAT_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
 size_t __BIGINT_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
     // Pre-buffer calculation metadatas
-    size_t xz_d, xz_m, xz_n, xz_k = __fft_best_metadata(x_size, z_size, &xz_d, &xz_m, &xz_n);
-    size_t yw_d, yw_m, yw_n, yw_k = __fft_best_metadata(y_size, w_size, &yw_d, &yw_m, &yw_n);
-    size_t max_d = max(xz_d, yw_d); size_t max_m = max(xz_m, yw_m);
-    size_t max_n = max(xz_n, yw_n); size_t max_k = max(xz_k, yw_k);
-    // Limbs/whole-word counterparts
-    size_t max_mlimbs = max((xz_m + U64_BITS - 1) >> 6, (yw_m + U64_BITS - 1) >> 6);
-    size_t max_nlimbs = max((xz_n + U64_BITS) >> 6,     (yw_n + U64_BITS) >> 6);
+    size_t xz_n, xz_k = __fft_best_metadata(x_size, z_size, NULL, NULL, &xz_n);
+    size_t yw_n, yw_k = __fft_best_metadata(y_size, w_size, NULL, NULL, &yw_n);
+    size_t max_k = max(xz_k, yw_k); size_t max_nlimbs = max((xz_n + U64_BITS) >> 6, (yw_n + U64_BITS) >> 6);
     // Main temporary buffer sizing
     size_t local_tmp = (
         // lo_buf, hi_buf, tbuf, usave

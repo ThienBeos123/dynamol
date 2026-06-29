@@ -41,15 +41,15 @@ size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *o
         n = d * m; // 2^n = 2^DM --> n = DM
         if (k + (m << 1) + 2 <= n) break; // k + 2M + slack <= n?
         ++k; // Increasing k until satisfies condition
-    } *outd = d; *outm = m; *outn = n; return k;
+    } 
+    if (outd != NULL) *outd = d; /**/ if (outm != NULL) *outm = m; 
+    if (outn != NULL) *outn = n; /**/ return k;
 }
 size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) { 
     if (a_size <= BIGINT_SCHOOLBOOK || b_size <= BIGINT_SCHOOLBOOK) return 0; // Base-case
     // Pre-buffer calculation metadatas
-    size_t d = 0, m = 0, n = 0, k = __fft_best_metadata(a_size, b_size, &d, &m, &n);
-    size_t mlimbs = (m + U64_BITS - 1) >> 6;
+    size_t n = 0, k = __fft_best_metadata(a_size, b_size, NULL, NULL, &n);
     size_t nlimbs = (n + U64_BITS) >> 6;
-    // Main temporary buffer sizing
     size_t local_tmp = (
         // lo_buf, hi_buf, tbuf, usave
         ((nlimbs + 1) << 1) + (nlimbs + 1) + (nlimbs + 2)

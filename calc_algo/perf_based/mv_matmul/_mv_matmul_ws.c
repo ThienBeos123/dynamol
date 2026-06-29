@@ -44,56 +44,5 @@ size_t __MV_ASYM_MATMUL_WS__(struct rt_matrix *T, size_t a_size, size_t b_size) 
 
 // TODO: ADD ASYMMETRY HANDLING
 size_t __MV_MATMUL_WS__(struct rt_matrix *T, size_t a_size, size_t b_size) {
-    if ( // Toom-cook 3-way
-        a_size <= BIGINT_TOOM_3 && b_size <= BIGINT_TOOM_3 && 
-        ((T->A.n <= BIGINT_TOOM_3 && T->B.n <= BIGINT_TOOM_3) ||
-         (T->C.n <= BIGINT_TOOM_3 && T->D.n <= BIGINT_TOOM_3))
-    ) return max(
-        __BIGINT_MAT_TOOM3_WS__(a_size, T->A.n, b_size, T->B.n), 
-        __BIGINT_MAT_TOOM3_WS__(a_size, T->C.n, b_size, T->D.n)
-    );
-    // else if ( // Toom-cook 4-way
-    //     a_size <= BIGINT_TOOM_4 && b_size <= BIGINT_TOOM_4 && 
-    //     ((T->A.n <= BIGINT_TOOM_4 && T->B.n <= BIGINT_TOOM_4) ||
-    //      (T->C.n <= BIGINT_TOOM_4 && T->D.n <= BIGINT_TOOM_4))
-    // ) return max(
-    //     __BIGINT_MAT_TOOM4_WS__(a_size, T->A.n, b_size, T->B.n), 
-    //     __BIGINT_MAT_TOOM4_WS__(a_size, T->C.n, b_size, T->D.n)
-    // );
-    // else if ( // Toom-cook 5-way
-    //     a_size <= BIGINT_TOOM_5 && b_size <= BIGINT_TOOM_5 && 
-    //     ((T->A.n <= BIGINT_TOOM_5 && T->B.n <= BIGINT_TOOM_5) ||
-    //      (T->C.n <= BIGINT_TOOM_5 && T->D.n <= BIGINT_TOOM_5))
-    // ) return max(
-    //     __BIGINT_MAT_TOOM5_WS__(a_size, T->A.n, b_size, T->B.n), 
-    //     __BIGINT_MAT_TOOM5_WS__(a_size, T->C.n, b_size, T->D.n)
-    // );
-    // else if ( // Toom-cook 6.5-way
-    //     a_size <= BIGINT_TOOM_6p5 && b_size <= BIGINT_TOOM_6p5 && 
-    //     ((T->A.n <= BIGINT_TOOM_6p5 && T->B.n <= BIGINT_TOOM_6p5) ||
-    //      (T->C.n <= BIGINT_TOOM_6p5 && T->D.n <= BIGINT_TOOM_6p5))
-    // ) return max(
-    //     __BIGINT_MAT_TOOM6p5_WS__(a_size, T->A.n, b_size, T->B.n), 
-    //     __BIGINT_MAT_TOOM6p5_WS__(a_size, T->C.n, b_size, T->D.n)
-    // );
-    // else if ( // Toom-cook 7.5-way
-    //     a_size <= BIGINT_TOOM_7p5 && b_size <= BIGINT_TOOM_7p5 && 
-    //     ((T->A.n <= BIGINT_TOOM_7p5 && T->B.n <= BIGINT_TOOM_7p5) ||
-    //      (T->C.n <= BIGINT_TOOM_7p5 && T->D.n <= BIGINT_TOOM_7p5))
-    // ) return max(
-    //     __BIGINT_MAT_TOOM7p5_WS__(a_size, T->A.n, b_size, T->B.n), 
-    //     __BIGINT_MAT_TOOM7p5_WS__(a_size, T->C.n, b_size, T->D.n)
-    // );
-    // else if ( // Toom-cook 8.5-way
-    //     a_size <= BIGINT_TOOM_8p5 && b_size <= BIGINT_TOOM_8p5 && 
-    //     ((T->A.n <= BIGINT_TOOM_8p5 && T->B.n <= BIGINT_TOOM_8p5) ||
-    //      (T->C.n <= BIGINT_TOOM_8p5 && T->D.n <= BIGINT_TOOM_8p5))
-    // ) return max(
-    //     __BIGINT_MAT_TOOM8p5_WS__(a_size, T->A.n, b_size, T->B.n), 
-    //     __BIGINT_MAT_TOOM8p5_WS__(a_size, T->C.n, b_size, T->D.n)
-    // );
-    else return max(
-        __BIGINT_MAT_SSA_WS__(a_size, T->A.n, b_size, T->B.n), 
-        __BIGINT_MAT_SSA_WS__(a_size, T->C.n, b_size, T->D.n)
-    );
+    return 0;
 }

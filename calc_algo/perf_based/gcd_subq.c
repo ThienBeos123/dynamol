@@ -39,6 +39,7 @@ limitations under the License.
  * algorithms for calculating the transformation matrix T for Half-GCD, but was then generalized for future uses (xGCD)
  */
 // Workspace Returner
+static inline size_t __hgcd_ws(bigInt *const a, bigInt *const b, struct rt_matrix *T) { return 0; }
 static inline size_t __BIGINT_HALF_WS__(size_t a_size, size_t b_size) { return 0; }
 size_t __BIGINT_SUBQ_WS__(size_t u_size, size_t v_size) { return 0; }
 
