@@ -31,10 +31,6 @@ limitations under the License.
 #include <_libdnml_mem/_ctx.h>
 #include "../../../intrinsics/intrinsics.h"
 #include "../../../util/util.h"
-struct rt_matrix {
-    bigInt A; bigInt B;
-    bigInt C; bigInt D;
-};
 
 
 #ifdef __cplusplus
