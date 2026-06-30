@@ -144,7 +144,10 @@ dnml_status __ASYMXZ_MATMUL_TOOM3__(
         alpha_window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
 
         // Size imbalances still too large --> Schoolbook
-        if (min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice)) { 
+        if (
+            min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice) || 
+            (Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
             __BIGINT_SCHOOLBOOK__(beta, &alpha_window, &final_res);
             __BIGINT_ADD_SHIFT__(&xz_tres, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
         } 
@@ -327,8 +330,8 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
 
     /* ----------- 4+5+6. Pointwise Multiplication + Inverse Evaluation + Recomposition ----------- */
     // Output of multiplication is up to 2 * nlimbs long before reduction
-    BIGINT_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, fft_ctx, fft_mark, echeck);
-    BIGINT_FTEMP(tmp_res, max(Bsize + slice, y->n + w->n), fft_ctx, fft_mark, echeck);
+    BIGINT_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, fft_ctx, fft_mark, echeck); prod_tmp.cap = (xz_nlimbs << 1) + 2;
+    BIGINT_FTEMP(tmp_res, max(Bsize + slice, y->n + w->n), fft_ctx, fft_mark, echeck); tmp_res.cap = (Bsize + slice);
     BIGINT_FTEMP(xz_tres, x->n + z->n, fft_ctx, fft_mark, echeck); // Accumulator for xz_res
     memset(tmp_res.limbs, 0, tmp_res.cap * U64_BYTES); /**/ bigInt tbuf_view = {0}; // bigInt view into tbuf
 
@@ -342,7 +345,10 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
         size_t curr_slice = slice; if (unlikely(i = splits - 1)) curr_slice = last_slice; /**/ offset = i * curr_slice;
         alpha_window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
         // Size imbalances still too large --> Schoolbook
-        if (min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice)) { 
+        if (
+            min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice) || 
+            (Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
             __BIGINT_SCHOOLBOOK__(beta, &alpha_window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&xz_tres, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
         } 
@@ -350,6 +356,7 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
         if (i == splits - 1 && last_slice != slice) {
             xz_k = __fft_best_metadata(Bsize, curr_slice, &xz_d, &xz_m, &xz_n);
             xz_mlimbs = (xz_m + U64_BITS - 1) >> 6; /**/ xz_nlimbs = (xz_n + U64_BITS) >> 6;
+            prod_tmp.cap = (xz_nlimbs << 1) + 2; /**/ tmp_res.cap = (Bsize + curr_slice);
         }
         
         /* ------------------------ 1. Setup & Split ------------------------ */
@@ -378,7 +385,6 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
         _bigint_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
 
         /* ----------- 4a. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS ----------- */
-        prod_tmp.cap = (xz_nlimbs << 1) + 2;
         for (size_t i = 0; i < xz_d; ++i) {
             // Recursive Multiply step: eval_a[i] * eval_b[i]
             __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
@@ -395,7 +401,7 @@ dnml_status __ASYMXZ_MATMUL_SSA__(
             __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, xz_n, xz_nlimbs);
         }
         // Clear and prepare your final destination container
-        tmp_res.cap = Bsize + slice; memset(tmp_res.limbs, 0, tmp_res.cap * U64_BYTES);
+        memset(tmp_res.limbs, 0, tmp_res.n * U64_BYTES);
         // Overlap-Add Recomposition into Final ab PRODUCT
         for (size_t i = 0; i < xz_d; ++i) {
             if (!eval_a[i].n) continue;

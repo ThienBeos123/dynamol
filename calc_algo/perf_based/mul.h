@@ -52,10 +52,10 @@ size_t __BIGINT_ASYM_TOOM6p5_WS__(size_t m_size, size_t n_size);
 size_t __BIGINT_ASYM_TOOM7p5_WS__(size_t m_size, size_t n_size);
 size_t __BIGINT_ASYM_TOOM8p5_WS__(size_t m_size, size_t n_size);
 size_t __BIGINT_ASYM_FFT_WS__(size_t a_size, size_t b_size);
-
-
+/* BIGINT WORKSPACE SIZE DISPATCHER */
 size_t __BIGINT_ASYM_MUL_WS__(size_t a_size, size_t b_size);
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size);
+
 
 /* BIGINT ALGORITHMS - BALANCED */
 void __BIGINT_SCHOOLBOOK__(const bigInt *const a, const bigInt *const b, bigInt *const res);
@@ -76,8 +76,7 @@ void __BIGINT_ASYM_TOOM6p5__(const bigInt *const m, const bigInt *const n, bigIn
 void __BIGINT_ASYM_TOOM7p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx toom_ctx, dnml_status *err);
 void __BIGINT_ASYM_TOOM8p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx toom_ctx, dnml_status *err);
 void __BIGINT_ASYM_FFT__(const bigInt *const a, const bigInt *const b, bigInt *const res, calc_ctx fft_ctx, dnml_status *err);
-
-
+/* BIGINT ALGORITHMS DISPATCHER */
 void __BIGINT_ASYM_MUL_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const res, calc_ctx mul_ctx, dnml_status *err);
 void __BIGINT_MUL_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const res, calc_ctx mul_ctx, dnml_status *err);
 #ifdef __cplusplus

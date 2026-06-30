@@ -63,10 +63,27 @@ size_t __BIGINT_FFT_WS__(size_t a_size, size_t b_size) {
     // AND THEREFORE CAN HARDLY BE EXPRESSED AS A FIXED, CONVERGENT INFINITE SUM/SERIES, 
     // AND THEREFORE REQUIRES ACTUAL LIVE RECURSIVE SIZE CALCULATION
 }
+size_t __BIGINT_ASYM_FFT_WS__(size_t a_size, size_t b_size) {
+    /* Block splitting Calculations */
+    size_t Bsize = min(a_size, b_size); // Beta size lol
+    size_t Asize = max(a_size, b_size); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1); /**/ size_t slice = (Asize / splits);
+    /* Raw Buffer Sizes */
+    size_t n = 0, k = __fft_best_metadata(Bsize, slice, NULL, NULL, &n);
+    size_t nlimbs = (n + U64_BITS) >> 6;
+    size_t local_tmp = (
+        // lo_buf, hi_buf, tbuf, usave
+        ((nlimbs + 1) << 1) + (nlimbs + 1) + (nlimbs + 2)
+      + ((((nlimbs + 1) << k) << 1)) // flat_evala + flat_evalb
+      + (nlimbs << 1) + 2 + Bsize + slice // prod_tmp + tmp_res
+    );
+    size_t downstream_size = __BIGINT_FFT_WS__(nlimbs, nlimbs);
+    return local_tmp + (a_size + b_size) + downstream_size;
+}
 
 
 /* ------------- Helper function ------------- */
-void __add_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
+void __add_mod_fermat(bigInt *const out, PCONST_BIGINT a, PCONST_BIGINT b, size_t n, size_t nlimbs) {
     uint8_t carry = 0, nonzero_lows = 0;
     for (size_t i = 0; i < max(a->n, b->n); ++i) {
         limb_t x = (i < a->n) ? a->limbs[i] : 0;
@@ -89,7 +106,7 @@ void __add_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *co
         }
     }
 }
-void __sub_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *const b, size_t n, size_t nlimbs) {
+void __sub_mod_fermat(bigInt *const out, PCONST_BIGINT a, PCONST_BIGINT b, size_t n, size_t nlimbs) {
     __BIGINT_SUB_SAW__(out, a, b);
     //* Modular Correction upon underflow (out_view < 0)
     //  We would achieve via subtraction of 2^n + 1 by the negative value,
@@ -156,7 +173,7 @@ void __negate_mod_fermat(bigInt *const out, const bigInt *in, size_t n, size_t n
  *  --> lo + hi * 2^n ≡ lo + (-hi)         -------> [x ≡ lo - hi]
  */
 void __reduce_mod_fermat(
-    bigInt *const out, const bigInt *const in, 
+    bigInt *const out, PCONST_BIGINT in, 
     limb_t *const lo_buf, limb_t *const hi_buf,
     size_t n, size_t nlimbs
 ) {
@@ -201,7 +218,7 @@ void __reduce_mod_fermat(
  *              ≡ lo * 2^s  -  hi
  */
 void __cyclic_shift_mod(
-    bigInt *const out, const bigInt *const x, 
+    bigInt *const out, PCONST_BIGINT x, 
     limb_t *const lo_buf, limb_t *const hi_buf,
     size_t s, size_t n, size_t nlimbs
 ) {
@@ -553,3 +570,139 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft
     } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(res, &tmp_res);
     scratch_rewind(&fft_ctx, fft_mark); *err = BIGINT_SUCCESS;
 }
+
+
+
+
+
+/* ---------- Asymmetrical Inputs Optimized Version ---------- */
+void __BIGINT_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx fft_ctx, dnml_status *err) {
+    size_t Bsize = min(a->n, b->n); // Beta size lol
+    size_t Asize = max(a->n, b->n); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1);
+    size_t slice = (Asize / splits), last_slice = Asize - slice;
+    const bigInt *const alpha = (Asize == a->n) ? a : b; 
+    const bigInt *const beta = (Bsize == b->n) ? b : a;
+    //* ============= Pre-operation Calculations & Allocations ============= *//
+    dnml_status echeck = BIGINT_SUCCESS; size_t fft_mark = scratch_mark(&fft_ctx);
+    size_t d = 0, m = 0, n = 0, k = __fft_best_metadata(Bsize, slice, &d, &m, &n);
+    /* ---------- 1. Setup & Split ---------- */
+    size_t mlimbs = (m + U64_BITS - 1) >> 6; // Limbs per D-splitted Windows - ceil(M / U64_BITS)
+    size_t nlimbs = (n + U64_BITS) >> 6; // Upperbound limit of ring-element in ℤ/(2^n+1)ℤ
+    bigInt a_windows[d], b_windows[d];
+
+    /* ------------ 2+3. PRE-EVALUATION NEGACYCLI OPTIMIZATION + FFT EVALUATION ------------ */
+    bigInt eval_a[d], eval_b[d]; // Each of the D elements requires an array of limbs of size 'nlimbs'
+    RAW_TEMP(lo_buf, nlimbs + 1, fft_ctx, fft_mark, echeck, err,);
+    RAW_TEMP(hi_buf, nlimbs + 1, fft_ctx, fft_mark, echeck, err,);
+    RAW_TEMP(tbuf,   nlimbs + 2, fft_ctx, fft_mark, echeck, err,); // Will be used later in recomposition
+    RAW_TEMP(usave,  nlimbs + 1, fft_ctx, fft_mark, echeck, err,);
+    size_t psi_step = n >> k; // Exponent step for negacyclic weight: ψ = 2^(n/D)
+    size_t total_limbs_needed = (nlimbs + 1) << k; // d(nlimbs + 1)
+    RAW_TEMP(flat_evala, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
+    RAW_TEMP(flat_evalb, total_limbs_needed, fft_ctx, fft_mark, echeck, err,);
+
+    /* -------- 4+5+6. Pointwise Multiplication + De-evaluation + Recomposition -------- */
+    BIGINT_TEMP(prod_tmp, (nlimbs << 1) + 2, fft_ctx, fft_mark, echeck, err,);
+    BIGINT_TEMP(tmp_res, Bsize + slice, fft_ctx, fft_mark, echeck, err,);
+    BIGINT_TEMP(accumulator, a->n + b->n, fft_ctx, fft_mark, echeck, err,);
+    bigInt tbuf_view = {0}; /**/ memset(tmp_res.limbs, 0, (a->n + b->n) * U64_BYTES);
+
+
+
+
+
+    //* ============================= MULTIPLICATION LOOP WITH SLICES ============================= *//
+    bigInt window = {0}; size_t offset = 0;
+    for (size_t i = 0; i < splits; ++i) {
+        size_t curr_slice = slice; if (unlikely(i = splits - 1)) curr_slice = last_slice; /**/ offset = i * curr_slice;
+        window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
+        if (
+            min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice) || 
+            (Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
+            __BIGINT_SCHOOLBOOK__(beta, &window, &tmp_res);
+            __BIGINT_ADD_SHIFT__(&accumulator, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        // Recalculation of Metadata on last_slice's iteration
+        if (i == splits - 1 && last_slice != slice) {
+            k = __fft_best_metadata(Bsize, curr_slice, &d, &m, &n);
+            mlimbs = (m + U64_BITS - 1) >> 6; /**/ nlimbs = (n + U64_BITS) >> 6;
+            prod_tmp.cap = (nlimbs << 1) + 2; /**/ tmp_res.cap = Bsize + curr_slice;
+        }
+
+
+        //* -------- 1. SETUP & SPLIT -------- *//
+        // Splitting and Convolution Variables
+        for (size_t i = 0; i < d; ++i) {
+            size_t a_offset = i * mlimbs; size_t a_len = (a_offset < slice) ? min(mlimbs, slice - a_offset) : 0;
+            size_t b_offset = i * mlimbs; size_t b_len = (b_offset < Bsize) ? min(mlimbs, Bsize - b_offset) : 0;
+            a_windows[i] = (bigInt){ .limbs = window.limbs + a_offset, .n = a_len, .cap = mlimbs, .sign = 1 };
+            b_windows[i] = (bigInt){ .limbs = beta->limbs + b_offset,  .n = b_len, .cap = mlimbs, .sign = 1 };
+        }
+
+
+        //* -------- 2+3. PRE-EVALUATION NEGACYCLIC OPTIMIZATIONS + FFT EVALUATION -------- *//
+        // 2. Looping over D of each windows and Pre-scale them through Negacyclic Convolutions
+        // Allocating two flat, contiguous memory blocks for all D windows at once
+        // (improve Cache Locality and Prefetch Efficiency)
+        psi_step = n >> k;
+        for (size_t i = 0; i < d; ++i) {
+            eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (nlimbs + 1)), .n = nlimbs, .cap = nlimbs + 1, .sign = 1 };
+            eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (nlimbs + 1)), .n = nlimbs, .cap = nlimbs + 1, .sign = 1 };
+            // Perform cyclic shifts straight into these perfectly localized targets
+            size_t weight_exp = i * psi_step;
+            __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, n, nlimbs);
+            __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf, hi_buf, weight_exp, n, nlimbs);
+        }
+        // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
+        _bigint_ctk_fft(eval_a, tbuf, usave, lo_buf, hi_buf, d, k, n, nlimbs);
+        _bigint_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, d, k, n, nlimbs);
+
+        
+        //* -------- 4. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS -------- *//
+        // Output of multiplication is up to 2 * nlimbs long before reduction
+        for (size_t i = 0; i < d; ++i) {
+            // Recursive Multiply step: eval_a[i] * eval_b[i]
+            __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_OVF(echeck, fft_ctx, fft_mark, err,);
+            __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, n, nlimbs);
+            // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
+        }
+
+
+        //* ------------- 5+6. INTERPOLATION & RECOMPOSITION ---------------- *//
+        // 5. Execute Inverse NTT (eval_a now holds the point-wise products)
+        _bigint_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, d, k, n, nlimbs);
+        for (size_t i = 0; i < d; ++i) {
+            size_t wexp = i * psi_step; // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
+            size_t iwexp = ((n << 1) - wexp) % (n << 1); // Exponent cycle of 2n
+            __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, n, nlimbs);
+        }
+        // Clear and prepare your final destination container
+        tbuf_view = (bigInt){ .limbs = tbuf, .n = 0, .cap = nlimbs + 2, .sign = 1 };
+        // 6. Overlap-Add Recomposition into Final ab PRODUCT
+        for (size_t i = 0; i < d; ++i) {
+            if (!eval_a[i].n) continue;
+            size_t total_bshift = i * m;
+            size_t mlimb_shift = total_bshift >> 6;
+            size_t m_bshift = total_bshift & 63;
+
+            // Actual recomposition operations
+            if (!m_bshift) __BIGINT_ADD_SHIFT__(&tmp_res, &eval_a[i], mlimb_shift);
+            else {
+                // Copy + Shift fused together
+                // This part only handles the modularly-reduced single machine-word bit shifts
+                tbuf_view.n = eval_a[i].n;
+                uint64_t discarded_bits = 0, mask = U64_BITS - m_bshift;
+                for (size_t j = 0; j < tbuf_view.n; ++j) {
+                    uint64_t tmp = eval_a[i].limbs[j];
+                    tbuf_view.limbs[j] = (tmp << m_bshift) | discarded_bits;
+                    discarded_bits = tmp >> mask;
+                } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
+                __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
+            }
+        } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
+        __BIGINT_ADD_SHIFT__(&accumulator, &tmp_res, offset); // through adding sums: (tmp_res <<<= slice) + tmp
+    } __BIGINT_INTERNAL_COPY__(res, &accumulator); scratch_rewind(&fft_ctx, fft_mark); *err = BIGINT_SUCCESS;
+}
+

@@ -160,8 +160,10 @@ dnml_status __SYM_MATMUL_TOOM3__(
     for (size_t i = 0; i < xz_splits; ++i) {
         size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslics; /**/ offset = i * curr_slice;
         alpha_window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        // Size imbalances still too large --> Schoolbook
-        if (min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice)) { 
+        if ( // Size imbalances still too large --> Schoolbook
+            min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice) || 
+            (xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
             __BIGINT_SCHOOLBOOK__(xz_beta, &alpha_window, &final_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); continue; // (tmp_res <<<= xz_slice) + tmp
         } 
@@ -231,9 +233,10 @@ dnml_status __SYM_MATMUL_TOOM3__(
     for (size_t i = 0; i < yw_splits; ++i) {
         size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = yw_lslices; /**/ offset = i * curr_slice;
         alpha_window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-
-        // Size imbalances still too large --> Schoolbook
-        if (min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice)) { 
+        if ( // Size imbalances still too large --> Schoolbook
+            min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice) || 
+            (yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
             __BIGINT_SCHOOLBOOK__(yw_beta, &alpha_window, &final_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); continue; // (tmp_res <<<= yw_slice) + tmp
         } 
@@ -376,8 +379,10 @@ dnml_status __SYM_MATMUL_SSA__(
     for (size_t i = 0; i < xz_splits; ++i) {
         size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslics; /**/ offset = i * curr_slice;
         alpha_window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        // Size imbalances still too large --> Schoolbook
-        if (min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice)) { 
+        if ( // Size imbalances still too large --> Schoolbook
+            min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice) || 
+            (xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
             __BIGINT_SCHOOLBOOK__(xz_beta, &alpha_window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= xz_slice) + tmp
         } 
@@ -463,8 +468,10 @@ dnml_status __SYM_MATMUL_SSA__(
     for (size_t i = 0; i < yw_splits; ++i) {
         size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = last_slice; /**/ offset = i * curr_slice;
         alpha_window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        // Size imbalances still too large --> Schoolbook
-        if (min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice)) { 
+        if ( // Size imbalances still too large --> Schoolbook
+            min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice) || 
+            (yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
             __BIGINT_SCHOOLBOOK__(yw_beta, &alpha_window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= yw_slice) + tmp
         } 
