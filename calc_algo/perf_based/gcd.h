@@ -33,6 +33,10 @@ limitations under the License.
 #include "div.h"
 #include "mul.h"
 #include "mod.h"
+struct rt_matrix {
+    bigInt A; bigInt B;
+    bigInt C; bigInt D;
+};
 
 #ifdef __cplusplus
 extern "C" {

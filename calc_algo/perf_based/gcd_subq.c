@@ -20,10 +20,6 @@ limitations under the License.
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 #include "mv_matmul/_mv_matmul_.h"
-struct rt_matrix {
-    bigInt A; bigInt B;
-    bigInt C; bigInt D;
-};
 /** ----------- General BigInt Greatest Common Divisor -----------
  * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS:
  *
@@ -42,6 +38,12 @@ struct rt_matrix {
  * under the direct implementation scope of GCD, as it was initially implemented as efficient
  * algorithms for calculating the transformation matrix T for Half-GCD, but was then generalized for future uses (xGCD)
  */
+// Helper function (Mostly for Convenience)
+void _RT_MAT_COPY(struct rt_matrix *dst, struct rt_matrix *src) {
+    __BIGINT_INTERNAL_COPY__(&dst->A, &src->A); __BIGINT_INTERNAL_COPY__(&dst->B, &src->B);
+    __BIGINT_INTERNAL_COPY__(&dst->C, &src->C); __BIGINT_INTERNAL_COPY__(&dst->D, &src->D);
+}
+
 
 
 
@@ -54,10 +56,7 @@ struct rt_matrix {
  * Transformation/Reduction 2x2 matrix T. This function computates exclusively inputs
  * a and b of 2-limbs long
  */
-void __hgcd2_base(
-    struct rt_matrix *T,
-    bigInt *const a, bigInt *const b, dnml_status *err
-) {
+void __hgcd2_base(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
 
 }
 
@@ -113,6 +112,7 @@ dnml_status __hgcd_mat_compose(struct rt_matrix *T1, struct rt_matrix *T2, struc
  *      a_new = Aa + Bb     WHERE A, B, C, D ∈ [A, B]   AND a,b ∈ [a]
  *      b_new = Ca + Db                        [C, D]             [b]
  */
+
 size_t __hgcd_matmul_ws(size_t a_size, size_t b_size, size_t Asize, size_t Bsize, size_t Csize, size_t Dsize) {
     size_t tmp_sizes = max(a_size + Asize, a_size + Csize) + max(b_size + Bsize, b_size + Dsize);
     size_t res_AB_size = max(a_size + Asize, b_size + Bsize) + 1;
@@ -131,7 +131,7 @@ dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T,
     BIGINT_FTEMP(res_CaDb, max(a->n + T->C.n, b->n + T->D.n) + 1, hgcd_ctx, hgcd_mark, echeck);
     __MV_MATMUL_21__(&T->A, a, &T->B, b, &tmp_Aa, &tmp_Bb, hgcd_ctx); 
     SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark); __BIGINT_ADD_WC__(&res_AaBb, &tmp_Aa, &tmp_Bb);
-    __MV_MATMUL_21__(&T->C, a, &T->D, b, &tmp_Aa, &tmp_Bb, hgcd_ctx); 
+    __MV_MATMUL_21__(&T->C, a, &T->D, b, &tmp_Aa, &tmp_Bb, hgcd_ctx);
     SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark); __BIGINT_ADD_WC__(&res_CaDb, &tmp_Aa, &tmp_Bb);
     __BIGINT_INTERNAL_COPY__(a, &res_AaBb); __BIGINT_INTERNAL_COPY__(b, &res_CaDb);
     scratch_rewind(&hgcd_ctx, hgcd_mark); return BIGINT_SUCCESS;
@@ -148,15 +148,54 @@ dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T,
  * or, more accurately, ceil(N/2). 
  */
 size_t _hgcd_ws(size_t TA_size, size_t TB_size, size_t TC_size, size_t TD_size, size_t a_size, size_t b_size) { return 0; }
-void _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b, calc_ctx hgcd_ctx, dnml_status *err) {
+dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b, calc_ctx hgcd_ctx) {
+    size_t n = a->n; /**/ if (n <= 2) { __hgcd2_base(T, a, b); return BIGINT_SUCCESS; } // Base-case
+    size_t m = n >> 1; // n / 2 (The predicted sizes of our elements in matrix T)
+    if (b->n <= m) { // b is already small enough
+        /* Identity matrix: */
+        /*  [1, 0] */ T->A.n = 1; T->A.limbs[0] = 1; /**/ T->B.n = 0;
+        /*  [0, 1] */ T->C.n = 0; /**/ T->D.n = 1; T->D.limbs[0] = 1; return BIGINT_SUCCESS;
+    }
+    /* Standard Case */ dnml_status echeck = BIGINT_SUCCESS;
+    size_t hgcd_mark = scratch_mark(&hgcd_ctx); /**/ struct rt_matrix R1 = {0}, R2 = {0}, temp_T = {0};
+    BIGINT_FTEMP(a_copy, a->n, hgcd_ctx, hgcd_mark, echeck); memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES); a_copy.n = a->n;
+    BIGINT_FTEMP(b_copy, b->n, hgcd_ctx, hgcd_mark, echeck); memcpy(b_copy.limbs, b->limbs, b->n * U64_BYTES); b_copy.n = b->n;
+    R1.A.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    R1.B.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    R1.C.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    R1.D.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
     
+    // Recursive Calculation of R1
+    bigInt ahi = { .limbs = a_copy.limbs + m, .n = a_copy.n - m, .cap = a_copy.n - m, .sign = 1 };
+    bigInt bhi = { .limbs = b_copy.limbs + m, .n = b_copy.n - m, .cap = b_copy.n - m, .sign = 1 };
+    _hgcd_reduct(&R1, &ahi, &bhi, hgcd_ctx); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+
+    // Intermediate Update of the full integer through R1
+    __hgcd_matmul(&a_copy, &b_copy, &R1, hgcd_ctx); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    if (b->n <= m) { // Early exit, b is already small enough
+        _RT_MAT_COPY(T, &R1); __BIGINT_INTERNAL_COPY__(a, &a_copy); 
+        __BIGINT_INTERNAL_COPY__(b, &b_copy); scratch_rewind(&hgcd_ctx, hgcd_mark); return BIGINT_SUCCESS;
+    }
+
+    // Second Recursive Calculation on R2 with updated integer
+    n = a_copy.n; /**/ m = n >> 1; // Recaculating n and m based on a/b_copy reduced size after the Euclidean's division step
+    R2.A.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    R2.B.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    R2.C.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    R2.D.limbs = (limb_t*)scratch_alloc(&hgcd_ctx, m, &echeck); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    // Rewindow ahi and bhi to now match with truncated a_copy and b_copy after the Euclidean GCD division step
+    ahi = (bigInt){ .limbs = a_copy.limbs + m, .n = a_copy.n - m, .cap = a_copy.n - m, .sign = 1 };
+    bhi = (bigInt){ .limbs = b_copy.limbs + m, .n = b_copy.n - m, .cap = b_copy.n - m, .sign = 1 };
+    _hgcd_reduct(&R2, &ahi, &bhi, hgcd_ctx); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    __hgcd_matmul(&a_copy, &b_copy, &R2, hgcd_ctx); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    __hgcd_mat_compose(&R1, &R2, T, hgcd_ctx); SCRATCH_FOVF(echeck, hgcd_ctx, hgcd_mark);
+    __BIGINT_INTERNAL_COPY__(a, &a_copy); __BIGINT_INTERNAL_COPY__(b, &b_copy);
+    scratch_rewind(&hgcd_ctx, hgcd_mark); return BIGINT_SUCCESS;
 }
 
 
 
 /* ---------- Main Orchestrating Function ---------- */
 void __BIGINT_SUBQ__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx subq_ctx, dnml_status *err) {
-
-
 
 }
