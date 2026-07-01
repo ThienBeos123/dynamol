@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "gcd.h"
+#include "heap_gcd.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 #include "hmv_matmul/_hmv_matmul_.h"
@@ -45,10 +45,7 @@ limitations under the License.
  * Transformation/Reduction 2x2 matrix T. This function computates exclusively inputs
  * a and b of 2-limbs long
  */
-static void __hgcd2_base(
-    struct rt_matrix *T,
-    bigInt *const a, bigInt *const b, dnml_status *err
-) {
+void __hgcd1_base(struct rt_matrix *T, bigInt *const a, bigInt *const b, dnml_status *err) {
 
 }
 
@@ -61,10 +58,7 @@ static void __hgcd2_base(
  *      a_new = Aa + Bb     WHERE A, B, C, D ∈ [A, B]   AND a,b ∈ [a]
  *      b_new = Ca + Db                        [C, D]             [b]
  */
-static dnml_status __hgcd_matmul(
-    bigInt *const a, bigInt *const b, 
-    struct rt_matrix *T
-) {
+dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T) {
     return BIGINT_SUCCESS;
 }
 
@@ -78,19 +72,14 @@ static dnml_status __hgcd_matmul(
  * onto the two inputs u and v, with sizes of N limbs, into floor(N/2) + 1,
  * or, more accurately, ceil(N/2). 
  */
-static void _hgcd_reduct(
-    struct rt_matrix *T, 
-    bigInt *const a, bigInt *const b, 
-    calc_ctx hgcd_ctx, dnml_status *err
-) {
-
+dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
+    return BIGINT_SUCCESS;
 }
 
 
 
 /* ---------- Main Orchestrating Function ---------- */
-void __BIHEAP_SUBQ__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx subq_ctx, dnml_status *err) {
+void __BIHEAP_SUBQ__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err) {
     
-
 
 }

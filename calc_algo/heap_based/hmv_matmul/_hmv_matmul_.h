@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef _DNML_BI_HGCD_MATMUL_H_
-#define _DNML_BI_HGCD_MATMUL_H_
+#ifndef _DNML_BIHEAP_HGCD_MATMUL_H_
+#define _DNML_BIHEAP_HGCD_MATMUL_H_
 
 
 
@@ -31,15 +31,13 @@ limitations under the License.
 #include <_libdnml_mem/_ctx.h>
 #include "../../../intrinsics/intrinsics.h"
 #include "../../../util/util.h"
-struct rt_matrix {
-    bigInt A; bigInt B;
-    bigInt C; bigInt D;
-};
+#include "heap_mul.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /* --------------- Algorithm Functions - Symmetrical  --------------- */
 dnml_status __BIHEAP_MATMUL_TOOM3__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __BIHEAP_MATMUL_TOOM4__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
@@ -48,8 +46,6 @@ dnml_status __BIHEAP_MATMUL_TOOM6p5__(bigInt *const x, bigInt *const z, /**/ big
 dnml_status __BIHEAP_MATMUL_TOOM7p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __BIHEAP_MATMUL_TOOM8p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __BIHEAP_MATMUL_SSA__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx fft_ctx);
-
-
 /* --------------- Algorithm Functions - XZ Asymmetrical  --------------- */
 dnml_status __HASYMXZ_MATMUL_TOOM3__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __HASYMXZ_MATMUL_TOOM4__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
@@ -58,8 +54,6 @@ dnml_status __HASYMXZ_MATMUL_TOOM6p5__(bigInt *const x, bigInt *const z, /**/ bi
 dnml_status __HASYMXZ_MATMUL_TOOM7p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __HASYMXZ_MATMUL_TOOM8p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __HASYMXZ_MATMUL_SSA__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx fft_ctx);
-
-
 /* --------------- Algorithm Functions - YW Asymmetrical  --------------- */
 dnml_status __HASYMYW_MATMUL_TOOM3__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __HASYMYW_MATMUL_TOOM4__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
@@ -68,6 +62,16 @@ dnml_status __HASYMYW_MATMUL_TOOM6p5__(bigInt *const x, bigInt *const z, /**/ bi
 dnml_status __HASYMYW_MATMUL_TOOM7p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __HASYMYW_MATMUL_TOOM8p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
 dnml_status __HASYMYW_MATMUL_SSA__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx fft_ctx);
+/* ------------- Algorithm Functions - Symmetrical Asymmetrical ------------- */
+dnml_status __HSYM_MATMUL_TOOM3__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __HSYM_MATMUL_TOOM4__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __HSYM_MATMUL_TOOM5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __HSYM_MATMUL_TOOM6p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __HSYM_MATMUL_TOOM7p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __HSYM_MATMUL_TOOM8p5__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx toom_ctx);
+dnml_status __HSYM_MATMUL_SSA__(bigInt *const x, bigInt *const z, /**/ bigInt *const y, bigInt *const w, bigInt *const xz_res, bigInt *const yw_res, calc_ctx fft_ctx);
+
+
 
 
 /* ---------------- Dispatchers ---------------- */

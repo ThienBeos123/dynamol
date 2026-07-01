@@ -34,7 +34,7 @@ limitations under the License.
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* BIGINT ALGORITHMS */
+/* BIGINT ALGORITHMS - BALANCED */
 void __BIHEAP_SCHOOLBOOK__(const bigInt *const a, const bigInt *const b, bigInt *const res);
 void __BIHEAP_KARATSUBA__(const bigInt *const x, const bigInt *const y, bigInt *const res, dnml_status *err);
 void __BIHEAP_TOOM_3__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
@@ -44,6 +44,17 @@ void __BIHEAP_TOOM_6p5__(const bigInt *const m, const bigInt *const n, bigInt *c
 void __BIHEAP_TOOM_7p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
 void __BIHEAP_TOOM_8p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
 void __BIHEAP_FFT__(const bigInt *const a, const bigInt *const b, bigInt *const res, dnml_status *err);
+/* BIGINT ALGORITHMS - UNBALANCED */
+void __BIHEAP_ASYM_KARAT__(const bigInt *const x, const bigInt *const y, bigInt *const res, dnml_status *err);
+void __BIHEAP_ASYM_TOOM3__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_ASYM_TOOM4__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_ASYM_TOOM5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_ASYM_TOOM6p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_ASYM_TOOM7p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_ASYM_TOOM8p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, dnml_status *err);
+void __BIHEAP_ASYM_FFT__(const bigInt *const a, const bigInt *const b, bigInt *const res, dnml_status *err);
+/* BIGINT ALGORITHMS DISPATCHER */
+void __BIHEAP_ASYM_MUL_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const res, dnml_status *err);
 void __BIHEAP_MUL_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const res, dnml_status *err);
 #ifdef __cplusplus
 }

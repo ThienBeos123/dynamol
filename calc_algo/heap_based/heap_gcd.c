@@ -43,15 +43,18 @@ limitations under the License.
 
 
 //* ======== GCD - ALGORITHMS RETURNER ======== */
-uint64_t __BIHEAP_EUCLID__(uint64_t u, uint64_t v) {
-    uint64_t remainder = (u < v) ? u : v;
-    uint64_t dividend = (u >= v) ? u : v;
-    uint64_t old_remainder;
-    while (remainder) {
-        old_remainder = remainder;
-        remainder = dividend % remainder;
-        dividend = old_remainder;
-    } return dividend;
+static uint64_t __BINGCD_U64__(uint64_t u, uint64_t v) {
+    // GCD(u, 0) == u && GCD(0, v) == v
+    if (!u) return v; /**/ if (!v) return u;
+    // GCD(2u, 2v) = GCD(u, v)
+    uint8_t i = __CTZ_UI64__(u); u >>= i;
+    uint8_t j = __CTZ_UI64__(v); v >>= j;
+    uint8_t k = min(i, j);
+    while (u != v) {
+        if (u < v) { uint64_t tmp = v; u = v; v = u; }
+        u -= v; // gcd(u, v) == gcd(u, v - u) WHEN (u & v == ODD) && (u <= v)
+        u >>= __CTZ_UI64__(u); // gcd(u, 2v) == gcd(u, v)
+    } return u;
 }
 void __BIHEAP_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {
     // Base case - Identity #1 - gcd(u, 0) = u
@@ -82,5 +85,71 @@ void __BIHEAP_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_statu
     } __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_MOVE__(res, &u_copy);
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
-void __BIHEAP_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}
-void __BIHEAP_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {}
+void __BIHEAP_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {
+    // Setup
+    dnml_status echeck = BIGINT_SUCCESS; size_t max_size = max(u->n + 1, v->n + 1) + 1;
+    bigInt *alloc_list[4] = {0}, *early_free[6] = {0}; uint64_t alloc_cnt = 0, early_cnt = 0;
+    BIHEAP_RET(u_copy, max_size, echeck, err, early_free, early_cnt,);
+    BIHEAP_TEMP(u_tmp1, u->n + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(u_tmp2, max_size, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_RET(v_copy, max_size, echeck, err, early_free, early_cnt,);
+    BIHEAP_TEMP(v_tmp1, v->n + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(v_tmp2, max_size, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    memcpy(u_copy.limbs, u->limbs, u->n << 6); u_copy.n = u->n;
+    memcpy(v_copy.limbs, v->limbs, v->n << 6); v_copy.n = v->n;
+
+    // Main Loop
+    // Main Loop
+    while (u_copy.n && v_copy.n) {
+        limb_t uhat = u_copy.limbs[u_copy.n - 1];
+        limb_t vhat = v_copy.limbs[v_copy.n - 1];
+        limb_t a = 1, b = 0, c = 0, d = 1;
+        // Identity matrix:
+        //      [1, 0, uhat]
+        //      [0, 1, vhat]
+        while (uhat + c && vhat + d) {
+            limb_t w1 = (uhat + a) / (vhat + c); // Absolute top quotient (uhat + 1) / (vhat + 1)
+            limb_t w2 = (uhat + b) / (vhat + d); // Absolute bottom quotient (uhat) / (vhat)
+            if (w1 != w2) break; // Top limb approximation diverges --> Correction NOW
+
+            // Updating the single-word limb variables
+            // Matrix Product:
+            // [0,  1] . [A, B, uhat] = [   C,      D,        vhat     ]
+            // [1, -w]   [C, D, vhat]   [ A - wC, B - wD, uhat - Wvhat ]
+            limb_t uhat_tmp = vhat, /**/ vhat_tmp = uhat - w1 * vhat;
+            uhat = uhat_tmp; /**/ vhat = vhat_tmp;
+            // Updating the matrix approximation variables
+            limb_t new_a = c, /**/ new_b = d;
+            limb_t new_c = a - w1 * c;
+            limb_t new_d = b - w1 * d;
+            a = new_a; b = new_b; c = new_c; d = new_d;
+        }
+
+        // u_copy = (u_copy * a) + (v_copy * b)
+        // v_copy = (u_copy * c) + (v_copy * d)
+        bigInt matrix_view = { .limbs = &a, .n = !!(a), .cap = 1, .sign = 1 }; // A, B, C, and D share this
+        /* Updating matrix views -> Store in u_tmp2 */
+        __BIHEAP_SCHOOLBOOK__(&u_copy, &matrix_view, &u_tmp1); matrix_view.limbs = &b; matrix_view.n = !!(b); 
+        __BIHEAP_SCHOOLBOOK__(&v_copy, &matrix_view, &v_tmp1); __BIGINT_ADD_WC__(&u_tmp1, &v_tmp1, &u_tmp2);
+        /* Updating matrix views -> Store in v_tmp2 */ matrix_view.limbs = &c; matrix_view.n = !!(c);
+        __BIHEAP_SCHOOLBOOK__(&u_copy, &matrix_view, &u_tmp1); matrix_view.limbs = &d; matrix_view.n = !!(d);
+        __BIHEAP_SCHOOLBOOK__(&v_copy, &matrix_view, &v_tmp1); __BIGINT_ADD_WC__(&u_tmp1, &v_tmp1, &v_tmp2);
+
+        /* Updating u_copy and v_copy from u_tmp2 and v_tmp2 */
+        // Shallow struct swaps here is desirable and safe due to u_copy and u_tmp2 (and therefore
+        // subsequently v_cpopy and v_tmp2) sharing the same arena buffer size, and we're
+        // basically trashing away the buffer values inside u_tmp2 and v_tmp2 after operation anyways
+        __BIGINT_INTERNAL_SWAP__(&u_copy, &u_tmp2); __BIGINT_INTERNAL_SWAP__(&v_copy, &v_tmp2);
+    }
+    // Whatever non-zero value remains is the GCD (according to Euclidean GCD algo)
+    if (!u_copy.n) { __BIGINT_INTERNAL_MOVE__(res, &u_copy); alloc_list[alloc_cnt++] = &v_copy; }
+    else { __BIGINT_INTERNAL_MOVE__(res, &v_copy); alloc_list[alloc_cnt++] = &u_copy; }
+    _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+}
+void __BIHEAP_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, dnml_status *err) {
+    size_t op_size = min(u->n, v->n);
+    if (u->n == 1 && v->n == 1) { res->limbs[0] = __BINGCD_U64__(u->limbs[0], v->limbs[0]); res->n = 1; }
+    else if (op_size <= BIGINT_STEIN) __BIHEAP_STEIN__(res, u, v, err);
+    else if (op_size <= BIGINT_LEHMER) __BIHEAP_LEHMER__(res, u, v, err);
+    else __BIHEAP_SUBQ__(res, u, v, err);
+}

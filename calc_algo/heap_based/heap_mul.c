@@ -99,6 +99,80 @@ void __BIHEAP_KARATSUBA__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, dnml_s
     __BIGINT_ADD_SHIFT__(&tmp1, &z2, m << 1); __BIGINT_INTERNAL_MOVE__(res, &tmp1); 
     _free_alloc_list(alloc_arr, alloc_cnt); *err = BIGINT_SUCCESS;
 }
+void __BIHEAP_ASYM_KARAT__(PCONST_BIGINT x, PCONST_BIGINT y, P_BIGINT res, dnml_status *err) {
+    size_t Bsize = min(x->n, y->n); // Beta size lol
+    size_t Asize = max(x->n, y->n); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1);
+    size_t slice = (Asize / splits), last_slice = Asize - slice;
+    const bigInt *const alpha = (Asize == x->n) ? x : y; 
+    const bigInt *const beta = (Bsize == y->n) ? y : x;
+    //* ============= Pre-operation Calculations & Allocations ============= *//
+    dnml_status echeck = BIGINT_SUCCESS;
+    bigInt *alloc_list[5] = {0}, *early_free[6]; 
+    uint8_t alloc_cnt = 0, early_cnt = 0;
+    /* --------- 1. Setup --------- */ size_t m = (size_t)(max(Bsize, slice) >> 1);
+    bigInt x0 = {0}, x1 = {0}, y0 = {0}, y1 = {0};
+    size_t x0_range = m, x1_range = Bsize - m;
+    size_t y0_range = m, y1_range = slice - m;
+    size_t z1_size = max(x1_range + y0_range, x0_range + y1_range) + m + 1;
+    size_t z2_size = max(max(z1_size, x1_range + y1_range + (m << 1)), x0_range + y0_range) + 1;
+    BIHEAP_TEMP(tmp1, max(x0_range, x1_range) + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(tmp2, max(y0_range, y1_range) + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(z0, x0_range + y0_range, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(z1, z1_size, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(z2, z2_size, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_RET(tmp_res, x->n + y->n, echeck, err, early_free, early_cnt,);
+    
+
+    //* ================ Main sliced window Multiplication loop  ================ *//
+    bigInt window = {0}; size_t offset = 0;
+    for (size_t i = 0; i < splits; ++i) {
+        size_t curr_slice = (i == splits - 1) ? last_slice : slice; /**/ offset = i * curr_slice;
+        window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
+        if (
+            min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice) || 
+            (Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
+            __BIHEAP_SCHOOLBOOK__(beta, &window, &z2);
+            __BIGINT_ADD_SHIFT__(&tmp_res, &z2, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        if (i == splits - 1) {
+            // Recalculation of size metadatas for last_slice's case
+            /* Normal Setups */ m = (size_t)(max(Bsize, last_slice) >> 1);
+            x0_range = m; x1_range = Bsize - m;
+            y0_range = m; y1_range = slice - m;
+            /* Qudratic Components Setup */
+            z1_size = max(x1_range + y0_range, x0_range + y1_range) + m + 1;
+            z2_size = max(max(z1_size, x1_range + y1_range + (m << 1)), x0_range + y0_range) + 1;
+            tmp1.cap = max(x0_range, x1_range) + 1; /**/ tmp2.cap = max(y0_range, y1_range) + 1;
+            z0.cap = x0_range + y0_range; /**/ z1.cap = z1_size; /**/ z2.cap = z2_size;
+        }
+        //* -------------- 1. SETUP -------------- *//
+        x0 = (bigInt){.limbs = window.limbs,            .n = x0_range, .cap = x0_range};
+        x1 = (bigInt){.limbs = window.limbs + x0_range, .n = x1_range, .cap = x1_range};
+        y0 = (bigInt){.limbs = beta->limbs,             .n = y0_range, .cap = y0_range};
+        y1 = (bigInt){.limbs = beta->limbs + y0_range,  .n = y1_range, .cap = y1_range};
+
+
+        //* ------- 2. QUADRATIC COMPONENTS CALCULATION -------- *//
+        // The procedure goes:
+        //  z3 = (x1 + x0)(y1 + y0)
+        //  z2 = x1 * y1
+        //  z0 = x0 * y0
+        //  z1 = z3 - z2 - z1
+        __BIHEAP_KARATSUBA__(&x0, &y0, &z0, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_KARATSUBA__(&x1, &y1, &z2, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIGINT_ADD_WC__(&tmp1, &x1, &x0); __BIGINT_ADD_WC__(&tmp2, &y1, &y0);
+        __BIHEAP_KARATSUBA__(&tmp1, &tmp2, &z1, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIGINT_SUB_WB__(&z1, &z1, &z2); __BIGINT_SUB_WB__(&z1, &z1, &z0);
+
+        //* ------------ 3. FINAL CALCULATION -------------- *//
+        __BIGINT_INTERNAL_LLSHIFT__(&z2, m << 1); __BIGINT_INTERNAL_LLSHIFT__(&z1, m);
+        __BIGINT_ADD_WC__(&z2, &z2, &z1); __BIGINT_ADD_WC__(&z2, &z2, &z0);
+        __BIGINT_ADD_SHIFT__(&tmp_res, &z2, offset); // Accumulate into tmp_res
+    } __BIGINT_INTERNAL_MOVE__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+}
+
 
 
 /* BigInt Toom 3-way Multiplication - Heap-allocating */
@@ -197,16 +271,164 @@ void __BIHEAP_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_stat
     __BIGINT_ADD_WC__(&q_neg2, &q_neg2, &r0); // final_res += r0
     __BIGINT_INTERNAL_MOVE__(res, &q_neg2); _free_alloc_list(alloc_arr, alloc_cnt); *err = BIGINT_SUCCESS;
 }
+void __BIHEAP_ASYM_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {
+    size_t Bsize = min(m->n, n->n); // Beta size lol
+    size_t Asize = max(m->n, n->n); // Alpha chad size lol
+    size_t splits = ((size_t)(Asize / Bsize) + 1);
+    size_t slice = (Asize / splits), last_slice = Asize - slice;
+    const bigInt *const alpha = (Asize == m->n) ? m : n; 
+    const bigInt *const beta = (Bsize == n->n) ? n : m;
+    //* ============= Pre-operation Calculations & Allocations ============= *//
+    dnml_status echeck = BIGINT_SUCCESS;
+    bigInt *alloc_list[14] = {0}, *early_free[15] = {0};
+    uint8_t alloc_cnt = 0, early_cnt = 0;
+    /* -------- 1. Setup & Splittings -------- */
+    size_t k = (size_t)(max(Bsize, slice) / 3) + 1;
+    size_t m2size = (Bsize > (k << 1)) ? (Bsize - (k << 1)) : 0;
+    size_t n2size = (slice > (k << 1)) ? (slice - (k << 1)) : 0;
+    bigInt m0 = {0}, m1 = {0}, m2 = {0}; /**/ bigInt n0 = {0}, n1 = {0}, n2 = {0};
+
+    /* ----------- 2. Evaluation & Pointwise Multiplication ----------- */
+    /* p(x) TEMPORARIES
+    * +) pOuter = m0 + m2                   | +) p(-1)  = pOuter - m1
+    * +) p(0)   = m0 (NO FULL TEMPORARY)    | +) p(-2)  = 2*(p(-1) + m2) - m0
+    * +) p(1)   = pOuter + m1               | +) p(inf) = m2 (NO FULL TEMPORARY)
+    */
+    BIHEAP_TEMP(p_outer, k + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(p1,      k + 2, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(p_neg1,  k + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(p_neg2,  k + 2, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    /* q(x) TEMPORARIES 
+    * +) qOuter = n0 + n2                   | +) q(-1)  = qOuter - n1
+    * +) q(0)   = n0 (NO FULL TEMPORARY)    | +) q(-2)  = 2*(q(-1) + n2) - n0
+    * +) q(1)   = qOuter + n1               | +) q(inf) = n2 (NO FULL TEMPORARY) 
+    */
+    BIHEAP_TEMP(q_outer, k + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(q1,      k + 2, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(q_neg1,  k + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(q_neg2,  k + 2, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    /* ------------ POINT-WISE MULTIPLICATION ------------
+    *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
+    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
+    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 9 (interpolation - r2 + llshift)
+    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    */
+    BIHEAP_TEMP(r0,     (k << 1),       echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(r1,     (k << 1) + 9,   echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(r_neg1, (k << 1) + 9,   echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(r_neg2, (k << 1) + 10,  echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(rinf,    m2size + n2size + 4, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_TEMP(final_res, (k << 1) + 14, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    BIHEAP_RET(tmp_res, m->n + n->n, echeck, err, early_free, early_cnt,);
+
+
+    //* ================ Main sliced window Multiplication loop  ================ *//
+    bigInt window = {0}; size_t offset = 0;
+    for (size_t i = 0;i < splits; ++i) {
+        size_t curr_slice = (i == splits - 1) ? last_slice : slice; /**/ offset = i * curr_slice;
+        window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
+        if (
+            min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice) || 
+            (Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
+        ) { 
+            __BIHEAP_SCHOOLBOOK__(beta, &window, &final_res);
+            __BIGINT_ADD_SHIFT__(&tmp_res, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        if (i == splits - 1) {
+            // Recalculation of size metadatas for last_slice's case
+            k = (size_t)(max(Bsize, curr_slice) / 3) + 1;
+            m2size = (Bsize      > (k << 1)) ? (Bsize      - (k << 1)) : 0;
+            n2size = (curr_slice > (k << 1)) ? (curr_slice - (k << 1)) : 0;
+            // Modifying the capacity metadata of buffers - Evaluation buffers
+            p_outer.cap = k + 1; p1.cap = k + 2;        q_outer.cap = k + 1; q1.cap = k + 2;
+            p_neg1.cap = k + 1; p_neg2.cap = k + 2;     q_neg1.cap = k + 2; q_neg2.cap = k + 2;
+            // Modifying the capacity metadata of buffers - Point-wise Mul
+            r0.cap = (k << 1); /**/ r1.cap = (k << 1) + 9; /**/ r_neg1.cap = (k << 1) + 9;
+            r_neg2.cap = (k << 1) + 10; /**/ rinf.cap = m2size + n2size + 4; /**/ final_res.cap = (k << 1) + 14;
+        }
+        /* ---------------- 1. SETUP & SPLITTING ---------------- */
+        bigInt m0 = {.limbs = window.limbs,            .n = k,      .cap = k};
+        bigInt m1 = {.limbs = window.limbs + k,        .n = k,      .cap = k};
+        bigInt m2 = {.limbs = window.limbs + (k << 1), .n = m2size, .cap = m2size};
+        bigInt n1 = {.limbs = beta->limbs + k,         .n = k,      .cap = k};
+        bigInt n0 = {.limbs = beta->limbs,             .n = k,      .cap = k};
+        bigInt n2 = {.limbs = beta->limbs + (k << 1),  .n = n2size, .cap = n2size};
+
+
+        /* -------- 2. EVALUATION & POINT-WISE MULTIPLICATION --------
+        *   +) pOuter = m0 + m2                             | +) qOuter = n0 + n2
+        *   +) p(0)   = m0          (NO FULL TEMPORARY)     | +) q(0)   = n0          (NO FULL TEMPORARY)
+        *   +) p(1)   = pOuter + m1                         | +) q(1)   = qOuter + n1
+        *   +) p(-1)  = pOuter - m1                         | +) q(-1)  = qOuter - n1
+        *   +) p(-2)  = 2*(p(-1) + m2) - m0                 | +) q(-2)  = 2*(q(-1) + n2) - n0
+        *   +) p(inf) = m2          (NO FULL TEMPORARY      | +) q(inf) = n2          (NO FULL TEMPORARY) */
+        // p(x) CALCULATIONS                                // q(x) CALCULATIONS
+        __BIGINT_ADD_WC__(&p_outer, &m0, &m2);              __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
+        __BIGINT_ADD_WC__(&p1, &p_outer, &m1);              __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
+        __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);         __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
+        __BIGINT_ADD_SAW__(&p_neg2, &p_neg1, &m2);          __BIGINT_ADD_SAW__(&q_neg2, &q_neg1, &n2);
+        __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);             __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
+        __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);          __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
+        /* ------------ POINT-WISE MULTIPLICATION ------------
+        *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
+        *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
+        *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 9 (interpolation - r2 + llshift)
+        *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
+        *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+        */
+        __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+
+
+        /* ------------- 3. INTERPOLATION & RECOMPOSITION ---------------- */
+        /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
+        /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
+        /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
+        /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
+        __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
+        __BIGINT_ADD_SAW__(&r_neg2, &r_neg2, &rinf);
+        /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
+        __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
+        /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
+        // ------------------ RECOMPOSITION ------------------ //
+        __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
+        __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
+        __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
+        __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
+        __BIGINT_ADD_SHIFT__(&tmp_res, &final_res, offset); // Accumulate into the final result (like truly final)
+    } __BIGINT_INTERNAL_MOVE__(res, &tmp_res); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+}
+
 
 
 /* BigInt Toom 4-way Multiplication - Heap-allocating */
 void __BIHEAP_TOOM_4__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
+void __BIHEAP_ASYM_TOOM_4__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
+
 
 
 /* BigInt Heap-allocating Multiplication Algorithm Dispatching */
+void __BIHEAP_ASYM_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status *err) {
+    // Metadata pre-calculations - slices
+    size_t Bsize = min(a->n, b->n); // Beta size lol
+    size_t Asize = max(a->n, b->n); // Alpha chad size lol
+    size_t slice = (Asize / ((size_t)(Asize / Bsize) + 1));
+    if (Bsize <= BIGINT_KARATSUBA && slice <= BIGINT_KARATSUBA) __BIHEAP_ASYM_KARAT__(a, b, res, err);
+    else if (Bsize <= BIGINT_TOOM_3 && slice <= BIGINT_TOOM_3) __BIHEAP_ASYM_TOOM3__(a, b, res, err);
+    // else if (Bsize <= BIGINT_TOOM_4 && slice <= BIGINT_TOOM_4) __BIHEAP_ASYM_TOOM4__(a, b, res, err);
+    // else if (Bsize <= BIGINT_TOOM_5 && slice <= BIGINT_TOOM_5) __BIHEAP_ASYM_TOOM5__(a, b, res, err);
+    // else if (Bsize <= BIGINT_TOOM_6p5 && slice <= BIGINT_TOOM_6p5) __BIHEAP_ASYM_TOOM6p5__(a, b, res, err);
+    // else if (Bsize <= BIGINT_TOOM_7p5 && slice <= BIGINT_TOOM_7p5) __BIHEAP_ASYM_TOOM7p5__(a, b, res, err);
+    // else if (Bsize <= BIGINT_TOOM_8p5 && slice <= BIGINT_TOOM_8p5) __BIHEAP_ASYM_TOOM8p5__(a, b, res, err);
+    else __BIHEAP_ASYM_FFT__(a, b, res, err);
+}
 void __BIHEAP_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status *err) {
     if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) { __BIHEAP_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
-    else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) { __BIHEAP_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
+    else if (min(a->n, b->n) * 2 <= max(a->n, b->n)) __BIHEAP_ASYM_MUL_DISP__(a, b, res, err);
     else if (a->n <= BIGINT_KARATSUBA && b->n <= BIGINT_KARATSUBA) __BIHEAP_KARATSUBA__(a, b, res, err);
     else if (a->n <= BIGINT_TOOM_3 && b->n <= BIGINT_TOOM_3) __BIHEAP_TOOM_3__(a, b, res, err);
     // else if (a->n <= BIGINT_TOOM_4 && b->n <= BIGINT_TOOM_4) __BIHEAP_TOOM_4__(a, b, res);

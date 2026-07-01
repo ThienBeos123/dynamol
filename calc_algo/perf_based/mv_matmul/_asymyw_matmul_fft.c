@@ -37,7 +37,7 @@ limitations under the License.
  * with a size difference magnitudes of larger than 2 (>2x), while x and z is balanced
  */
 /* ------------ Sizing Function ------------ */
-size_t __ASYMXZ_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
+size_t __ASYMYW_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
     // Metadata pre-calculations - slices
     size_t Bsize = min(y_size, w_size); // Beta size lol
     size_t Asize = max(y_size, w_size); // Alpha chad size lol
@@ -58,9 +58,9 @@ size_t __ASYMXZ_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size
     size_t fres_size = (max_k << 1) + 14; size_t xz_tres_size = x_size + z_size;
     return (3*(eval_bufs + ptmul_bufs + fres_size) >> 1) + xz_tres_size; // Follows the path of the largest input size
 }
-size_t __ASYMXZ_MAT_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __ASYMXZ_MAT_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
-size_t __ASYMXZ_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
+size_t __ASYMYW_MAT_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
+size_t __ASYMYW_MAT_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
+size_t __ASYMYW_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
     // Pre-operation Operand Slicing Calculations
     size_t Bsize = min(y_size, w_size); // Beta size lol
     size_t Asize = max(y_size, w_size); // Alpha chad size lol
@@ -83,7 +83,7 @@ size_t __ASYMXZ_MAT_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __ASYMXZ_MATMUL_TOOM3__(
+dnml_status __ASYMYW_MATMUL_TOOM3__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) {
@@ -273,7 +273,7 @@ dnml_status __ASYMXZ_MATMUL_TOOM3__(
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __ASYMXZ_MATMUL_TOOM4__(
+dnml_status __ASYMYW_MATMUL_TOOM4__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }
@@ -282,7 +282,7 @@ dnml_status __ASYMXZ_MATMUL_TOOM4__(
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __ASYMXZ_MATMUL_TOOM5__(
+dnml_status __ASYMYW_MATMUL_TOOM5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
 ) { return BIGINT_SUCCESS; }
@@ -292,7 +292,7 @@ dnml_status __ASYMXZ_MATMUL_TOOM5__(
 
 
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
-dnml_status __ASYMXZ_MATMUL_SSA__(
+dnml_status __ASYMYW_MATMUL_SSA__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx fft_ctx
 ) {
