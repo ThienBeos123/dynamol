@@ -52,6 +52,13 @@ void __BIGINT_STEIN__(bigInt *const res, const bigInt *const u, const bigInt *co
 void __BIGINT_LEHMER__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx lehmer_ctx, dnml_status *err);
 void __BIGINT_SUBQ__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx half_ctx, dnml_status *err);
 void __BIGINT_GCD_DISP__(bigInt *const res, const bigInt *const u, const bigInt *const v, calc_ctx gcd_ctx, dnml_status *err);
+/* ========= Extra algorithms and functions ========= */
+size_t __hgcd_mat_compose_ws(size_t Asize, size_t Bsize, size_t Csize, size_t Dsize, size_t Esize, size_t Fsize, size_t Gsize, size_t Hsize);
+size_t __hgcd_matmul_ws(size_t a_size, size_t b_size, size_t Asize, size_t Bsize, size_t Csize, size_t Dsize);
+size_t _hgcd_ws(size_t a_size, size_t b_size);
+dnml_status __hgcd_mat_compose(struct rt_matrix *T1, struct rt_matrix *T2, struct rt_matrix *T, calc_ctx hgcd_ctx);
+dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T, calc_ctx hgcd_ctx);
+dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b, calc_ctx hgcd_ctx); // For XGCD
 #ifdef __cplusplus
 }
 #endif

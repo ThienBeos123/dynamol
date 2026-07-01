@@ -50,14 +50,38 @@ void _RT_MAT_COPY(struct rt_matrix *dst, struct rt_matrix *src) {
 
 
 /** ------------ 2-limb Base-case Half-GCD ------------
- * This function, for all intend and purposes, is exclusively an internal function
+ * These function, for all intend and purposes, is exclusively an internal function
  * utilized inside the "gcd_subq.c" file as the base-case of __hgcd_reduct().
  * This function computes the base-case of __hgcd_reduct() to compute the Half-GCD
- * Transformation/Reduction 2x2 matrix T. This function computates exclusively inputs
- * a and b of 2-limbs long
+ * Transformation/Reduction 2x2 matrix T. 
+ *
+ * These function computates exclusively inputs a and b of 2-limbs long OR a single machine-word long. 
+ * They implement an efficient Euclidean GCD at such small scale to compute the linear combination of 
+ * our transformation matrices.
  */
-void __hgcd2_base(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
-
+void __hgcd1_base(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
+    uint64_t rem = 0, quot = 0;
+    uint64_t a1 = a->limbs[0], b1 = b->limbs[0];
+    uint64_t A = T->A.limbs[0], B = T->B.limbs[0];
+    uint64_t C = T->C.limbs[0], D = T->D.limbs[0];
+    while ((a1 % b1)) {
+        quot = a1 / b1; /**/ rem = a1 % b1;
+        // Equation: [0,  1] x [A, B] = [(0A +  1C), (0B +  1D)] = [  C,      D   ]
+        //           [1, -q]   [C, D]   [(1A + -qC), (1B + -qD)]   [A - qC, B - qD]
+        uint64_t qc_hi = 0, qc_lo = __MUL_UI64__(quot, C, &qc_hi);
+        uint64_t qd_hi = 0, qd_lo = __MUL_UI64__(quot, D, &qd_hi);
+        // Overflowing/Underflowing, current progression matrix tracker is still
+        if (qc_hi || qd_hi || qc_lo < A || qd_lo < B) break;
+        uint64_t nextA = C; uint64_t nextB = D;
+        uint64_t nextC = qc_lo - A; uint64_t nextD = qd_lo - B; 
+        // qC and qD is guaranteed to be larger than A and B
+        A = nextA; B = nextB; C = nextC; D = nextD;
+        a1 = b1; b1 = rem;
+    }
+    // Updating our matrices
+    T->A.limbs[0] = A; T->B.limbs[0] = B; /**/ T->A.n = !!(A); T->B.n = !!(B);
+    T->C.limbs[0] = C; T->D.limbs[0] = D; /**/ T->C.n = !!(C); T->D.n = !!(D);
+    a->limbs[0] = a1; b->limbs[0] = b1; /**/ a->n = !!(a1); b->n = !!(b1);
 }
 
 
@@ -147,9 +171,26 @@ dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T,
  * onto the two inputs u and v, with sizes of N limbs, into floor(N/2) + 1,
  * or, more accurately, ceil(N/2). 
  */
-size_t _hgcd_ws(size_t TA_size, size_t TB_size, size_t TC_size, size_t TD_size, size_t a_size, size_t b_size) { return 0; }
+size_t _hgcd_ws(size_t a_size, size_t b_size) {
+    size_t n = a_size; size_t m = n >> 1;
+    size_t copies_size = a_size + b_size; // a_copy and b_copy
+    size_t r1_sizes = (m << 2); // R1 matrix elements (A, B, C, D)
+    // Second recursive - recalculating n and m after a_copy and b_copy size reduction/halving
+    n = (a_size >> 1) + 1; // Maximum approximation of the reduction
+    size_t new_m = n >> 1; size_t r2_sizes = (new_m << 2); // R2 matrix elements (A, B, C, D)
+    // Function calls
+    size_t matmul_max = __hgcd_matmul_ws(a_size, b_size, m, m, m, m); // __hgcd_matmul(&a_copy, &b_copy, &R1, hgcd_ctx);
+    size_t matcomp_max = __hgcd_mat_compose_ws(m, m, m, m, new_m, new_m, new_m, new_m); // __hgcd_mat_compose(&R1, &R2, T, hgcd_ctx);
+    return 3*(copies_size + r1_sizes + r2_sizes + max(matmul_max, matcomp_max)); // Each recursion splits the size in half
+}
 dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b, calc_ctx hgcd_ctx) {
-    size_t n = a->n; /**/ if (n <= 2) { __hgcd2_base(T, a, b); return BIGINT_SUCCESS; } // Base-case
+    size_t n = a->n;
+    // Base-cases
+    if (!n) { // Return an identity matrix (a fully reduced --> GCD(0, b) == b)
+        /* [1, 0] */ T->A.n = 1; T->A.limbs[0] = 1; /**/ T->B.n = 0;
+        /* [0, 1] */ T->C.n = 0; /**/ T->D.n = 1; T->D.limbs[0] = 1; return BIGINT_SUCCESS;
+    }
+    if (n == 1) { __hgcd1_base(T, a, b); return BIGINT_SUCCESS; }
     size_t m = n >> 1; // n / 2 (The predicted sizes of our elements in matrix T)
     if (b->n <= m) { // b is already small enough
         /* Identity matrix: */
@@ -196,6 +237,65 @@ dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b, 
 
 
 /* ---------- Main Orchestrating Function ---------- */
-void __BIGINT_SUBQ__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx subq_ctx, dnml_status *err) {
+size_t __BIGINT_SUBQ_WS__(size_t u_size, size_t v_size) {
+    size_t safe_matcap = (u_size >> 1) + 1;
+    size_t Msizes = (safe_matcap << 2); // Transformation Matrix M's elements
+    size_t copies_size = u_size + v_size; // u_copy + v_copy
+    // Function calls (the maximum size of each of the function calls always comes from the first iteration)
+    size_t hgcd_max = _hgcd_ws(u_size, v_size); // _hgcd_reduct(&M, &u_copy, &v_copy, subq_ctx);
+    size_t matmul_max = __hgcd_matmul_ws(u_size, v_size, safe_matcap, safe_matcap, safe_matcap, safe_matcap);
 
+    // __BIGINT_MOD_DISP__(&u_copy, &v_copy, &M.A, &M.A, subq_ctx, &echeck);
+    // This is after the matrix multiplication halving u_copy and v_copy in size by half from our transformation matrix M
+    size_t mod_max = __BIGINT_MOD_WS__(((u_size >> 1) + 1), ((v_size >> 1) + 1));
+
+    // __BIGINT_LEHMER__(res, &u_copy, &v_copy, subq_ctx, &echeck);
+    // On the worst case scenario for this function call, our function only iterate once, cuts
+    // u_copy and v_copy sizes in half, and then exit back out into Lehmer's fallback
+    size_t lehmer_max = __BIGINT_LEHMER_WS__((u_size >> 1) + 1, (v_size >> 1) + 1);
+
+    
+    return Msizes + copies_size + max(max(max(hgcd_max, matmul_max), mod_max), lehmer_max);
+    // This function doesn't recurse, and only have while loop that has a deterministic maximum size
+    // of operation on the first iteration, where no inputs have been reduced at all
+}
+void __BIGINT_SUBQ__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx subq_ctx, dnml_status *err) {
+    // Allocate safe capacity amount for M's matrix elements (Half-GCD element upperbound is ceil(u->n / 2))
+    struct rt_matrix M = {0}; size_t safe_matcap = (u->n >> 1) + 1;
+    size_t subq_mark = scratch_mark(&subq_ctx); dnml_status echeck = BIGINT_SUCCESS;
+    M.A.limbs = (limb_t*)scratch_alloc(&subq_ctx, safe_matcap, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+    M.B.limbs = (limb_t*)scratch_alloc(&subq_ctx, safe_matcap, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+    M.C.limbs = (limb_t*)scratch_alloc(&subq_ctx, safe_matcap, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+    M.D.limbs = (limb_t*)scratch_alloc(&subq_ctx, safe_matcap, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+    // Allocate temporaries mirroring/mimicking u and v + a temporary 
+    BIGINT_TEMP(u_copy, u->n, subq_ctx, subq_mark, echeck, err,); memcpy(u_copy.limbs, u->limbs, u->n * U64_BYTES);
+    BIGINT_TEMP(v_copy, v->n, subq_ctx, subq_mark, echeck, err,); memcpy(v_copy.limbs, v->limbs, v->n * U64_BYTES);
+    // We assume and expect u >= v (AND when v == 0 ---> GCD(u, v) = u)
+    while (u->n > BIGINT_LEHMER && v->n) {
+        // Produces the linear-steps reduction matrices M --> Matrix Multiply on u and v to reduce their sizes in half
+        echeck = _hgcd_reduct(&M, &u_copy, &v_copy, subq_ctx); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+        echeck = __hgcd_matmul(&u_copy, &v_copy, &M, subq_ctx); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+        if (!(v_copy.n)) break; // According to Euclidean GCD, when b == 0 (remainder == 0) --> GCD found
+
+
+        /** Standard Euclidean Division for Correction - According to Schonhage's design following Euclidean GCD.
+         * We reuse M.A as both the quotient and remainder buffer. This is safe due to:
+         *
+         *      1. M.A is allocated with a size of ceil(u->n / 2), and the Half-GCD reduction also reduced
+         *         u_copy and v_copy in size by half, which makes M.A compatible to be the quotient and
+         *         remainder buffer for our step
+         *
+         *      2. Using SOLELY M.A is still safe for our Modular Reduction routine since our Modular
+         *         Reduction Dispatcher selects remainder-biased functions, in which they either
+         *         do not touch anything with a quotient-buffer OR copy the remainder result
+         *         AFTER the quotient copy so on the case of double-aliasing, we still end up with the remainder
+         */
+        __BIGINT_MOD_DISP__(&u_copy, &v_copy, &M.A, &M.A, subq_ctx, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+        __BIGINT_INTERNAL_COPY__(&u_copy, &v_copy); __BIGINT_INTERNAL_COPY__(&v_copy, &M.A);
+    }
+
+    // Fallback to Lehmer is fell below Subquadratic range for speed at lower ranges
+    if (v_copy.n) { __BIGINT_LEHMER__(res, &u_copy, &v_copy, subq_ctx, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,); }
+    else __BIGINT_INTERNAL_COPY__(res, &u_copy); // According to Euclidean GCD, if v_copy == 0 --> GCD found
+    scratch_rewind(&subq_ctx, subq_mark); *err = BIGINT_SUCCESS;
 }
