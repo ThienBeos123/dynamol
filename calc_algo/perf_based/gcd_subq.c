@@ -49,17 +49,21 @@ void _RT_MAT_COPY(struct rt_matrix *dst, struct rt_matrix *src) {
 
 
 
-/** ------------ 2-limb Base-case Half-GCD ------------
- * These function, for all intend and purposes, is exclusively an internal function
+/** ------------ Machine-word Base-case Half-GCD ------------
+ * This function, for all intend and purposes, is exclusively an internal function
  * utilized inside the "gcd_subq.c" file as the base-case of __hgcd_reduct().
  * This function computes the base-case of __hgcd_reduct() to compute the Half-GCD
  * Transformation/Reduction 2x2 matrix T. 
  *
- * These function computates exclusively inputs a and b of 2-limbs long OR a single machine-word long. 
+ * this function computates exclusively inputs a and b of 2-limbs long OR a single machine-word long. 
  * They implement an efficient Euclidean GCD at such small scale to compute the linear combination of 
  * our transformation matrices.
  */
 void __hgcd1_base(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
+    // Intiailizing T as an identity matrix before continuing
+    T->A.limbs[0] = 1; T->A.n = 1; /**/ T->B.limbs[0] = 0; T->B.n = 0; // [1, 0]
+    T->C.limbs[0] = 0; T->C.n = 0; /**/ T->D.limbs[0] = 1; T->D.n = 1; // [0, 1]
+    // Actual loop/operation
     uint64_t rem = 0, quot = 0;
     uint64_t a1 = a->limbs[0], b1 = b->limbs[0];
     uint64_t A = T->A.limbs[0], B = T->B.limbs[0];
@@ -254,7 +258,7 @@ size_t __BIGINT_SUBQ_WS__(size_t u_size, size_t v_size) {
     // u_copy and v_copy sizes in half, and then exit back out into Lehmer's fallback
     size_t lehmer_max = __BIGINT_LEHMER_WS__((u_size >> 1) + 1, (v_size >> 1) + 1);
 
-    
+
     return Msizes + copies_size + max(max(max(hgcd_max, matmul_max), mod_max), lehmer_max);
     // This function doesn't recurse, and only have while loop that has a deterministic maximum size
     // of operation on the first iteration, where no inputs have been reduced at all

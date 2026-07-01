@@ -35,7 +35,7 @@ limitations under the License.
 /* ----------- BigInt Matrix Multiplication Toom-cook 6.5-way ----------- */
 dnml_status __HASYMXZ_MATMUL_TOOM6p5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) { return BIGINT_SUCCESS; }
 
 
@@ -46,7 +46,7 @@ dnml_status __HASYMXZ_MATMUL_TOOM6p5__(
 /* ----------- BigInt Matrix Multiplication Toom-cook 6.5-way ----------- */
 dnml_status __HASYMXZ_MATMUL_TOOM7p5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) { return BIGINT_SUCCESS; }
 
 
@@ -57,5 +57,5 @@ dnml_status __HASYMXZ_MATMUL_TOOM7p5__(
 /* ----------- BigInt Matrix Multiplication Toom-cook 6.5-way ----------- */
 dnml_status __HASYMXZ_MATMUL_TOOM8p5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) { return BIGINT_SUCCESS; }

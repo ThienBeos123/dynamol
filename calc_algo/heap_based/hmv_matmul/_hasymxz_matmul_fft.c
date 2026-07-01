@@ -39,7 +39,7 @@ limitations under the License.
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __HASYMXZ_MATMUL_TOOM3__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) {
     // Metadata pre-calculations - slices
     size_t Bsize = min(x->n, z->n); // Beta size lol
@@ -49,7 +49,8 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
     bigInt *alpha = (Asize == x->n) ? x : z; /**/ bigInt *beta = (Bsize == z->n) ? z : x;
 
     //* ================== PRE-OPERATION ALLOCATIONS ================== *//
-    dnml_status echeck; size_t toom_mark = scratch_mark(&toom_ctx);
+    dnml_status echeck = BIGINT_SUCCESS; /**/ uint8_t alloc_cnt = 0, early_cnt = 0;
+    bigInt *alloc_list[13] = {0}, *early_free[15] = {0};
     size_t xz_k = (size_t)(max(slice, Bsize) / 3) + 1;
     size_t yw_k = (size_t)(max(y->n, w->n) / 3) + 1;
     size_t max_k = max(xz_k, yw_k);
@@ -60,18 +61,25 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
     size_t w2size = (w->n > (yw_k << 1)) ? (w->n - (yw_k << 1)) : 0;
     size_t max_m2size = max(A2size, y2size); size_t max_n2size = max(B2size, w2size);
     bigInt m0 = {0}; bigInt m1 = {0}; bigInt m2 = {0}; /**/ bigInt n0 = {0}; bigInt n1 = {0}; bigInt n2 = {0};
-    /* --------- 2a. Evaluation & Point-wise Multiplication ---------
-    *   +) pOuter = m0 + m2                                        | +) qOuter = n0 + n2
-    *   +) p(0)   = m0          (NO FULL TEMPORARY)                | +) q(0)   = n0          (NO FULL TEMPORARY)
-    *   +) p(1)   = pOuter + m1                                    | +) q(1)   = qOuter + n1
-    *   +) p(-1)  = pOuter - m1                                    | +) q(-1)  = qOuter - n1
-    *   +) p(-2)  = 2*(p(-1) + m2) - m0                            | +) q(-2)  = 2*(q(-1) + n2) - n0
-    *   +) p(inf) = m2          (NO FULL TEMPORARY)                | +) q(inf) = n2          (NO FULL TEMPORARY) */
-    // p(x) TEMPORARIES                                            // q(x) TEMPORARIES
-    BIGINT_FTEMP(p_outer, max_k + 1, toom_ctx, toom_mark, echeck); BIGINT_FTEMP(q_outer, max_k + 1, toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(p1,      max_k + 2, toom_ctx, toom_mark, echeck); BIGINT_FTEMP(q1,      max_k + 2, toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(p_neg1,  max_k + 1, toom_ctx, toom_mark, echeck); BIGINT_FTEMP(q_neg1,  max_k + 1, toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(p_neg2,  max_k + 2, toom_ctx, toom_mark, echeck); BIGINT_FTEMP(q_neg2,  max_k + 2, toom_ctx, toom_mark, echeck);
+    /* --------- 2a. Evaluation & Point-wise Multiplication --------- */
+    /* p(x) TEMPORARIES 
+    * +) pOuter = m0 + m2                   | +) p(-1)  = pOuter - m1
+    * +) p(0)   = m0 (NO FULL TEMPORARY)    | +) p(-2)  = 2*(p(-1) + m2) - m0
+    * +) p(1)   = pOuter + m1               | +) p(inf) = m2 (NO FULL TEMPORARY)
+    */
+    BIHEAP_FTEMP(p_outer, max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt); 
+    BIHEAP_FTEMP(p1,      max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); 
+    BIHEAP_FTEMP(p_neg1,  max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt); 
+    BIHEAP_FTEMP(p_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); 
+    /* q(x) TEMPORARIES 
+    * +) qOuter = n0 + n2                   | +) q(-1)  = qOuter - n1
+    * +) q(0)   = n0 (NO FULL TEMPORARY)    | +) q(-2)  = 2*(q(-1) + n2) - n0
+    * +) q(1)   = qOuter + n1               | +) q(inf) = n2 (NO FULL TEMPORARY) 
+    */
+    BIHEAP_FTEMP(q_outer, max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(q1,      max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(q_neg1,  max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(q_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     /* ------------ POINT-WISE MULTIPLICATION ------------
     *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
     *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
@@ -79,14 +87,14 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
     *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
     */
-    BIGINT_FTEMP(r0,     (max_k << 1),       toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(r1,     (max_k << 1) + 9,   toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(r_neg1, (max_k << 1) + 9,   toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(r_neg2, (max_k << 1) + 10,  toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(rinf, max_m2size + max_n2size + 4, toom_ctx, toom_mark, echeck);
+    BIHEAP_FTEMP(r0,     (max_k << 1),       echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(r1,     (max_k << 1) + 9,   echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(r_neg1, (max_k << 1) + 9,   echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(r_neg2, (max_k << 1) + 10,  echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(rinf, max_m2size + max_n2size + 4, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     /* ---------------- 3a. INTERPOLATION & RECOMPOSITION ---------------- */
-    BIGINT_FTEMP(final_res, (max_k << 1) + 14, toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(xz_tres, x->n + z->n, toom_ctx, toom_mark, echeck);
+    BIHEAP_FTEMP(final_res, (max_k << 1) + 14, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(xz_tres, x->n + z->n, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
 
 
 
@@ -138,11 +146,11 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
         */
         r0.cap = (xz_k << 1); /**/ r1.cap = (xz_k << 1) + 9; /**/ r_neg1.cap = (xz_k << 1) + 9;
         r_neg2.cap = (xz_k << 1) + 10; /**/ rinf.cap = A2size + B2size;
-        __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-        __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-        __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-        __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-        __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+        __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
 
         /* ----------------- 3a. INTERPOLATION & RECOMPOSITION ----------------- */
         /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
@@ -162,7 +170,7 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
         
         // Accumulating result into tmp_res, Same principle as normal Schoolbook but cooler, Ig
         __BIGINT_ADD_SHIFT__(&xz_tres, &final_res, offset); // (tmp_res <<<= slice) + tmp (Accumulating the product as a sum)
-    } __BIGINT_INTERNAL_COPY__(xz_res, &xz_tres);
+    } __BIGINT_INTERNAL_MOVE__(xz_res, &xz_tres);
 
 
 
@@ -201,11 +209,11 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
     */
     r0.cap = yw_k << 1; /**/ r1.cap = (yw_k << 1) + 9; /**/ r_neg1.cap = (yw_k << 1) + 9;
     r_neg2.cap = (yw_k << 1) + 9; /**/ rinf.cap = (yw_k << 1) + 10;
-    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+    __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     
     /* -------------------------- 3b. INTERPOLATION & RECOMPOSITION -------------------------- */
     /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
@@ -222,7 +230,7 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
     __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
     __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
     __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
-    __BIGINT_INTERNAL_COPY__(yw_res, &final_res); scratch_rewind(&toom_ctx, toom_mark); return BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_MOVE__(yw_res, &final_res); _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }
 
 
@@ -231,7 +239,7 @@ dnml_status __HASYMXZ_MATMUL_TOOM3__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __HASYMXZ_MATMUL_TOOM4__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) { return BIGINT_SUCCESS; }
 
 
@@ -240,7 +248,7 @@ dnml_status __HASYMXZ_MATMUL_TOOM4__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __HASYMXZ_MATMUL_TOOM5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) { return BIGINT_SUCCESS; }
 
 
@@ -250,9 +258,10 @@ dnml_status __HASYMXZ_MATMUL_TOOM5__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __HASYMXZ_MATMUL_SSA__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx fft_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) {
-    size_t fft_mark = scratch_mark(&fft_ctx); dnml_status echeck = BIGINT_SUCCESS;
+    dnml_status echeck = BIGINT_SUCCESS; /**/ uint8_t alloc_cnt = 0, early_cnt = 0;
+    bigInt *alloc_list[7] = {0}, *early_free[9] = {0};
     size_t Bsize = min(x->n, z->n); // Beta size lol
     size_t Asize = max(x->n, z->n); // Alpha chad size lol
     size_t splits = ((size_t)(Asize / Bsize) + 1);
@@ -272,22 +281,22 @@ dnml_status __HASYMXZ_MATMUL_SSA__(
 
     /* ---------- 2+3. PRE-EVALUATION NEGACYCLIC OPTIMIZATION + FFT EVALUATION ---------- */
     bigInt eval_a[max_d], eval_b[max_d]; // Each of the D elements requires an array of limbs of size 'nlimbs'
-    RAW_FTEMP(lo_buf, max_nlimbs + 1, fft_ctx, fft_mark, echeck);
-    RAW_FTEMP(hi_buf, max_nlimbs + 1, fft_ctx, fft_mark, echeck); 
-    RAW_FTEMP(tbuf,   max_nlimbs + 2, fft_ctx, fft_mark, echeck); // Will be used later in recomposition
-    RAW_FTEMP(usave,  max_nlimbs + 1, fft_ctx, fft_mark, echeck);
+    BIHEAP_FTEMP(lo_buf, max_nlimbs + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(hi_buf, max_nlimbs + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt); 
+    BIHEAP_FTEMP(tbuf,   max_nlimbs + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); // Will be used later in recomposition
+    BIHEAP_FTEMP(usave,  max_nlimbs + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     size_t psi_step = 0; // Exponent step for negacyclic weight: ψ = 2^(n/D)
     // Flat Evaluation Buffer
     size_t total_limbs_needed = (max_nlimbs + 1) << max_k; // d(nlimbs + 1)
-    RAW_FTEMP(flat_evala, total_limbs_needed, fft_ctx, fft_mark, echeck);
-    RAW_FTEMP(flat_evalb, total_limbs_needed, fft_ctx, fft_mark, echeck);
+    BIHEAP_FTEMP(flat_evala, total_limbs_needed, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(flat_evalb, total_limbs_needed, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
 
     /* ----------- 4+5+6. Pointwise Multiplication + Inverse Evaluation + Recomposition ----------- */
     // Output of multiplication is up to 2 * nlimbs long before reduction
-    BIGINT_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, fft_ctx, fft_mark, echeck); prod_tmp.cap = (xz_nlimbs << 1) + 2;
-    BIGINT_FTEMP(tmp_res, max(Bsize + slice, y->n + w->n), fft_ctx, fft_mark, echeck); tmp_res.cap = (Bsize + slice);
-    BIGINT_FTEMP(xz_tres, x->n + z->n, fft_ctx, fft_mark, echeck); // Accumulator for xz_res
-    memset(tmp_res.limbs, 0, tmp_res.cap * U64_BYTES); /**/ bigInt tbuf_view = {0}; // bigInt view into tbuf
+    BIHEAP_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); prod_tmp.cap = (xz_nlimbs << 1) + 2;
+    BIHEAP_FRET(tmp_res, max(Bsize + slice, y->n + w->n), echeck, early_free, early_cnt); tmp_res.cap = (Bsize + slice);
+    BIHEAP_FRET(xz_tres, x->n + z->n, echeck, early_free, early_cnt); // Accumulator for xz_res
+    memset(tmp_res.limbs, 0, tmp_res.cap * U64_BYTES);
 
 
 
@@ -327,32 +336,32 @@ dnml_status __HASYMXZ_MATMUL_SSA__(
         // (improve Cache Locality and Prefetch Efficiency)
         psi_step = xz_n >> xz_k;
         for (size_t i = 0; i < xz_d; ++i) {
-            eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
-            eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
+            eval_a[i] = (bigInt){ .limbs = flat_evala.limbs + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
+            eval_b[i] = (bigInt){ .limbs = flat_evalb.limbs + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
             // Perform cyclic shifts straight into these perfectly localized targets
             size_t weight_exp = i * psi_step;
-            __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, xz_n, xz_nlimbs);
-            __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf, hi_buf, weight_exp, xz_n, xz_nlimbs);
+            __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, xz_n, xz_nlimbs);
+            __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, xz_n, xz_nlimbs);
         }
         // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
-        _biheap_ctk_fft(eval_a, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
-        _biheap_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
+        _biheap_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
+        _biheap_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
 
         /* ----------- 4a. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS ----------- */
         for (size_t i = 0; i < xz_d; ++i) {
             // Recursive Multiply step: eval_a[i] * eval_b[i]
-            __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
-            __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, xz_n, xz_nlimbs);
+            __BIHEAP_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+            __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf.limbs, hi_buf.limbs, xz_n, xz_nlimbs);
             // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
         }
 
         /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
         // Execute Inverse NTT (eval_a now holds the point-wise products)
-        _biheap_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
+        _biheap_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
         for (size_t i = 0; i < xz_d; ++i) {
             size_t wexp = i * psi_step; // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
             size_t iwexp = ((xz_n << 1) - wexp) % (xz_n << 1); // Exponent cycle of 2n;
-            __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, xz_n, xz_nlimbs);
+            __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf.limbs, hi_buf.limbs, iwexp, xz_n, xz_nlimbs);
         }
         // Clear and prepare your final destination container
         memset(tmp_res.limbs, 0, tmp_res.n * U64_BYTES);
@@ -368,18 +377,18 @@ dnml_status __HASYMXZ_MATMUL_SSA__(
             else {
                 // Copy + Shift fused together
                 // This part only handles the modularly-reduced single machine-word bit shifts
-                tbuf_view.n = eval_a[i].n;
+                tbuf.n = eval_a[i].n;
                 uint64_t discarded_bits = 0, mask = U64_BITS - m_bshift;
-                for (size_t j = 0; j < tbuf_view.n; ++j) {
+                for (size_t j = 0; j < tbuf.n; ++j) {
                     uint64_t tmp = eval_a[i].limbs[j];
-                    tbuf_view.limbs[j] = (tmp << m_bshift) | discarded_bits;
+                    tbuf.limbs[j] = (tmp << m_bshift) | discarded_bits;
                     discarded_bits = tmp >> mask;
-                } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
-                __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
+                } if (discarded_bits) tbuf.limbs[tbuf.n++] = discarded_bits;
+                __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf, mlimb_shift); // Addition with actual limb shifts
             }
         } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
         __BIGINT_ADD_SHIFT__(&xz_tres, &tmp_res, offset); // through adding sums: (tmp_res <<<= slice) + tmp
-    } __BIGINT_INTERNAL_COPY__(xz_res, &xz_tres);
+    } __BIGINT_INTERNAL_MOVE__(xz_res, &xz_tres);
 
 
 
@@ -397,39 +406,38 @@ dnml_status __HASYMXZ_MATMUL_SSA__(
     // Allocating two flat, contiguous memory blocks for all D windows at once
     // (improve Cache Locality and Prefetch Efficiency)
     for (size_t i = 0; i < yw_d; ++i) {
-        eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
-        eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
+        eval_a[i] = (bigInt){ .limbs = flat_evala.limbs + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
+        eval_b[i] = (bigInt){ .limbs = flat_evalb.limbs + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
         // Perform cyclic shifts straight into these perfectly localized targets
         size_t weight_exp = i * psi_step;
-        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, yw_n, yw_nlimbs);
-        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf, hi_buf, weight_exp, yw_n, yw_nlimbs);
+        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, yw_n, yw_nlimbs);
+        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, yw_n, yw_nlimbs);
     }
 
     /* ------------ 3b+4b. FFT Evaluation + Point-Wise Multiplication of Ring Elements ------------ */
     // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
-    _biheap_ctk_fft(eval_a, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
-    _biheap_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
+    _biheap_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
+    _biheap_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
     // Output of multiplication is up to 2 * nlimbs long before reduction
     prod_tmp.cap = (yw_nlimbs << 1) + 2;
     for (size_t i = 0; i < yw_d; ++i) {
         // Recursive Multiply step: eval_a[i] * eval_b[i]
-        __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
-        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, yw_n, yw_nlimbs);
+        __BIHEAP_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf.limbs, hi_buf.limbs, yw_n, yw_nlimbs);
         // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
     }
 
     /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
     // Execute Inverse NTT (eval_a now holds the point-wise products)
-    _biheap_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
+    _biheap_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
     for (size_t i = 0; i < yw_d; ++i) {
         // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
         size_t wexp = i * psi_step;
         size_t iwexp = ((yw_n << 1) - wexp) % (yw_n << 1); // Exponent cycle of 2n;
-        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, yw_n, yw_nlimbs);
+        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf.limbs, hi_buf.limbs, iwexp, yw_n, yw_nlimbs);
     }
     // Clear and prepare your final destination container
     tmp_res.cap = y->n + w->n; /**/ memset(tmp_res.limbs, 0, tmp_res.n * U64_BYTES);
-    tbuf_view = (bigInt){ .limbs = tbuf, .n = 0, .cap = yw_nlimbs + 2, .sign = 1 };
     // Overlap-Add Recomposition into Final ab PRODUCT
     for (size_t i = 0; i < yw_d; ++i) {
         if (!eval_a[i].n) continue;
@@ -442,15 +450,15 @@ dnml_status __HASYMXZ_MATMUL_SSA__(
         else {
             // Copy + Shift fused together
             // This part only handles the modularly-reduced single machine-word bit shifts
-            tbuf_view.n = eval_a[i].n;
+            tbuf.n = eval_a[i].n;
             uint64_t discarded_bits = 0, mask = U64_BITS - m_bshift;
-            for (size_t j = 0; j < tbuf_view.n; ++j) {
+            for (size_t j = 0; j < tbuf.n; ++j) {
                 uint64_t tmp = eval_a[i].limbs[j];
-                tbuf_view.limbs[j] = (tmp << m_bshift) | discarded_bits;
+                tbuf.limbs[j] = (tmp << m_bshift) | discarded_bits;
                 discarded_bits = tmp >> mask;
-            } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
-            __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
+            } if (discarded_bits) tbuf.limbs[tbuf.n++] = discarded_bits;
+            __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf, mlimb_shift); // Addition with actual limb shifts
         }
-    } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(yw_res, &tmp_res); 
-    scratch_rewind(&fft_ctx, fft_mark); return BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_MOVE__(yw_res, &tmp_res); 
+    _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }

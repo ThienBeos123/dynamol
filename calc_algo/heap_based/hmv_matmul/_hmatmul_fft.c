@@ -35,7 +35,7 @@ limitations under the License.
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __BIHEAP_MATMUL_TOOM3__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) {
     size_t xz_k = (size_t)(max(x->n, z->n) / 3) + 1;
     size_t yw_k = (size_t)(max(y->n, w->n) / 3) + 1;
@@ -55,23 +55,25 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     bigInt n2 = {.limbs = z->limbs + (xz_k << 1),   .n = z2size,    .cap = z2size};
 
     /* ------------ 2a. Evaluation & Point-wise Multiplication ------------ */
-    dnml_status echeck; size_t toom_mark = scratch_mark(&toom_ctx);
+    dnml_status echeck;
+    bigInt *early_free[14]; uint8_t early_cnt = 0;
+    bigInt *alloc_arr[13]; uint8_t alloc_cnt = 0;
     // p(x) TEMPORARIES
     //  +) pOuter   = m0 + m2                           |   +) p(-1)    = pOuter - m1
     //  +) p(0)     = m0          (NO FULL TEMPORARY)   |   +) p(-2)    = 2*(p(-1) + m2) - m0
     //  +) p(1)     = pOuter + m1                       |   +) p(inf)   = m2                    (NO FULL TEMPORARY)
-    BIGINT_FTEMP(p_outer, max_k + 1, toom_ctx, toom_mark, echeck); p_outer.cap = xz_k + 1;
-    BIGINT_FTEMP(p1,      max_k + 2, toom_ctx, toom_mark, echeck); p1.cap = xz_k + 2;
-    BIGINT_FTEMP(p_neg1,  max_k + 1, toom_ctx, toom_mark, echeck); p_neg1.cap = xz_k + 1;
-    BIGINT_FTEMP(p_neg2,  max_k + 2, toom_ctx, toom_mark, echeck); p_neg2.cap = xz_k + 1;
+    BIHEAP_FTEMP(p_outer, max_k + 1, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); p_outer.cap = xz_k + 1;
+    BIHEAP_FTEMP(p1,      max_k + 2, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); p1.cap = xz_k + 2;
+    BIHEAP_FTEMP(p_neg1,  max_k + 1, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); p_neg1.cap = xz_k + 1;
+    BIHEAP_FTEMP(p_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); p_neg2.cap = xz_k + 1;
     // q(x) TEMPORARIES
     //  +) qOuter   = n0 + n2                           |   +) q(-1)    = qOuter - n1
     //  +) q(0)     = n0          (NO FULL TEMPORARY)   |   +) q(-2)    = 2*(q(-1) + n2) - n0
     //  +) q(1)     = qOuter + n1                       |   +) q(inf)   = n2                    (NO FULL TEMPORARY)
-    BIGINT_FTEMP(q_outer, max_k + 1, toom_ctx, toom_mark, echeck); q_outer.cap = xz_k + 1;
-    BIGINT_FTEMP(q1,      max_k + 2, toom_ctx, toom_mark, echeck); q1.cap = xz_k + 2;
-    BIGINT_FTEMP(q_neg1,  max_k + 1, toom_ctx, toom_mark, echeck); q_neg1.cap = xz_k + 1;
-    BIGINT_FTEMP(q_neg2,  max_k + 2, toom_ctx, toom_mark, echeck); q_neg2.cap = xz_k + 2;
+    BIHEAP_FTEMP(q_outer, max_k + 1, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); q_outer.cap = xz_k + 1;
+    BIHEAP_FTEMP(q1,      max_k + 2, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); q1.cap = xz_k + 2;
+    BIHEAP_FTEMP(q_neg1,  max_k + 1, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); q_neg1.cap = xz_k + 1;
+    BIHEAP_FTEMP(q_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); q_neg2.cap = xz_k + 2;
     // p(x) CALCULATIONS                                // q(x) CALCULATIONS
     __BIGINT_ADD_WC__(&p_outer, &m0, &m2);              __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);              __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
@@ -86,16 +88,16 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
     *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
     */
-    BIGINT_FTEMP(r0,     (max_k << 1),       toom_ctx, toom_mark, echeck); r0.cap = (xz_k << 1);
-    BIGINT_FTEMP(r1,     (max_k << 1) + 9,   toom_ctx, toom_mark, echeck); r1.cap = (xz_k << 1) + 9;
-    BIGINT_FTEMP(r_neg1, (max_k << 1) + 9,   toom_ctx, toom_mark, echeck); r_neg1.cap = (xz_k << 1) + 9;
-    BIGINT_FTEMP(r_neg2, (max_k << 1) + 10,  toom_ctx, toom_mark, echeck); r_neg2.cap = (xz_k << 1) + 10;
-    BIGINT_FTEMP(rinf, max_m2size + max_m2size + 4, toom_ctx, toom_mark, echeck); rinf.cap = x2size + z2size;
-    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+    BIHEAP_FTEMP(r0,     (max_k << 1),       echeck, early_free, early_cnt, alloc_arr, alloc_cnt); r0.cap = (xz_k << 1);
+    BIHEAP_FTEMP(r1,     (max_k << 1) + 9,   echeck, early_free, early_cnt, alloc_arr, alloc_cnt); r1.cap = (xz_k << 1) + 9;
+    BIHEAP_FTEMP(r_neg1, (max_k << 1) + 9,   echeck, early_free, early_cnt, alloc_arr, alloc_cnt); r_neg1.cap = (xz_k << 1) + 9;
+    BIHEAP_FTEMP(r_neg2, (max_k << 1) + 10,  echeck, early_free, early_cnt, alloc_arr, alloc_cnt); r_neg2.cap = (xz_k << 1) + 10;
+    BIHEAP_FTEMP(rinf, max_m2size + max_m2size + 4, echeck, early_free, early_cnt, alloc_arr, alloc_cnt); rinf.cap = x2size + z2size;
+    __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
 
     /* ----------------- 3a. INTERPOLATION & RECOMPOSITION ----------------- */
     /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
@@ -108,12 +110,12 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     // ------------------ RECOMPOSITION ------------------ //
-    BIGINT_FTEMP(final_res, (max_k << 1) + 14, toom_ctx, toom_mark, echeck); final_res.cap = (xz_k << 1) + 14;
+    BIHEAP_FRET(xz_tres, (max_k << 1) + 14, echeck, early_free, early_cnt); xz_tres.cap = (xz_k << 1) + 14;
     __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
     __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-    __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
-    __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
-    __BIGINT_INTERNAL_COPY__(xz_res, &final_res);
+    __BIGINT_ADD_WC__(&xz_tres, &rinf, &r_neg2); __BIGINT_ADD_WC__(&xz_tres, &xz_tres, &r_neg1);
+    __BIGINT_ADD_WC__(&xz_tres, &xz_tres, &r1); __BIGINT_ADD_WC__(&xz_tres, &xz_tres, &r0);
+    __BIGINT_INTERNAL_COPY__(xz_res, &xz_tres);
 
 
 
@@ -152,11 +154,11 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     */
     r0.cap = yw_k << 1; /**/ r1.cap = (yw_k << 1) + 9; /**/ r_neg1.cap = (yw_k << 1) + 9;
     r_neg2.cap = (yw_k << 1) + 9; /**/ rinf.cap = (yw_k << 1) + 10;
-    __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
-    __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+    __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     
     /* -------------------------- 3b. INTERPOLATION & RECOMPOSITION -------------------------- */
     /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
@@ -168,12 +170,13 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
-    /* ------------------ RECOMPOSITION ------------------ */ final_res.cap = (yw_k << 1) + 14;
+    /* ------------------ RECOMPOSITION ------------------ */ 
+    BIHEAP_FRET(yw_tres, (max_k << 1) + 14, echeck, early_free, early_cnt); yw_tres.cap = (xz_k << 1) + 14;
     __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
     __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-    __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
-    __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
-    __BIGINT_INTERNAL_COPY__(yw_res, &final_res); scratch_rewind(&toom_ctx, toom_mark); return BIGINT_SUCCESS;
+    __BIGINT_ADD_WC__(&yw_tres, &rinf, &r_neg2); __BIGINT_ADD_WC__(&yw_tres, &yw_tres, &r_neg1);
+    __BIGINT_ADD_WC__(&yw_tres, &yw_tres, &r1); __BIGINT_ADD_WC__(&yw_tres, &yw_tres, &r0);
+    __BIGINT_INTERNAL_COPY__(yw_res, &yw_tres); _free_alloc_list(alloc_arr, alloc_cnt); return BIGINT_SUCCESS;
 }
 
 
@@ -182,7 +185,7 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __BIHEAP_MATMUL_TOOM4__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) { return BIGINT_SUCCESS; }
 
 
@@ -191,7 +194,7 @@ dnml_status __BIHEAP_MATMUL_TOOM4__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __BIHEAP_MATMUL_TOOM5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) { return BIGINT_SUCCESS; }
 
 
@@ -201,9 +204,11 @@ dnml_status __BIHEAP_MATMUL_TOOM5__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __BIHEAP_MATMUL_SSA__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx fft_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res
 ) {
-    size_t fft_mark = scratch_mark(&fft_ctx); dnml_status echeck = BIGINT_SUCCESS;
+    dnml_status echeck = BIGINT_SUCCESS;
+    bigInt *early_free[8]; uint8_t early_cnt = 0;
+    bigInt *alloc_list[7]; uint8_t alloc_cnt = 0;
     size_t xz_d, xz_m, xz_n, xz_k = __fft_best_metadata(x->n, z->n, &xz_d, &xz_m, &xz_n);
     size_t yw_d, yw_m, yw_n, yw_k = __fft_best_metadata(y->n, w->n, &yw_d, &yw_m, &yw_n);
     size_t max_d = max(xz_d, yw_d); size_t max_m = max(xz_m, yw_m);
@@ -223,53 +228,53 @@ dnml_status __BIHEAP_MATMUL_SSA__(
 
     /* ---------- 2a+3a. PRE-EVALUATION NEGACYCLIC OPTIMIZATION + FFT EVALUATION ---------- */
     bigInt eval_a[max_d], eval_b[max_d]; // Each of the D elements requires an array of limbs of size 'nlimbs'
-    RAW_FTEMP(lo_buf, max_nlimbs + 1, fft_ctx, fft_mark, echeck);
-    RAW_FTEMP(hi_buf, max_nlimbs + 1, fft_ctx, fft_mark, echeck); 
-    RAW_FTEMP(tbuf,   max_nlimbs + 2, fft_ctx, fft_mark, echeck); // Will be used later in recomposition
-    RAW_FTEMP(usave,  max_nlimbs + 1, fft_ctx, fft_mark, echeck);
+    BIHEAP_FTEMP(lo_buf, max_nlimbs + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(hi_buf, max_nlimbs + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt); 
+    BIHEAP_FTEMP(tbuf,   max_nlimbs + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); // Will be used later in recomposition
+    BIHEAP_FTEMP(usave,  max_nlimbs + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     size_t psi_step = xz_n >> xz_k; // Exponent step for negacyclic weight: ψ = 2^(n/D)
 
     // 2. Looping over D of each windows and Pre-scale them through Negacyclic Convolutions
     // Allocating two flat, contiguous memory blocks for all D windows at once
     // (improve Cache Locality and Prefetch Efficiency)
     size_t total_limbs_needed = (max_nlimbs + 1) << max_k; // d(nlimbs + 1)
-    RAW_FTEMP(flat_evala, total_limbs_needed, fft_ctx, fft_mark, echeck);
-    RAW_FTEMP(flat_evalb, total_limbs_needed, fft_ctx, fft_mark, echeck);
+    BIHEAP_FTEMP(flat_evala, total_limbs_needed, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FTEMP(flat_evalb, total_limbs_needed, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     for (size_t i = 0; i < xz_d; ++i) {
-        eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
-        eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
+        eval_a[i] = (bigInt){ .limbs = flat_evala.limbs + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
+        eval_b[i] = (bigInt){ .limbs = flat_evalb.limbs + (i * (xz_nlimbs + 1)), .n = xz_nlimbs, .cap = xz_nlimbs + 1, .sign = 1 };
         // Perform cyclic shifts straight into these perfectly localized targets
         size_t weight_exp = i * psi_step;
-        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, xz_n, xz_nlimbs);
-        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf, hi_buf, weight_exp, xz_n, xz_nlimbs);
+        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, xz_n, xz_nlimbs);
+        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, xz_n, xz_nlimbs);
     }
     // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
-    _bigint_ctk_fft(eval_a, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
-    _bigint_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
+    _bigint_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
+    _bigint_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
 
     /* ----------- 4a. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS ----------- */
     // Output of multiplication is up to 2 * nlimbs long before reduction
-    BIGINT_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, fft_ctx, fft_mark, echeck); prod_tmp.cap = (xz_nlimbs << 1) + 2;
+    BIHEAP_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); prod_tmp.cap = (xz_nlimbs << 1) + 2;
     for (size_t i = 0; i < xz_d; ++i) {
         // Recursive Multiply step: eval_a[i] * eval_b[i]
-        __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
-        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, xz_n, xz_nlimbs);
+        __BIHEAP_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf.limbs, hi_buf.limbs, xz_n, xz_nlimbs);
         // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
     }
 
     /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
     // Execute Inverse NTT (eval_a now holds the point-wise products)
-    _bigint_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, xz_d, xz_k, xz_n, xz_nlimbs);
+    _bigint_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
     for (size_t i = 0; i < xz_d; ++i) {
         // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
         size_t wexp = i * psi_step;
         size_t iwexp = ((xz_n << 1) - wexp) % (xz_n << 1); // Exponent cycle of 2n;
-        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, xz_n, xz_nlimbs);
+        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf.limbs, hi_buf.limbs, iwexp, xz_n, xz_nlimbs);
     }
     // Clear and prepare your final destination container
-    BIGINT_FTEMP(tmp_res, max(x->n + z->n, y->n + w->n), fft_ctx, fft_mark, echeck); tmp_res.cap = x->n + z->n;
-    bigInt tbuf_view = { .limbs = tbuf, .n = 0, .cap = xz_nlimbs + 2, .sign = 1 };
-    memset(tmp_res.limbs, 0, max(x->n + z->n, y->n + w->n) * U64_BYTES);
+    BIHEAP_FRET(xz_tres, x->n + z->n, echeck, early_free, early_cnt); xz_tres.cap = x->n + z->n;
+    tbuf = (bigInt){ .limbs = tbuf.limbs, .n = 0, .cap = xz_nlimbs + 2, .sign = 1 };
+    memset(xz_tres.limbs, 0, max(x->n + z->n, y->n + w->n) * U64_BYTES);
     // Overlap-Add Recomposition into Final ab PRODUCT
     for (size_t i = 0; i < xz_d; ++i) {
         if (!eval_a[i].n) continue;
@@ -278,20 +283,20 @@ dnml_status __BIHEAP_MATMUL_SSA__(
         size_t m_bshift = total_bshift & 63;
 
         // Actual recomposition operations
-        if (!m_bshift) __BIGINT_ADD_SHIFT__(&tmp_res, &eval_a[i], mlimb_shift);
+        if (!m_bshift) __BIGINT_ADD_SHIFT__(&xz_tres, &eval_a[i], mlimb_shift);
         else {
             // Copy + Shift fused together
             // This part only handles the modularly-reduced single machine-word bit shifts
-            tbuf_view.n = eval_a[i].n;
+            tbuf.n = eval_a[i].n;
             uint64_t discarded_bits = 0, mask = U64_BITS - m_bshift;
-            for (size_t j = 0; j < tbuf_view.n; ++j) {
+            for (size_t j = 0; j < tbuf.n; ++j) {
                 uint64_t tmp = eval_a[i].limbs[j];
-                tbuf_view.limbs[j] = (tmp << m_bshift) | discarded_bits;
+                tbuf.limbs[j] = (tmp << m_bshift) | discarded_bits;
                 discarded_bits = tmp >> mask;
-            } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
-            __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
+            } if (discarded_bits) tbuf.limbs[tbuf.n++] = discarded_bits;
+            __BIGINT_ADD_SHIFT__(&xz_tres, &tbuf, mlimb_shift); // Addition with actual limb shifts
         }
-    } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(xz_res, &tmp_res);
+    } __BIGINT_INTERNAL_TRIM_LZ__(&xz_tres); __BIGINT_INTERNAL_MOVE__(xz_res, &xz_tres);
 
 
 
@@ -310,39 +315,40 @@ dnml_status __BIHEAP_MATMUL_SSA__(
     // Allocating two flat, contiguous memory blocks for all D windows at once
     // (improve Cache Locality and Prefetch Efficiency)
     for (size_t i = 0; i < xz_d; ++i) {
-        eval_a[i] = (bigInt){ .limbs = flat_evala + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
-        eval_b[i] = (bigInt){ .limbs = flat_evalb + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
+        eval_a[i] = (bigInt){ .limbs = flat_evala.limbs + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
+        eval_b[i] = (bigInt){ .limbs = flat_evalb.limbs + (i * (yw_nlimbs + 1)), .n = yw_nlimbs, .cap = yw_nlimbs + 1, .sign = 1 };
         // Perform cyclic shifts straight into these perfectly localized targets
         size_t weight_exp = i * psi_step;
-        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf, hi_buf, weight_exp, yw_n, yw_nlimbs);
-        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf, hi_buf, weight_exp, yw_n, yw_nlimbs);
+        __cyclic_shift_mod(&eval_a[i], &a_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, yw_n, yw_nlimbs);
+        __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, yw_n, yw_nlimbs);
     }
 
     /* ------------ 3b+4b. FFT Evaluation + Point-Wise Multiplication of Ring Elements ------------ */
     // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
-    _bigint_ctk_fft(eval_a, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
-    _bigint_ctk_fft(eval_b, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
+    _bigint_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
+    _bigint_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
     // Output of multiplication is up to 2 * nlimbs long before reduction
     prod_tmp.cap = (yw_nlimbs << 1) + 2;
     for (size_t i = 0; i < xz_d; ++i) {
         // Recursive Multiply step: eval_a[i] * eval_b[i]
-        __BIGINT_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
-        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf, hi_buf, yw_n, yw_nlimbs);
+        __BIHEAP_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf.limbs, hi_buf.limbs, yw_n, yw_nlimbs);
         // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
     }
 
     /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
     // Execute Inverse NTT (eval_a now holds the point-wise products)
-    _bigint_ctk_ifft(eval_a, tbuf, usave, lo_buf, hi_buf, yw_d, yw_k, yw_n, yw_nlimbs);
+    _bigint_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
     for (size_t i = 0; i < yw_d; ++i) {
         // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
         size_t wexp = i * psi_step;
         size_t iwexp = ((yw_n << 1) - wexp) % (yw_n << 1); // Exponent cycle of 2n;
-        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf, hi_buf, iwexp, yw_n, yw_nlimbs);
+        __cyclic_shift_mod(&eval_a[i], &eval_a[i], lo_buf.limbs, hi_buf.limbs, iwexp, yw_n, yw_nlimbs);
     }
     // Clear and prepare your final destination container
-    tmp_res.cap = y->n + w->n; /**/ memset(tmp_res.limbs, 0, tmp_res.cap * U64_BYTES);
-    tbuf_view = (bigInt){ .limbs = tbuf, .n = 0, .cap = yw_nlimbs + 2, .sign = 1 };
+    BIHEAP_FRET(yw_tres, y->n + w->n, echeck, early_free, early_cnt); yw_tres.cap = y->n + w->n;
+    memset(yw_tres.limbs, 0, yw_tres.cap * U64_BYTES);
+    tbuf = (bigInt){ .limbs = tbuf.limbs, .n = 0, .cap = yw_nlimbs + 2, .sign = 1 };
     // Overlap-Add Recomposition into Final ab PRODUCT
     for (size_t i = 0; i < yw_d; ++i) {
         if (!eval_a[i].n) continue;
@@ -351,19 +357,19 @@ dnml_status __BIHEAP_MATMUL_SSA__(
         size_t m_bshift = total_bshift & 63;
 
         // Actual recomposition operations
-        if (!m_bshift) __BIGINT_ADD_SHIFT__(&tmp_res, &eval_a[i], mlimb_shift);
+        if (!m_bshift) __BIGINT_ADD_SHIFT__(&yw_tres, &eval_a[i], mlimb_shift);
         else {
             // Copy + Shift fused together
             // This part only handles the modularly-reduced single machine-word bit shifts
-            tbuf_view.n = eval_a[i].n;
+            tbuf.n = eval_a[i].n;
             uint64_t discarded_bits = 0, mask = U64_BITS - m_bshift;
-            for (size_t j = 0; j < tbuf_view.n; ++j) {
+            for (size_t j = 0; j < tbuf.n; ++j) {
                 uint64_t tmp = eval_a[i].limbs[j];
-                tbuf_view.limbs[j] = (tmp << m_bshift) | discarded_bits;
+                tbuf.limbs[j] = (tmp << m_bshift) | discarded_bits;
                 discarded_bits = tmp >> mask;
-            } if (discarded_bits) tbuf_view.limbs[tbuf_view.n++] = discarded_bits;
-            __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
+            } if (discarded_bits) tbuf.limbs[tbuf.n++] = discarded_bits;
+            __BIGINT_ADD_SHIFT__(&yw_tres, &tbuf, mlimb_shift); // Addition with actual limb shifts
         }
-    } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(yw_res, &tmp_res); 
-    scratch_rewind(&fft_ctx, fft_mark); return BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_TRIM_LZ__(&yw_tres); __BIGINT_INTERNAL_MOVE__(yw_res, &yw_tres); 
+    _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }

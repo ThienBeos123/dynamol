@@ -38,7 +38,7 @@ extern "C" {
 #define P_BIGINT bigInt *const
 
 
-/* Heap Allocation Convenience */
+/* Heap Allocation Convenience - Mutative */
 void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt);
 #define BIHEAP_TEMP(name, size, echeck, err, early_list, early_cnt, alloc_list, alloc_cnt, ret_val) \
     bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
@@ -58,6 +58,24 @@ void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt);
     _free_alloc_list((early_list), (early_cnt)); \
     *(err) = DNML_ALLOC_OOM; return ret_val; \
 }
+
+
+/* Heap Allocation Convenience - Functional */
+#define BIHEAP_FTEMP(name, size, echeck, early_list, early_cnt, alloc_list, alloc_cnt) \
+    bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
+    if ((echeck) == DNML_ALLOC_OOM) { _free_alloc_list((early_list), (early_cnt)); return DNML_ALLOC_OOM; } \
+    (early_list)[(early_cnt)++] = &(name); \
+    (alloc_list)[(alloc_cnt)++] = &(name);
+#define BIHEAP_FRET(name, size, echeck, early_list, early_cnt) \
+    bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
+    if ((echeck) == DNML_ALLOC_OOM) { _free_alloc_list((early_list), (early_cnt)); return DNML_ALLOC_OOM; } \
+    (early_list)[(early_cnt)++] = &(name);
+#define HEAP_FOOM(echeck, early_list, early_cnt) if ((echeck) == DNML_ALLOC_OOM) {  \
+    _free_alloc_list((early_list), (early_cnt)); return DNML_ALLOC_OOM; \
+}
+
+
+
 
 
 /* Scratch/Arena Allocation Convenience - Mutative */
