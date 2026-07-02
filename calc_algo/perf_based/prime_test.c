@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "prime_test.h"
 #include <debug_util.h>
+#include <tables.h>
 #include "../../util/aconv_macros.h"
 static const uint32_t dmr_bases[7] = { 2, 325, 9375, 28178, 450775, 9780504, 1794265022 };
 /** ----------- General BigInt Primality Testing -----------
@@ -28,7 +29,7 @@ static const uint32_t dmr_bases[7] = { 2, 325, 9375, 28178, 450775, 9780504, 179
  *      - Probabilistic Miller-Rabin (General)
  *      - Unproven Probabilistic Baillie-PSW (General)
  *
- * This file is generally the main and only algorithm file for bigInt primality testing, 
+ * This file is generally the main and only algorithm file for bigInt primality testing,
  * containing the primality testing algorithm dispatcher, as well as the workspace sizing function dispatcher.
  */
 
@@ -118,17 +119,35 @@ uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n) {
 }
 
 
-/* Large Probablistic Tests */
+
+
+
+/* ---------- Large Probablistic Tests - Miller Rabin ---------- */
 uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx rabin_ctx, dnml_status *err) {
-    if (n->sign == -1) return 0;
-    if (!n->n || (n->n == 1 && n->limbs[1] == 1)) return 0;
-    dnml_status echeck;
-    uint8_t prim_status = 0; uint64_t a[1] = {1};
+    // Early exit conditions - Even/Odd + Divisibility by 5
+    if (n->sign < 0) { *err = BIGINT_SUCCESS; return 0; }
+    if (!n->n || (n->n == 1 && n->limbs[0] == 1)) { *err = BIGINT_SUCCESS; return 0; }
+    if (!(n->limbs[0])) { *err = BIGINT_SUCCESS; return 0; }
+    if (!(n->limbs[0] % 5) || n->limbs[0] % 5 == 5) { *err = BIGINT_SUCCESS; return 0; }
+    // Early exit conditions - Perfect squares checking (Only lightly, Miller-Rabin still works on perfect squares)
+    uint64_t limb_1 = n->limbs[0]; uint64_t _mod10_ = limb_1 % 10;
+    uint64_t _mod16_ = limb_1 & 15; uint64_t _mod64_ = limb_1 & 63; 
+    uint64_t _mod256_ = limb_1 & UINT8_MAX;
+    if (_mod10_ == 1 || _mod10_ == 9) { *err = BIGINT_SUCCESS; return 0; } // Check in mod(10)
+    if (_mod16_ == 1 || _mod16_ == 9) { *err = BIGINT_SUCCESS; return 0; } // Check in mod(16)
+    for (uint8_t i = 0; i < _PFSQR_MOD64_CNT; ++i) { if (_mod64_ == pfsqr_filter_mod64[i]) { *err = BIGINT_SUCCESS; return 0; }}
+    for (uint8_t i = 0; i < _PFSQR_MOD256_CNT; ++i) { if (_mod256_ == pfsqr_filter_mod256[i]) { *err = BIGINT_SUCCESS; return 0; }}
+
+
+
+    /* ---------------- Normal Operation - Miller Rabin ---------------- */
+    dnml_status echeck = BIGINT_SUCCESS;
+    uint8_t prim_status = 0; uint64_t a = 1;
     size_t mrabin_mark = scratch_mark(&rabin_ctx);
 
     BIGINT_TEMP(n_min1, n->n, rabin_ctx, mrabin_mark, echeck, err, 0); n_min1.n = n->n;
     memcpy(n_min1.limbs, n->limbs, n->n * U64_BYTES);
-    bigInt constant_one = {.limbs = a, .n = 1, .cap = 1, .sign = 1 };
+    bigInt constant_one = {.limbs = &a, .n = 1, .cap = 1, .sign = 1 };
     __BIGINT_SUB_WB__(&n_min1, &n_min1, &constant_one);
     size_t s = (uint64_t)(__BIGINT_CTZ__(&n_min1));
     BIGINT_TEMP(d, n_min1.n, rabin_ctx, mrabin_mark, echeck, err, 0);
@@ -170,12 +189,16 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
         }
     } scratch_rewind(&rabin_ctx, mrabin_mark); *err = BIGINT_SUCCESS; return prim_status;
 }
-uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx bpsw_ctx, dnml_status *err) { return 0; }
+
+
 
 
 
 /* Deterministic Primality Certificate Tests */
 uint8_t __BIGINT_ECPP__(PCONST_BIGINT n, calc_ctx ecpp_ctx, dnml_status *err) { return 0; }
+
+
+
 
 
 
@@ -185,7 +208,7 @@ uint8_t __BIGINT_PTEST_DISP__(PCONST_BIGINT x, calc_ctx ptest_ctx, dnml_status *
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIGINT_TRIAL_DIV__(x->limbs[0]);
         else return __BIGINT_SMALL_MRABIN__(x->limbs[0]);
     } else {
-        dnml_status echeck; uint8_t bpsw_ret = __BIGINT_BPSW__(x, ptest_ctx, &echeck);
+        dnml_status echeck = BIGINT_SUCCESS; uint8_t bpsw_ret = __BIGINT_BPSW__(x, ptest_ctx, &echeck);
         if (echeck == DARENA_OVERFLOW) { *err = DARENA_OVERFLOW; return 0; }
         if (!bpsw_ret) { *err = BIGINT_SUCCESS; return 0; }
  

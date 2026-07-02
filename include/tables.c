@@ -16,7 +16,7 @@ limitations under the License.
 
 
 
-#include "char_tables.h"
+#include "tables.h"
 
 // THIS FILE MAY NOT BE EXPLICITLY INCLUDED BY
 // ANY ANOTHER FILE IN THE LIB-DNML PROJECT
@@ -109,4 +109,16 @@ const char _DIGIT_SEN_[64] = {
 };
 const uint8_t _ASCII_INVAL_RANGE64[4][2] = {
     {0, 45}, {58, 64}, {91, 96}, {123, 255}
+};
+
+
+
+
+/* ----------- Perfect Squares filtering ----------- */
+const uint32_t pfsqr_filter_mod64[_PFSQR_MOD64_CNT] = {1, 9, 17, 25, 33, 36, 41, 49, 57};
+const uint32_t pfsqr_filter_mod256[_PFSQR_MOD256_CNT] = {
+    17, 25, 33, 36, 41, 49, 57, 65, 68, 73, 81, 89, 97,
+    105, 113, 121, 129, 132, 137, 144, 145, 153,
+    161, 164, 169, 177, 185, 193, 196,
+    201, 209, 217, 225, 228, 233, 241, 249
 };

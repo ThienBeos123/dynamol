@@ -33,6 +33,7 @@ limitations under the License.
 #include "mul.h"
 #include "mod.h"
 #include "mod_mulexp.h"
+#include "pow_root.h"
 
 #ifdef __cplusplus
 extern "C" {

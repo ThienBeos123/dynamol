@@ -100,9 +100,9 @@ typedef enum {
     BIGINT_CLASSICAL = 64,
     BIGINT_MONTGOMERY,
     /* Modular Exponentiation */
-    BIGINT_MOD_BINARY = 2,
-    BIGINT_MONT_BINARY = 16,
-    BIGINT_MOD_FIXED = 96,
+    BIGINT_MOD_BINARY = 1,
+    BIGINT_MONT_BINARY = 4,
+    BIGINT_MOD_FIXED = 16,
     BIGINT_MOD_SLIDING,
     /* Modular Inverse */
     BIGINT_XEUCLID = 256,
