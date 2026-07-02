@@ -32,6 +32,7 @@ limitations under the License.
 #include "heap_mul.h"
 #include "heap_mod.h"
 #include "heap_modmulexp.h"
+#include "heap_pow_root.h"
 
 #ifdef __cplusplus
 extern "C" {

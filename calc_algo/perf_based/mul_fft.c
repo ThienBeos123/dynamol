@@ -705,4 +705,3 @@ void __BIGINT_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ct
         __BIGINT_ADD_SHIFT__(&accumulator, &tmp_res, offset); // through adding sums: (tmp_res <<<= slice) + tmp
     } __BIGINT_INTERNAL_COPY__(res, &accumulator); scratch_rewind(&fft_ctx, fft_mark); *err = BIGINT_SUCCESS;
 }
-

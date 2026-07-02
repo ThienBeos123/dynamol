@@ -91,7 +91,7 @@ typedef enum {
     DETERMINISTIC_MR = 207936, // Value, not limbs
     MRABIN_ONLY = 256, // Miller-Rabin ONLY
     BPSW_ONLY = 257, // Baillie-PSW ONLY (This value is a placeholder, and is typically dispatched as an else)
-    MIXED_MAIN // Baillie-PSW + 10-20 Miller-Rabin random-base rounds
+    MIXED_MAIN = 1, // Baillie-PSW + 10-20 Miller-Rabin random-base rounds
 } NUM_THEORY_THRESHOLDS;
 
 /* Modular Arithmetic */

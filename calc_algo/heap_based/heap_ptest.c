@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include "heap_ptest.h"
+#include "tables.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 static const uint32_t dmr_bases[7] = { 2, 325, 9375, 28178, 450775, 9780504, 1794265022 };
@@ -68,7 +69,23 @@ uint8_t __BIHEAP_SMALL_MRABIN__(uint64_t n) {
     } return 1;
 }
 uint8_t __BIHEAP_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, dnml_status *err) {
-    if (n->sign == -1) return 0; /**/ if (!n->n || (n->n == 1 && n->limbs[1] == 1)) return 0;
+    // Early exit conditions - Even/Odd + Divisibility by 5
+    if (n->sign < 0) { *err = BIGINT_SUCCESS; return 0; }
+    if (!n->n || (n->n == 1 && n->limbs[0] == 1)) { *err = BIGINT_SUCCESS; return 0; }
+    if (!(n->limbs[0])) { *err = BIGINT_SUCCESS; return 0; }
+    if (!(n->limbs[0] % 5) || n->limbs[0] % 5 == 5) { *err = BIGINT_SUCCESS; return 0; }
+    // Early exit conditions - Perfect squares checking (Only lightly, Miller-Rabin still works on perfect squares)
+    uint64_t limb_1 = n->limbs[0]; uint64_t _mod10_ = limb_1 % 10;
+    uint64_t _mod16_ = limb_1 & 15; uint64_t _mod64_ = limb_1 & 63; 
+    uint64_t _mod256_ = limb_1 & UINT8_MAX;
+    if (_mod10_ == 1 || _mod10_ == 9) { *err = BIGINT_SUCCESS; return 0; } // Check in mod(10)
+    if (_mod16_ == 1 || _mod16_ == 9) { *err = BIGINT_SUCCESS; return 0; } // Check in mod(16)
+    for (uint8_t i = 0; i < _PFSQR_MOD64_CNT; ++i) { if (_mod64_ == pfsqr_filter_mod64[i]) { *err = BIGINT_SUCCESS; return 0; }}
+    for (uint8_t i = 0; i < _PFSQR_MOD256_CNT; ++i) { if (_mod256_ == pfsqr_filter_mod256[i]) { *err = BIGINT_SUCCESS; return 0; }}
+
+
+
+    /* ---------------- Normal Operation - Miller Rabin ---------------- */
     dnml_status echeck = BIGINT_SUCCESS; uint8_t prim_status = 0; uint64_t a[1] = {1};
     bigInt *alloc_list[6], *early_free[6]; uint8_t alloc_cnt = 0, early_cnt = 0;
 
@@ -115,30 +132,35 @@ uint8_t __BIHEAP_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, dnml_status
         }
     } _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS; return prim_status;
 }
-uint8_t __BIHEAP_BPSW__(PCONST_BIGINT n, dnml_status *err) { return 0; }
 uint8_t __BIHEAP_ECPP__(PCONST_BIGINT n, dnml_status *err) { return 0; }
 uint8_t __BIHEAP_PTEST_DISP__(PCONST_BIGINT x, dnml_status *err) {
     if (x->n < MIXED_MAIN) {
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIHEAP_TRIAL_DIV__(x->limbs[0]);
         else return __BIHEAP_SMALL_MRABIN__(x->limbs[0]);
     } else {
-        dnml_status echeck = BIGINT_SUCCESS; uint8_t bpsw_ret = __BIHEAP_BPSW__(x, &echeck);
-        if (echeck == DARENA_OVERFLOW) { *err = DARENA_OVERFLOW; return 0; }
-        if (!bpsw_ret) { *err = BIGINT_SUCCESS; return 0; }
-        bigInt *alloc_list[1], *early_free[1]; uint8_t alloc_cnt = 0, early_cnt = 0; 
- 
-        xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
-        __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
-        __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
-        seed_xoshiro256(&ptmain_state, side_mix);
-        size_t uppperbound = (size_t)(sqrtl((long double)x->n)) + 1;
-        size_t rand_upper = __rng_skrange(&ptmain_state, 6, uppperbound, 70.0f);
-        BIHEAP_TEMP(random_base, rand_upper, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0);
-        for (size_t i = 0; i < _DNML_MR_ROUNDS_DYNAMOL; ++i) {
-            _randbase_fill(&random_base, &ptmain_state, rand_upper);
-            uint8_t mrabin_ret = __BIHEAP_MILLER_RABIN__(x, &random_base, &echeck);
-            if (echeck == DNML_ALLOC_OOM) { _free_alloc_list(alloc_list, alloc_cnt); *err = DNML_ALLOC_OOM; return 0; }
-            if (!mrabin_ret) { _free_alloc_list(alloc_list, alloc_cnt); *err = DNML_ALLOC_OOM; return 0; }
-        } _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS; return 1;
+        if (!_DNML_PRIMALITY_STRATEGY) {
+            uint64_t a = 2; bigInt two = { .limbs = &a, .n = 1, .cap = 1, .sign = 1 };
+            if (x->n < MRABIN_ONLY) return __BIHEAP_MILLER_RABIN__(x, &two, err);
+            else return __BIHEAP_BPSW__(x, err);
+        } else {
+            dnml_status echeck = BIGINT_SUCCESS; uint8_t bpsw_ret = __BIHEAP_BPSW__(x, &echeck);
+            if (echeck == DARENA_OVERFLOW) { *err = DARENA_OVERFLOW; return 0; }
+            if (!bpsw_ret) { *err = BIGINT_SUCCESS; return 0; }
+            bigInt *alloc_list[1], *early_free[1]; uint8_t alloc_cnt = 0, early_cnt = 0; 
+     
+            xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
+            __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
+            __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
+            seed_xoshiro256(&ptmain_state, side_mix);
+            size_t uppperbound = (size_t)(sqrtl((long double)x->n)) + 1;
+            size_t rand_upper = __rng_skrange(&ptmain_state, 6, uppperbound, 70.0f);
+            BIHEAP_TEMP(random_base, rand_upper, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0);
+            for (size_t i = 0; i < _DNML_MR_ROUNDS_DYNAMOL; ++i) {
+                _randbase_fill(&random_base, &ptmain_state, rand_upper);
+                uint8_t mrabin_ret = __BIHEAP_MILLER_RABIN__(x, &random_base, &echeck);
+                if (echeck == DNML_ALLOC_OOM) { _free_alloc_list(alloc_list, alloc_cnt); *err = DNML_ALLOC_OOM; return 0; }
+                if (!mrabin_ret) { _free_alloc_list(alloc_list, alloc_cnt); *err = DNML_ALLOC_OOM; return 0; }
+            } _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS; return 1;
+        }
     }
 }

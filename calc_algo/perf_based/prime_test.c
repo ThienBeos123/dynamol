@@ -63,17 +63,18 @@ size_t __BIGINT_MRABIN_WS__(size_t n_size, size_t base_size) {
     max_fcall = max(max_fcall, __BIGINT_MODEXP_WS__(base_size, n_size, n_size));
     return mrabin_setup_size + x_size + additional_size + max_fcall;
 }
-size_t __BIGINT_BPSW_WS__(size_t n_size) { return 0; }
 size_t __BIGINT_ECPP_WS__(size_t n_size) { return 0; }
 size_t __BIGINT_PTEST_WS__(size_t x_size) {
     if (x_size < MIXED_MAIN) return 0;
     else {
-        size_t random_size = (size_t)(sqrtl((long double)x_size)) + 1;
-        size_t proc_calls = max(
-            __BIGINT_BPSW_WS__(x_size),
-            __BIGINT_MRABIN_WS__(x_size, random_size)
-        );
-        return (random_size * U64_BYTES) + proc_calls;
+        if (!_DNML_PRIMALITY_STRATEGY) {
+            if (x_size < MRABIN_ONLY) return __BIGINT_MRABIN_WS__(x_size, 2);
+            else return __BIGINT_BPSW_WS__(x_size);
+        } else {
+            size_t random_size = (size_t)(sqrtl((long double)x_size)) + 1;
+            size_t proc_calls = max(__BIGINT_BPSW_WS__(x_size), __BIGINT_MRABIN_WS__(x_size, random_size));
+            return (random_size * U64_BYTES) + proc_calls;
+        }
     }
 }
 
@@ -84,7 +85,7 @@ size_t __BIGINT_PTEST_WS__(size_t x_size) {
 //* ======== Primality Testing - ALGORITHMS ======== *//
 // Helper functions
 static void _randbase_fill(P_BIGINT x, xoshiro256_state *state, size_t upper_size) {
-    x->n = __rng_range(state, 1, upper_size); 
+    x->n = __rng_skrange(state, 1, upper_size, 0.1f); 
     size_t i = 0; while (i < x->n) {
         uint64_t rand = xoshiro256pp_next(state);
         if (i == x->n - 1 && !rand) continue; /**/ ++i;
@@ -207,23 +208,30 @@ uint8_t __BIGINT_PTEST_DISP__(PCONST_BIGINT x, calc_ctx ptest_ctx, dnml_status *
     if (x->n < MIXED_MAIN) {
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIGINT_TRIAL_DIV__(x->limbs[0]);
         else return __BIGINT_SMALL_MRABIN__(x->limbs[0]);
-    } else {
-        dnml_status echeck = BIGINT_SUCCESS; uint8_t bpsw_ret = __BIGINT_BPSW__(x, ptest_ctx, &echeck);
-        if (echeck == DARENA_OVERFLOW) { *err = DARENA_OVERFLOW; return 0; }
-        if (!bpsw_ret) { *err = BIGINT_SUCCESS; return 0; }
- 
-        xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
-        __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
-        __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
-        seed_xoshiro256(&ptmain_state, side_mix); size_t ptest_mark = scratch_mark(&ptest_ctx);
-        size_t uppperbound = (size_t)(sqrtl((long double)x->n)) + 1;
-        size_t rand_upper = __rng_skrange(&ptmain_state, 6, uppperbound, 70.0f);
-        BIGINT_TEMP(random_base, rand_upper, ptest_ctx, ptest_mark, echeck, err, 0);
-        for (size_t i = 0; i < _DNML_MR_ROUNDS_DYNAMOL; ++i) {
-            _randbase_fill(&random_base, &ptmain_state, rand_upper);
-            uint8_t mrabin_ret = __BIGINT_MILLER_RABIN__(x, &random_base, ptest_ctx, &echeck);
-            if (echeck == DARENA_OVERFLOW) { scratch_rewind(&ptest_ctx, ptest_mark); *err = DARENA_OVERFLOW; return 0; }
-            if (!mrabin_ret) { scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 0; }
-        } scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 1;
+    } 
+    else {
+        if (!_DNML_PRIMALITY_STRATEGY) {
+            uint64_t a = 2; bigInt two = { .limbs = &a, .n = 1, .cap = 1, .sign = 1 };
+            if (x->n <= MRABIN_ONLY) return __BIGINT_MILLER_RABIN__(x, &two, ptest_ctx, err);
+            else return __BIGINT_BPSW__(x, ptest_ctx, err);
+        } else {
+            dnml_status echeck = BIGINT_SUCCESS; uint8_t bpsw_ret = __BIGINT_BPSW__(x, ptest_ctx, &echeck);
+            if (echeck == DARENA_OVERFLOW) { *err = DARENA_OVERFLOW; return 0; }
+            if (!bpsw_ret) { *err = BIGINT_SUCCESS; return 0; }
+    
+            xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
+            __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
+            __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
+            seed_xoshiro256(&ptmain_state, side_mix); size_t ptest_mark = scratch_mark(&ptest_ctx);
+            size_t uppperbound = (size_t)(sqrtl((long double)x->n)) + 1;
+            size_t rand_upper = __rng_skrange(&ptmain_state, 6, uppperbound, 70.0f);
+            BIGINT_TEMP(random_base, rand_upper, ptest_ctx, ptest_mark, echeck, err, 0);
+            for (size_t i = 0; i < _DNML_MR_ROUNDS_DYNAMOL; ++i) {
+                _randbase_fill(&random_base, &ptmain_state, rand_upper);
+                uint8_t mrabin_ret = __BIGINT_MILLER_RABIN__(x, &random_base, ptest_ctx, &echeck);
+                if (echeck == DARENA_OVERFLOW) { scratch_rewind(&ptest_ctx, ptest_mark); *err = DARENA_OVERFLOW; return 0; }
+                if (!mrabin_ret) { scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 0; }
+            } scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 1;
+        }
     }
 }

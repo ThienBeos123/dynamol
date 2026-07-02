@@ -101,9 +101,9 @@ extern "C" {
  * ============================================================================ */
 #ifndef _DNML_PRIMALITY_STRATEGY
     #if _DNML_PERF_PROFILE == 0
-        #define _DNML_PRIMALITY_STRATEGY 0  /* Pure MR */
+        #define _DNML_PRIMALITY_STRATEGY 0  /* ADAPTIVE */
     #elif _DNML_PERF_PROFILE == 1
-        #define _DNML_PRIMALITY_STRATEGY 1  /* Adaptive */
+        #define _DNML_PRIMALITY_STRATEGY 1  /* Mixed Main */
     #endif
 #endif
 
