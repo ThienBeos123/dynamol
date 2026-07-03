@@ -17,7 +17,7 @@ limitations under the License.
 
 
 #include "bigInt_func.h"
-#include <char_tables.h>
+#include <tables.h>
 #include <debug_util.h>
 #include "_bi_macros.h"
 
@@ -31,7 +31,7 @@ limitations under the License.
 static const bool heap_switch = false;
 
 
-//todo ========================================= === INTRODUCTION ============================================= */
+//todo ========================================= === INTRODUCTION ============================================= */               
 /** 
   * Attribute Explanation:
   * +) sign     (uint8_t)       : Stores the sign (negative or positive)
@@ -1687,7 +1687,7 @@ static dnml_status __BIGINT_MAGDIV__(bigInt *const quot, bigInt *const tmp_rem, 
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGDIV_ARENA
     }; dnml_status echeck = BIGINT_SUCCESS; __BIGINT_DIV_DISP__(a, b, quot, tmp_rem, magdivmod_ctx, &echeck); return echeck;
 }
-static dnml_status __BIGINT_MAGMOD__(bigInt *const rem, bigInt *const tmp_quot, bigInt *const a, bigInt *const b) {
+static dnml_status __BIGINT_MAGMOD__(bigInt *const rem, bigInt *const a, bigInt *const b) {
     dnml_arena *_DASI_MAGDIV_ARENA = _USE_ARENA(); if (_DASI_MAGDIV_ARENA->poisoined) return DARENA_POISON;
     size_t needed_size = __BIGINT_MOD_WS__(a->n, b->n) + a->n;
     if (_DASI_MAGDIV_ARENA->cap < needed_size) {
@@ -1698,7 +1698,7 @@ static dnml_status __BIGINT_MAGMOD__(bigInt *const rem, bigInt *const tmp_quot, 
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGDIV_ARENA
-    }; dnml_status echeck = BIGINT_SUCCESS; __BIGINT_MOD_DISP__(a, b, rem, tmp_quot, magdivmod_ctx, &echeck); return echeck;
+    }; dnml_status echeck = BIGINT_SUCCESS; __BIGINT_MOD_DISP__(a, b, rem, magdivmod_ctx, &echeck); return echeck;
 }
 static void __BIGINT_MAGMUL_U64__(bigInt *const res, bigInt *const x, const uint64_t val) {
     // Since the divisor size is small (n <= 1), we implement schoolbook multiplication
@@ -1811,7 +1811,7 @@ static dnml_status __BIGINT_MAGEMOD__(bigInt *const res, bigInt *const a, bigInt
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGEMOD_ARENA
-    }; dnml_status echeck; __BIGINT_MOD_DISP__(a, mod, res, res, magemod_ctx, &echeck); return echeck;
+    }; dnml_status echeck; __BIGINT_MOD_DISP__(a, mod, res, magemod_ctx, &echeck); return echeck;
 }
 static bool __BIGINT_PTEST_RAW__(bigInt *const x, dnml_status *err) {
     dnml_arena *_DASI_LPRIME_ARENA = _USE_ARENA();
@@ -2096,22 +2096,11 @@ dnml_status bigInt_mut_mod(bigInt *const x, bigInt y) {
         if (!comp_res) bigInt_reset(x);
         else if (comp_res > 0) {
             dnml_status echeck = BIGINT_SUCCESS; list_bi free_list[2] = {(list_bi){x,0},(list_bi){&y,0}};
-            if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGMOD__(x, x, x, &y); darena_assert(echeck, free_list, 2); } 
-            else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGMOD__(x, x, x, &y);
+            if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGMOD__(x, x, &y); darena_assert(echeck, free_list, 2); } 
+            else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGMOD__(x, x, &y);
                 if (echeck == DARENA_OVERFLOW) goto heap_mut_mod;
             } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_mod;
-
-            /** THIS NOTE ALSO APPLIES TO __BIGINT_MAGMOD__ above ^
-             * The double aliasing for __BIHEAP_MOD_DISP__ and __BIGINT_MOD_DISP__ is safe due
-             * to their dispatched aglorithms either finishing off remainder-based (short division, Knuth-D, ...),
-             * or don't modify/tamper with any quotient components at all (Barett Reduction), making the output
-             * being the remainder in such double-aliasing case. 
-             *
-             * Additionally, Division and Modular Reduction Algorithms used in both dispatchers is safe to 
-             * have the dividend and the result buffers be aliased of each other, since they never mutate the
-             * operands, and only mutate the result buffers at the end (through copies or move-semantics)
-             */
-            heap_mut_mod: { __BIHEAP_MOD_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2); }
+            heap_mut_mod: { __BIHEAP_MOD_DISP__(x, &y, x, &echeck); heap_alloc_oom(echeck, free_list, 2); }
         }
     } return BIGINT_SUCCESS;
 }
@@ -2351,20 +2340,13 @@ bigInt bigInt_mod(bigInt x, bigInt y, dnml_status *err) {
         if (comp_res < 0) { echeck = bigInt_binew(&rem, &x); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
         else if (!comp_res) { echeck = __BIGINT_INTERNAL_LINIT__(&rem, 0); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
         else {
-            bigInt tmp_quot = {0};
             _tmp_heap_mut(rem, y.n, echeck, err, free_list, free_cnt);
-            _tmp_heap_mut(tmp_quot, x.n, echeck, err, free_list, free_cnt);
             if (!_DNML_ALLOC_STRAT) {
-                echeck = __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y); darena_biassert(echeck, err, free_list, free_cnt);
-            } else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGMOD__(&rem, &tmp_quot, &x, &y); 
+                echeck = __BIGINT_MAGMOD__(&rem, &x, &y); darena_biassert(echeck, err, free_list, free_cnt);
+            } else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGMOD__(&rem, &x, &y); 
                 if (echeck == DARENA_OVERFLOW) goto heap_mod;
             } else if (_DNML_ALLOC_STRAT == 2) goto heap_mod;
-            heap_mod: { 
-                __BIHEAP_MOD_DISP__(&x, &y, &rem, &tmp_quot, &echeck);
-                heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
-            }
-
-            __BIGINT_INTERNAL_FREE__(&tmp_quot);
+            heap_mod: { __BIHEAP_MOD_DISP__(&x, &y, &rem, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
         }
     } *err = BIGINT_SUCCESS; return rem;
 }
@@ -2594,11 +2576,11 @@ dnml_status bigInt_mut_emod(bigInt *const x, bigInt mod) {
         } else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGEMOD__(x, x, &mod); 
             if (echeck == DARENA_OVERFLOW) goto mut_emod_heap; /**/ uint8_t fallback_mod_heap = false;
             if (x->sign == -1 && x->n) {  __BIGINT_MAGSUB__(x, &mod, x);
-                if (fallback_mod_heap) { __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2); } 
+                if (fallback_mod_heap) { __BIHEAP_MOD_DISP__(x, &mod, x, &echeck); heap_alloc_oom(echeck, free_list, 2); } 
                 else { 
                     echeck = __BIGINT_MAGEMOD__(x, x, &mod); 
                     if (echeck == DNML_ALLOC_OOM) { 
-                        __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); 
+                        __BIHEAP_MOD_DISP__(x, &mod, x, &echeck); 
                         heap_alloc_oom(echeck, free_list, 2); fallback_mod_heap = true;
                     } 
                 }
@@ -2606,17 +2588,10 @@ dnml_status bigInt_mut_emod(bigInt *const x, bigInt mod) {
         } else if (_DNML_ALLOC_STRAT == 2) goto mut_emod_heap;
 
         mut_emod_heap: {
-            /**
-             * This part right here, if succeed, would already free the previous buffer in _DNML_ALLOC_STRAT == 1.
-             * Double-aliasing here is also safe since heap-based algorithms are designed to be move-semantics,
-             * meaning we don't have to care too much about the size upfront + __BIHEAP_MOD_DISP__ and it's
-             * dispatched algorithms are designed to be remainder-biased, which mean the final results
-             * in a double-aliasing scenario will be the remainder
-             */
-            __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2);
+            __BIHEAP_MOD_DISP__(x, &mod, x, &echeck); heap_alloc_oom(echeck, free_list, 2);
             if (x->sign == -1 && x->n) { __BIGINT_MAGSUB__(x, &mod, x);
                 // Same here, double-aliasing is safe for the reason uptop
-                __BIHEAP_MOD_DISP__(x, &mod, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2);
+                __BIHEAP_MOD_DISP__(x, &mod, x, &echeck); heap_alloc_oom(echeck, free_list, 2);
             }
         }
     } return BIGINT_SUCCESS;
@@ -2678,13 +2653,13 @@ bigInt bigInt_emod(bigInt x, bigInt mod, dnml_status *err) {
             if (x.sign == -1 && res.n) { 
                 __BIGINT_MAGSUB__(&res, &mod, &res);
                 if (fallback_mod_heap) {
-                    __BIHEAP_MOD_DISP__(&res, &mod, &res, &res, &echeck); 
+                    __BIHEAP_MOD_DISP__(&res, &mod, &res, &echeck); 
                     heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
                 }
                 else { 
                     echeck =__BIGINT_MAGEMOD__(&res, &res, &mod);
                     if (echeck == DNML_ALLOC_OOM) {
-                        __BIHEAP_MOD_DISP__(&res, &mod, &res, &res, &echeck);
+                        __BIHEAP_MOD_DISP__(&res, &mod, &res, &echeck);
                         heap_alloc_oom_bi(echeck, err, free_list, free_cnt); fallback_mod_heap = true;
                     }
                 }
@@ -2692,17 +2667,10 @@ bigInt bigInt_emod(bigInt x, bigInt mod, dnml_status *err) {
         } else if (_DNML_ALLOC_STRAT == 2) goto emod_heap;
 
         emod_heap: {
-            /**
-             * This part right here, if succeed, would already free the previous buffer in _DNML_ALLOC_STRAT == 1.
-             * Double-aliasing here is also safe since heap-based algorithms are designed to be move-semantics,
-             * meaning we don't have to care too much about the size upfront + __BIHEAP_MOD_DISP__ and it's
-             * dispatched algorithms are designed to be remainder-biased, which mean the final results
-             * in a double-aliasing scenario will be the remainder
-             */
-            __BIHEAP_MOD_DISP__(&x, &mod, &res, &res, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+            __BIHEAP_MOD_DISP__(&x, &mod, &res, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
             if (x.sign == -1 && res.n) { __BIGINT_MAGSUB__(&res, &mod, &res);
                 // Same here, double-aliasing is safe for the reason uptop
-                __BIHEAP_MOD_DISP__(&res, &mod, &res, &res, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
+                __BIHEAP_MOD_DISP__(&res, &mod, &res, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
             }
         }
     } *err = BIGINT_SUCCESS; return res;

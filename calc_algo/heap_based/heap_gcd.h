@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_GCD_H
-#define DNML_GCD_H
+#ifndef DNML_HEAP_GCD_H
+#define DNML_HEAP_GCD_H
 
 
 #include <dnml_status.h>
@@ -33,7 +33,7 @@ limitations under the License.
 #include "heap_div.h"
 #include "heap_mul.h"
 #include "heap_mod.h"
-struct rt_matrix {
+struct hrt_matrix {
     bigInt A; bigInt B;
     bigInt C; bigInt D;
 };
@@ -47,12 +47,9 @@ void __BIHEAP_LEHMER__(bigInt *const res, const bigInt *const u, const bigInt *c
 void __BIHEAP_SUBQ__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
 void __BIHEAP_GCD_DISP__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err);
 /* ========= Extra algorithms and functions ========= */
-size_t __hgcd_mat_compose_ws(size_t Asize, size_t Bsize, size_t Csize, size_t Dsize, size_t Esize, size_t Fsize, size_t Gsize, size_t Hsize);
-size_t __hgcd_matmul_ws(size_t a_size, size_t b_size, size_t Asize, size_t Bsize, size_t Csize, size_t Dsize);
-size_t _hgcd_ws(size_t a_size, size_t b_size);
-dnml_status __hgcd_mat_compose(struct rt_matrix *T1, struct rt_matrix *T2, struct rt_matrix *T);
-dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T);
-dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b); // For XGCD
+dnml_status __hgcd_heap_matcomp(struct hrt_matrix *T1, struct hrt_matrix *T2, struct hrt_matrix *T);
+dnml_status __hgcd_heap_matmul(bigInt *const a, bigInt *const b, struct hrt_matrix *T);
+dnml_status _hgcd_heap_reduct(struct hrt_matrix *T, bigInt *const a, bigInt *const b); // For XGCD
 #ifdef __cplusplus
 }
 #endif

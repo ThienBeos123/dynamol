@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_MOD_OP_H
-#define DNML_MOD_OP_H
+#ifndef DNML_MOD_MULEXP_H
+#define DNML_MOD_MULEXP_H
 
 
 

@@ -45,7 +45,7 @@ endif()
 add_library(dnml_core STATIC
     # 2. System Assembly files
     include/dnml_sys/__hwcaps.c
-    include/char_table.c
+    include/tables.c
 
     # 3. Mathematical Intrinsic Operations Files
     intrinsics/intrin_base.c
@@ -77,22 +77,49 @@ add_library(dnml_core STATIC
     calc_algo/perf_based/mul_toom_45.c
     calc_algo/perf_based/mul_toom_p5.c
     calc_algo/perf_based/mul.c
+    # Sub-5a. Matrix-Vector Multiplication helpers
+    calc_algo/perf_based/mv_matmul/_asymxz_matmul_fft.c
+    calc_algo/perf_based/mv_matmul/_asymxz_matmul_toom.c
+    calc_algo/perf_based/mv_matmul/_asymyw_matmul_fft.c
+    calc_algo/perf_based/mv_matmul/_asymyw_matmul_toom.c
+    calc_algo/perf_based/mv_matmul/_sym_matmul_fft.c
+    calc_algo/perf_based/mv_matmul/_sym_matmul_toom.c
+    calc_algo/perf_based/mv_matmul/_matmul_fft.c
+    calc_algo/perf_based/mv_matmul/_matmul_toom.c
+    calc_algo/perf_based/mv_matmul/_mv_matmul_disp.c
+    calc_algo/perf_based/mv_matmul/_mv_matmul_ws.c
     calc_algo/perf_based/div_newton.c
     calc_algo/perf_based/div.c
     calc_algo/perf_based/mod.c
-    calc_algo/perf_based/mod_op.c
-    calc_algo/perf_based/num_theory.c
+    calc_algo/perf_based/mod_mulexp.c
     calc_algo/perf_based/pow_root.c
-    # 5a. Calculational Algorithms Files - PERF-BASED + HEAP
+    calc_algo/perf_based/gcd_subq.c
+    calc_algo/perf_based/gcd.c
+    calc_algo/perf_based/ptest_bpsw.c
+    calc_algo/perf_based/prime_test.c
+    # 5b. Calculational Algorithms Files - PERF-BASED + HEAP
     calc_algo/heap_based/heap_mul_toom.c
     calc_algo/heap_based/heap_mul_fft.c
     calc_algo/heap_based/heap_mul.c
+    # Sub-5b. Matrix-Vector Multiplication Helpers
+    calc_algo/heap_based/hmv_matmul/_hasymxz_matmul_fft.c
+    calc_algo/heap_based/hmv_matmul/_hasymxz_matmul_toom.c
+    calc_algo/heap_based/hmv_matmul/_hasymyw_matmul_fft.c
+    calc_algo/heap_based/hmv_matmul/_hasymyw_matmul_toom.c
+    calc_algo/heap_based/hmv_matmul/_hsym_matmul_fft.c
+    calc_algo/heap_based/hmv_matmul/_hsym_matmul_toom.c
+    calc_algo/heap_based/hmv_matmul/_hmatmul_fft.c
+    calc_algo/heap_based/hmv_matmul/_hmatmul_toom.c
+    calc_algo/heap_based/hmv_matmul/_hmv_matmul.c
     calc_algo/heap_based/heap_div_newt.c
     calc_algo/heap_based/heap_div.c
     calc_algo/heap_based/heap_mod.c
-    calc_algo/heap_based/heap_modop.c
-    calc_algo/heap_based/heap_num_theory.c
+    calc_algo/heap_based/heap_modmulexp.c
     calc_algo/heap_based/heap_pow_root.c
+    calc_algo/heap_based/heap_gcd_subq.c
+    calc_algo/heap_based/heap_gcd.c
+    calc_algo/heap_based/heap_ptest_bpsw.c
+    calc_algo/heap_based/heap_ptest.c
     # 5c. Calculational Algorithms Files - CRYPTO-BASED
     calc_algo/crt_based/crt_mul.c
     calc_algo/crt_based/crt_div.c
@@ -190,8 +217,10 @@ target_include_directories(dnml_core
         ${CMAKE_CURRENT_SOURCE_DIR}/util
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_based/mv_matmul
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_float
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_based/hmv_matmul
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_float
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/crt_based
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/crt_float

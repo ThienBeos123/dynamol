@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_HEAP_NUM_THEORY_H
-#define DNML_HEAP_NUM_THEORY_H
+#ifndef DNML_HEAP_PTEST_H
+#define DNML_HEAP_PTEST_H
 
 
 #include <dnml_status.h>

@@ -25,7 +25,7 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/arena.h>
 #include <_libdnml_mem/_ctx.h>
-#include "../../calc_algo/perf_based/num_theory.h"
+#include "../../calc_algo/perf_based/prime_test.h"
 
 
 int main(void) {

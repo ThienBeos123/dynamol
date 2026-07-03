@@ -36,7 +36,7 @@ limitations under the License.
  * algorithms for calculating the transformation matrix T for Half-GCD, but was then generalized for future uses (xGCD)
  */
 // Helper functions
-dnml_status _RT_INIT(struct rt_matrix *x) {
+dnml_status _RT_INIT(struct hrt_matrix *x) {
     // Identity Matrix:
     //  [1, 0]
     //  [0, 1]
@@ -47,11 +47,11 @@ dnml_status _RT_INIT(struct rt_matrix *x) {
     __BIGINT_INTERNAL_LINIT__(&x->D, 0); HEAP_FOOM(echeck, early_free, early_cnt); early_free[early_cnt++] = &x->D;
     return BIGINT_SUCCESS;
 }
-void _RT_MAT_FREE(struct rt_matrix *x) {
+void _RT_MAT_FREE(struct hrt_matrix *x) {
     __BIGINT_INTERNAL_FREE__(&x->A); __BIGINT_INTERNAL_FREE__(&x->B);
     __BIGINT_INTERNAL_FREE__(&x->C); __BIGINT_INTERNAL_FREE__(&x->D);
 }
-void _RT_MAT_MOVE(struct rt_matrix *dst, struct rt_matrix *src) {
+void _RT_MAT_MOVE(struct hrt_matrix *dst, struct hrt_matrix *src) {
     __BIGINT_INTERNAL_MOVE__(&dst->A, &src->A); __BIGINT_INTERNAL_MOVE__(&dst->B, &src->B);
     __BIGINT_INTERNAL_MOVE__(&dst->C, &src->C); __BIGINT_INTERNAL_MOVE__(&dst->D, &src->D);
 }
@@ -69,8 +69,8 @@ void _RT_MAT_MOVE(struct rt_matrix *dst, struct rt_matrix *src) {
  * They implement an efficient Euclidean GCD at such small scale to compute the linear combination of 
  * our transformation matrices.
  */
-void __hgcd1_base(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
-    _RT_INIT(T); // Initializing for _hgcd_reduct as the base-case with an idenitty matrix
+void __hgcd1_base(struct hrt_matrix *T, bigInt *const a, bigInt *const b) {
+    _RT_INIT(T); // Initializing for _hgcd_heap_reduct as the base-case with an idenitty matrix
     // Actual loop/operation
     uint64_t rem = 0, quot = 0;
     uint64_t a1 = a->limbs[0], b1 = b->limbs[0];
@@ -106,7 +106,7 @@ void __hgcd1_base(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
  *      T1 = [A, B]     T2 = [E, F] ---> T1 x T2 = [(AE + BG), (AF + BH)]
  *           [C, D]          [G, H]                [(CE + DG), (CF + DH)]
  */
-dnml_status __hgcd_mat_compose(struct rt_matrix *T1, struct rt_matrix *T2, struct rt_matrix *T) {
+dnml_status __hgcd_heap_matcomp(struct hrt_matrix *T1, struct hrt_matrix *T2, struct hrt_matrix *T) {
     // tmp_AE is shared for the calculation of AE, AF, CE, CF
     // tmp_BG is shared for the calculation of BG, BH, DG, DH
     dnml_status echeck = BIGINT_SUCCESS; bigInt *alloc_list[2], *early_free[2]; uint8_t alloc_cnt = 0, early_cnt = 0;
@@ -136,7 +136,7 @@ dnml_status __hgcd_mat_compose(struct rt_matrix *T1, struct rt_matrix *T2, struc
  *      a_new = Aa + Bb     WHERE A, B, C, D ∈ [A, B]   AND a,b ∈ [a]
  *      b_new = Ca + Db                        [C, D]             [b]
  */
-dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T) {
+dnml_status __hgcd_heap_matmul(bigInt *const a, bigInt *const b, struct hrt_matrix *T) {
     // tmp_Aa is shared for the calculation of Aa and Ca
     // tmp_Bb is shared for the calculation of Bb and Db
     dnml_status echeck = BIGINT_SUCCESS; bigInt *alloc_list[4], *early_free[4]; uint8_t alloc_cnt = 0, early_cnt = 0;
@@ -163,7 +163,7 @@ dnml_status __hgcd_matmul(bigInt *const a, bigInt *const b, struct rt_matrix *T)
  * onto the two inputs u and v, with sizes of N limbs, into floor(N/2) + 1,
  * or, more accurately, ceil(N/2). 
  */
-dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b) {
+dnml_status _hgcd_heap_reduct(struct hrt_matrix *T, bigInt *const a, bigInt *const b) {
     size_t n = a->n;
     // Base-cases
     if (!n) { // Return an identity matrix (a fully reduced --> GCD(0, b) == b)
@@ -182,16 +182,16 @@ dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b) 
     }
     /* Standard Case */ dnml_status echeck = BIGINT_SUCCESS;
     bigInt *alloc_list[8], *early_free[12]; uint8_t alloc_cnt = 0, early_cnt = 0;
-    struct rt_matrix R1 = {0}, R2 = {0}, temp_T = {0};
+    struct hrt_matrix R1 = {0}, R2 = {0}, temp_T = {0};
     early_free[early_cnt++] = &R1.A; early_free[early_cnt++] = &R1.B;
     early_free[early_cnt++] = &R1.C; early_free[early_cnt++] = &R1.D;
     // Recursive Calculation of R1
     bigInt ahi = { .limbs = a->limbs + m, .n = a->n - m, .cap = a->n - m, .sign = 1 };
     bigInt bhi = { .limbs = b->limbs + m, .n = b->n - m, .cap = b->n - m, .sign = 1 };
-    _hgcd_reduct(&R1, &ahi, &bhi); HEAP_FOOM(echeck, early_free, early_cnt);
+    _hgcd_heap_reduct(&R1, &ahi, &bhi); HEAP_FOOM(echeck, early_free, early_cnt);
 
     // Intermediate Update of the full integer through R1
-    __hgcd_matmul(a, b, &R1); HEAP_FOOM(echeck, early_free, early_cnt);
+    __hgcd_heap_matmul(a, b, &R1); HEAP_FOOM(echeck, early_free, early_cnt);
     if (b->n <= m) { _RT_MAT_MOVE(T, &R1); _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS; }
 
     // Second Recursive Calculation on R2 with updated integer
@@ -207,13 +207,13 @@ dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b) 
     // Rewindow ahi and bhi to now match with truncated a and b after the Euclidean GCD division step
     ahi = (bigInt){ .limbs = a->limbs + m, .n = a->n - m, .cap = a->n - m, .sign = 1 };
     bhi = (bigInt){ .limbs = b->limbs + m, .n = b->n - m, .cap = b->n - m, .sign = 1 };
-    _hgcd_reduct(&R2, &ahi, &bhi); HEAP_FOOM(echeck, early_free, early_cnt);
+    _hgcd_heap_reduct(&R2, &ahi, &bhi); HEAP_FOOM(echeck, early_free, early_cnt);
     early_free[early_cnt++] = &R2.A; alloc_list[alloc_cnt++] = &R2.A;
     early_free[early_cnt++] = &R2.B; alloc_list[alloc_cnt++] = &R2.B;
     early_free[early_cnt++] = &R2.C; alloc_list[alloc_cnt++] = &R2.C;
     early_free[early_cnt++] = &R2.D; alloc_list[alloc_cnt++] = &R2.D;
-    __hgcd_matmul(a, b, &R2); HEAP_FOOM(echeck, early_free, early_cnt);
-    __hgcd_mat_compose(&R1, &R2, &temp_T); HEAP_FOOM(echeck, early_free, early_cnt);
+    __hgcd_heap_matmul(a, b, &R2); HEAP_FOOM(echeck, early_free, early_cnt);
+    __hgcd_heap_matcomp(&R1, &R2, &temp_T); HEAP_FOOM(echeck, early_free, early_cnt);
     _RT_MAT_MOVE(T, &temp_T); _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }
 
@@ -222,7 +222,7 @@ dnml_status _hgcd_reduct(struct rt_matrix *T, bigInt *const a, bigInt *const b) 
 /* ---------- Main Orchestrating Function ---------- */
 void __BIHEAP_SUBQ__(bigInt *const res, const bigInt *const u, const bigInt *const v, dnml_status *err) {
     // Allocate safe capacity amount for M's matrix elements (Half-GCD element upperbound is ceil(u->n / 2))
-    struct rt_matrix M = {0}; dnml_status echeck = BIGINT_SUCCESS;
+    struct hrt_matrix M = {0}; dnml_status echeck = BIGINT_SUCCESS;
     bigInt *alloc_list[6] = {0}, *early_free[6] = {0};
     uint8_t alloc_cnt = 0, early_cnt = 0;
     early_free[early_cnt++] = &M.A; alloc_list[alloc_cnt++] = &M.A;
@@ -238,8 +238,8 @@ void __BIHEAP_SUBQ__(bigInt *const res, const bigInt *const u, const bigInt *con
     while (u->n > BIGINT_LEHMER && v->n) {
         // Produces the linear-steps reduction matrices M --> Matrix Multiply on u and v to reduce their sizes in half
         // Every iteration, M is refreshed and allocate differently with a smaller element size
-        echeck = _hgcd_reduct(&M, &u_copy, &v_copy); HEAP_OOM(echeck, err, early_free, early_cnt,);
-        echeck = __hgcd_matmul(&u_copy, &v_copy, &M); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        echeck = _hgcd_heap_reduct(&M, &u_copy, &v_copy); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        echeck = __hgcd_heap_matmul(&u_copy, &v_copy, &M); HEAP_OOM(echeck, err, early_free, early_cnt,);
         if (!(v_copy.n)) break; // According to Euclidean GCD, when b == 0 (remainder == 0) --> GCD found
 
 

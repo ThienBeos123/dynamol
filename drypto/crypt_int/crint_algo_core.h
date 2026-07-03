@@ -22,9 +22,7 @@ limitations under the License.
 
 #include <libdnml_types.h>
 #include <include.h>
-#include <char_tables.h>
 #include <dnml_sys/sys.h>
-#include <debug_util.h>
 #include <_libdnml_config/settings.h>
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/_ctx.h>

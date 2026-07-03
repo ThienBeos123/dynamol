@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef DNML_HEAP_MODOP_H
-#define DNML_HEAP_MODOP_H
+#ifndef DNML_HEAP_MODMULEXP_H
+#define DNML_HEAP_MODMULEXP_H
 
 
 

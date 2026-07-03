@@ -26,7 +26,7 @@ limitations under the License.
 #include <_libdnml_mem/arena.h>
 #include <_libdnml_mem/_ctx.h>
 #include "../../calc_algo/crt_based/crt_num_theory.h"
-#include "../../calc_algo/perf_based/num_theory.h"
+#include "../../calc_algo/perf_based/gcd.h"
 
 
 int main(void) {

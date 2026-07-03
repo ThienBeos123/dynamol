@@ -19,6 +19,7 @@ limitations under the License.
 #include "cryptInt_func.h"
 #include "crint_algo_core.h"
 #include <debug_util.h>
+#include <tables.h>
 #include "_crint_macros.h"
 
 
