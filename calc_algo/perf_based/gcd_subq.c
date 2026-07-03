@@ -288,13 +288,8 @@ void __BIGINT_SUBQ__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx su
          *      1. M.A is allocated with a size of ceil(u->n / 2), and the Half-GCD reduction also reduced
          *         u_copy and v_copy in size by half, which makes M.A compatible to be the quotient and
          *         remainder buffer for our step
-         *
-         *      2. Using SOLELY M.A is still safe for our Modular Reduction routine since our Modular
-         *         Reduction Dispatcher selects remainder-biased functions, in which they either
-         *         do not touch anything with a quotient-buffer OR copy the remainder result
-         *         AFTER the quotient copy so on the case of double-aliasing, we still end up with the remainder
          */
-        __BIGINT_MOD_DISP__(&u_copy, &v_copy, &M.A, &M.A, subq_ctx, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
+        __BIGINT_MOD_DISP__(&u_copy, &v_copy, &M.A, subq_ctx, &echeck); SCRATCH_OVF(echeck, subq_ctx, subq_mark, err,);
         __BIGINT_INTERNAL_COPY__(&u_copy, &v_copy); __BIGINT_INTERNAL_COPY__(&v_copy, &M.A);
     }
 

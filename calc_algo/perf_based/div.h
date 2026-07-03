@@ -52,9 +52,9 @@ void __BIGINT_BURNIKEL__(
     calc_ctx burk_ctx, dnml_status *err
 );
 void __BIGINT_NEWTON__(const bigInt *const n, const bigInt *const d, bigInt *const quot, bigInt *const rem, calc_ctx newton_ctx, dnml_status *err);
-void __RBIGINT_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const quot, bigInt *const rem);
-void __RBIGINT_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, calc_ctx knuth_ctx, dnml_status *err);
-void __RBIGINT_NEWTON__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, calc_ctx newton_ctx, dnml_status *err);
+void __RBIGINT_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const rem);
+void __RBIGINT_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const rem, calc_ctx knuth_ctx, dnml_status *err);
+void __RBIGINT_NEWTON__(const bigInt *const a, const bigInt *const b, bigInt *const rem, calc_ctx newton_ctx, dnml_status *err);
 void __BIGINT_DIV_DISP__(const bigInt *const n, const bigInt *const d, bigInt *const quot, bigInt *const tmp_rem, calc_ctx div_ctx, dnml_status *err);
 #ifdef __cplusplus
 }

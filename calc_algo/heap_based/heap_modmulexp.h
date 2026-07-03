@@ -41,8 +41,8 @@ void __BIHEAP_MONTMUL__(const bigInt *const a, const bigInt *const b, mont_ctx c
 void __BIHEAP_CMODMUL__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, dnml_status *err);
 void __BIHEAP_BIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
 void __BIHEAP_MBIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
-void __BIHEAP_FIX_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
-void __BIHEAP_SLIDE_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
+void __BIHEAP_FIX_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, uint8_t k, bigInt *const res, dnml_status *err);
+void __BIHEAP_SLIDE_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, uint8_t k, bigInt *const res, dnml_status *err);
 void __BIHEAP_MODMUL_DISP__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, dnml_status *err);
 void __BIHEAP_MODEXP_DISP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, dnml_status *err);
 #ifdef __cplusplus

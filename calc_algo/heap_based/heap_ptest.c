@@ -114,12 +114,12 @@ uint8_t __BIHEAP_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, dnml_status
         }
     } else {
         mont_ctx mont_ctx = {.n = n, .nprime = __MODINV_UI64__(n->limbs[0]), .k = n->n};
-        BIHEAP_TEMP(r, n->n << 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0); r.n = n->n + 1;
+        BIHEAP_TEMP(r, n->n + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0); r.n = n->n + 1;
         BIHEAP_TEMP(r_mod_n, n->n, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0);
         BIHEAP_TEMP(tmp, n->n << 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt, 0); r.limbs[n->n] = 1; 
-        __BIHEAP_MOD_DISP__(&r, n, &r_mod_n, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
+        __BIHEAP_MOD_DISP__(&r, n, &r_mod_n, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
         __BIHEAP_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
-        __BIHEAP_MOD_DISP__(&tmp, n, &tmp, &r, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
+        __BIHEAP_MOD_DISP__(&tmp, n, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);
         mont_ctx.r2 = &tmp;
         // Conversions
         __BIHEAP_MONTMUL__(&x, mont_ctx.r2, mont_ctx, &x, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt, 0);

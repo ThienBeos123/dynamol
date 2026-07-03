@@ -171,12 +171,12 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
         }
     } else if (!prim_status) {
         mont_ctx mont_ctx = {.n = n, .nprime = __MODINV_UI64__(n->limbs[0]), .k = n->n};
-        BIGINT_TEMP(r, n->n << 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.n = n->n + 1;
+        BIGINT_TEMP(r, n->n + 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.n = n->n + 1;
         BIGINT_TEMP(r_mod_n, n->n, rabin_ctx, mrabin_mark, echeck, err, 0);
         BIGINT_TEMP(tmp, n->n << 1, rabin_ctx, mrabin_mark, echeck, err, 0); r.limbs[n->n] = 1; 
-        __BIGINT_MOD_DISP__(&r, n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MOD_DISP__(&r, n, &r_mod_n, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
         __BIGINT_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
-        __BIGINT_MOD_DISP__(&tmp, n, &tmp, &r, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
+        __BIGINT_MOD_DISP__(&tmp, n, &tmp, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);
         mont_ctx.r2 = &tmp;
         // Conversions
         __BIGINT_MONTMUL__(&x, mont_ctx.r2, mont_ctx, &x, rabin_ctx, &echeck); SCRATCH_OVF(echeck, rabin_ctx, mrabin_mark, err, 0);

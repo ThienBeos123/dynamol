@@ -160,7 +160,7 @@ void __BIHEAP_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT
 
 
 /* ------------ MAIN FUNCTION - REMAINDER-BIASED ------------ */
-void __RBIHEAP_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT rem, dnml_status *err) {
+void __RBIHEAP_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT rem, dnml_status *err) {
     // 1. Bootstrapping and Setting up metadatas
     limb_t dtop  = d->limbs[d->n - 1]; // The MSL (Most Significant Limb) of d
     size_t k = (d->n << 6) - __CLZ_UI64__(dtop); // Bit length of d
@@ -173,7 +173,7 @@ void __RBIHEAP_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGIN
     uint8_t alloc_cnt = 0; uint8_t early_cnt = 0; 
     BIHEAP_RET(r, n->n, echeck, err, early_free, early_cnt,); r.cap = d->n;
     BIHEAP_TEMP(dr, ((k << 1) + 1) >> 6, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
-    BIHEAP_RET(rprod, max(((k + 1) << 1) >> 6, n->n + d->n), echeck, err, early_free, early_cnt,);
+    BIHEAP_TEMP(rprod, max(((k + 1) << 1) >> 6, n->n + d->n), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     rprod.cap = ((k + 1) << 1) >> 6; /**/ size_t correct_bits = U64_BITS; limb_t carry_in = 0;
     while (correct_bits < k) {
         // Full estimation equation: R{i+1} = R{i} * (2^(k+1) - DR{i}) >> k
@@ -201,20 +201,9 @@ void __RBIHEAP_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGIN
     __BIGINT_INTERNAL_RLSHIFT__(&rprod, (k >> 6)); __BIGINT_INTERNAL_RSHIFT__(&rprod, (k & 63));
     __BIGINT_INTERNAL_TRIM_LZ__(&rprod); // Our final quotient!
     // 4. Calculating the remainder (Reusing r, since remainder is also bounded by d->n)
-    if (!__BIGINT_INTERNAL_COMP__(&rprod, n)) {
-        // Shrinking to save memory + 2 slack
-        __BIGINT_INTERNAL_SHRINK__(&r, 2); HEAP_OOM(echeck, err, early_free, early_cnt,);
-        __BIGINT_INTERNAL_SHRINK__(&rprod, rprod.n + 2); HEAP_OOM(echeck, err, early_free, early_cnt,);
-        r.n = 0; r.limbs[0] = 0; r.limbs[1] = 0; r.sign = 2;
-        __BIGINT_INTERNAL_MOVE__(quot, &rprod); __BIGINT_INTERNAL_MOVE__(rem, &r); 
-    } else {
-        r.cap = n->n; // Reusing r at a capacity of n->n due to D * Quot <= N
-        __BIHEAP_MUL_DISP__(d, &rprod, &r, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
-        __BIGINT_SUB_WB__(&r, n, &r); // Formula: (Remainder = Dividend - (Divsor * Quotient))
-        __BIGINT_INTERNAL_SHRINK__(&r, r.n + 2); HEAP_OOM(echeck, err, early_free, early_cnt,);
-        __BIGINT_INTERNAL_SHRINK__(&rprod, rprod.n); HEAP_OOM(echeck, err, early_free, early_cnt,);
-        __BIGINT_INTERNAL_MOVE__(quot, &rprod); __BIGINT_INTERNAL_MOVE__(rem, &r);
-    } // This function is remainder-biased due to if quot and rem were alias of one another, then we
-    // would copy the final quotient into quot first, and then overwriting with the remainder result
-    *err = BIGINT_SUCCESS;
+    r.cap = n->n; // Reusing r at a capacity of n->n due to D * Quot <= N
+    __BIHEAP_MUL_DISP__(d, &rprod, &r, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIGINT_SUB_WB__(&r, n, &r); // Formula: (Remainder = Dividend - (Divsor * Quotient))
+    __BIGINT_INTERNAL_SHRINK__(&r, r.n + 2); HEAP_OOM(echeck, err, early_free, early_cnt,);
+    __BIGINT_INTERNAL_MOVE__(rem, &r); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }

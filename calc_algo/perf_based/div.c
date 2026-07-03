@@ -80,6 +80,8 @@ static void __burk_3b2(
 }
 
 
+
+
 /* ------ ALGORITHMS FUNCTIONS - QUOTIENT BIASED ------ */
 void __BIGINT_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIGINT rem) {
     uint64_t remainder = 0; uint8_t overflow_check;
@@ -270,23 +272,25 @@ void __BIGINT_BURNIKEL__(
     __BIGINT_INTERNAL_COPY__(rem, &r); __BIGINT_INTERNAL_COPY__(quot, &q2);
     scratch_rewind(&burk_ctx, burk_mark); *err = BIGINT_SUCCESS;
 }
+
+
+
+
+
 /* ------ ALGORITHMS FUNCTIONS - REMAINDER BIASED ------ */
 // Only algorithms included in the modulo dispatching function is included here
-void __RBIGINT_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIGINT rem) {
-    uint64_t remainder = 0; uint8_t overflow_check;
+void __RBIGINT_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT rem) {
+    uint64_t remainder = 0, dummy = 0; uint8_t overflow_check;
     for (size_t i = a->n; i > 0; --i) {
-        quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
-    }
-    __BIGINT_INTERNAL_TRIM_LZ__(quot); /**/ if (quot->n == 0) quot->sign = 1;
-    rem->limbs[0] = remainder; /**/ rem->n = (remainder) ? 1 : 0; /**/ rem->sign = 1;
+        dummy = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
+    } rem->limbs[0] = remainder; /**/ rem->n = (remainder) ? 1 : 0; /**/ rem->sign = 1;
 }
-void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, calc_ctx knuth_ctx, dnml_status *err) {
+void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT rem, calc_ctx knuth_ctx, dnml_status *err) {
     /* ---- Setup ---- */ dnml_status echeck;
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
     size_t m = a->n, n = b->n, knuth_mark = scratch_mark(&knuth_ctx);
     BIGINT_TEMP(a_copy, m + 1, knuth_ctx, knuth_mark, echeck, err,);
     BIGINT_TEMP(b_copy, n, knuth_ctx, knuth_mark, echeck, err,);
-    BIGINT_TEMP(ret_quot, m, knuth_ctx, knuth_mark, echeck, err,);
     BIGINT_TEMP(ret_rem, n, knuth_ctx, knuth_mark, echeck, err,);
 
     /* 1. Normalization */
@@ -307,7 +311,7 @@ void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGI
         carry = (shift ? x >> (U64_BITS - shift) : 0);
     }
     b_copy.n = n;
-    ret_quot.n = m - n + 1;
+    uint64_t quot_dummy = 0;
 
     /* 3-5. Main Loop */
     for (size_t j = m - n + 1; j > 0; --j) {
@@ -394,7 +398,7 @@ void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGI
                 a_copy.limbs[j + i] = t;
             } a_copy.limbs[j + n] += carry2; // Handles remaining carry
         }
-        ret_quot.limbs[j] = qhat; // Add estimated quotient of: a's 2 limbs (!28 bit) / b's 1 limb (64 bit)
+        quot_dummy = qhat; // Add estimated quotient of: a's 2 limbs (!28 bit) / b's 1 limb (64 bit)
     }
 
     /* 6. Denormalize */
@@ -404,11 +408,13 @@ void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGI
         ret_rem.limbs[i] = (x >> shift) | carry;
         carry = (shift ? x << (U64_BITS - shift) : 0);
     } ret_rem.n = n;
-    __BIGINT_INTERNAL_TRIM_LZ__(&ret_quot); /**/ __BIGINT_INTERNAL_TRIM_LZ__(&ret_rem);
-    if (!ret_quot.n) ret_quot.sign = 1; /**/ if (!ret_rem.n) ret_rem.sign = 1;
-    __BIGINT_INTERNAL_COPY__(quot, &ret_quot); __BIGINT_INTERNAL_COPY__(rem, &ret_rem); 
-    scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS; // Free all temporaries
+    __BIGINT_INTERNAL_TRIM_LZ__(&ret_rem); if (!ret_rem.n) ret_rem.sign = 1;
+    __BIGINT_INTERNAL_COPY__(rem, &ret_rem); scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS;
 }
+
+
+
+
 /* --------------- ALGORITHM DISPATCHER --------------- */
 void __BIGINT_DIV_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT tmp_rem, calc_ctx div_ctx, dnml_status *err) {
     if (b->n < BIGINT_SHORT) {  __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem); *err = BIGINT_SUCCESS; }

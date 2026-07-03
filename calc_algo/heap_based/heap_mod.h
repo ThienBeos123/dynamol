@@ -36,7 +36,7 @@ extern "C" {
 #endif
 void __BIHEAP_BARETT__(const bigInt *const a, const bigInt *const n, bigInt *const rem, dnml_status *err);
 void __BIHEAP_MONT_REDC__(bigInt *const t, mont_ctx mredc_ctx, bigInt *const rem);
-void __BIHEAP_MOD_DISP__(const bigInt *const a, const bigInt *const n, bigInt *const rem, bigInt *const tmp_quot, dnml_status *err);
+void __BIHEAP_MOD_DISP__(const bigInt *const a, const bigInt *const n, bigInt *const rem, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

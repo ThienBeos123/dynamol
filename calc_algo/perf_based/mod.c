@@ -116,13 +116,9 @@ void __BIGINT_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
     if (__BIGINT_INTERNAL_COMP__(t, mredc_ctx.n) > 0) __BIGINT_SUB_WB__(t, t, mredc_ctx.n);
     __BIGINT_INTERNAL_COPY__(rem, t);
 }
-void __BIGINT_MOD_DISP__(
-    PCONST_BIGINT a, PCONST_BIGINT n, 
-    P_BIGINT rem, P_BIGINT tmp_quot,
-    calc_ctx mod_ctx, dnml_status *err
-) {
-    if (n->n < BIGINT_SHORT) { __RBIGINT_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem); *err = BIGINT_SUCCESS; }
-    else if (n->n < BIGINT_KNUTH) __RBIGINT_KNUTH_D__(a, n, tmp_quot, rem, mod_ctx, err);
+void __BIGINT_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx mod_ctx, dnml_status *err) {
+    if (n->n < BIGINT_SHORT) { __RBIGINT_SHORT_DIVISION__(a, n->limbs[0], rem); *err = BIGINT_SUCCESS; }
+    else if (n->n < BIGINT_KNUTH) __RBIGINT_KNUTH_D__(a, n, rem, mod_ctx, err);
     else if (n->n < BIGINT_BARETT) __BIGINT_BARETT__(a, n, rem, mod_ctx, err);
-    else __RBIGINT_NEWTON__(a, n, tmp_quot, rem, mod_ctx, err);
+    else __RBIGINT_NEWTON__(a, n, rem, mod_ctx, err);
 }

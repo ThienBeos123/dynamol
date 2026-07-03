@@ -56,6 +56,10 @@ static void __heap_burk_3b2(
     __BIGINT_INTERNAL_MOVE__(r, &c); *err = BIGINT_SUCCESS;
 }   
 
+
+
+
+
 /* --------- ALGORITHM FUNCTIONS - QUOTIENT BIASED ---------  */
 void __BIHEAP_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIGINT rem) {
     uint64_t remainder = 0; uint8_t overflow_check;
@@ -201,24 +205,26 @@ void __BIHEAP_BURNIKEL__(PCONST_BIGINT AH, PCONST_BIGINT AL, PCONST_BIGINT b, P_
     _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
 void __BIHEAP_NEWTON__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, dnml_status *err) {}
+
+
+
+
+
 /* --------- ALGORITHM FUNCTIONS - REMAINDER BIASED ---------  */
 // Only algorithms that are also used for modulo are included here
-void __RBIHEAP_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIGINT rem) {
-    uint64_t remainder = 0; uint8_t overflow_check;
+void __RBIHEAP_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT rem) {
+    uint64_t remainder = 0, dummy = 0; uint8_t overflow_check;
     for (size_t i = a->n; i > 0; --i) {
-        quot->limbs[i - 1] = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
-    }
-    __BIGINT_INTERNAL_TRIM_LZ__(quot); /**/ if (quot->n == 0) quot->sign = 1;
-    rem->limbs[0] = remainder; /**/ rem->n = (remainder) ? 1 : 0; /**/ rem->sign = 1;
+        dummy = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
+    } rem->limbs[0] = remainder; /**/ rem->n = (remainder) ? 1 : 0; /**/ rem->sign = 1;
 }
-void __RBIHEAP_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, dnml_status *err) {
+void __RBIHEAP_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT rem, dnml_status *err) {
     /* ---- Setup ---- */ dnml_status echeck;
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
     size_t m = a->n, n = b->n; bigInt *alloc_list[2], *early_free[4]; uint8_t early_cnt = 0, alloc_cnt = 0;
     BIHEAP_TEMP(a_copy, m + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     BIHEAP_TEMP(b_copy, n, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
-    BIHEAP_RET(ret_quot, m, echeck, err, early_free, early_cnt,); // Temporary quot (allows for aliasing both quot and rem)
-    BIHEAP_RET(ret_rem, n, echeck, err, early_free, early_cnt,); // Temporary rem (allows for aliasing both rem and quot)
+    BIHEAP_RET(ret_rem, n, echeck, err, early_free, early_cnt,);
 
     /* 1. Normalization */
     uint64_t carry = 0;
@@ -233,7 +239,7 @@ void __RBIHEAP_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGI
         uint64_t x = b->limbs[i];
         b_copy.limbs[i] = (x << shift) | carry;
         carry = (shift ? x >> (U64_BITS - shift) : 0);
-    } b_copy.n = n; /**/ ret_quot.n = m - n + 1;
+    } b_copy.n = n; /**/ uint64_t quot_dummy = 0;
 
     /* 3-5. Main Loop */
     for (size_t j = m - n + 1; j > 0; --j) {
@@ -272,7 +278,7 @@ void __RBIHEAP_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGI
                 a_copy.limbs[j + i] = t;
             } a_copy.limbs[j + n] += carry2; // Handles remaining carry
         }
-        ret_quot.limbs[j] = qhat; // Add estimated quotient of: a's 2 limbs (!28 bit) / b's 1 limb (64 bit)
+        quot_dummy = qhat; // Add estimated quotient of: a's 2 limbs (!28 bit) / b's 1 limb (64 bit)
     }
 
     /* 6. Denormalize */ carry = 0;
@@ -281,12 +287,14 @@ void __RBIHEAP_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGI
         ret_rem.limbs[i] = (x >> shift) | carry;
         carry = (shift ? x << (U64_BITS - shift) : 0);
     } ret_rem.n = n;
-    __BIGINT_INTERNAL_TRIM_LZ__(&ret_quot); /**/ __BIGINT_INTERNAL_TRIM_LZ__(&ret_rem);
-    if (!ret_quot.n) ret_quot.sign = 1; /**/ if (!ret_rem.n) ret_rem.sign = 1;
-    __BIGINT_INTERNAL_MOVE__(quot, &ret_quot); /**/ __BIGINT_INTERNAL_MOVE__(rem, &ret_rem);
-    _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS; // Free all temporaries
+    __BIGINT_INTERNAL_TRIM_LZ__(&ret_rem); if (!ret_rem.n) ret_rem.sign = 1;
+    __BIGINT_INTERNAL_MOVE__(rem, &ret_rem); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }
-void __RBIHEAP_NEWTON__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, dnml_status *err) {}
+
+
+
+
+
 /* ----------- ALGORITHM DISPATCHERS ----------- */
 void __BIHEAP_DIV_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT tmp_rem, dnml_status *err) {
     if (b->n < BIGINT_SHORT) {  __BIHEAP_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem); *err = BIGINT_SUCCESS; }

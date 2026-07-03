@@ -96,9 +96,9 @@ void __BIHEAP_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
 
 
 /* Modular Reduction Algorithm Dispatcher */
-void __BIHEAP_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, P_BIGINT tmp_quot, dnml_status *err) {
-    if (n->n < BIGINT_SHORT) { __RBIHEAP_SHORT_DIVISION__(a, n->limbs[0], tmp_quot, rem); *err = BIGINT_SUCCESS; }
-    else if (n->n < BIGINT_KNUTH) __RBIHEAP_KNUTH_D__(a, n, tmp_quot, rem, err);
+void __BIHEAP_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, dnml_status *err) {
+    if (n->n < BIGINT_SHORT) { __RBIHEAP_SHORT_DIVISION__(a, n->limbs[0], rem); *err = BIGINT_SUCCESS; }
+    else if (n->n < BIGINT_KNUTH) __RBIHEAP_KNUTH_D__(a, n, rem, err);
     else if (n->n < BIGINT_BARETT) __BIHEAP_BARETT__(a, n, rem, err);
-    else __RBIHEAP_NEWTON__(a, n, tmp_quot, rem, err);
+    else __RBIHEAP_NEWTON__(a, n, rem, err);
 }

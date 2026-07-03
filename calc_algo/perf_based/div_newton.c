@@ -154,7 +154,7 @@ void __BIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT
 
 
 /* ------------ MAIN FUNCTION - REMAINDER-BIASED ------------ */
-void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT rem, calc_ctx newton_ctx, dnml_status *err) {
+void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT rem, calc_ctx newton_ctx, dnml_status *err) {
     // 1. Bootstrapping and Setting up metadatas
     limb_t dtop  = d->limbs[d->n - 1]; // The MSL (Most Significant Limb) of d
     size_t k = (d->n << 6) - __CLZ_UI64__(dtop); // Bit length of d
@@ -194,13 +194,8 @@ void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGIN
     __BIGINT_INTERNAL_RLSHIFT__(&rprod, (k >> 6)); __BIGINT_INTERNAL_RSHIFT__(&rprod, (k & 63));
     __BIGINT_INTERNAL_TRIM_LZ__(&rprod); // Our final quotient!
     // 4. Calculating the remainder (Reusing r, since remainder is also bounded by d->n)
-    if (!__BIGINT_INTERNAL_COMP__(&rprod, n)) { __BIGINT_INTERNAL_COPY__(quot, &rprod); __BIGINT_INTERNAL_ZSET__(rem); }
-    else {
-        r.cap = n->n; // Reusing r at a capacity of n->n due to D * Quot <= N
-        __BIGINT_MUL_DISP__(d, &rprod, &r, newton_ctx, &echeck); SCRATCH_OVF(echeck, newton_ctx, newton_mark, err,);
-        __BIGINT_SUB_WB__(&r, n, &r); // Formula: (Remainder = Dividend - (Divsor * Quotient))
-        __BIGINT_INTERNAL_COPY__(quot, &rprod); __BIGINT_INTERNAL_COPY__(rem, &r);
-    } // This function is remainder-biased due to if quot and rem were alias of one another, then we
-    // would copy the final quotient into quot first, and then overwriting with the remainder result
-    scratch_rewind(&newton_ctx, newton_mark); *err = BIGINT_SUCCESS;
+    r.cap = n->n; // Reusing r at a capacity of n->n due to D * Quot <= N
+    __BIGINT_MUL_DISP__(d, &rprod, &r, newton_ctx, &echeck); SCRATCH_OVF(echeck, newton_ctx, newton_mark, err,);
+    __BIGINT_SUB_WB__(&r, n, &r); // Formula: (Remainder = Dividend - (Divsor * Quotient))
+    __BIGINT_INTERNAL_COPY__(rem, &r); scratch_rewind(&newton_ctx, newton_mark); *err = BIGINT_SUCCESS;
 }

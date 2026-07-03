@@ -163,11 +163,11 @@ uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx bpsw_ctx, dnml_status *err) {
     // Pre-Phase A: Setting up U1, V1, and Q1 for d's loop
     tmp1.cap = n->n << 1; 
     mont_ctx mont_ctx = {.n = n, .nprime = __MODINV_UI64__(n->limbs[0]), .k = n->n};
-    BIGINT_TEMP(r, n->n << 1, bpsw_ctx, bpsw_mark, echeck, err, 0); r.n = n->n + 1; r.limbs[n->n] = 1;
+    BIGINT_TEMP(r, n->n + 1, bpsw_ctx, bpsw_mark, echeck, err, 0); r.n = n->n + 1; r.limbs[n->n] = 1;
     BIGINT_TEMP(r_mod_n, n->n + 1, bpsw_ctx, bpsw_mark, echeck, err, 0); r_mod_n.cap -= 1;
-    __BIGINT_MOD_DISP__(&r, n, &r_mod_n, &tmp1, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
+    __BIGINT_MOD_DISP__(&r, n, &r_mod_n, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
     __BIGINT_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp1, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
-    __BIGINT_MOD_DISP__(&tmp1, n, &tmp1, &r, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
+    __BIGINT_MOD_DISP__(&tmp1, n, &tmp1, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
     mont_ctx.r2 = &tmp1; const bigInt *const r2 = mont_ctx.r2;
     // Conversins of p and q into Montgomery form for V1 and Q1
     bigInt pview = { .limbs = &p, .n = 1, .cap = 1, .sign = 1 };
