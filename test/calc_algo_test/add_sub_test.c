@@ -25,10 +25,13 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/arena.h>
 #include <_libdnml_mem/_ctx.h>
-#include "../../calc_algo/perf_based/mul.h"
+#include "../../libdnml_base.h"
+#include "../../calc_algo/algo_base/add_sub.h"
 
 
-int main(void) {
-    // code here ...
-    return 0;
+int main(void) { _libdnml_init();
+    
+
+    
+    _libdnml_cleanup(); return 0;
 }
