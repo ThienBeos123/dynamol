@@ -16,8 +16,8 @@ limitations under the License.
 
 
 
-#ifndef ___DNMLin_CHAR_TABLES_H____
-#define ___DNMLin_CHAR_TABLES_H____
+#ifndef ___DNML_CHAR_TABLES_H____
+#define ___DNML_CHAR_TABLES_H____
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +32,11 @@ extern const uint8_t _VALUE_LOOKUP_SEN_[256];
 extern const char _DIGIT_INSEN_[32];
 extern const char _DIGIT_SEN_[64];
 extern const uint8_t _ASCII_INVAL_RANGE64[4][2];
+
+#define _PFSQR_MOD64_CNT 9
+#define _PFSQR_MOD256_CNT 40
+extern const uint32_t pfsqr_filter_mod64[_PFSQR_MOD64_CNT];
+extern const uint32_t pfsqr_filter_mod256[_PFSQR_MOD256_CNT];
 
 
 #ifdef __cplusplus

@@ -110,8 +110,9 @@ make CC=gcc ARCH=x86_64 Variant=Drypto
 
 *Development Status: Blueprint Phase.* For bare Windows environments operating without CMake but carrying access to the C++ Build Tools suite, an MSVC-compatible `Makefile.msc` configuration framework is being established for execution through the native Visual Studio `nmake` command processor.
 
----
 
+
+---
 ## Method 3: Direct Terminal Pipelines & Scripting (Legacy Fallback)
 
 > **WARNING**: The internal file matrix of `lib-dnml` updates rapidly during pre-release velocity cycles. Manual multi-line compilation strings can quickly become obsolete.
@@ -122,15 +123,17 @@ When both CMake and Make infrastructures are missing entirely, compilation can b
 
 Rather than writing massive multi-line commands by hand, use the root utility shell wrappers. These scripts internally handle platform detection, target architecture splitting, and safely pass the appropriate compiler flag sets:
 
-* **Unix-like environments:** Execute `./legacy-build.sh` (dispatches compiler optimization levels and binds localized assembly sequences).
-* **Windows Command Environments:** Execute `legacy-build.bat` via an active Visual Studio Developer Command Prompt instance.
+* **Unix-like environments:** Execute [`./legacy-build.sh`](/scripts/setup.sh/legacy-build.sh) and choose between different compilation presets.
+* **Windows Command Environments:** Execute [`legacy-build.bat`](/scripts/setup.sh/legacy-build.bat) via an active Visual Studio Developer Command Prompt instance.
+
+Afterwards, extract the `/dist` from the root directory to your project or where ever you want to store the compiled library for future usage.
 
 ### 3.2 Manual Single-Line Pipeline Reference Base
 
 Below is the raw terminal configuration sequence for a **Unix Intel x86_64 host utilizing GCC/Clang**. You can use this as a structural foundation to customize parameters or diagnose edge-case environment compilation constraints manually:
 ```sh
 # Step 1: Compile source files and positional assembly elements to standalone objects
-gcc -O3 -c \
+gcc -O3 -flto -march=native -mtune=native -c \
     -I./include -I./include/dnml_sys -I./include/dnml_sys/asm -I./include/_libdnml_config -I./include/_libdnml_mem -I./include/_libdnml_perf \
     -I./intrinsics -I./intrinsics/x86_64 -I./intrinsics/zvanillc -I./util -I./calc_algo -I./calc_algo/perf_based -I./calc_algo/crt_based -I./dynamol/bigint -I./dynamol/bigfloat -I./drypto/crypt_int -I./drypto/crypt_float -I./test_ui \
     include/dnml_sys/__hwcaps.c include/dnml_sys/asm/_dnml_cpuid.S include/char_table.c \

@@ -17,10 +17,9 @@ limitations under the License.
 
 
 #include "cryptInt_func.h"
-#include "dnml_status.h"
-#include "include.h"
-#include "intrinsics.h"
-#include "libdnml_types.h"
+#include <debug_util.h>
+#include <tables.h>
+#include "_crint_macros.h"
 
 
 
@@ -1597,10 +1596,8 @@ dnml_status crint_transfer(crint *dst, crint *src) {
     DNML_TEST_ASSERT((__STORAGE_VAL__(dst) & __STORAGE_VAL__(src)), ci_store_inval, { crint_free(dst); crint_free(src); });
     if (_lib_crt_eq((ptr_t)dst, (ptr_t)(NULL)) | _lib_crt_eq((ptr_t)(src), (ptr_t)(NULL))) { dst = 0; src = 0; return CRINT_NULL;}
     if (!__STORAGE_VAL__(dst) | !__STORAGE_VAL__(src)) { dst = 0; src = 0; return CRINT_ERR_SINVAL; } // clang-format off
-    crint_free(dst);
-    dst->limbs = src->limbs; dst->n = src->n; dst->cap = src->cap;
-    dst->sign = src->sign; dst->poisoned = src->poisoned;
-    /* Invalidate src */
+    crint_free(dst); *dst = *src;
+    /* Invalidate src */ // clang-format off
     src->limbs = NULL; src->n = 0; src->cap = 1; src->sign = 1;
     src->poisoned = false; dst = 0; src = 0; return CRINT_SUCCESS; // clang-format on
 }

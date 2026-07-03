@@ -28,8 +28,8 @@ extern "C" {
 #endif
 
 
-#define U64_BYTES sizeof(uint64_t)
-#define U64_BITS ((sizeof(uint64_t)) * CHAR_BIT)
+#define U64_BYTES 8
+#define U64_BITS 64
 #define SIZE_T_BITS ((sizeof(size_t)) * CHAR_BIT)
 #define I64_MAX_BIT_MASK UINT64_C(0x7FFFFFFFFFFFFFFF)
 #define I64_MIN_BIT_MASK UINT64_C(0x8000000000000000)
@@ -48,24 +48,24 @@ extern "C" {
 
 /* Multiplication */
 typedef enum MUL_THRESHOLDS {
-    BIGINT_SCHOOLBOOK = 24,
-    BIGINT_KARATSUBA = 72,
-    BIGINT_TOOM_3 = 144,
-    BIGINT_TOOM_4 = 288,
-    BIGINT_TOOM_5 = 512,
-    BIGINT_TOOM_6p5 = 1024,
-    BIGINT_TOOM_7p5 = 1536,
-    BIGINT_TOOM_8p5 = 3072,
+    BIGINT_SCHOOLBOOK = 12,
+    BIGINT_KARATSUBA = 48,
+    BIGINT_TOOM_3 = 72,
+    BIGINT_TOOM_4 = 108,
+    BIGINT_TOOM_5 = 144,
+    BIGINT_TOOM_6p5 = 192,
+    BIGINT_TOOM_7p5 = 256,
+    BIGINT_TOOM_8p5 = 312,
     BIGINT_SSA
 } MUL_THRESHOLDS;
 
 /* Division + Euclidean Modulo */
 typedef enum DIV_THRESHOLDS {
     BIGINT_SHORT = 1,           // n < 1        DIV + MOD
-    BIGINT_KNUTH = 64,          // n < 64       DIV + MOD
-    BIGINT_BURNIKEL = 512,      // n < 512      DIV
-    BIGINT_BARETT = 512,        // n < 512            MOD
-    BIGINT_NEWTON,              // n >= 512     DIV + MOD
+    BIGINT_KNUTH = 24,          // n < 24       DIV + MOD
+    BIGINT_BURNIKEL = 96,       // n < 96       DIV
+    BIGINT_BARETT = 192,        // n < 192            MOD
+    BIGINT_NEWTON,              // n >= 96      DIV + MOD
 } DIV_THRESHOLDS;
 
 /* Power, Roots, & Miscallenous Algebraic Operations */
@@ -82,15 +82,16 @@ typedef enum ALG_THRESHOLDS {
 typedef enum {
     /* GCD - Greatest Common Divisor */
     BIGINT_EUCLID = 1,
-    BIGINT_STEIN = 512,
-    BIGINT_LEHMER = 4096,
-    BIGINT_HALF_GCD,
+    BIGINT_STEIN = 24,
+    BIGINT_LEHMER = 256,
+    BIGINT_SUBQ_GCD,
 
     /* Primality Testing */
     TRIAL_DIVISION = 207936, // Value, not limbs
     DETERMINISTIC_MR = 207936, // Value, not limbs
-    BPSW_ONLY = 128, // Baillie-PSW ONLY
-    MIXED_MAIN // Baillie-PSW + 10-20 Miller-Rabin random-base rounds
+    MRABIN_ONLY = 256, // Miller-Rabin ONLY
+    BPSW_ONLY = 257, // Baillie-PSW ONLY (This value is a placeholder, and is typically dispatched as an else)
+    MIXED_MAIN = 1, // Baillie-PSW + 10-20 Miller-Rabin random-base rounds
 } NUM_THEORY_THRESHOLDS;
 
 /* Modular Arithmetic */
@@ -99,21 +100,15 @@ typedef enum {
     BIGINT_CLASSICAL = 64,
     BIGINT_MONTGOMERY,
     /* Modular Exponentiation */
-    BIGINT_MOD_BINARY = 8,
-    BIGINT_MONT_BINARY = 512,
-    BIGINT_MOD_FIXED = 1536,
+    BIGINT_MOD_BINARY = 1,
+    BIGINT_MONT_BINARY = 4,
+    BIGINT_MOD_FIXED = 16,
     BIGINT_MOD_SLIDING,
     /* Modular Inverse */
     BIGINT_XEUCLID = 256,
     BIGINT_BINARY_XGCD = 2048,
     BIGINT_HALF_XGCD
 } MOD_ARITHMETIC_THRESHOLDS;
-
-#define MRROUNDS_DNML               5 // Dynamol - Scientific Calculation
-#define MRROUNDS_DBEDDED            5 // dBedded - Embedded Development
-#define MRROUNDS_DRYPTO             20 // Drypto - Cryptography
-
-#define __bienable_ecpp__       1
 
 
 #ifdef __cplusplus

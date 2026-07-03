@@ -18,7 +18,9 @@ limitations under the License.
 
 // Providing for
 #include "bigInt_func.h"
-#define ___DASI_IO_BUFSIZE 512
+#include <tables.h>
+#include <debug_util.h>
+#include "_bi_macros.h"
 static local_thread char ___DASI_IO_CHUNKBUF_[___DASI_IO_BUFSIZE];
 
 //todo ===================================== 0. LOW-LEVEL ENGINEs ===================================== *//
@@ -82,13 +84,16 @@ static inline void _ASCII_COLUMN__(limb_t val, char* c) {
 
 
 //todo ======================================= 1. CONSTRUCTIONS ======================================= *//
-dnml_status bigInt_strinit(bigInt *x, const char* str) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
+dnml_status bigInt_strinit(bigInt *const x, const char* str) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena* _DASI_STR_INIT_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_STR_INIT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_STR_INIT_ARENA->poisoined), arena_poison_oom,
+        {clear_arena;__BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -139,7 +144,7 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_STR_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_STR_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -148,22 +153,25 @@ dnml_status bigInt_strinit(bigInt *x, const char* str) {
 
     //* =========== 6. FULLY Initializing and Copy-over ============== *//
     x->limbs = malloc(cap * U64_BYTES);
-    if (!x->limbs) { arena_reset(_DASI_STR_INIT_ARENA, tmp_mark); abort(); }
+    if (!x->limbs) { arena_rewind(_DASI_STR_INIT_ARENA, tmp_mark); abort(); }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = __TEMPHOLDER__.n;
     x->sign = sign;
-    arena_reset(_DASI_STR_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_STR_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
+dnml_status bigInt_strbinit(bigInt *const x, const char* str, const uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena* _DASI_BASE_INIT_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_BASE_INIT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_BASE_INIT_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -200,7 +208,7 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_BASE_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -210,22 +218,25 @@ dnml_status bigInt_strbinit(bigInt *x, const char* str, const uint8_t base) {
 
     //* =========== 5. FULLY Initializing and Copy-over ============== *//
     limb_t *tmp = malloc(cap * U64_BYTES);
-    if (!tmp) { arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark); abort(); }
+    if (!tmp) { arena_rewind(_DASI_BASE_INIT_ARENA, tmp_mark); abort(); }
     x->limbs = tmp;
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = cap;
     x->sign = sign;
-    arena_reset(_DASI_BASE_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_BASE_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
+dnml_status bigInt_strninit(bigInt *const x, const char* str, const size_t len) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena* _DASI_STRNLEN_INIT_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_STRNLEN_INIT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_STRNLEN_INIT_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -277,7 +288,7 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -286,22 +297,25 @@ dnml_status bigInt_strninit(bigInt *x, const char* str, const size_t len) {
 
     //* =========== 6. FULLY Initializing and Copy-over ============== *//
     x->limbs = malloc(cap * U64_BYTES);
-    if (!x->limbs) { arena_reset(_DASI_STRNLEN_INIT_ARENA, tmp_mark); abort(); }
+    if (!x->limbs) { arena_rewind(_DASI_STRNLEN_INIT_ARENA, tmp_mark); abort(); }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap  = cap;
     x->n    = __TEMPHOLDER__.n;
     x->sign = sign;
-    arena_reset(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_STRNLEN_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
+dnml_status bigInt_strnbinit(bigInt *const x, const char* str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
     if (x->limbs) return STR_SUCCESS; // Already initialized
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena* _DASI_BASENLEN_INIT_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_BASENLEN_INIT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_BASENLEN_INIT_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -338,7 +352,7 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
+            arena_rewind(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&__TEMPHOLDER__, base);
@@ -348,10 +362,10 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
 
     //* =========== 5. FULLY Initializing and Copy-over ============== *//
     x->limbs = malloc(cap * U64_BYTES);
-    if (!x->limbs) { arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark); abort(); }
+    if (!x->limbs) { arena_rewind(_DASI_BASENLEN_INIT_ARENA, tmp_mark); abort(); }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->cap = cap; x->n = __TEMPHOLDER__.n; x->sign = sign;
-    arena_reset(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
+    arena_rewind(_DASI_BASENLEN_INIT_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
 
@@ -361,9 +375,9 @@ dnml_status bigInt_strnbinit(bigInt *x, const char* str, size_t len, uint8_t bas
 //todo ================================= 2. CONVERSIONS & ASSIGNMENTS ================================= *//
 //* -------------------------- String Conversions -------------------------- *//
 /* Truncative BigInt --> String */
-dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
+dnml_status bigInt_tto_str(char* str, bigInt x, size_t *written) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
     size_t str_length = strlen(str); // Early segfault if no NULL-Terminator found
     /* Special Case - Singular Character */
     if (x.n == 1 && x.limbs[0] <= 9) {
@@ -374,7 +388,10 @@ dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
     }
     /* Normal Case */
     dnml_arena *_DASI_TSET_STRING_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TSET_STRING_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TSET_STRING_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (str_length <= sign_space) return STR_INVALID_CAP;
@@ -393,14 +410,14 @@ dnml_status bigInt_tto_str(char* str, const bigInt x, size_t *written) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_STRING_ARENA, tmp_mark);
     if (digit_needed > str_length) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_tto_strb(char* str, bigInt x, uint8_t base, size_t *written) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     size_t str_length = strlen(str); // Early segfauly if no NULL-Terminator found
     // Special Case - Singular Character
     if (x.n == 1 && x.limbs[0] <= base - 1) {
@@ -413,7 +430,10 @@ dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *wri
     }
     // Normal Case
     dnml_arena *_DASI_TSET_BASE_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TSET_BASE_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TSET_BASE_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (str_length <= sign_space) return STR_INVALID_CAP;
@@ -432,13 +452,13 @@ dnml_status bigInt_tto_strb(char* str, const bigInt x, uint8_t base, size_t *wri
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_BASE_ARENA, tmp_mark);
     if (digit_needed > str_length) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *written) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
+dnml_status bigInt_tto_strn(char* str, size_t len, bigInt x, size_t *written) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
     /* Special Case - Singular Character */
     if (x.n == 1 && x.limbs[0] <= 9) {
         if (len < 1 + ((x.sign == -1) ? 1 : 0)) return STR_INVALID_CAP;  // Need "-0"
@@ -448,7 +468,10 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
     }
     /* Normal Case */
     dnml_arena *_DASI_TSET_STRNLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TSET_STRNLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TSET_STRNLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (len <= sign_space) return STR_INVALID_CAP;
@@ -467,14 +490,14 @@ dnml_status bigInt_tto_strn(char* str, size_t len, const bigInt x, size_t *writt
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_STRNLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_tto_strnb(char* str, size_t len, bigInt x, uint8_t base, size_t *written) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     /* Special Case - Singular Character */
     if (x.n == 1 && x.limbs[0] <= base - 1) {
         if (len < 1 + ((x.sign == -1) ? 1 : 0)) return STR_INVALID_CAP;  // Need "-0"
@@ -484,7 +507,10 @@ dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base
     }
     /* Normal Case */
     dnml_arena *_DASI_TSET_BASENLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TSET_BASENLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TSET_BASENLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (len <= sign_space) return STR_INVALID_CAP;
@@ -507,23 +533,26 @@ dnml_status bigInt_tto_strnb(char* str, size_t len, const bigInt x, uint8_t base
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
 dnml_status bigInt_tto_strf(
     char* str, size_t len,
-    const bigInt x, uint8_t base,
+    bigInt x, uint8_t base,
     bool uppercase, size_t *written
 ) {
     /* Pre-operation validation & Static Analysis */
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
 
     /* Main Operation */
     dnml_arena *_DASI_TSET_BASENLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TSET_BASENLEN_ARENA), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TSET_BASENLEN_ARENA), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     uint8_t sign_space = (x.sign == -1) ? 1 : 0,
     prefix_space = (base == 2 || base == 8 || base == 16) ? 2 : (
         (base < 10) ? 4 : ((base < 100) ? 5 : 6)
@@ -560,15 +589,15 @@ dnml_status bigInt_tto_strf(
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value + char_add] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TSET_BASENLEN_ARENA, tmp_mark);
     if (digit_needed > len) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
 /* Safe BigInt --> String */
-dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
+dnml_status bigInt_to_str(char* str, bigInt x, size_t *written) {
     /* Pre-operation Valdation & Static Analysis */
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
     size_t str_length = strlen(str);
     /* Special Case - Singular Character */
     if (x.n == 1 && x.limbs[0] <= 9) {
@@ -579,7 +608,10 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
     }
     /* Normal Case */
     dnml_arena *_DASI_SET_STRING_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SET_STRING_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SET_STRING_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (str_length <= sign_space) return STR_INVALID_CAP;
@@ -597,13 +629,13 @@ dnml_status bigInt_to_str(char* str, const bigInt x, size_t *written) {
     for (size_t i = total_needed - 1; i >= sign_space; --i) {
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
-    }  arena_reset(_DASI_SET_STRING_ARENA, tmp_mark); return STR_SUCCESS;
+    }  arena_rewind(_DASI_SET_STRING_ARENA, tmp_mark); return STR_SUCCESS;
 }
-dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *written) {
+dnml_status bigInt_to_strb(char* str, bigInt x, uint8_t base, size_t *written) {
     /* Pre-operation Validation & Static Analysis */
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     size_t str_length = strlen(str);
     /* Special Case - Singular Character */
     if (x.n == 1 && x.limbs[0] <= base - 1) {
@@ -614,7 +646,10 @@ dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *writ
     }
     /* Normal Case */
     dnml_arena *_DASI_SET_BASE_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SET_BASE_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SET_BASE_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (str_length <= sign_space) return STR_INVALID_CAP;
@@ -633,12 +668,12 @@ dnml_status bigInt_to_strb(char* str, const bigInt x, uint8_t base, size_t *writ
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, base);
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
-    } arena_reset(_DASI_SET_BASE_ARENA, tmp_mark); return STR_SUCCESS;
+    } arena_rewind(_DASI_SET_BASE_ARENA, tmp_mark); return STR_SUCCESS;
 }
-dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *written) {
+dnml_status bigInt_to_strn(char* str, size_t len, bigInt x, size_t *written) {
     /* Pre-operation Validation & Static Analysis */
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
     /* Special Case - Singular Character */
     if (x.n == 1 && x.limbs[0] <= 9) {
         if (len < 1 + ((x.sign == -1) ? 1 : 0)) return STR_INVALID_CAP;  // Need "-0\0"
@@ -648,7 +683,10 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
     }
     /* Normal Case */
     dnml_arena *_DASI_SET_STRNLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SET_STRNLEN_ARENA), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SET_STRNLEN_ARENA), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (len <= sign_space) return STR_INVALID_CAP;
@@ -667,12 +705,12 @@ dnml_status bigInt_to_strn(char* str, size_t len, const bigInt x, size_t *writte
         uint8_t numeric_value = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
         str[i] = _DIGIT_INSEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_SET_STRNLEN_ARENA, tmp_mark); return STR_SUCCESS;
+    arena_rewind(_DASI_SET_STRNLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
-dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base, size_t *written) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_to_strnb(char* str, size_t len, bigInt x, uint8_t base, size_t *written) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     // Special Case - Singular Character
     if (x.n == 1 && x.limbs[0] <= base - 1) {
         if (len < 1 + ((x.sign == -1) ? 1 : 0)) {
@@ -684,7 +722,10 @@ dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base,
     }
     /* Normal Case */
     dnml_arena *_DASI_SET_BASENLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SET_BASENLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SET_BASENLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     dnml_status err_check; uint8_t sign_space = (x.sign == -1) ? 1 : 0;
 
     if (len <= sign_space) return STR_INVALID_CAP;
@@ -703,20 +744,23 @@ dnml_status bigInt_to_strnb(char* str, size_t len, const bigInt x, uint8_t base,
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
+    arena_rewind(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
 dnml_status bigInt_to_strf(
     char* str, size_t len,
-    const bigInt x, uint8_t base,
+    bigInt x, uint8_t base,
     bool uppercase, size_t *written
 ) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
 
     /* Normal Case */
     dnml_arena *_DASI_SET_BASENLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SET_BASENLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SET_BASENLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+    );
     uint8_t sign_space = (x.sign == -1) ? 1 : 0,
     prefix_space = (base == 2 || base == 8 || base == 16) ? 2 : (
         (base < 10) ? 4 : ((base < 100) ? 5 : 6)
@@ -752,35 +796,34 @@ dnml_status bigInt_to_strf(
         str[i] = (base <= 16) ? _DIGIT_INSEN_[numeric_value + char_add] :
         _DIGIT_SEN_[numeric_value]; (*written)++;
     }
-    arena_reset(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
+    arena_rewind(_DASI_SET_BASENLEN_ARENA, tmp_mark); return STR_SUCCESS;
 }
 //* -------------------------- BigInt Conversions -------------------------- *//
 bigInt bigInt_from_str(const char* str, dnml_status *err) {
-    assert(err);
-    test_assert_mut((str == NULL), str_null, clear_arena, err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
-    test_assert_mut((*str == '\0'), str_empty, clear_arena, err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
-    bigInt res;
+    test_assert_mut((str == NULL), str_null, clear_arena, {}, err, STR_NULL, __BIGINT_ERROR_VALUE__());
+    test_assert_mut((*str == '\0'), str_empty, clear_arena, {}, err, STR_EMPTY, __BIGINT_ERROR_VALUE__());
+    bigInt res = {0, 0, 0, 0};
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
-    if (str[curr_pos] == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
+    if (str[curr_pos] == '\0') { if (err != NULL) *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
     unsigned char sign_op_res = _sign_handle_(str, &curr_pos, &sign);
-    if (sign_op_res == 4) { *err = STR_INVALID_DIGIT; return __BIGINT_ERROR_VALUE__(); }
-    else if (sign_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
+    if (sign_op_res == 4) { if (err != NULL) *err = STR_INVALID_DIGIT; return __BIGINT_ERROR_VALUE__(); }
+    else if (sign_op_res == 3) { if (err != NULL) *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
 
     //* ====== 2. Prefix Handling ====== *//
     uint8_t base = 10;
     unsigned char prefix_op_res = _prefix_handle_(str, &curr_pos, &base);
-    if (prefix_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
+    if (prefix_op_res == 3) { if (err != NULL) *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
     else if (prefix_op_res == 0) {
-        if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
+        if (sign == -1) { if (err != NULL) *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
         limb_t *tmp = malloc(U64_BYTES);
-        if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+        if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap  = 1;
         res.n = 0; res.sign = 1;
-        *err = STR_SUCCESS; return res;
-    } else if (prefix_op_res == 2) { *err = STR_INVALID_BASE_PREFIX; return __BIGINT_ERROR_VALUE__(); }
-    else if (prefix_op_res == 4) { *err = STR_INVALID_BASE; return __BIGINT_ERROR_VALUE__(); }
+        if (err != NULL) *err = STR_SUCCESS; return res;
+    } else if (prefix_op_res == 2) { if (err != NULL) *err = STR_INVALID_BASE_PREFIX; return __BIGINT_ERROR_VALUE__(); }
+    else if (prefix_op_res == 4) { if (err != NULL) *err = STR_INVALID_BASE; return __BIGINT_ERROR_VALUE__(); }
     // The remaining case (prefix_op_res == 1) indicates we have a decimal string with 1+ leading zero
 
     //* ====== 3. Leading-Zeros Handling ====== *//
@@ -788,12 +831,12 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     // String full of zeros
     if (str[curr_pos] == '\0') {
         // -0 is INVALID
-        if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); };
+        if (sign == -1) { if (err != NULL) *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); };
         limb_t *tmp = malloc(U64_BYTES);
-        if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+        if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign  = 1;
-        *err = STR_SUCCESS; return res;
+        if (err != NULL) *err = STR_SUCCESS; return res;
     }
 
     //* ======= 4. Initiating Resulting BigInt ======= *//
@@ -801,7 +844,7 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     size_t bits = __BITCOUNT___(d, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     limb_t *tmp = malloc(U64_BYTES * cap);
-    if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+    if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap   = cap; res.n = cap;
 
@@ -812,7 +855,7 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            *err = STR_INVALID_DIGIT;
+            if (err != NULL) *err = STR_INVALID_DIGIT;
             free(res.limbs); return __BIGINT_ERROR_VALUE__();
         }
         __BIGINT_INTERNAL_MUL_UI64__(&res, base);
@@ -820,30 +863,29 @@ bigInt bigInt_from_str(const char* str, dnml_status *err) {
     } return res;
 }
 bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
-    assert(err);
-    test_assert_mut((str == NULL), str_null, clear_arena, err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
-    test_assert_mut((!base), str_inval_base, clear_arena, err, STR_INVALID_BASE, (__BIGINT_ERROR_VALUE__()));
-    test_assert_mut((*str == '\0'), str_empty, clear_arena, err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
-    bigInt res;
+    test_assert_mut((str == NULL), str_null, clear_arena, {}, err, STR_NULL, __BIGINT_ERROR_VALUE__());
+    test_assert_mut((!base), str_inval_base, clear_arena, {}, err, STR_INVALID_BASE, __BIGINT_ERROR_VALUE__());
+    test_assert_mut((*str == '\0'), str_empty, clear_arena, {}, err, STR_EMPTY, __BIGINT_ERROR_VALUE__());
+    bigInt res = {0, 0, 0, 0};
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
-    if (str[curr_pos] == '\0') { *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
+    if (str[curr_pos] == '\0') { if (err != NULL) *err = STR_EMPTY; return __BIGINT_ERROR_VALUE__(); }
     if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
-    if (str[curr_pos] == '\0') { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
+    if (str[curr_pos] == '\0') { if (err != NULL) *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
 
     //* ====== 2. Leading-Zeros Handling ====== *//
     while (str[curr_pos] == '0' && str[curr_pos] != '\0') ++curr_pos; // Skipping all leading zeros
     // String full of zeros
     if (str[curr_pos] == '\0') {
         // -0 is INVALID
-        if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); };
+        if (sign == -1) { if (err != NULL) *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); };
         limb_t *tmp = malloc(U64_BYTES);
-        if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+        if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
-        *err = STR_SUCCESS; return res;
+        if (err != NULL) *err = STR_SUCCESS; return res;
     }
 
     //* ======= 3. Initiating Resulting BigInt ======= *//
@@ -851,7 +893,7 @@ bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
     size_t bits = __BITCOUNT___(d, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     limb_t *tmp = malloc(U64_BYTES * cap);
-    if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+    if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap = cap; res.n = cap;
 
@@ -862,40 +904,40 @@ bigInt bigInt_from_strb(const char* str, uint8_t base, dnml_status *err) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            *err = STR_INVALID_DIGIT;
+            if (err != NULL) *err = STR_INVALID_DIGIT;
             free(res.limbs); return __BIGINT_ERROR_VALUE__();
         }
         __BIGINT_INTERNAL_MUL_UI64__(&res, base);
         __BIGINT_INTERNAL_ADD_UI64__(&res, num_val);
     } return res;
 }
-bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
-    assert(err); test_assert_mut((str == NULL), str_null, clear_arena, err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
-    test_assert_mut((!len || *str == '\0'), str_empty, clear_arena, err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
-    bigInt res;
+bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) { 
+    test_assert_mut((str == NULL), str_null, clear_arena, {}, err, STR_NULL, __BIGINT_ERROR_VALUE__());
+    test_assert_mut((!len || *str == '\0'), str_empty, clear_arena, {}, err, STR_EMPTY, __BIGINT_ERROR_VALUE__());
+    bigInt res = {0, 0, 0, 0};
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
     if (curr_pos == len || str[curr_pos] == '\0') {
-        *err = STR_EMPTY;
+        if (err != NULL) *err = STR_EMPTY;
         return __BIGINT_ERROR_VALUE__();
     } unsigned char sign_op_res = _sign_handle_nlen_(str, &curr_pos, &sign, len);
-    if (sign_op_res == 4) { *err = STR_INVALID_DIGIT; return __BIGINT_ERROR_VALUE__(); }
-    else if (sign_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
+    if (sign_op_res == 4) { if (err != NULL) *err = STR_INVALID_DIGIT; return __BIGINT_ERROR_VALUE__(); }
+    else if (sign_op_res == 3) { if (err != NULL) *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
 
     //* ====== 2. Prefix Handling ====== *//
     uint8_t base = 10;
     unsigned char prefix_op_res = _prefix_handle_nlen_(str, &curr_pos, &base, len);
-    if (prefix_op_res == 3) { *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
+    if (prefix_op_res == 3) { if (err != NULL) *err = STR_INCOMPLETE; return __BIGINT_ERROR_VALUE__(); }
     else if (prefix_op_res == 0) {
-        if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
+        if (sign == -1) { if (err != NULL) *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
         limb_t *tmp = malloc(U64_BYTES);
-        if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+        if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
-        *err = STR_SUCCESS; return res;
-    } else if (prefix_op_res == 2) { *err = STR_INVALID_BASE_PREFIX; return __BIGINT_ERROR_VALUE__(); }
-    else if (prefix_op_res == 4) { *err = STR_INVALID_BASE; return __BIGINT_ERROR_VALUE__(); }
+        if (err != NULL) *err = STR_SUCCESS; return res;
+    } else if (prefix_op_res == 2) { if (err != NULL) *err = STR_INVALID_BASE_PREFIX; return __BIGINT_ERROR_VALUE__(); }
+    else if (prefix_op_res == 4) { if (err != NULL) *err = STR_INVALID_BASE; return __BIGINT_ERROR_VALUE__(); }
     // The remaining case (prefix_op_res == 1) indicates we have a decimal string with 1+ leading zero
 
     //* ====== 3. Leading-Zeros Handling ====== *//
@@ -904,13 +946,13 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     // String full of zeros
     if (curr_pos == len || str[curr_pos] == '\0') {
         // -0 is INVALID
-        if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
+        if (sign == -1) { if (err != NULL) *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
         // Empty initialization
         limb_t *tmp = malloc(U64_BYTES);
-        if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+        if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
-        *err = STR_SUCCESS; return res;
+        if (err != NULL) *err = STR_SUCCESS; return res;
     }
 
     //* ======= 4. Initiating Resulting BigInt ======= *//
@@ -918,7 +960,7 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     size_t bits = __BITCOUNT___(true_len, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     limb_t *tmp = malloc(U64_BYTES * cap);
-    if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+    if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap = cap; res.n = cap;
 
@@ -929,7 +971,7 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            *err = STR_INVALID_DIGIT;
+            if (err != NULL) *err = STR_INVALID_DIGIT;
             free(res.limbs); return __BIGINT_ERROR_VALUE__();
         }
         __BIGINT_INTERNAL_MUL_UI64__(&res, base);
@@ -937,21 +979,20 @@ bigInt bigInt_from_strn(const char* str, size_t len, dnml_status *err) {
     } return res;
 }
 bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status *err) {
-    assert(err);
-    test_assert_mut((str == NULL), str_null, clear_arena, err, STR_NULL, (__BIGINT_ERROR_VALUE__()));
-    test_assert_mut((!base), str_inval_base, clear_arena, err, STR_INVALID_BASE, (__BIGINT_ERROR_VALUE__()));
-    test_assert_mut((!len || *str == '\0'), str_empty, clear_arena, err, STR_EMPTY, (__BIGINT_ERROR_VALUE__()));
-    bigInt res;
+    test_assert_mut((str == NULL), str_null, clear_arena, {}, err, STR_NULL, __BIGINT_ERROR_VALUE__());
+    test_assert_mut((!base), str_inval_base, clear_arena, {}, err, STR_INVALID_BASE, __BIGINT_ERROR_VALUE__());
+    test_assert_mut((!len || *str == '\0'), str_empty, clear_arena, {}, err, STR_EMPTY, __BIGINT_ERROR_VALUE__());
+    bigInt res = {0, 0, 0, 0};
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
     if (curr_pos == len || str[curr_pos] == '\0') {
-        *err = STR_EMPTY;
+        if (err != NULL) *err = STR_EMPTY;
         return __BIGINT_ERROR_VALUE__();
     } if (str[curr_pos] == '-') { sign = -1; ++curr_pos; }
     else if (str[curr_pos] == '+') ++curr_pos;
     if (curr_pos == len - 1 || str[curr_pos] == '\0') {
-        *err = STR_INCOMPLETE;
+        if (err != NULL) *err = STR_INCOMPLETE;
         return __BIGINT_ERROR_VALUE__();
     }
 
@@ -961,13 +1002,13 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
     // String full of zeros
     if (curr_pos == len || str[curr_pos] == '\0') {
         // -0 is INVALID
-        if (sign == -1) { *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
+        if (sign == -1) { if (err != NULL) *err = STR_INVALID_SIGN; return __BIGINT_ERROR_VALUE__(); }
         // Empty initialization
         limb_t *tmp = malloc(U64_BYTES);
-        if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+        if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
         res.limbs = tmp; res.cap = 1;
         res.n = 0; res.sign = 1;
-        *err = STR_SUCCESS; return res;
+        if (err != NULL) *err = STR_SUCCESS; return res;
     }
 
     //* ======= 3. Initiating Resulting BigInt ======= *//
@@ -975,7 +1016,7 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
     size_t bits = __BITCOUNT___(true_len, base);
     size_t cap = __BIGINT_LIMBS_NEEDED__(bits);
     limb_t *tmp = malloc(U64_BYTES * cap);
-    if (tmp == NULL) { *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
+    if (tmp == NULL) { if (err != NULL) *err = DNML_ALLOC_OOM; return __BIGINT_ERROR_VALUE__(); }
     res.limbs = tmp; res.sign = sign;
     res.cap   = cap; res.n = cap;
 
@@ -986,7 +1027,7 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            *err = STR_INVALID_DIGIT;
+            if (err != NULL) *err = STR_INVALID_DIGIT;
             free(res.limbs); return __BIGINT_ERROR_VALUE__();
         }
         __BIGINT_INTERNAL_MUL_UI64__(&res, base);
@@ -995,13 +1036,16 @@ bigInt bigInt_from_strnb(const char* str, size_t len, uint8_t base, dnml_status 
 }
 //* -------------------------- BigInt Assignments -------------------------- *//
 /* Default String --> BigInt */ /* Grows */
-dnml_status bigInt_get_str(bigInt *x, const char *str) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_get_str(bigInt *const x, const char *str) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_GET_STRING_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_GET_STRING_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_GET_STRING_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -1048,24 +1092,27 @@ dnml_status bigInt_get_str(bigInt *x, const char *str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_STRING_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_STRING_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_STRING_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_get_strb(bigInt *const x, const char *str, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_GET_BASE_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_GET_BASE_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_GET_BASE_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -1101,23 +1148,26 @@ dnml_status bigInt_get_strb(bigInt *x, const char *str, uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_BASE_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_BASE_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_BASE_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_get_strn(bigInt *const x, const char *str, size_t len) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_GET_STRNLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_GET_STRNLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_GET_STRNLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
      //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -1165,24 +1215,27 @@ dnml_status bigInt_get_strn(bigInt *x, const char *str, size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_STRNLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_STRNLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_STRNLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_get_strnb(bigInt *const x, const char *str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_GET_BASENLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_GET_BASENLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_GET_BASENLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -1219,24 +1272,27 @@ dnml_status bigInt_get_strnb(bigInt *x, const char *str, size_t len, uint8_t bas
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_GET_BASENLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_GET_BASENLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = cap; // For safety measures
-    arena_reset(_DASI_GET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_GET_BASENLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
 /* Truncative String --> BigInt */ /* Truncates */
-dnml_status bigInt_tget_str(bigInt *x, const char *str) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_tget_str(bigInt *const x, const char *str) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_TGET_STRING_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TGET_STRING_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TGET_STRING_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -1284,25 +1340,28 @@ dnml_status bigInt_tget_str(bigInt *x, const char *str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_STRING_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_STRING_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_STRING_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_tget_strb(bigInt *const x, const char *str, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_TGET_BASE_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TGET_BASE_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TGET_BASE_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -1339,24 +1398,27 @@ dnml_status bigInt_tget_strb(bigInt *x, const char *str, uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_BASE_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_BASE_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_BASE_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_tget_strn(bigInt *const x, const char *str, size_t len) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_TGET_STRNLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TGET_STRNLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TGET_STRNLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -1406,25 +1468,28 @@ dnml_status bigInt_tget_strn(bigInt *x, const char *str, size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_STRNLEN_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
-dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_tget_strnb(bigInt *const x, const char *str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_TGET_BASENLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TGET_BASENLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TGET_BASENLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -1464,25 +1529,28 @@ dnml_status bigInt_tget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
         __BIGINT_INTERNAL_ADD_UI64__(&tmp_buf, num_val);
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->n = ranged_cap; // For safety measures
-    arena_reset(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_BASENLEN_ARENA, tmp_mark);
     if (cap > x->cap) return STR_TRUNC_SUCCESS;
     else return STR_SUCCESS;
 }
 /* Safe String --> BigInt */ /* Return an Error */
-dnml_status bigInt_sget_str(bigInt *x, const char *str) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_sget_str(bigInt *const x, const char *str) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_SGET_STRING_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SGET_STRING_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SGET_STRING_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -1528,7 +1596,7 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_STRING_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_STRING_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1536,17 +1604,20 @@ dnml_status bigInt_sget_str(bigInt *x, const char *str) {
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_STRING_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_STRING_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(*str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_sget_strb(bigInt *const x, const char *str, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(*str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_SGET_BASE_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SGET_BASE_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SGET_BASE_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, strlen(str), &curr_pos);
@@ -1582,7 +1653,7 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_BASE_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_BASE_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1590,16 +1661,19 @@ dnml_status bigInt_sget_strb(bigInt *x, const char *str, uint8_t base) {
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_BASE_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_BASE_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_sget_strn(bigInt *const x, const char *str, size_t len) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_SGET_STRNLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SGET_STRNLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SGET_STRNLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
      //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -1647,7 +1721,7 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1655,17 +1729,20 @@ dnml_status bigInt_sget_strn(bigInt *x, const char *str, size_t len) {
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_STRNLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
-    test_assert(!(str == NULL), str_null, clear_arena, STR_NULL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
-    test_assert(!(!len || *str == '\0'), str_empty, clear_arena, STR_EMPTY);
+dnml_status bigInt_sget_strnb(bigInt *const x, const char *str, size_t len, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(__BIGINT_INTERNAL_PVALID__(x), bi_state_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_SINVAL);
+    test_assert(!(str == NULL), str_null, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_NULL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
+    test_assert(!(!len || *str == '\0'), str_empty, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_EMPTY);
     dnml_arena *_DASI_SGET_BASENLEN_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SGET_BASENLEN_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SGET_BASENLEN_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* ====== 1. Sign Handling ====== *//
     size_t curr_pos = 0; int8_t sign = 1;
     _skip_whitespace(str, len, &curr_pos);
@@ -1702,7 +1779,7 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
             _VALUE_LOOKUP_INSEN_[lookup_index]
           : _VALUE_LOOKUP_SEN_[lookup_index];
         if (num_val > base) {
-            arena_reset(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
             return STR_INVALID_DIGIT;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -1710,7 +1787,7 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
     }
     memcpy(x->limbs, tmp_limbs, cap * U64_BYTES);
     x->n = cap; x->sign = sign;
-    arena_reset(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_BASENLEN_ARENA, tmp_mark);
     return STR_SUCCESS;
 }
 
@@ -1742,16 +1819,17 @@ dnml_status bigInt_sget_strnb(bigInt *x, const char *str, size_t len, uint8_t ba
 *      --------> Heap-allocation for size-owning buffers that can be easily grown.
 */
 /* --------- Decimal Instant OUTPUT ---------  */
-dnml_status bigInt_put(const bigInt x) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
+dnml_status bigInt_put(bigInt x) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
     if (x.n == 0) putchar('0');
-    else if (x.n == 1) {
-        if (x.sign == -1) putchar('-');
-        printf("%" PRIu64 "", x.limbs[0]);
-    } else {
+    else if (x.n == 1) { if (x.sign == -1) putchar('-'); /**/ printf("%" PRIu64 "", x.limbs[0]); } 
+    else {
         if (x.sign == -1) putchar('-');
         dnml_arena *_DASI_PUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_PUT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_PUT_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DARENA_POISON
+        );
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1762,12 +1840,12 @@ dnml_status bigInt_put(const bigInt x) {
             uint8_t numeric_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             putchar((char)('0' + numeric_val));
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_putb(const bigInt x, uint8_t base) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_putb(bigInt x, uint8_t base) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) putchar('-');
@@ -1790,7 +1868,10 @@ dnml_status bigInt_putb(const bigInt x, uint8_t base) {
     } else {
         if (x.sign == -1) putchar('-');
         dnml_arena *_DASI_PUTB_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_PUTB_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_PUTB_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DARENA_POISON
+        );
         size_t tmp_mark = arena_mark(_DASI_PUTB_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_PUTB_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1802,12 +1883,12 @@ dnml_status bigInt_putb(const bigInt x, uint8_t base) {
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] :
             _DIGIT_SEN_[numerical_val]; putchar(c);
         }
-        arena_reset(_DASI_PUTB_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUTB_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_putf(bigInt x, uint8_t base, bool uppercase) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) putchar('-');
@@ -1842,7 +1923,10 @@ dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
             default: printf("0{%" PRIu8 "}", base); break;
         }
         dnml_arena *_DASI_PUTF_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_PUTF_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_PUTF_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DARENA_POISON
+        );
         size_t tmp_mark = arena_mark(_DASI_PUTF_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_PUTF_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1854,11 +1938,11 @@ dnml_status bigInt_putf(const bigInt x, uint8_t base, bool uppercase) {
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] :
             _DIGIT_SEN_[numerical_val]; putchar(c);
         }
-        arena_reset(_DASI_PUTF_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUTF_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_fput(FILE *stream, const bigInt x) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
+dnml_status bigInt_fput(FILE *stream, bigInt x) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
     if (x.n == 0) fputc('0', stream);
     else if (x.n == 1) {
         if (x.sign == -1) fputc('-', stream);
@@ -1866,7 +1950,10 @@ dnml_status bigInt_fput(FILE *stream, const bigInt x) {
     } else {
         if (x.sign == -1) fputc('-', stream);
         dnml_arena *_DASI_FPUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_FPUT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_FPUT_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DARENA_POISON
+        );
         size_t tmp_mark = arena_mark(_DASI_FPUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_FPUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1877,12 +1964,12 @@ dnml_status bigInt_fput(FILE *stream, const bigInt x) {
             uint8_t numerical_val = __BIGINT_INTERNAL_DIVMOD_UI64__(&tmp_buf, 10);
             fputc((char)('0' + numerical_val), stream);
         }
-        arena_reset(_DASI_FPUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_FPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_fputb(FILE *stream, bigInt x, uint8_t base) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) fputc('-', stream);
@@ -1905,7 +1992,10 @@ dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
     } else {
         if (x.sign == -1) fputc('-', stream);
         dnml_arena *_DASI_FPUTB_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_FPUTB_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_FPUTB_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DARENA_POISON
+        );
         size_t tmp_mark = arena_mark(_DASI_FPUTB_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_FPUTB_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1917,12 +2007,12 @@ dnml_status bigInt_fputb(FILE *stream, const bigInt x, uint8_t base) {
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val] :
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
         }
-        arena_reset(_DASI_FPUTB_ARENA, tmp_mark);
+        arena_rewind(_DASI_FPUTB_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_fputf(FILE *stream, bigInt x, uint8_t base, bool uppercase) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) putchar('0');
     else if (x.n == 1) {
         if (x.sign == -1) fputc('-', stream);
@@ -1959,7 +2049,10 @@ dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool upperc
             default: fprintf(stream, "0{%" PRIu8 "}", base); break;
         }
         dnml_arena *_DASI_FPUTF_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_FPUTF_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_FPUTF_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DARENA_POISON
+        );
         size_t tmp_mark = arena_mark(_DASI_FPUTF_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_FPUTF_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -1971,12 +2064,12 @@ dnml_status bigInt_fputf(FILE *stream, const bigInt x, uint8_t base, bool upperc
             char c = (base <= 16) ? _DIGIT_INSEN_[numerical_val + additional_val] :
             _DIGIT_SEN_[numerical_val]; fputc(c, stream);
         }
-        arena_reset(_DASI_FPUTF_ARENA, tmp_mark);
+        arena_rewind(_DASI_FPUTF_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 /* --------- Decimal Buffered OUTPUT ---------  */
-dnml_status bigInt_sput(const bigInt x) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
+dnml_status bigInt_sput(bigInt x) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
     if (x.n == 0) fputs("0\n", stdout);
     else if (x.n == 1) printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
     else {
@@ -1984,7 +2077,10 @@ dnml_status bigInt_sput(const bigInt x) {
         size_t str_len = __BIGINT_COUNTDB__(&x, 10) + sign_space;
         if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_SPUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_SPUT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_SPUT_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DARENA_POISON
+        );
         size_t tmp_mark = arena_mark(_DASI_SPUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -2002,12 +2098,12 @@ dnml_status bigInt_sput(const bigInt x) {
             printf("%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_SPUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_SPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_sputb(bigInt x, uint8_t base) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stdout);
     else if (x.n == 1) {
         if (base == 10)         printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2037,7 +2133,10 @@ dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
         size_t str_len = __BIGINT_COUNTDB__(&x, base) + sign_space;
         if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_PUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_PUT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_PUT_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+        );
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -2058,12 +2157,12 @@ dnml_status bigInt_sputb(const bigInt x, uint8_t base) {
             printf("%.*s", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_sputf(bigInt x, uint8_t base, bool uppercase) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stdout);
     else if (x.n == 1) {
         if (base == 10)         printf("%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2110,7 +2209,10 @@ dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
                 } break;
             }
         } dnml_arena *_DASI_PUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_PUT_ARENA), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_PUT_ARENA), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+        );
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         bigInt tmp_buf = { .limbs = tmp_limbs, .sign = x.sign, .cap = x.n, .n = x.n };
@@ -2131,11 +2233,11 @@ dnml_status bigInt_sputf(const bigInt x, uint8_t base, bool uppercase) {
             printf("%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
+dnml_status bigInt_sfput(FILE *stream, bigInt x) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
     if (x.n == 0) fputs("0\n", stream);
     else if (x.n == 1) fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
     else {
@@ -2143,7 +2245,10 @@ dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
         size_t str_len = __BIGINT_COUNTDB__(&x, 10) + sign_space;
         if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_SPUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_SPUT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_SPUT_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+        );
         size_t tmp_mark = arena_mark(_DASI_SPUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_SPUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -2160,12 +2265,12 @@ dnml_status bigInt_sfput(FILE *stream, const bigInt x) {
             } fprintf(stream, "%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_SPUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_SPUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_sfputb(FILE *stream, bigInt x, uint8_t base) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stream);
     else if (x.n == 1) {
         if (base == 10)         fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2195,7 +2300,10 @@ dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
         size_t str_len = __BIGINT_COUNTDB__(&x, base) + sign_space;
         if (sign_space) ___DASI_IO_CHUNKBUF_[0] = '-';
         dnml_arena *_DASI_PUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_PUT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_PUT_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+        );
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -2215,12 +2323,12 @@ dnml_status bigInt_sfputb(FILE *stream, const bigInt x, uint8_t base) {
             }
             fprintf(stream, "%.*s\n", (int)str_len, ___DASI_IO_CHUNKBUF_);
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
-dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool uppercase) {
-    test_assert(bigInt_validate(x), bi_full_contract, clear_arena, BIGINT_ERR_INVAL);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_sfputf(FILE *stream, bigInt x, uint8_t base, bool uppercase) {
+    test_assert(bigInt_validate(x), bi_full_contract, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_INVAL);
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, STR_INVALID_BASE);
     if (x.n == 0) fputs("0\n", stream);
     else if (x.n == 1) {
         if (base == 10)         fprintf(stream, "%s %" PRIu64 "\n", (x.sign == -1) ? "-" : "", x.limbs[0]);
@@ -2266,7 +2374,10 @@ dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool upper
                 } break;
             }
         } dnml_arena *_DASI_PUT_ARENA = _USE_IO_ARENA();
-        test_assert(!(_DASI_PUT_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+        test_assert(
+            !(_DASI_PUT_ARENA->poisoined), arena_poison_oom, 
+            {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, DNML_ALLOC_OOM
+        );
         size_t tmp_mark = arena_mark(_DASI_PUT_ARENA); dnml_status err_check;
         limb_t *tmp_limbs = arena_galloc(_DASI_PUT_ARENA, x.n * U64_BYTES, &err_check);
         if (err_check == DNML_ALLOC_OOM) return DNML_ALLOC_OOM;
@@ -2287,13 +2398,16 @@ dnml_status bigInt_sfputf(FILE *stream, const bigInt x, uint8_t base, bool upper
             fprintf(stream, "%.*s\n", (int)curr_size, ___DASI_IO_CHUNKBUF_);
             if (str_len >= ___DASI_IO_BUFSIZE) str_len -= ___DASI_IO_BUFSIZE;
         }
-        arena_reset(_DASI_PUT_ARENA, tmp_mark);
+        arena_rewind(_DASI_PUT_ARENA, tmp_mark);
     } return STR_SUCCESS;
 }
 /* --------- Standard Stream (stdin) INPUT ---------  */
-dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocated Temporary
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
+dnml_status bigInt_scan(bigInt *const x) {                            //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
     //* Whitespace & Sign *//
     uint16_t current_char = _fskip_whitespace__(stdin); int8_t sign = 1;
     if (current_char == '\n' || current_char == (uint16_t)EOF) return STR_INCOMPLETE;
@@ -2343,10 +2457,13 @@ dnml_status bigInt_scan(bigInt *x) {                            //* Heap-allocat
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocated Temporary
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_scanb(bigInt *const x, uint8_t base) {             //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
     //* Whitespace, Sign, & Leading zeros *//
     uint16_t current_char = _fskip_whitespace__(stdin); int8_t sign = 1;
     if (current_char == '\n' || current_char == (uint16_t)EOF) return STR_INCOMPLETE;
@@ -2387,11 +2504,17 @@ dnml_status bigInt_scanb(bigInt *x, uint8_t base) {             //* Heap-allocat
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_sscan(bigInt *x) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
+dnml_status bigInt_sscan(bigInt *const x) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
     dnml_arena *_DASI_SGET_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SGET_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SGET_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* Whitespace & Sign *//
     uint16_t current_char = _fskip_whitespace__(stdin); int8_t sign = 1;
     if (current_char == '\n' || current_char == (uint16_t)EOF) return STR_INCOMPLETE;
@@ -2433,11 +2556,11 @@ dnml_status bigInt_sscan(bigInt *x) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_SGET_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         } if (tmp_buf.n == tmp_buf.cap && tmp_buf.limbs[tmp_buf.n - 1] > threshold) {
             // Overflow/Too small
-            arena_reset(_DASI_SGET_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGET_ARENA, tmp_mark);
             tmp_limbs = NULL; return BIGINT_ERR_RANGE;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2445,15 +2568,21 @@ dnml_status bigInt_sscan(bigInt *x) {
         current_char = getchar();
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_SGET_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGET_ARENA, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_sscanb(bigInt *const x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
     dnml_arena *_DASI_SGETB_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_SGETB_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_SGETB_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* Whitespace, Sign, & Leading Zeros *//
     uint16_t current_char = _fskip_whitespace__(stdin); int8_t sign = 1;
     if (current_char == '\n' || current_char == (uint16_t)EOF) return STR_INCOMPLETE;
@@ -2486,11 +2615,11 @@ dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_SGETB_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGETB_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         } if (tmp_buf.n == tmp_buf.cap && tmp_buf.limbs[tmp_buf.n - 1] > threshold) {
             // Overflow/Too small
-            arena_reset(_DASI_SGETB_ARENA, tmp_mark);
+            arena_rewind(_DASI_SGETB_ARENA, tmp_mark);
             tmp_limbs = NULL; return BIGINT_ERR_RANGE;
         }
         __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2498,14 +2627,20 @@ dnml_status bigInt_sscanb(bigInt *x, uint8_t base) {
         current_char = getchar();
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_SGETB_ARENA, tmp_mark);
+    arena_rewind(_DASI_SGETB_ARENA, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_tscan(bigInt *x) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
+dnml_status bigInt_tscan(bigInt *const x) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
     dnml_arena *_DASI_TGET_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TGET_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TGET_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* Whitespace & Sign *//
     uint16_t current_char = _fskip_whitespace__(stdin); int8_t sign = 1;
     if (current_char == '\n' || current_char == (uint16_t)EOF) return STR_INCOMPLETE;
@@ -2548,7 +2683,7 @@ dnml_status bigInt_tscan(bigInt *x) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_TGET_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGET_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         }
         // Not in the loop condition since
@@ -2560,15 +2695,21 @@ dnml_status bigInt_tscan(bigInt *x) {
     } dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_TGET_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGET_ARENA, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
-dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_tscanb(bigInt *const x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
     dnml_arena *_DASI_TGETB_ARENA = _USE_IO_ARENA();
-    test_assert(!(_DASI_TGETB_ARENA->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_TGETB_ARENA->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* Whitespace, Sign, & Leading zeros *//
     uint16_t current_char = _fskip_whitespace__(stdin); int8_t sign = 1;
     if (current_char == '\n' || current_char == (uint16_t)EOF) return STR_INCOMPLETE;
@@ -2601,7 +2742,7 @@ dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
         threshold = (UINT64_MAX - numerical_val) / base;
         if (numerical_val >= base) {
             // Invalid Digit from the user
-            arena_reset(_DASI_TGETB_ARENA, tmp_mark);
+            arena_rewind(_DASI_TGETB_ARENA, tmp_mark);
             tmp_limbs = NULL; return STR_INVALID_DIGIT;
         }
         // Not in the loop condition since
@@ -2613,13 +2754,16 @@ dnml_status bigInt_tscanb(bigInt *x, uint8_t base) {
     } dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_TGETB_ARENA, tmp_mark);
+    arena_rewind(_DASI_TGETB_ARENA, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
 /* --------- Custom Stream INPUT ---------  */
-dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap-allocated Temporary
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN); clearerr(stream);
+dnml_status bigInt_fscan(FILE *stream, bigInt *const x) {                     //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN); clearerr(stream
+        );
     /* Whitespace */ uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != (uint16_t)(EOF) && curr_char != '\n' && isspace(curr_char))
     scan_eos(curr_char, stream, STR_EMPTY);
@@ -2691,10 +2835,13 @@ dnml_status bigInt_fscan(FILE *stream, bigInt *x) {                     //* Heap
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap-allocated Temporary
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE); clearerr(stream);
+dnml_status bigInt_fscanb(FILE *stream, bigInt *const x, uint8_t base) {      //* Heap-allocated Temporary
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE); clearerr(stream);
     //* Whitespace *//
     int8_t sign = 1; uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != (uint16_t)(EOF) && curr_char != '\n' && isspace(curr_char))
@@ -2757,11 +2904,17 @@ dnml_status bigInt_fscanb(FILE *stream, bigInt *x, uint8_t base) {      //* Heap
     bigInt_free(&tmp_buf);
     return STR_SUCCESS;
 }
-dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
+dnml_status bigInt_fsscan(FILE *stream, bigInt *const x) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
     dnml_arena *_DASI_FSGET = _USE_IO_ARENA();
-    test_assert(!(_DASI_FSGET->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_FSGET->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     /* Whitespace */ uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != (uint16_t)(EOF) && curr_char != '\n' && isspace(curr_char))
     scan_eos(curr_char, stream, STR_EMPTY);
@@ -2815,10 +2968,10 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGET, tmp_mark);
+                    arena_rewind(_DASI_FSGET, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
-                    arena_reset(_DASI_FSGET, tmp_mark);
+                    arena_rewind(_DASI_FSGET, tmp_mark);
                     tmp_limbs = NULL; return BIGINT_ERR_RANGE;
                 }
                 __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2828,21 +2981,27 @@ dnml_status bigInt_fsscan(FILE *stream, bigInt *x) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGET, tmp_mark);
+                arena_rewind(_DASI_FSGET, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) end = 1;
         }
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGET, tmp_mark);
+    arena_rewind(_DASI_FSGET, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_fsscanb(FILE *stream, bigInt *const x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
     clearerr(stream); dnml_arena *_DASI_FSGETB = _USE_IO_ARENA();
-    test_assert(!(_DASI_FSGETB->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_FSGETB->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
 
     //* Whitespace *//
     int8_t sign = 1; uint16_t curr_char;
@@ -2891,10 +3050,10 @@ dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGETB, tmp_mark);
+                    arena_rewind(_DASI_FSGETB, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
-                    arena_reset(_DASI_FSGETB, tmp_mark);
+                    arena_rewind(_DASI_FSGETB, tmp_mark);
                     tmp_limbs = NULL; return BIGINT_ERR_RANGE;
                 }
                 __BIGINT_INTERNAL_MUL_UI64__(&tmp_buf, base);
@@ -2904,20 +3063,26 @@ dnml_status bigInt_fsscanb(FILE *stream, bigInt *x, uint8_t base) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGETB, tmp_mark);
+                arena_rewind(_DASI_FSGETB, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) end = 1;
         }
     }
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGETB, tmp_mark);
+    arena_rewind(_DASI_FSGETB, tmp_mark);
     tmp_limbs = NULL; return STR_SUCCESS;
 }
-dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN); clearerr(stream);
+dnml_status bigInt_ftscan(FILE *stream, bigInt *const x) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN); clearerr(stream
+        );
     dnml_arena *_DASI_FSGET = _USE_IO_ARENA();
-    test_assert(!(_DASI_FSGET->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_FSGET->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* Whitespace & Signs *//
     uint16_t curr_char; int8_t sign = 1; uint8_t base = 10;
     while ((curr_char = fgetc(stream)) != (uint16_t)(EOF) && curr_char != '\n' && isspace(curr_char))
@@ -2969,7 +3134,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGET, tmp_mark);
+                    arena_rewind(_DASI_FSGET, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
                     // Ends the entire accumalation loop
@@ -2983,7 +3148,7 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGET, tmp_mark);
+                arena_rewind(_DASI_FSGET, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) break;
         }
@@ -2991,15 +3156,21 @@ dnml_status bigInt_ftscan(FILE *stream, bigInt *x) {
     dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGET, tmp_mark);
+    arena_rewind(_DASI_FSGET, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
-dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
-    test_assert(x != NULL, input_null, clear_arena, BIGINT_NULL);
-    test_assert(__BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, clear_arena, BIGINT_ERR_STORE_IN);
-    test_assert(base > 1, str_inval_base, clear_arena, STR_INVALID_BASE);
+dnml_status bigInt_ftscanb(FILE *stream, bigInt *const x, uint8_t base) {
+    test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
+    test_assert(
+        __BIGINT_INTERNAL_SVALID__(x), bi_storage_inval, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, BIGINT_ERR_STORE_IN
+    );
+    test_assert(base > 1, str_inval_base, {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, STR_INVALID_BASE);
     clearerr(stream); dnml_arena *_DASI_FSGETB = _USE_IO_ARENA();
-    test_assert(!(_DASI_FSGETB->poisoined), arena_poison_oom, clear_arena, DNML_ALLOC_OOM);
+    test_assert(
+        !(_DASI_FSGETB->poisoined), arena_poison_oom, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(x);}, {}, DNML_ALLOC_OOM
+    );
     //* Whitespace *//
     int8_t sign = 1; uint16_t curr_char;
     while ((curr_char = fgetc(stream)) != (uint16_t)(EOF) && curr_char != '\n' && isspace(curr_char))
@@ -3047,7 +3218,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
                     _VALUE_LOOKUP_SEN_[index_lookup];
                 threshold = (UINT64_MAX - numerical_val) / base;
                 if (numerical_val >= base) {
-                    arena_reset(_DASI_FSGETB, tmp_mark);
+                    arena_rewind(_DASI_FSGETB, tmp_mark);
                     tmp_limbs = NULL; return STR_INVALID_DIGIT;
                 } if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) {
                     // Termiante the whole accumalation loop
@@ -3061,7 +3232,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
         //* ENDING CONDITION
         if (parse_res < ___DASI_IO_BUFSIZE) {
             if (ferror(stream)) {
-                arena_reset(_DASI_FSGETB, tmp_mark);
+                arena_rewind(_DASI_FSGETB, tmp_mark);
                 tmp_limbs = NULL; return FILE_ERR_PARSE;
             } else if (feof(stream)) end = 1;
         }
@@ -3069,7 +3240,7 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
     dnml_status ret = STR_SUCCESS;
     if (__BIGINT_WILL_OVERFLOW__(&tmp_buf, threshold)) ret = STR_TRUNC_SUCCESS;
     __BIGINT_INTERNAL_COPY__(x, &tmp_buf); x->sign = sign;
-    arena_reset(_DASI_FSGETB, tmp_mark);
+    arena_rewind(_DASI_FSGETB, tmp_mark);
     tmp_limbs = NULL; return ret;
 }
 
@@ -3078,23 +3249,26 @@ dnml_status bigInt_ftscanb(FILE *stream, bigInt *x, uint8_t base) {
 
 //todo ================================= 4. SERIALIZATION & DESERIALIZATION ============================== *//
 /* --------- Binary INPUT/OUTPUT ---------  */
-dnml_status bigInt_fwrite(FILE *stream, const bigInt x) { return STR_INCOMPLETE; }
-dnml_status bigInt_fread(FILE *stream, bigInt *x) { return STR_INCOMPLETE; }
-dnml_status bigInt_fsread(FILE *stream, bigInt *x) { return STR_INCOMPLETE; }
-dnml_status bigInt_ftread(FILE *stream, bigInt *x) { return STR_INCOMPLETE; }
+dnml_status bigInt_fwrite(FILE *stream, bigInt x) { return STR_INCOMPLETE; }
+dnml_status bigInt_fread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
+dnml_status bigInt_fsread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
+dnml_status bigInt_ftread(FILE *stream, bigInt *const x) { return STR_INCOMPLETE; }
 /* --------- SERIALIZATION ---------  */
-dnml_status bigInt_serialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
-dnml_status bigInt_tserialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
-dnml_status bigInt_sserialize(char *buf, size_t len, const bigInt x, size_t *written) { return STR_INCOMPLETE; }
+dnml_status bigInt_serialize(char *buf, size_t len, bigInt x, size_t *written) { return STR_INCOMPLETE; }
+dnml_status bigInt_tserialize(char *buf, size_t len, bigInt x, size_t *written) { return STR_INCOMPLETE; }
+dnml_status bigInt_sserialize(char *buf, size_t len, bigInt x, size_t *written) { return STR_INCOMPLETE; }
 /* -------- DESERIALIZATION --------  */
-dnml_status bigInt_deserialize(bigInt *x, const char* str, size_t len) { return STR_INCOMPLETE; }
+dnml_status bigInt_deserialize(bigInt *const x, const char* str, size_t len) { return STR_INCOMPLETE; }
 
 
 
 
 //todo ====================================== 5. GENERAL UTILITIES ===================================== *//
-dnml_status bigInt_limb_dump(FILE *stream, const bigInt x) {
-    test_assert(__BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
+dnml_status bigInt_limb_dump(FILE *stream, bigInt x) {
+    test_assert(
+        __BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_SINVAL
+    );
     fputs  (        "--- DECIMAL LIMB DUMP --------------------------------------\n", stream);
     fprintf(stream, "Limbs' starting location: %p\n", (void*)(x.limbs));
     fputs  (        "------------------------------------------------------------\n", stream);
@@ -3107,8 +3281,11 @@ dnml_status bigInt_limb_dump(FILE *stream, const bigInt x) {
     fputs(          "--------------------------------------------------------\n", stream);
     return STR_SUCCESS;
 }
-dnml_status bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase) {
-    test_assert(__BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
+dnml_status bigInt_hexdump(FILE *stream, bigInt x, bool uppercase) {
+    test_assert(
+        __BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_SINVAL
+    );
     fputs  (        "--- HEX LIMB DUMP --------------------------------------\n", stream);
     fprintf(stream, "Limbs' starting location: %p\n", (void*)(x.limbs));
     fputs  (        "--------------------------------------------------------\n", stream);
@@ -3121,8 +3298,11 @@ dnml_status bigInt_hexdump(FILE *stream, const bigInt x, bool uppercase) {
     fputs(          "--------------------------------------------------------\n", stream);
     return STR_SUCCESS;
 }
-dnml_status bigInt_bindump(FILE *stream, const bigInt x) {
-    test_assert(__BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, clear_arena, BIGINT_ERR_SINVAL);
+dnml_status bigInt_bindump(FILE *stream, bigInt x) {
+    test_assert(
+        __BIGINT_INTERNAL_PVALID__(&x), bi_state_contract, 
+        {clear_arena; __BIGINT_INTERNAL_FREE__(&x);}, {}, BIGINT_ERR_SINVAL
+    );
     fputs  (        "--- BINARY LIMB DUMP ----------------------------------------------------------------------------------------\n", stream);
     fprintf(stream, "Limbs' starting location: %p\n", (void*)(x.limbs));
     fputs  (        "-------------------------------------------------------------------------------------------------------------\n", stream);
@@ -3141,7 +3321,7 @@ dnml_status bigInt_bindump(FILE *stream, const bigInt x) {
     fputs(          "-------------------------------------------------------------------------------------------------------------\n", stream);
     return STR_SUCCESS;
 }
-dnml_status bigInt_info(FILE *stream, const bigInt x) {
+dnml_status bigInt_info(FILE *stream, bigInt x) {
     fputs    (        "-------- [ BIGINT DEBUG INFO ] --------\n", stream);
     fprintf  (stream, "Address:  %p\n", (void*)x.limbs);
     fprintf  (stream, "Sign:         %" PRId8 " %s\n", x.sign, (x.sign == -1) ? "(Negative)" : "(Positive)");

@@ -33,16 +33,75 @@ limitations under the License.
 extern "C" {
 #endif
 
+/* Type Conveniences */
+#define PCONST_BIGINT const bigInt *const
+#define P_BIGINT bigInt *const
 
-#define BIGINT_TEMP(name, limb_count, ctx, err_check, end_stat) \
+
+/* Heap Allocation Convenience - Mutative */
+void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt);
+#define BIHEAP_TEMP(name, size, echeck, err, early_list, early_cnt, alloc_list, alloc_cnt, ret_val) \
+    bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
+    if ((echeck) == DNML_ALLOC_OOM) { \
+        _free_alloc_list((early_list), (early_cnt)); \
+        *(err) = DNML_ALLOC_OOM; return ret_val; \
+    } \
+    (early_list)[(early_cnt)++] = &(name); \
+    (alloc_list)[(alloc_cnt)++] = &(name);
+#define BIHEAP_RET(name, size, echeck, err, early_list, early_cnt, ret_val) \
+    bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
+    if ((echeck) == DNML_ALLOC_OOM) { \
+        _free_alloc_list((early_list), (early_cnt)); \
+        *(err) = DNML_ALLOC_OOM; return ret_val; \
+    } (early_list)[(early_cnt)++] = &(name);
+#define HEAP_OOM(echeck, err, early_list, early_cnt, ret_val) if ((echeck) == DNML_ALLOC_OOM) { \
+    _free_alloc_list((early_list), (early_cnt)); \
+    *(err) = DNML_ALLOC_OOM; return ret_val; \
+}
+
+
+/* Heap Allocation Convenience - Functional */
+#define BIHEAP_FTEMP(name, size, echeck, early_list, early_cnt, alloc_list, alloc_cnt) \
+    bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
+    if ((echeck) == DNML_ALLOC_OOM) { _free_alloc_list((early_list), (early_cnt)); return DNML_ALLOC_OOM; } \
+    (early_list)[(early_cnt)++] = &(name); \
+    (alloc_list)[(alloc_cnt)++] = &(name);
+#define BIHEAP_FRET(name, size, echeck, early_list, early_cnt) \
+    bigInt name; echeck = __BIGINT_INTERNAL_LINIT__(&(name), (size)); \
+    if ((echeck) == DNML_ALLOC_OOM) { _free_alloc_list((early_list), (early_cnt)); return DNML_ALLOC_OOM; } \
+    (early_list)[(early_cnt)++] = &(name);
+#define HEAP_FOOM(echeck, early_list, early_cnt) if ((echeck) == DNML_ALLOC_OOM) {  \
+    _free_alloc_list((early_list), (early_cnt)); return DNML_ALLOC_OOM; \
+}
+
+
+
+
+
+/* Scratch/Arena Allocation Convenience - Mutative */
+#define BIGINT_TEMP(name, limb_count, ctx, ctx_mark, err_check, err, ret_val) \
     limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count), (&(err_check))); \
-    mod_endstat((end_stat), (err_check)); \
-    DNML_TEST_ASSERT( \
-        !((end_stat) == DARENA_OVERFLOW),  \
-        "Insufficient Scratch Allocation Capaicty (-Earena_cap_overflow)", \
-        { scratch_clear(&(ctx)); scratch_destruct(&(ctx)); } \
-    ); \
+    if ((err_check) != (BIGINT_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); *err = DARENA_OVERFLOW; return ret_val; } \
     bigInt name = {.limbs = name##_limbs, .sign = 1, .n = 0, .cap = (limb_count)};
+#define RAW_TEMP(name, limb_count, ctx, ctx_mark, echeck, err, retval) \
+    limb_t *name = scratch_alloc(&(ctx), (limb_count), (&(echeck))); \
+    if ((echeck) != (BIGINT_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); *err = DARENA_OVERFLOW; return retval; }
+#define SCRATCH_OVF(err_check, ctx, mark, err, ret_val) if ((err_check) == DARENA_OVERFLOW) { \
+    scratch_rewind(&(ctx), (mark)); (*(err)) = DARENA_OVERFLOW; return ret_val; \
+}
+
+
+/* Scratch/Arena Allocation Convenience - Functional */
+#define BIGINT_FTEMP(name, limb_count, ctx, ctx_mark, echeck) \
+    limb_t *name##_limbs = scratch_alloc(&(ctx), (limb_count), (&(echeck))); \
+    if ((echeck) != (BIGINT_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); return echeck; } \
+    bigInt name = {.limbs = name##_limbs, .sign = 1, .n = 0, .cap = (limb_count)};
+#define RAW_FTEMP(name, limb_count, ctx, ctx_mark, echeck) \
+    limb_t *name = scratch_alloc(&(ctx), (limb_count), (&(echeck))); \
+    if ((echeck) != (BIGINT_SUCCESS)) { scratch_rewind(&(ctx), (ctx_mark)); return echeck; }
+#define SCRATCH_FOVF(echeck, ctx, mark) if ((echeck) == DARENA_OVERFLOW) { \
+    scratch_rewind(&(ctx), (mark)); return echeck; \
+}
 
 
 #ifdef __cplusplus

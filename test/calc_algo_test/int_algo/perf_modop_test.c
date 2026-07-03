@@ -25,7 +25,7 @@ limitations under the License.
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/arena.h>
 #include <_libdnml_mem/_ctx.h>
-#include "../../calc_algo/perf_based/mod_op.h"
+#include "../../calc_algo/perf_based/mod_mulexp.h"
 
 
 int main(void) {

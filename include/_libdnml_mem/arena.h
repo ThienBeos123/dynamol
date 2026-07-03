@@ -63,10 +63,7 @@ static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
 static inline void* arena_alloc(dnml_arena *a, size_t space, dnml_status *err) {
     if (a->poisoined) { *err = DARENA_POISON; return NULL; }
     size_t new_offset = a->offset + space;
-    if (new_offset > a->cap) {
-        if (err!= NULL) *err = DARENA_OVERFLOW;
-        return NULL;
-    }
+    if (new_offset > a->cap) { if (err != NULL) *err = DARENA_OVERFLOW; return NULL; }
     void *ptr = a->base + new_offset;
     a->offset = new_offset;
     if (err != NULL) *err = DARENA_SUCCESS; return ptr;
@@ -85,8 +82,8 @@ static inline void* arena_galloc(dnml_arena *a, size_t space, dnml_status *err) 
 }
 static inline void arena_clear(dnml_arena *a) { a->offset = 0; }
 static inline size_t arena_mark(dnml_arena *a) { return a->offset; }
-static inline void arena_reset(dnml_arena *a, size_t mark) {
-    if (mark <= a->offset)  a->offset = mark;
+static inline void arena_rewind(dnml_arena *a, size_t mark) {
+    if (a == NULL) return; /**/ if (mark <= a->offset) a->offset = mark;
 }
 
 //* ================== ADAPTERS ===================== *//
@@ -96,8 +93,8 @@ static inline void *arena_alloc_adapter(void *state, size_t n, dnml_status *err)
 static inline size_t arena_mark_adapter(void *state) {
     return arena_mark((dnml_arena*)state);
 }
-static inline void arena_reset_adapter(void *state, size_t n) {
-    arena_reset((dnml_arena*)state, n);
+static inline void arena_rewind_adapter(void *state, size_t n) {
+    arena_rewind((dnml_arena*)state, n);
 }
 static inline void arena_clear_adapter(void *state) {
     arena_clear((dnml_arena*)state);
