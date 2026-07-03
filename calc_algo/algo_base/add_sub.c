@@ -30,17 +30,20 @@ void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     } res->n = max; /**/ if (carry) res->limbs[res->n++] = carry;
 }
 void __BIGINT_ADD_SHIFT__(bigInt *dst, const bigInt *src, size_t limb_shift) {
-    uint8_t carry = 0;
+    if (!src->n) return; /**/ uint8_t carry = 0;
+    if (dst->n < limb_shift) { // Fill in gaps if add src beyound dst->n
+        for (size_t j = dst->n; j < limb_shift; ++j) dst->limbs[j] = 0;
+        dst->n = limb_shift;
+    }
+    // Actual addition with src simulated to be limb shifted
     for (size_t i = 0; i < src->n; ++i) {
         size_t di = i + limb_shift;
         dst->limbs[di] = __ADD_UI64__(dst->limbs[di], src->limbs[i], &carry);
     }
     // Propagate carry upward through dst's existing limbs
-    for (size_t di = limb_shift + src->n; carry && di < dst->cap; ++di) {
-        uint8_t carry = (uint8_t)carry;
-        dst->limbs[di] = __ADD_UI64__(dst->limbs[di], 0, &carry);
-    }
-    dst->n = max(dst->n, limb_shift + src->n + (carry != 0));
+    size_t di = limb_shift + src->n;
+    while (carry && di < dst->cap) { dst->limbs[di] = __ADD_UI64__(dst->limbs[di], 0, &carry); di++;}
+    if (di > dst->n) dst->n = di;
 }
 void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
     // Main operation
@@ -52,10 +55,8 @@ void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
     } else {
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(x, y);
         if (!comp_res) __BIGINT_INTERNAL_ZSET__(res);
-        else {
-            if (comp_res > 0) { __BIGINT_SUB_WB__(res, x, y); res->sign = x->sign; }
-            else { __BIGINT_SUB_WB__(res, x, y); res->sign = y->sign; }
-        }
+        else if (comp_res > 0) { __BIGINT_SUB_WB__(res, x, y); res->sign = x->sign; }
+        else { __BIGINT_SUB_WB__(res, y, x); res->sign = y->sign; }
     }
 }
 
@@ -66,7 +67,7 @@ void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b) {
         limb_t y = (i < b->n) ? b->limbs[i] : 0;
         res->limbs[i] = __SUB_UI64__(a->limbs[i], y, &borrow);
         // Do single-limb subtraction with borrow ---> Stores the borrow
-        if (!(res->limbs[i])) top_nonzero = i;
+        if (res->limbs[i]) top_nonzero = i + 1;
     } res->n = top_nonzero;
 }
 void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {

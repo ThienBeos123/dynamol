@@ -160,7 +160,7 @@ int main(void) { _libdnml_init();
     struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
     limb_t *ret_buf = (limb_t *)malloc(MAX_SIZE_T * U64_BYTES); assert(ret_buf != NULL);
     fputs("====================================================================\n", stdout);
-    fputs("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n", stdout);
+    fputs("      RUNNING INTEGRATED UNIT TESTS - BIGNUM DIVISION UTILITIES     \n", stdout);
     fputs("====================================================================\n", stdout);
     fputs("---- __BIGINT_DIV3__ -----\n", stdout);
     for (int i = 0; i < CASE_CNT; i++) { total_tests++; 

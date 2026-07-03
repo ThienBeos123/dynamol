@@ -31,7 +31,7 @@ limitations under the License.
 #include <_libdnml_mem/_ctx.h>
 #include "../../../intrinsics/intrinsics.h"
 #include "../../../util/util.h"
-#include "heap_mul.h"
+#include "../heap_mul.h"
 
 
 #ifdef __cplusplus

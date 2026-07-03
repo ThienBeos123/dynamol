@@ -8,6 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 # When building test/low as a standalone subproject, look for a local root build
@@ -15,7 +16,7 @@ include_directories(
 # needing an absolute path.
 list(APPEND CMAKE_PREFIX_PATH
     # Basic paths for barebone builds
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../build/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/..z/../build/install"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../build"
 
     # Paths on standard Development builds
@@ -43,8 +44,14 @@ endif()
 # Add sanitization flags and debug symbols
 add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
 add_link_options(-fsanitize=address,undefined)
-add_executable(add_sub_test         add_sub_test.c)
-target_link_libraries(add_sub_test  PRIVATE dnml::dnml_core)
+# /algo_base
+add_executable(bi_add_test      algo_base/bi_add_test.c)
+add_executable(bi_sub_test      algo_base/bi_sub_test.c)
+add_executable(ci_add_sub       algo_base/ci_add_sub.c)
+target_link_libraries(bi_add_test       PRIVATE dnml::dnml_core)
+target_link_libraries(bi_sub_test       PRIVATE dnml::dnml_core)
+target_link_libraries(ci_add_sub        PRIVATE dnml::dnml_core)
+
 
 
 # /crt_algos

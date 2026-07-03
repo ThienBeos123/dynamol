@@ -9,6 +9,7 @@ build-perf/
 log/
 logs/
 install/
+sandbox.py
 *.o
 *.out
 *.a

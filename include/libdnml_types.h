@@ -55,7 +55,8 @@ typedef struct {
 typedef struct {
     size_t n; size_t cap;
     limb_t *limbs; int8_t sign;
-    bool poisoned; /*
+    bool poisoned; 
+    /*
         This field is not to be taken the same as crint_validate and its variants.
         crint_validate and its variants check and assert the validity of a cryptInt's
         internal state, following CRYPT_NUM_CONTRACT.txt. This field is specifically

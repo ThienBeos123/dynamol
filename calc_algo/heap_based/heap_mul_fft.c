@@ -83,7 +83,7 @@ void __sub_mod_fermat(bigInt *const out, const bigInt *const a, const bigInt *co
             else if (unlikely((i == nlimbs - 1))) curr_limb = last_limb;
             else curr_limb = 0;
             out->limbs[i] = __SUB_UI64__(curr_limb, y, &borrow);
-            if (!(out->limbs[i])) top_nonzero = i;
+            if (out->limbs[i]) top_nonzero = i;
         } out->sign = 1; out->n = top_nonzero;
     }
 }
@@ -106,7 +106,7 @@ void __negate_mod_fermat(bigInt *const out, const bigInt *in, size_t n, size_t n
         else if (unlikely((i == nlimbs - 1))) curr_limb = last_limb;
         else curr_limb = 0;
         out->limbs[i] = __SUB_UI64__(curr_limb, y, &borrow);
-        if (!(out->limbs[i])) top_nonzero = i;
+        if (out->limbs[i]) top_nonzero = i;
     } out->sign = 1; out->n = top_nonzero;
 }
 
