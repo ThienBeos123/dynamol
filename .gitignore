@@ -9,6 +9,7 @@ build-perf/
 log/
 logs/
 install/
+__pycache__/
 sandbox.py
 *.o
 *.out
@@ -17,3 +18,5 @@ sandbox.py
 *.dSYM
 .idea/
 *.pdf
+*.log
+*.sout
