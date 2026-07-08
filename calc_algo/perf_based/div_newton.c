@@ -99,7 +99,7 @@ static void __sub_2kp1(bigInt *const x, size_t exp_k) { // 2^(k + 1) - x (SIGN-A
 
 
 /* --------- MAIN FUNCTION - QUOTIENT-BIASED --------- */
-void __BIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT rem, calc_ctx newton_ctx, dnml_status *err) {
+void __BIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT rem, calc_ctx *newton_ctx, dnml_status *err) {
     // 1. Bootstrapping and Setting up metadatas
     limb_t dtop  = d->limbs[d->n - 1]; // The MSL (Most Significant Limb) of d
     size_t k = (d->n << 6) - __CLZ_UI64__(dtop); // Bit length of d
@@ -109,7 +109,7 @@ void __BIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT
     //  - Our goal here is to compute 2^k / D using Newton's root-approximation method
     //  - The reason we don't do 1 / D as detailed by Wikipedia's description of
     //    floating-point Newton-Raphson division is because that would always equal to 0 due to integer flooring
-    dnml_status echeck = BIGINT_SUCCESS; /**/ size_t newton_mark = scratch_mark(&newton_ctx);
+    dnml_status echeck = BIGINT_SUCCESS; /**/ size_t newton_mark = scratch_mark(newton_ctx);
     BIGINT_TEMP(r, n->n, newton_ctx, newton_mark, echeck, err,); r.cap = d->n;
     BIGINT_TEMP(dr, ((k << 1) + 1) >> 6, newton_ctx, newton_mark, echeck, err,);
     BIGINT_TEMP(rprod, max(((k + 1) << 1) >> 6, n->n + d->n), newton_ctx, newton_mark, echeck, err,);
@@ -147,14 +147,14 @@ void __BIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT quot, P_BIGINT
         __BIGINT_INTERNAL_COPY__(rem, &r);
     } // This function is quotient-biased due to if quot and rem were alias of one another, then we
     // would copy the final remainder into rem first, and then overwriting with the quotient result
-    __BIGINT_INTERNAL_COPY__(quot, &rprod); scratch_rewind(&newton_ctx, newton_mark); *err = BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_COPY__(quot, &rprod); scratch_rewind(newton_ctx, newton_mark); *err = BIGINT_SUCCESS;
 }
 
 
 
 
 /* ------------ MAIN FUNCTION - REMAINDER-BIASED ------------ */
-void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT rem, calc_ctx newton_ctx, dnml_status *err) {
+void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT rem, calc_ctx *newton_ctx, dnml_status *err) {
     // 1. Bootstrapping and Setting up metadatas
     limb_t dtop  = d->limbs[d->n - 1]; // The MSL (Most Significant Limb) of d
     size_t k = (d->n << 6) - __CLZ_UI64__(dtop); // Bit length of d
@@ -164,7 +164,7 @@ void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT rem, calc_ctx
     //  - Our goal here is to compute 2^k / D using Newton's root-approximation method
     //  - The reason we don't do 1 / D as detailed by Wikipedia's description of
     //    floating-point Newton-Raphson division is because that would always equal to 0 due to integer flooring
-    dnml_status echeck = BIGINT_SUCCESS; /**/ size_t newton_mark = scratch_mark(&newton_ctx);
+    dnml_status echeck = BIGINT_SUCCESS; /**/ size_t newton_mark = scratch_mark(newton_ctx);
     BIGINT_TEMP(r, n->n, newton_ctx, newton_mark, echeck, err,); r.cap = d->n;
     BIGINT_TEMP(dr, ((k << 1) + 1) >> 6, newton_ctx, newton_mark, echeck, err,);
     BIGINT_TEMP(rprod, max(((k + 1) << 1) >> 6, n->n + d->n), newton_ctx, newton_mark, echeck, err,);
@@ -197,5 +197,5 @@ void __RBIGINT_NEWTON__(PCONST_BIGINT n, PCONST_BIGINT d, P_BIGINT rem, calc_ctx
     r.cap = n->n; // Reusing r at a capacity of n->n due to D * Quot <= N
     __BIGINT_MUL_DISP__(d, &rprod, &r, newton_ctx, &echeck); SCRATCH_OVF(echeck, newton_ctx, newton_mark, err,);
     __BIGINT_SUB_WB__(&r, n, &r); // Formula: (Remainder = Dividend - (Divsor * Quotient))
-    __BIGINT_INTERNAL_COPY__(rem, &r); scratch_rewind(&newton_ctx, newton_mark); *err = BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_COPY__(rem, &r); scratch_rewind(newton_ctx, newton_mark); *err = BIGINT_SUCCESS;
 }

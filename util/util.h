@@ -31,8 +31,8 @@ limitations under the License.
 extern "C" {
 #endif
 
-#define min(x, y) ( ((x) < (y)) ? (x) : (y) )
-#define max(x, y) ( ((x) > (y)) ? (x) : (y) )
+#define min(x, y) ( ((x) <= (y)) ? (x) : (y) )
+#define max(x, y) ( ((x) >= (y)) ? (x) : (y) )
 
 
 /* ---------------------- */

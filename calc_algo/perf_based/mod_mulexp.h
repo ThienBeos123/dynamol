@@ -48,14 +48,14 @@ size_t __BIGINT_MODMUL_WS__(size_t a_size, size_t b_size, size_t mod_size);
 size_t __BIGINT_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size);
 
 
-void __BIGINT_MONTMUL__(const bigInt *const a, const bigInt *const b, mont_ctx ctx, bigInt *const res, calc_ctx montmul_ctx, dnml_status *err);
-void __BIGINT_CMODMUL__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, calc_ctx modmul_ctx, dnml_status *err);
-void __BIGINT_BIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx binexp_ctx, dnml_status *err);
-void __BIGINT_MBIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx binexp_ctx, dnml_status *err);
-void __BIGINT_FIX_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, uint8_t k, calc_ctx fix_ctx, dnml_status *err);
-void __BIGINT_SLIDE_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, uint8_t k, calc_ctx slide_ctx, dnml_status *err);
-void __BIGINT_MODMUL_DISP__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, calc_ctx modmul_ctx, dnml_status *err);
-void __BIGINT_MODEXP_DISP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx binexp_ctx, dnml_status *err);
+void __BIGINT_MONTMUL__(const bigInt *const a, const bigInt *const b, mont_ctx ctx, bigInt *const res, calc_ctx *montmul_ctx, dnml_status *err);
+void __BIGINT_CMODMUL__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, calc_ctx *modmul_ctx, dnml_status *err);
+void __BIGINT_BIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx *binexp_ctx, dnml_status *err);
+void __BIGINT_MBIN_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx *binexp_ctx, dnml_status *err);
+void __BIGINT_FIX_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, uint8_t k, calc_ctx *fix_ctx, dnml_status *err);
+void __BIGINT_SLIDE_MODEXP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, uint8_t k, calc_ctx *slide_ctx, dnml_status *err);
+void __BIGINT_MODMUL_DISP__(const bigInt *const a, const bigInt *const b, const bigInt *const mod, bigInt *const res, calc_ctx *modmul_ctx, dnml_status *err);
+void __BIGINT_MODEXP_DISP__(const bigInt *const base, const bigInt *const exp, const bigInt *const mod, bigInt *const res, calc_ctx *binexp_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

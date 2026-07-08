@@ -16,7 +16,7 @@ limitations under the License.
 
 
 
-#include "mul.h"
+#include "heap_mul.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
 /** ----------- BigInt Fast Fourier Transform Multiplication -----------
@@ -31,6 +31,7 @@ limitations under the License.
  *      - heap_mul_toom.c (implementation of Toom-cook 5, 6.5, 7.5, and 8.5-way)
  */
 /* ------------- Helper function ------------- */
+size_t ___hschoolbook_scale(size_t x) { return 1 << ((SIZE_T_BITS - __CLZ_UI64__(x)) - 8); }
 size_t __fft_best_metadata(size_t a_size, size_t b_size, size_t *outd, size_t *outm, size_t *outn) {
     size_t max_bits = max(a_size * U64_BITS, b_size * U64_BITS);
     size_t k = 2, d = 0, m = 0, n = 0;
@@ -443,7 +444,7 @@ void __BIHEAP_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status 
         if (res->limbs != NULL) echeck = __BIGINT_INTERNAL_ENSCAP__(res, a->n + b->n);
         else echeck = __BIGINT_INTERNAL_LINIT__(res, a->n + b->n);
         if (echeck == DNML_ALLOC_OOM) { __BIGINT_INTERNAL_FREE__(res); *err = DNML_ALLOC_OOM; return; }
-        __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; return;
+        __BIHEAP_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; return;
     } //* -------- 1. SETUP & SPLIT -------- *//
     // Splitting and Convolution Variables
     dnml_status echeck = BIGINT_SUCCESS;
@@ -493,8 +494,7 @@ void __BIHEAP_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status 
     
     //* -------- 4. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS -------- *//
     // Output of multiplication is up to 2 * nlimbs long before reduction
-    bigInt tmp_prod = {0}; // Will be allocated at the base-case
-    alloc_list[alloc_cnt++] = &tmp_prod; early_free[early_cnt++] = &tmp_prod;
+    bigInt tmp_prod = {0}; alloc_list[alloc_cnt++] = &tmp_prod; early_free[early_cnt++] = &tmp_prod;
     for (size_t i = 0; i < d; ++i) {
         __BIHEAP_FFT__(&eval_a[i], &eval_b[i], &tmp_prod, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         __reduce_mod_fermat(&eval_a[i], &tmp_prod, lo.limbs, hi.limbs, n, nlimbs);
@@ -551,7 +551,7 @@ void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_st
     size_t Bsize = min(a->n, b->n); // Beta size lol
     size_t Asize = max(a->n, b->n); // Alpha chad size lol
     size_t splits = ((size_t)(Asize / Bsize) + 1);
-    size_t slice = (Asize / splits), last_slice = Asize - slice;
+    size_t slice = (Asize / splits), last_slice = Asize % splits;
     const bigInt *const alpha = (Asize == a->n) ? a : b; 
     const bigInt *const beta = (Bsize == b->n) ? b : a;
     //* ============= Pre-operation Calculations & Allocations ============= *//
@@ -576,32 +576,32 @@ void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_st
     BIHEAP_TEMP(flat_evalb, total_limbs_needed, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
 
     /* -------- 4+5+6. Pointwise Multiplication + De-evaluation + Recomposition -------- */
-    BIHEAP_TEMP(prod_tmp, (nlimbs << 1) + 2, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
+    bigInt tmp_prod = {0}; alloc_list[alloc_cnt++] = &tmp_prod; early_free[early_cnt++] = &tmp_prod;
     BIHEAP_TEMP(tmp_res, Bsize + slice, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
-    BIHEAP_RET(accumulator, a->n + b->n, echeck, err, early_free, early_cnt,);
-    memset(tmp_res.limbs, 0, (a->n + b->n) * U64_BYTES);
+    BIHEAP_RET(acum, a->n + b->n, echeck, err, early_free, early_cnt,); memset(acum.limbs, 0, acum.cap * U64_BYTES);
 
 
 
 
 
     //* ============================= MULTIPLICATION LOOP WITH SLICES ============================= *//
-    bigInt window = {0}; size_t offset = 0;
+    bigInt window = {0}; size_t offset = 0, scaled_threshold = BIGINT_SCHOOLBOOK * ___hschoolbook_scale(Bsize);
     for (size_t i = 0; i < splits; ++i) {
         size_t curr_slice = slice; if (unlikely(i = splits - 1)) curr_slice = last_slice; /**/ offset = i * curr_slice;
         window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if (
-            min(Bsize, curr_slice) * 2 <= max(Bsize, curr_slice) || 
-            (Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
-            __BIGINT_SCHOOLBOOK__(beta, &window, &tmp_res);
-            __BIGINT_ADD_SHIFT__(&accumulator, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        if ((Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) { 
+            __BIHEAP_SCHOOLBOOK__(beta, &window, &tmp_res);
+            __BIGINT_ADD_SHIFT__(&acum, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        else if (Bsize != curr_slice) { // Rectangular Recursion
+            __BIHEAP_ASYM_MUL_DISP__(beta, &window, &tmp_res, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+            __BIGINT_ADD_SHIFT__(&acum, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
         // Recalculation of Metadata on last_slice's iteration
         if (i == splits - 1 && last_slice != slice) {
             k = __fft_best_metadata(Bsize, curr_slice, &d, &m, &n);
             mlimbs = (m + U64_BITS - 1) >> 6; /**/ nlimbs = (n + U64_BITS) >> 6;
-            prod_tmp.cap = (nlimbs << 1) + 2; /**/ tmp_res.cap = Bsize + curr_slice;
+            tmp_prod.cap = (nlimbs << 1) + 2; /**/ tmp_res.cap = Bsize + curr_slice;
         }
 
 
@@ -637,8 +637,8 @@ void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_st
         // Output of multiplication is up to 2 * nlimbs long before reduction
         for (size_t i = 0; i < d; ++i) {
             // Recursive Multiply step: eval_a[i] * eval_b[i]
-            __BIHEAP_FFT__(&eval_a[i], &eval_b[i], &prod_tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
-            __reduce_mod_fermat(&eval_a[i], &prod_tmp, lo_buf.limbs, hi_buf.limbs, n, nlimbs);
+            __BIHEAP_FFT__(&eval_a[i], &eval_b[i], &tmp_prod, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+            __reduce_mod_fermat(&eval_a[i], &tmp_prod, lo_buf.limbs, hi_buf.limbs, n, nlimbs);
             // Immediate Ring Reduction: Reduce back to Z/(2^n + 1)Z
         }
 
@@ -675,6 +675,6 @@ void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_st
                 __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf, mlimb_shift); // Addition with actual limb shifts
             }
         } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
-        __BIGINT_ADD_SHIFT__(&accumulator, &tmp_res, offset); // through adding sums: (tmp_res <<<= slice) + tmp
-    } __BIGINT_INTERNAL_MOVE__(res, &accumulator); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
+        __BIGINT_ADD_SHIFT__(&acum, &tmp_res, offset); // through adding sums: (tmp_res <<<= slice) + tmp
+    } __BIGINT_INTERNAL_MOVE__(res, &acum); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }

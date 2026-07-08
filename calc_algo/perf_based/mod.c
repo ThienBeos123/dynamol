@@ -53,9 +53,9 @@ size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size) {
 
 
 /* ----------------- ALGORITHMS FUNCTIONS ----------------- */
-void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx barett_ctx, dnml_status *err) {
+void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx *barett_ctx, dnml_status *err) {
     //* ---- 1. PRECOMPUTATION - μ ---- *//
-    dnml_status echeck = BIGINT_SUCCESS; size_t barett_mark = scratch_mark(&barett_ctx);
+    dnml_status echeck = BIGINT_SUCCESS; size_t barett_mark = scratch_mark(barett_ctx);
     size_t precomp_size = (n->n << 1) + 1, remlimbs = a->n - (n->n - 1);
     BIGINT_TEMP(numer, precomp_size + remlimbs, barett_ctx, barett_mark, echeck, err,); numer.n = precomp_size;
     BIGINT_TEMP(precomp, precomp_size, barett_ctx, barett_mark, echeck, err,);
@@ -95,10 +95,10 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
     a_copy.n = a->n; /**/ memcpy(a_copy.limbs, a->limbs, a->n * U64_BYTES);
     __BIGINT_MUL_DISP__(&numer, n, &tmp, barett_ctx, &echeck); SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
     __BIGINT_INTERNAL_TRIM_LZ__(&tmp); if (tmp.n > a_copy.n) { // Guaranteeing Barett's Invariant of tmp's size
-        scratch_rewind(&barett_ctx, barett_mark); *err = BIGINT_ERR_RANGE; return; 
+        scratch_rewind(barett_ctx, barett_mark); *err = BIGINT_ERR_RANGE; return; 
     } __BIGINT_SUB_WB__(&a_copy, &a_copy, &tmp);
     while (__BIGINT_INTERNAL_COMP__(&a_copy, n) >= 0) __BIGINT_SUB_WB__(&a_copy, &a_copy, n);
-    __BIGINT_INTERNAL_COPY__(rem, &a_copy); scratch_rewind(&barett_ctx, barett_mark); *err = BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_COPY__(rem, &a_copy); scratch_rewind(barett_ctx, barett_mark); *err = BIGINT_SUCCESS;
 }
 void __BIGINT_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
     uint64_t m, carry = 0;
@@ -116,7 +116,7 @@ void __BIGINT_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
     if (__BIGINT_INTERNAL_COMP__(t, mredc_ctx.n) > 0) __BIGINT_SUB_WB__(t, t, mredc_ctx.n);
     __BIGINT_INTERNAL_COPY__(rem, t);
 }
-void __BIGINT_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx mod_ctx, dnml_status *err) {
+void __BIGINT_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx *mod_ctx, dnml_status *err) {
     if (n->n < BIGINT_SHORT) { __RBIGINT_SHORT_DIVISION__(a, n->limbs[0], rem); *err = BIGINT_SUCCESS; }
     else if (n->n < BIGINT_KNUTH) __RBIGINT_KNUTH_D__(a, n, rem, mod_ctx, err);
     else if (n->n < BIGINT_BARETT) __BIGINT_BARETT__(a, n, rem, mod_ctx, err);

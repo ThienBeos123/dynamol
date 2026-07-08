@@ -125,6 +125,8 @@ extern "C" {
         #define _DNML_MR_ROUNDS_DYNAMOL  5 /* Scientific: 2^(-10) error */
     #elif _DNML_PERF_PROFILE == 2
         #define _DNML_MR_ROUNDS_DYNAMOL 15 /* Scientific: 2^(-30) error */
+    #else
+        #define _DNML_MR_ROUNDS_DYNAMOL 0
     #endif
 #endif
 #ifndef _DNML_MR_ROUNDS_DBEDDED

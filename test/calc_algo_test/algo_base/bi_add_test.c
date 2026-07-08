@@ -255,7 +255,7 @@ int main(void) { _libdnml_init();
     limb_t *ret_buf = (limb_t *)malloc(BUF_SIZE * U64_BYTES); assert(ret_buf != NULL);
     bigInt ret = { .limbs = ret_buf, .n = 0, .cap = BUF_SIZE, .sign = 1 };
     log_path = fopen("../../algo_base/bi_add_logs.log", "w+");
-    if (log_path == NULL) { free(ret_buf); fputs("Can't open log file", stdout); return 1; }
+    if (log_path == NULL) { free(ret_buf); fputs("Can't open log file", stderr); return 1; }
     fputs("====================================================================\n", stdout);
     fputs("               LIB-DNML ALGORITHM TESTS - BIGINT ADDITION           \n", stdout);
     fputs("====================================================================\n", stdout);

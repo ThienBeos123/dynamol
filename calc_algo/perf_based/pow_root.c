@@ -105,9 +105,9 @@ size_t __BIGINT_NEWTON_NRT_WS__(size_t a_size, uint64_t root) {
 
 
 /* ----------------- ALGORITHMS ----------------- */
-void __BIGINT_BINARY_EXP__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, calc_ctx binexp_ctx, dnml_status *err) {
+void __BIGINT_BINARY_EXP__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, calc_ctx *binexp_ctx, dnml_status *err) {
     // SETUP
-    dnml_status echeck; size_t binexp_mark = scratch_mark(&binexp_ctx);
+    dnml_status echeck; size_t binexp_mark = scratch_mark(binexp_ctx);
     BIGINT_TEMP(tmp_res, base->n * exp, binexp_ctx, binexp_mark, echeck, err,); tmp_res.limbs[0] = 1; tmp_res.n = 1;
     BIGINT_TEMP(tmp_base, base->n * exp, binexp_ctx, binexp_mark, echeck, err,);
     memcpy(tmp_base.limbs, base->limbs, base->n * U64_BYTES); tmp_base.n = base->n;
@@ -120,18 +120,18 @@ void __BIGINT_BINARY_EXP__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, calc_
         __BIGINT_MUL_DISP__(&tmp_base, &tmp_base, &tmp_base, binexp_ctx, &echeck);
         SCRATCH_OVF(echeck, binexp_ctx, binexp_mark, err,); exp >>= 1;
     } __BIGINT_INTERNAL_COPY__(res, &tmp_res); 
-    scratch_rewind(&binexp_ctx, binexp_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(binexp_ctx, binexp_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_FIXED__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, uint8_t k, calc_ctx fix_ctx, dnml_status *err) {
+void __BIGINT_FIXED__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, uint8_t k, calc_ctx *fix_ctx, dnml_status *err) {
     /* --- 1. SETUP ---- */ dnml_status echeck;
-    size_t table_size = UINT64_C(1) << (k - 1), fix_mark = scratch_mark(&fix_ctx);
+    size_t table_size = UINT64_C(1) << (k - 1), fix_mark = scratch_mark(fix_ctx);
     bigInt table[table_size]; table[0] = *base;
     BIGINT_TEMP(x2, (base->n << 1), fix_ctx, fix_mark, echeck, err,);
     __BIGINT_MUL_DISP__(base, base, &x2, fix_ctx, &echeck); SCRATCH_OVF(echeck, fix_ctx, fix_mark, err,);
 
     //* ---- 2. TABLE PRECOMPUTATION ----- *//
     for (size_t i = 1; i < table_size; ++i) {
-        table[i].limbs = scratch_alloc(&fix_ctx, base->n * ((i << 1) + 1) * U64_BYTES, &echeck); 
+        table[i].limbs = scratch_alloc(fix_ctx, base->n * ((i << 1) + 1) * U64_BYTES, &echeck); 
         SCRATCH_OVF(echeck, fix_ctx, fix_mark, err,);
         table[i].cap = base->n * ((i << 1) + 1); table[i].sign  = 1; table[i].n = 0;
         __BIGINT_MUL_DISP__(&table[i-1], &x2, &table[i], fix_ctx, &echeck); SCRATCH_OVF(echeck, fix_ctx, fix_mark, err,);
@@ -158,18 +158,18 @@ void __BIGINT_FIXED__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, uint8_t k,
             __BIGINT_MUL_DISP__(&tmp_res, &tmp_res, &tmp_res, fix_ctx, &echeck);
             SCRATCH_OVF(echeck, fix_ctx, fix_mark, err,);
         }
-    } __BIGINT_INTERNAL_COPY__(res, &tmp_res); scratch_rewind(&fix_ctx, fix_mark); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_COPY__(res, &tmp_res); scratch_rewind(fix_ctx, fix_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_SLIDING__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, uint8_t k, calc_ctx slide_ctx, dnml_status *err) {
+void __BIGINT_SLIDING__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, uint8_t k, calc_ctx *slide_ctx, dnml_status *err) {
     /* --- 1. SETUP ---- */ dnml_status echeck;
-    size_t table_size = 1 << (k - 1), slide_mark = scratch_mark(&slide_ctx);
+    size_t table_size = 1 << (k - 1), slide_mark = scratch_mark(slide_ctx);
     bigInt table[table_size]; table[0] = *base;
     BIGINT_TEMP(x2, (base->n << 1), slide_ctx, slide_mark, echeck, err,);
     __BIGINT_MUL_DISP__(base, base, &x2, slide_ctx, &echeck); SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
 
     //* ---- 2. TABLE PRECOMPUTATION ----- *//
     for (size_t i = 1; i < table_size; ++i) {
-        table[i].limbs = scratch_alloc(&slide_ctx, base->n * ((i << 1) + 1) * U64_BYTES, &echeck);
+        table[i].limbs = scratch_alloc(slide_ctx, base->n * ((i << 1) + 1) * U64_BYTES, &echeck);
         SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
         table[i].cap = base->n * ((i << 1) + 1); table[i].sign = 1;
         __BIGINT_MUL_DISP__(&table[i-1], &x2, &table[i], slide_ctx, &echeck); SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
@@ -196,12 +196,12 @@ void __BIGINT_SLIDING__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, uint8_t 
             __BIGINT_MUL_DISP__(&tmp_res, &table[(curr_chunk - 1) >> 1], &tmp_res, slide_ctx, &echeck);
             SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,); curr_pos = s - 1;
         }
-    } __BIGINT_INTERNAL_COPY__(res, &tmp_res); scratch_rewind(&slide_ctx, slide_mark); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_COPY__(res, &tmp_res); scratch_rewind(slide_ctx, slide_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_HERON__(P_BIGINT res, PCONST_BIGINT a, calc_ctx heron_ctx, dnml_status *err) {
+void __BIGINT_HERON__(P_BIGINT res, PCONST_BIGINT a, calc_ctx *heron_ctx, dnml_status *err) {
     dnml_status echeck;
     uint64_t guess_bits = (__BIGINT_COUNTDB__(a, 2) + 1) >> 1;
-    size_t heron_mark = scratch_mark(&heron_ctx);
+    size_t heron_mark = scratch_mark(heron_ctx);
     BIGINT_TEMP(guess, a->n, heron_ctx, heron_mark, echeck, err,);
     BIGINT_TEMP(ratio, a->n, heron_ctx, heron_mark, echeck, err,);
     BIGINT_TEMP(next, a->n + 1, heron_ctx, heron_mark, echeck, err,);
@@ -213,12 +213,12 @@ void __BIGINT_HERON__(P_BIGINT res, PCONST_BIGINT a, calc_ctx heron_ctx, dnml_st
         __BIGINT_ADD_WC__(&next, &guess, &ratio); __BIGINT_INTERNAL_RSHIFT__(&next, 1);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/ __BIGINT_INTERNAL_SWAP__(&guess, &next);
-    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(&heron_ctx, heron_mark); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(heron_ctx, heron_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_NEWTON_CBRT__(P_BIGINT res, PCONST_BIGINT a, calc_ctx cbrt_ctx, dnml_status *err) {
+void __BIGINT_NEWTON_CBRT__(P_BIGINT res, PCONST_BIGINT a, calc_ctx *cbrt_ctx, dnml_status *err) {
     dnml_status echeck;
     uint64_t guess_bits = (__BIGINT_COUNTDB__(a, 2) + 2) / 3;
-    size_t cbrt_mark = scratch_mark(&cbrt_ctx);
+    size_t cbrt_mark = scratch_mark(cbrt_ctx);
     BIGINT_TEMP(guess,  (a->n + 1) << 1,  cbrt_ctx, cbrt_mark, echeck, err,);
     BIGINT_TEMP(ratio,   a->n + 1,        cbrt_ctx, cbrt_mark, echeck, err,);
     BIGINT_TEMP(next,   (a->n + 1) << 1,  cbrt_ctx, cbrt_mark, echeck, err,);
@@ -233,7 +233,7 @@ void __BIGINT_NEWTON_CBRT__(P_BIGINT res, PCONST_BIGINT a, calc_ctx cbrt_ctx, dn
         __BIGINT_ADD_WC__(&next, &next, &ratio); __BIGINT_DIV3__(&next);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/ __BIGINT_INTERNAL_SWAP__(&guess, &next);
-    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(&cbrt_ctx, cbrt_mark); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(cbrt_ctx, cbrt_mark); *err = BIGINT_SUCCESS;
 }
 uint64_t __UI64_NROOT__(uint64_t a, uint64_t root) {
     if (__IS_2POW__(root)) {
@@ -260,14 +260,14 @@ uint64_t __UI64_NROOT__(uint64_t a, uint64_t root) {
         } return guess;
     }
 }
-void __BIGINT_NEWTON_2NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ctx _2nrt_ctx, dnml_status *err) {
+void __BIGINT_NEWTON_2NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ctx *_2nrt_ctx, dnml_status *err) {
     // ! WARNING ! WARNING ! WARNING ! WARNING !
     //   THIS FUNCTION EXPECTS THE ROOT TO A POWER OF 2
     // ! WARNING ! WARNING ! WARNING ! WARNING !
     dnml_status echeck;
     uint8_t shift = __CTZ_UI64__(root);
     uint64_t guess_bits = (__BIGINT_COUNTDB__(a, 2) + root - 1) >> shift;
-    size_t _2nrt_mark = scratch_mark(&_2nrt_ctx);
+    size_t _2nrt_mark = scratch_mark(_2nrt_ctx);
     BIGINT_TEMP(guess, a->n * (root - 1), _2nrt_ctx, _2nrt_mark, echeck, err,);
     BIGINT_TEMP(ratio, a->n, _2nrt_ctx, _2nrt_mark, echeck, err,);
     guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63);
@@ -286,12 +286,12 @@ void __BIGINT_NEWTON_2NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_c
         if (!comp_res || comp_res == 1) break; 
         __BIGINT_INTERNAL_SWAP__(&guess, &next);
         __BIGINT_EXP_DISP__(&xpow, &guess, (root - 1), _2nrt_ctx, &echeck); SCRATCH_OVF(echeck, _2nrt_ctx, _2nrt_mark, err,);
-    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(&_2nrt_ctx, _2nrt_mark); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(_2nrt_ctx, _2nrt_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_NEWTON_NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ctx nrt_ctx, dnml_status *err) {
+void __BIGINT_NEWTON_NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ctx *nrt_ctx, dnml_status *err) {
     dnml_status echeck;
     uint64_t guess_bits = (__BIGINT_COUNTDB__(a, 2) + root - 1) / root;
-    size_t nrt_mark = scratch_mark(&nrt_ctx);
+    size_t nrt_mark = scratch_mark(nrt_ctx);
     BIGINT_TEMP(guess, a->n * (root - 1), nrt_ctx, nrt_mark, echeck, err,);
     BIGINT_TEMP(ratio, a->n, nrt_ctx, nrt_mark, echeck, err,);
     guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63); guess.n = (guess_bits >> 6) + 1;
@@ -315,7 +315,7 @@ void __BIGINT_NEWTON_NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ct
         if (!comp_res || comp_res == 1) break;
         __BIGINT_INTERNAL_SWAP__(&guess, &next);
         __BIGINT_EXP_DISP__(&xpow, &guess, (root - 1), nrt_ctx, &echeck); SCRATCH_OVF(echeck, nrt_ctx, nrt_mark, err,);
-    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(&nrt_ctx, nrt_mark); *err = BIGINT_SUCCESS;
+    } __BIGINT_INTERNAL_COPY__(res, &guess); scratch_rewind(nrt_ctx, nrt_mark); *err = BIGINT_SUCCESS;
 }
 
 
@@ -344,21 +344,21 @@ size_t __BIGINT_NRT_WS__(size_t a_size, uint64_t root) {
         else return __BIGINT_NEWTON_NRT_WS__(a_size, root);
     }
 }
-void __BIGINT_EXP_DISP__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, calc_ctx exp_ctx, dnml_status *err) {
+void __BIGINT_EXP_DISP__(P_BIGINT res, PCONST_BIGINT base, uint64_t exp, calc_ctx *exp_ctx, dnml_status *err) {
     uint8_t pow_bits = U64_BITS - __CLZ_UI64__(exp);
     if (pow_bits <= BIGINT_BINARY) __BIGINT_BINARY_EXP__(res, base, exp, exp_ctx, err);
     else if (pow_bits <= BIGINT_FIXED) __BIGINT_FIXED__(res, base, exp, 4, exp_ctx, err);
     else __BIGINT_SLIDING__(res, base, exp, 3, exp_ctx, err);
 }
-void __BIGINT_SQRT_DISP__(P_BIGINT res, PCONST_BIGINT a, calc_ctx sqrt_ctx, dnml_status *err) {
+void __BIGINT_SQRT_DISP__(P_BIGINT res, PCONST_BIGINT a, calc_ctx *sqrt_ctx, dnml_status *err) {
     if (a->n <= BIGINT_NAIVE) { res->limbs[0] = (uint64_t)(sqrtl((long double)a->limbs[0])); res->n = 1; }
     else __BIGINT_HERON__(res, a, sqrt_ctx, err);
 }
-void __BIGINT_CBRT_DISP__(P_BIGINT res, PCONST_BIGINT a, calc_ctx cbrt_ctx, dnml_status *err) {
+void __BIGINT_CBRT_DISP__(P_BIGINT res, PCONST_BIGINT a, calc_ctx *cbrt_ctx, dnml_status *err) {
     if (a->n <= BIGINT_NAIVE) { res->limbs[0] = (uint64_t)(cbrtl((long double)a->limbs[0])); res->n = 1; }
     else __BIGINT_NEWTON_CBRT__(res, a, cbrt_ctx, err);
 }
-void __BIGINT_NRT_DISP__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ctx nrt_ctx, dnml_status *err) {
+void __BIGINT_NRT_DISP__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ctx *nrt_ctx, dnml_status *err) {
     if (a->n <= BIGINT_NAIVE) {
         if (root == 2) res->limbs[0] = (uint64_t)(sqrtl((long double)a->limbs[0]));
         else if (root == 3) res->limbs[0] = (uint64_t)(cbrtl((long double)a->limbs[0]));

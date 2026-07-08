@@ -38,7 +38,7 @@
             "name": "pdnml-unix-flag",
             "hidden": true,
             "cacheVariables": { 
-                "CMAKE_C_FLAGS": "-w -O3 -flto -march=native -mtune=native -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=0 -D_DNML_PRIMALITY_STRATEGY=0"
+                "CMAKE_C_FLAGS": "-w -O3 -flto -march=native -mtune=native -D_DNML_DEBUG_MODE=0 -D_DNML_PERF_PROFILE=0 -D_DNML_PRIMALITY_STRATEGY=0 -D_DNML_MRROUNDS"
             }
         }, 
         {
@@ -98,7 +98,7 @@
             "displayName": "Drypto Release Build (GCC/Clang) – Secure",
             "description": "Hardened release build for Drypto (cryptography). Secure profile: heap fallback enabled, Baillie-PSW + MR (20 rounds), verified correctness prioritized over speed.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-drypto/unix",
+            "binaryDir": "${sourceDir}/build-drt/unix",
             "inherits": "drt-unix-flag"
         },
         { 
@@ -106,7 +106,7 @@
             "displayName": "Drypto Release Build (MSVC) – Secure",
             "description": "Hardened release build for Drypto (cryptography). Secure profile: heap fallback enabled, Baillie-PSW + MR (20 rounds), verified correctness prioritized over speed.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-drypto/msvc",
+            "binaryDir": "${sourceDir}/build-drt/msvc",
             "inherits": "drt-msvc-flag"
         },
         {
@@ -114,7 +114,7 @@
             "displayName": "Dynamol Release Build (GCC/Clang) – Max Performance",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-dynamol-perf/unix",
+            "binaryDir": "${sourceDir}/build-mdnml/unix",
             "inherits": "pdnml-unix-flag"
         },
         { 
@@ -122,7 +122,7 @@
             "displayName": "Dynamol Release Build (MSVC) – Max Performance",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-dynamol-perf/msvc",
+            "binaryDir": "${sourceDir}/build-mdnml/msvc",
             "inherits": "pdnml-msvc-flag"
         },
         {
@@ -130,7 +130,7 @@
             "displayName": "Dynamol Release Build (GCC/Clang) – Mild Performance, Top Stability",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-dynamol-perf/unix",
+            "binaryDir": "${sourceDir}/build-pdnml/unix",
             "inherits": "bdnml-unix-flag"
         },
         { 
@@ -138,7 +138,7 @@
             "displayName": "Dynamol Release Build (MSVC) – Mild Performance, Top Stability",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-dynamol-perf/msvc",
+            "binaryDir": "${sourceDir}/build-pdnml/msvc",
             "inherits": "bdnml-msvc-flag"
         },
         {
@@ -146,7 +146,7 @@
             "displayName": "Dynamol Stable Release Build (GCC/Clang)",
             "description": "Balanced performance build for Dynamol (scientific). Secure profile with aggressive optimizations: heap fallback enabled, adaptive primality, full API stability. Faster than Drypto but safer than Max Performance.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-dynamol-stable/unix",
+            "binaryDir": "${sourceDir}/build-sdnml/unix",
             "inherits": "sdnml-unix-flag"
         },
         {
@@ -154,7 +154,7 @@
             "displayName": "Dynamol Stable Release Build (MSVC)",
             "description": "Balanced performance build for Dynamol (scientific). Secure profile with aggressive optimizations: heap fallback enabled, adaptive primality, full API stability. Faster than Drypto but safer than Max Performance.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-dynamol-stable/msvc",
+            "binaryDir": "${sourceDir}/build-sdnml/msvc",
             "inherits": "sdnml-msvc-flag"
         }
     ],

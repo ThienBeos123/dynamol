@@ -6,12 +6,12 @@ def evaluate_logic(inputs):
     MANUAL TWEAK ZONE: Modify this function based on the operation you are testing.
     'inputs' is a list of integer values corresponding to the current case.
     """
-    return inputs[0] - inputs[1]
+    return inputs[0] * inputs[1]
 
 def run_evaluator(cases):
-    exp_limb_cache = {}
-    exp_limb_strings = []
-    limb_counter = 1
+    exp_limb_cache: dict = {}
+    exp_limb_strings: list = []
+    limb_counter: int = 1
     magnituded = input("Magnituded inputs (for evaluator.py? [Y/n]: ")
     magnituded = magnituded.lower()
     if magnituded == 'y': magnituded = True

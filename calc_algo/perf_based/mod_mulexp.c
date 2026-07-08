@@ -111,36 +111,36 @@ size_t __BIGINT_MODEXP_WS__(size_t base_size, size_t mod_size, size_t pow_size) 
 
 
 //* --------- ALGORITHMS --------- *//
-void __BIGINT_CMODMUL__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod, P_BIGINT res, calc_ctx modmul_ctx, dnml_status *err) {
-    dnml_status echeck = BIGINT_SUCCESS; size_t cmodmul_mark = scratch_mark(&modmul_ctx);
+void __BIGINT_CMODMUL__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod, P_BIGINT res, calc_ctx *modmul_ctx, dnml_status *err) {
+    dnml_status echeck = BIGINT_SUCCESS; size_t cmodmul_mark = scratch_mark(modmul_ctx);
     BIGINT_TEMP(prod, (a->n + b->n), modmul_ctx, cmodmul_mark, echeck, err,);
     const bigInt *chosen_a = a, *chosen_b = b; bigInt a_mod_n = {0}, b_mod_n = {0};
     if (a->n < mod->n << 1) {
-        limb_t *amodn_limbs = scratch_alloc(&modmul_ctx, mod->n, &echeck);
-        if (echeck != DARENA_SUCCESS) { scratch_rewind(&modmul_ctx, cmodmul_mark); *err = DARENA_OVERFLOW; return; }
+        limb_t *amodn_limbs = scratch_alloc(modmul_ctx, mod->n, &echeck);
+        if (echeck != DARENA_SUCCESS) { scratch_rewind(modmul_ctx, cmodmul_mark); *err = DARENA_OVERFLOW; return; }
         a_mod_n.limbs = amodn_limbs; a_mod_n.n = 0, a_mod_n.sign = 1; a_mod_n.cap = mod->n;
         __BIGINT_MOD_DISP__(a, mod, &a_mod_n, modmul_ctx, &echeck); 
         SCRATCH_OVF(echeck, modmul_ctx, cmodmul_mark, err,); chosen_a = &a_mod_n;
     }
     if (b->n < mod->n << 1) {
-        limb_t *bmodn_limbs = scratch_alloc(&modmul_ctx, mod->n, &echeck);
-        if (echeck != DARENA_SUCCESS) { scratch_rewind(&modmul_ctx, cmodmul_mark); *err = DARENA_OVERFLOW; return; }
+        limb_t *bmodn_limbs = scratch_alloc(modmul_ctx, mod->n, &echeck);
+        if (echeck != DARENA_SUCCESS) { scratch_rewind(modmul_ctx, cmodmul_mark); *err = DARENA_OVERFLOW; return; }
         b_mod_n.limbs = bmodn_limbs; b_mod_n.n = 0, b_mod_n.sign = 1; b_mod_n.cap = mod->n;
         __BIGINT_MOD_DISP__(b, mod, &b_mod_n, modmul_ctx, &echeck); 
         SCRATCH_OVF(echeck, modmul_ctx, cmodmul_mark, err,); chosen_b = &b_mod_n;
     }
     __BIGINT_MUL_DISP__(chosen_a, chosen_b, &prod, modmul_ctx, &echeck); SCRATCH_OVF(echeck, modmul_ctx, cmodmul_mark, err,);
     __BIGINT_MOD_DISP__(&prod, mod, res, modmul_ctx, &echeck); SCRATCH_OVF(echeck, modmul_ctx, cmodmul_mark, err,);
-    scratch_rewind(&modmul_ctx, cmodmul_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(modmul_ctx, cmodmul_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_MONTMUL__(PCONST_BIGINT a, PCONST_BIGINT b, mont_ctx ctx, P_BIGINT res, calc_ctx montmul_ctx, dnml_status *err) {
-    dnml_status echeck = BIGINT_SUCCESS; size_t montmul_mark = scratch_mark(&montmul_ctx);
+void __BIGINT_MONTMUL__(PCONST_BIGINT a, PCONST_BIGINT b, mont_ctx ctx, P_BIGINT res, calc_ctx *montmul_ctx, dnml_status *err) {
+    dnml_status echeck = BIGINT_SUCCESS; size_t montmul_mark = scratch_mark(montmul_ctx);
     BIGINT_TEMP(t, ((ctx.k << 1) + 1), montmul_ctx, montmul_mark, echeck, err,);
     __BIGINT_MUL_DISP__(a, b, &t, montmul_ctx, &echeck); SCRATCH_OVF(echeck, montmul_ctx, montmul_mark, err,);
-    __BIGINT_MONT_REDC__(&t, ctx, res); scratch_rewind(&montmul_ctx, montmul_mark); *err = BIGINT_SUCCESS;
+    __BIGINT_MONT_REDC__(&t, ctx, res); scratch_rewind(montmul_ctx, montmul_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_BIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx bin_ctx, dnml_status *err) {
-    dnml_status echeck = BIGINT_SUCCESS; size_t binexp_mark = scratch_mark(&bin_ctx);
+void __BIGINT_BIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx *bin_ctx, dnml_status *err) {
+    dnml_status echeck = BIGINT_SUCCESS; size_t binexp_mark = scratch_mark(bin_ctx);
     int8_t cmp_res = __BIGINT_INTERNAL_COMP__(base, mod); size_t tres_size = (cmp_res > 0) ? base->n : mod->n;
     BIGINT_TEMP(tmp_res, tres_size, bin_ctx, binexp_mark, echeck, err,);
     BIGINT_TEMP(tmp_exp, exp->n, bin_ctx, binexp_mark, echeck, err,);
@@ -157,12 +157,12 @@ void __BIGINT_BIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT 
         __BIGINT_CMODMUL__(&tmp_base, &tmp_base, mod, &tmp_base, bin_ctx, &echeck); 
         SCRATCH_OVF(echeck, bin_ctx, binexp_mark, err,); __BIGINT_INTERNAL_RSHIFT__(&tmp_exp, 1);
     } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); __BIGINT_INTERNAL_COPY__(res, &tmp_res);
-    scratch_rewind(&bin_ctx, binexp_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(bin_ctx, binexp_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_MBIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx bin_ctx, dnml_status *err) {
+void __BIGINT_MBIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx *bin_ctx, dnml_status *err) {
     /* --- 1. SETUP ---- */ dnml_status echeck = BIGINT_SUCCESS;
     mont_ctx modexp_contx = { .n = mod, .nprime = __MODINV_UI64__(mod->limbs[0]), .k = mod->n }; 
-    size_t binexp_mark = scratch_mark(&bin_ctx), max_tsize = max((mod->n << 1), max(base->n, exp->n));
+    size_t binexp_mark = scratch_mark(bin_ctx), max_tsize = max((mod->n << 1), max(base->n, exp->n));
     int8_t cmp_res = __BIGINT_INTERNAL_COMP__(base, mod);
     BIGINT_TEMP(r, mod->n + 1, bin_ctx, binexp_mark, echeck, err,); r.n = mod->n + 1;
     BIGINT_TEMP(r_mod_n, mod->n, bin_ctx, binexp_mark, echeck, err,);
@@ -193,12 +193,12 @@ void __BIGINT_MBIN_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT
     } uint64_t a[1] = {1};
     __BIGINT_MONTMUL__(&r_mod_n, &(bigInt){.limbs = a, .n = 1, .cap = 1, .sign = 1}, modexp_contx, res, bin_ctx, &echeck); 
     SCRATCH_OVF(echeck, bin_ctx, binexp_mark, err,); __BIGINT_INTERNAL_COPY__(res, &r_mod_n);
-    scratch_rewind(&bin_ctx, binexp_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(bin_ctx, binexp_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_FIX_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, uint8_t k, calc_ctx fix_ctx, dnml_status *err) {
+void __BIGINT_FIX_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, uint8_t k, calc_ctx *fix_ctx, dnml_status *err) {
     /* --- 1. MONTGOMERY DOMAIN SETUP ---- */ dnml_status echeck = BIGINT_SUCCESS;
     mont_ctx modexp_contx = { .n = mod, .nprime = __MODINV_UI64__(mod->limbs[0]), .k = mod->n }; 
-    size_t fixexp_mark = scratch_mark(&fix_ctx), max_tsize = max((mod->n << 1), max(base->n, exp->n));
+    size_t fixexp_mark = scratch_mark(fix_ctx), max_tsize = max((mod->n << 1), max(base->n, exp->n));
     int8_t cmp_res = __BIGINT_INTERNAL_COMP__(base, mod);
     BIGINT_TEMP(r, mod->n + 1, fix_ctx, fixexp_mark, echeck, err,); r.n = mod->n + 1; 
     BIGINT_TEMP(r_mod_n, mod->n, fix_ctx, fixexp_mark, echeck, err,);
@@ -214,7 +214,7 @@ void __BIGINT_FIX_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT 
     table[0] = r; /**/ BIGINT_TEMP(x2_mod, mod->n, fix_ctx, fixexp_mark, echeck, err,);
     __BIGINT_MONTMUL__(&r, &r, modexp_contx, &x2_mod, fix_ctx, &echeck);
     for (size_t i = 1; i < table_size; ++i) {
-        table[i].limbs = scratch_alloc(&fix_ctx, mod->n, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
+        table[i].limbs = scratch_alloc(fix_ctx, mod->n, &echeck); SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
         table[i].cap = mod->n; table[i].sign = 1; table[i].n = 0;
         __BIGINT_MONTMUL__(&table[i-1], &x2_mod, modexp_contx, &table[i], fix_ctx, &echeck);
         SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,);
@@ -258,12 +258,12 @@ void __BIGINT_FIX_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT 
     } uint64_t a[1] = {1};
     __BIGINT_MONTMUL__(&r_mod_n, &(bigInt){.limbs = a, .n = 1, .cap = 1, .sign = 1}, modexp_contx, res, fix_ctx, &echeck);
     SCRATCH_OVF(echeck, fix_ctx, fixexp_mark, err,); __BIGINT_INTERNAL_COPY__(res, &r_mod_n);
-    scratch_rewind(&fix_ctx, fixexp_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(fix_ctx, fixexp_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_SLIDE_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, uint8_t k, calc_ctx slide_ctx, dnml_status *err) {
+void __BIGINT_SLIDE_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, uint8_t k, calc_ctx *slide_ctx, dnml_status *err) {
     /* --- 1. MONTGOMERY DOMAIN SETUP ---- */ dnml_status echeck = BIGINT_SUCCESS;
     mont_ctx modexp_contx = { .n = mod, .nprime = __MODINV_UI64__(mod->limbs[0]), .k = mod->n }; 
-    size_t slide_mark = scratch_mark(&slide_ctx), max_tsize = max((mod->n << 1), max(base->n, exp->n));
+    size_t slide_mark = scratch_mark(slide_ctx), max_tsize = max((mod->n << 1), max(base->n, exp->n));
     int8_t cmp_res = __BIGINT_INTERNAL_COMP__(base, mod);
     BIGINT_TEMP(r, mod->n + 1, slide_ctx, slide_mark, echeck, err,); r.n = mod->n + 1;
     BIGINT_TEMP(r_mod_n, mod->n, slide_ctx, slide_mark, echeck, err,);
@@ -279,7 +279,7 @@ void __BIGINT_SLIDE_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGIN
     table[0] = r; /**/ BIGINT_TEMP(x2_mod, mod->n, slide_ctx, slide_mark, echeck, err,);
     __BIGINT_MONTMUL__(&r, &r, modexp_contx, &x2_mod, slide_ctx, &echeck);
     for (size_t i = 1; i < table_size; ++i) {
-        table[i].limbs = scratch_alloc(&slide_ctx, mod->n, &echeck); SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
+        table[i].limbs = scratch_alloc(slide_ctx, mod->n, &echeck); SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
         table[i].cap = mod->n; table[i].sign = 1; table[i].n = 0;
         __BIGINT_MONTMUL__(&table[i-1], &x2_mod, modexp_contx, &table[i], slide_ctx, &echeck);
         SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,);
@@ -330,13 +330,13 @@ void __BIGINT_SLIDE_MODEXP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGIN
     } uint64_t a[1] = {1};
     __BIGINT_MONTMUL__(&r_mod_n, &(bigInt){.limbs = a, .n = 1, .cap = 1, .sign = 1}, modexp_contx, res, slide_ctx, &echeck);
     SCRATCH_OVF(echeck, slide_ctx, slide_mark, err,); __BIGINT_INTERNAL_COPY__(res, &r_mod_n);
-    scratch_rewind(&slide_ctx, slide_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(slide_ctx, slide_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_MODMUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod, P_BIGINT res, calc_ctx modmul_ctx, dnml_status *err) {
+void __BIGINT_MODMUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod, P_BIGINT res, calc_ctx *modmul_ctx, dnml_status *err) {
     if (mod->n <= BIGINT_CLASSICAL) __BIGINT_CMODMUL__(a, b, mod, res, modmul_ctx, err);
     else { dnml_status echeck = BIGINT_SUCCESS;
         mont_ctx modmul_disp_ctx = { .n = mod, .nprime = __MODINV_UI64__(mod->limbs[0]), .k = mod->n };
-        size_t modmul_disp_mark = scratch_mark(&modmul_ctx);
+        size_t modmul_disp_mark = scratch_mark(modmul_ctx);
         BIGINT_TEMP(r, mod->n + 1, modmul_ctx, modmul_disp_mark, echeck, err,); r.n = mod->n + 1;
         BIGINT_TEMP(r_mod_n, mod->n, modmul_ctx, modmul_disp_mark, echeck, err,);
         BIGINT_TEMP(tmp, mod->n << 1, modmul_ctx, modmul_disp_mark, echeck, err,); r.limbs[mod->n] = 1; 
@@ -344,11 +344,11 @@ void __BIGINT_MODMUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, PCONST_BIGINT mod,
         __BIGINT_MUL_DISP__(&r_mod_n, &r_mod_n, &tmp, modmul_ctx, &echeck); SCRATCH_OVF(echeck, modmul_ctx, modmul_disp_mark, err,);
         __BIGINT_MOD_DISP__(&tmp, mod, &tmp, modmul_ctx, &echeck); SCRATCH_OVF(echeck, modmul_ctx, modmul_disp_mark, err,);
         modmul_disp_ctx.r2 = &tmp; __BIGINT_MONTMUL__(a, b, modmul_disp_ctx, res, modmul_ctx, &echeck);
-        SCRATCH_OVF(echeck, modmul_ctx, modmul_disp_mark, err,); scratch_rewind(&modmul_ctx, modmul_disp_mark); 
+        SCRATCH_OVF(echeck, modmul_ctx, modmul_disp_mark, err,); scratch_rewind(modmul_ctx, modmul_disp_mark); 
         *err = BIGINT_SUCCESS;
     }
 }
-void __BIGINT_MODEXP_DISP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx modexp_ctx, dnml_status *err) {
+void __BIGINT_MODEXP_DISP__(PCONST_BIGINT base, PCONST_BIGINT exp, PCONST_BIGINT mod, P_BIGINT res, calc_ctx *modexp_ctx, dnml_status *err) {
     if (exp->n < BIGINT_MOD_BINARY) __BIGINT_BIN_MODEXP__(base, exp, mod, res, modexp_ctx, err);
     else if (exp->n < BIGINT_MONT_BINARY) __BIGINT_MBIN_MODEXP__(base, exp, mod, res, modexp_ctx, err);
     else if (exp->n < BIGINT_MOD_FIXED) __BIGINT_FIX_MODEXP__(base, exp, mod, res, 7, modexp_ctx, err);

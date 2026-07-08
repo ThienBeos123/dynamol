@@ -46,10 +46,10 @@ size_t __BIGINT_PTEST_WS__(size_t x_size);
 /* ======== Primality Testing - ALGORITHMS ======== */
 uint8_t __BIGINT_TRIAL_DIV__(uint64_t x);
 uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n);
-uint8_t __BIGINT_MILLER_RABIN__(const bigInt *const n, const bigInt *const base, calc_ctx rabin_ctx, dnml_status *err);
-uint8_t __BIGINT_BPSW__(const bigInt *const n, calc_ctx bpsw_ctx, dnml_status *err);
-uint8_t __BIGINT_ECPP__(const bigInt *const n, calc_ctx ecpp_ctx, dnml_status *err);
-uint8_t __BIGINT_PTEST_DISP__(const bigInt *const x, calc_ctx ptest_ctx, dnml_status *err);
+uint8_t __BIGINT_MILLER_RABIN__(const bigInt *const n, const bigInt *const base, calc_ctx *rabin_ctx, dnml_status *err);
+uint8_t __BIGINT_BPSW__(const bigInt *const n, calc_ctx *bpsw_ctx, dnml_status *err);
+uint8_t __BIGINT_ECPP__(const bigInt *const n, calc_ctx *ecpp_ctx, dnml_status *err);
+uint8_t __BIGINT_PTEST_DISP__(const bigInt *const x, calc_ctx *ptest_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

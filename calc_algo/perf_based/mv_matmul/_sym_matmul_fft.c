@@ -20,7 +20,7 @@ limitations under the License.
 #include "_mv_matmul_.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-#include "mul_fft.c"
+#include "../mul_fft.c"
 
 /** ----------- Matrix-Vector Multiplication Linear Combination -----------
  * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS FOR MATRIX MULTIPLICATION:
@@ -42,12 +42,12 @@ size_t __SYM_MATMUL_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size
     size_t xz_Bsize = min(x_size, z_size); // Beta size lol
     size_t xz_Asize = max(x_size, z_size); // Alpha chad size lol
     size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslics = xz_Asize - xz_slice;
+    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslice = xz_Asize % xz_splits;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y_size, w_size); // Beta size lol
     size_t yw_Asize = max(y_size, w_size); // Alpha chad size lol
     size_t yw_splits = ((size_t)(yw_Asize / yw_Bsize) + 1);
-    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslices = yw_Asize - yw_slice;
+    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslice = yw_Asize % yw_splits;
     // Maximum k-values calculation + Splitting Sizes
     size_t xz_k = (size_t)(max(xz_slice, xz_Bsize) / 3) + 1;
     size_t yw_k = (size_t)(max(yw_slice, yw_Bsize) / 3) + 1;
@@ -59,10 +59,12 @@ size_t __SYM_MATMUL_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size
     size_t w2size = (yw_Bsize > (yw_k << 1)) ? (yw_Bsize - (yw_k << 1)) : 0;
     size_t max_m2size = max(x2size, y2size); size_t max_n2size = max(z2size, w2size);
     // Raw buffer lengths calculations
-    size_t eval_bufs = (max_k << 3) + 12;
-    size_t ptmul_bufs = ((max_k << 3) + (max_m2size + max_n2size) + 32);
-    size_t fres_size = (max_k << 1) + 14; size_t xz_tres_size = max(x_size + z_size, y_size + w_size);
-    return (3*(eval_bufs + ptmul_bufs + fres_size) >> 1) + xz_tres_size; // Follows the path of the largest input size
+    size_t eval_bufs = (max_k << 3) + 12; size_t ptmul_bufs = ((max_k << 3) + (max_m2size + max_n2size) + 22);
+    size_t fres_size = max(xz_Bsize + xz_slice, yw_Bsize + yw_slice); size_t xz_tres_size = max(x_size + z_size, y_size + w_size);
+    size_t max_fcall = max(__BIGINT_TOOM_3_WS__(max_k + 2, max_k + 2), __BIGINT_TOOM_3_WS__(max_m2size, max_n2size));
+    if (xz_lslice != xz_slice && xz_lslice > BIGINT_SCHOOLBOOK) max_fcall = max(max_fcall, __BIGINT_ASYM_MUL_WS__(xz_Bsize, xz_lslice));
+    if (yw_lslice != yw_slice && yw_lslice > BIGINT_SCHOOLBOOK) max_fcall = max(max_fcall, __BIGINT_ASYM_MUL_WS__(yw_Bsize, yw_lslice));
+    return ((eval_bufs + ptmul_bufs + fres_size) + max_fcall) + xz_tres_size; // Follows the path of the largest input size
 }
 size_t __SYM_MATMUL_TOOM4_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
 size_t __SYM_MATMUL_TOOM5_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) { return 0; }
@@ -71,12 +73,12 @@ size_t __SYM_MATMUL_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t
     size_t xz_Bsize = min(x_size, z_size); // Beta size lol
     size_t xz_Asize = max(x_size, z_size); // Alpha chad size lol
     size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslics = xz_Asize - xz_slice;
+    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslice = xz_Asize % xz_splits;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y_size, w_size); // Beta size lol
     size_t yw_Asize = max(y_size, w_size); // Alpha chad size lol
     size_t yw_splits = ((size_t)(yw_Asize / yw_Bsize) + 1);
-    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslices = yw_Asize - yw_slice;
+    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslice = yw_Asize % yw_splits;
     // Pre-oepration Allocation Size Calculations
     size_t xz_n, xz_k = __fft_best_metadata(xz_Bsize, xz_slice, NULL, NULL, &xz_n);
     size_t yw_n, yw_k = __fft_best_metadata(yw_Bsize, yw_slice, NULL, NULL, &yw_n);
@@ -88,8 +90,11 @@ size_t __SYM_MATMUL_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t
     size_t flat_bufs = ((max_nlimbs + 1) << max_k) << 1; // d(nlimbs + 1) * 2;
     size_t tres_size = max(xz_Bsize + xz_slice, yw_Bsize + yw_slice);
     size_t acum_tres_size = max(x_size + z_size, y_size + w_size); /**/ size_t ptmp_size = (max_nlimbs << 1) + 2;
-    size_t downstream_size = __BIGINT_FFT_WS__(max_nlimbs, max_nlimbs);
-    return tmp_bufs + flat_bufs + tres_size + ptmp_size + acum_tres_size + downstream_size;
+    size_t max_fcall = __BIGINT_FFT_WS__(max_nlimbs, max_nlimbs); 
+    size_t xz_scaled = ___schoolbook_scale(xz_Bsize), yw_scaled = ___schoolbook_scale(yw_Bsize);
+    if (xz_lslice != xz_slice && xz_lslice > xz_scaled) max_fcall = max(max_fcall, __BIGINT_ASYM_MUL_WS__(xz_Bsize, xz_lslice));
+    if (yw_lslice != yw_slice && yw_lslice > yw_scaled) max_fcall = max(max_fcall, __BIGINT_ASYM_MUL_WS__(yw_Bsize, yw_lslice));
+    return tmp_bufs + flat_bufs + tres_size + ptmp_size + acum_tres_size + max_fcall;
 }
 
 
@@ -97,29 +102,33 @@ size_t __SYM_MATMUL_SSA_WS__(size_t x_size, size_t z_size, size_t y_size, size_t
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __SYM_MATMUL_TOOM3__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *toom_ctx
 ) {
     // Metadata slices pre-calculations - XZ
     size_t xz_Bsize = min(x->n, z->n); // Beta size lol
     size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
     size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslics = xz_Asize - xz_slice;
+    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslice = xz_Asize % xz_splits;
     bigInt *xz_alpha = (xz_Asize == x->n) ? x : z; /**/ bigInt *xz_beta = (xz_Bsize == z->n) ? z : x;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y->n, w->n); // Beta size lol
     size_t yw_Asize = max(y->n, w->n); // Alpha chad size lol
     size_t yw_splits = ((size_t)(yw_Asize / yw_Bsize) + 1);
-    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslices = yw_Asize - yw_slice;
+    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslice = yw_Asize % yw_splits;
     bigInt *yw_alpha = (yw_Asize == y->n) ? y : w; /**/ bigInt *yw_beta = (yw_Bsize == w->n) ? w : y;
 
     //* ================== PRE-OPERATION ALLOCATIONS ================== *//
-    dnml_status echeck; size_t toom_mark = scratch_mark(&toom_ctx);
+    dnml_status echeck; size_t toom_mark = scratch_mark(toom_ctx);
     size_t xz_k = (size_t)(max(xz_slice, xz_Bsize) / 3) + 1;
     size_t yw_k = (size_t)(max(yw_slice, yw_Bsize) / 3) + 1;
     size_t max_k = max(xz_k, yw_k);
     /* -------- 1a. Setup and Splitting Metadatas -------- */
+    size_t x1size = (xz_slice > xz_k) ? xz_slice - xz_k : 0; // Maximum = k
+    size_t z1size = (xz_Bsize > xz_k) ? xz_Bsize - xz_k : 0; // Maximum = k
     size_t x2size = (xz_slice > (xz_k << 1)) ? (xz_slice - (xz_k << 1)) : 0;
     size_t z2size = (xz_Bsize > (xz_k << 1)) ? (xz_Bsize - (xz_k << 1)) : 0;
+    size_t y1size = (yw_slice > yw_k) ? yw_slice - yw_k : 0; // Maximum = k
+    size_t w1size = (yw_Bsize > yw_k) ? yw_Bsize - yw_k : 0; // Maximum = k
     size_t y2size = (yw_slice > (yw_k << 1)) ? (yw_slice - (yw_k << 1)) : 0;
     size_t w2size = (yw_Bsize > (yw_k << 1)) ? (yw_Bsize - (yw_k << 1)) : 0;
     size_t max_m2size = max(x2size, y2size); size_t max_n2size = max(z2size, w2size);
@@ -138,19 +147,20 @@ dnml_status __SYM_MATMUL_TOOM3__(
     BIGINT_FTEMP(p_neg2,  max_k + 2, toom_ctx, toom_mark, echeck); BIGINT_FTEMP(q_neg2,  max_k + 2, toom_ctx, toom_mark, echeck);
     /* ------------ POINT-WISE MULTIPLICATION ------------
     *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
-    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
-    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
-    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
+    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
     */
     BIGINT_FTEMP(r0,     (max_k << 1),       toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(r1,     (max_k << 1) + 9,   toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(r_neg1, (max_k << 1) + 9,   toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(r_neg2, (max_k << 1) + 10,  toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(rinf, max_m2size + max_n2size + 4, toom_ctx, toom_mark, echeck);
+    BIGINT_FTEMP(r1,     (max_k << 1) + 8,   toom_ctx, toom_mark, echeck);
+    BIGINT_FTEMP(r_neg1, (max_k << 1) + 7,   toom_ctx, toom_mark, echeck);
+    BIGINT_FTEMP(r_neg2, (max_k << 1) + 7,   toom_ctx, toom_mark, echeck);
+    BIGINT_FTEMP(rinf, max_m2size + max_n2size, toom_ctx, toom_mark, echeck);
     /* ---------------- 3a. INTERPOLATION & RECOMPOSITION ---------------- */
-    BIGINT_FTEMP(final_res, (max_k << 1) + 14, toom_ctx, toom_mark, echeck);
-    BIGINT_FTEMP(acum_tres, max(x->n + z->n, y->n + w->n), toom_ctx, toom_mark, echeck);
+    BIGINT_FTEMP(final_res, max(xz_Bsize + xz_slice, yw_Bsize + yw_slice), toom_ctx, toom_mark, echeck); 
+    BIGINT_FTEMP(acum_tres, max(x->n + z->n, y->n + w->n), toom_ctx, toom_mark, echeck); acum_tres.cap = x->n + z->n;
+    final_res.cap = xz_Bsize + xz_slice; /**/ memset(acum_tres.limbs, 0, acum_tres.cap * U64_BYTES);
 
 
 
@@ -158,28 +168,30 @@ dnml_status __SYM_MATMUL_TOOM3__(
     //* ============== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ============== *//
     bigInt alpha_window = {0}; size_t offset = 0;
     for (size_t i = 0; i < xz_splits; ++i) {
-        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslics; /**/ offset = i * curr_slice;
+        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslice;
         alpha_window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice) || 
-            (xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
+        if ((xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)) { 
             __BIGINT_SCHOOLBOOK__(xz_beta, &alpha_window, &final_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); continue; // (tmp_res <<<= xz_slice) + tmp
         } 
-        // Recalculation of Metadta on xz_lslics's iteration
-        if (i == xz_splits - 1 && xz_lslics != xz_slice) {
+        else if (xz_Bsize != curr_slice) {
+            __BIGINT_ASYM_MUL_DISP__(xz_beta, &alpha_window, &final_res, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+            __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        // Recalculation of Metadta on xz_lslice's iteration
+        if (i == xz_splits - 1 && xz_lslice != xz_slice) {
             xz_k = (size_t)(max(curr_slice, xz_Bsize) / 3) + 1; // Recalculating xz_k
+            x1size = (curr_slice > (xz_k)) ? (curr_slice - (xz_k)) : 0;
             x2size = (curr_slice > (xz_k << 1)) ? (curr_slice - (xz_k << 1)) : 0;
         } 
         
         /* ------- 1a. Setup & Splitting ------- */
         m0 = (bigInt){.limbs = alpha_window.limbs,                  .n = xz_k,     .cap = xz_k};
-        m1 = (bigInt){.limbs = alpha_window.limbs + xz_k,           .n = xz_k,     .cap = xz_k};
+        m1 = (bigInt){.limbs = alpha_window.limbs + xz_k,           .n = x1size,   .cap = x1size};
         m2 = (bigInt){.limbs = alpha_window.limbs + (xz_k << 1),    .n = x2size,   .cap = x2size};
-        n0 = (bigInt){.limbs = xz_beta->limbs,                         .n = xz_k,      .cap = xz_k};
-        n1 = (bigInt){.limbs = xz_beta->limbs + xz_k,                  .n = xz_k,      .cap = xz_k};
-        n2 = (bigInt){.limbs = xz_beta->limbs + (xz_k << 1),           .n = z2size,    .cap = z2size};
+        n0 = (bigInt){.limbs = xz_beta->limbs,                      .n = xz_k,     .cap = xz_k};
+        n1 = (bigInt){.limbs = xz_beta->limbs + xz_k,               .n = z1size,   .cap = z1size};
+        n2 = (bigInt){.limbs = xz_beta->limbs + (xz_k << 1),        .n = z2size,   .cap = z2size};
 
         /* ------------ 2a. Evaluation & Point-wise Multiplication ------------ */
         p_outer.cap = xz_k + 1; p1.cap = xz_k + 2;          q_outer.cap = xz_k + 1; q1.cap = xz_k + 2;
@@ -198,8 +210,8 @@ dnml_status __SYM_MATMUL_TOOM3__(
         *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
         *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
         */
-        r0.cap = (xz_k << 1); /**/ r1.cap = (xz_k << 1) + 9; /**/ r_neg1.cap = (xz_k << 1) + 9;
-        r_neg2.cap = (xz_k << 1) + 10; /**/ rinf.cap = x2size + z2size;
+        r0.cap = (xz_k << 1); /**/ r1.cap = (xz_k << 1) + 8; /**/ r_neg1.cap = (xz_k << 1) + 7;
+        r_neg2.cap = (xz_k << 1) + 7; /**/ rinf.cap = x2size + z2size;
         __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
         __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
         __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
@@ -216,43 +228,44 @@ dnml_status __SYM_MATMUL_TOOM3__(
         /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
         __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
         /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
-        /* ------------------ RECOMPOSITION ------------------ */ final_res.cap = ((xz_k << 1) + 14);
-        __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
-        __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-        __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
-        __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
-        
-        // Accumulating result into tmp_res, Same principle as normal Schoolbook but cooler, Ig
-        __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); // (tmp_res <<<= xz_slice) + tmp (Accumulating the product as a sum)
+        /* ------------------ RECOMPOSITION ------------------ */
+        memset(final_res.limbs, 0, final_res.cap * U64_BYTES); final_res.n = 0; final_res.sign = 1;
+        __BIGINT_ADD_SHIFT__(&final_res, &rinf, 4); __BIGINT_ADD_SHIFT__(&final_res, &r_neg2, 3);
+        __BIGINT_ADD_SHIFT__(&final_res, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&final_res, &r1, 1);
+        __BIGINT_ADD_WC__(&final_res, &final_res, &r0); __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_COPY__(xz_res, &acum_tres);
 
 
 
 
     //* ============== Y and W MULTIPLICATION PAIR - LOOP OF SLICES ============== *//
+    acum_tres.cap = y->n + w->n; memset(acum_tres.limbs, 0, acum_tres.cap * U64_BYTES);
+    offset = 0; alpha_window = (bigInt){0}; final_res.cap = yw_Bsize + yw_slice;
     for (size_t i = 0; i < yw_splits; ++i) {
-        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = yw_lslices; /**/ offset = i * curr_slice;
+        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = yw_lslice;
         alpha_window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice) || 
-            (yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
+        if ((yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)) { 
             __BIGINT_SCHOOLBOOK__(yw_beta, &alpha_window, &final_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); continue; // (tmp_res <<<= yw_slice) + tmp
         } 
-        // Recalculation of Metadta on yw_lslices's iteration
-        if (i == yw_splits - 1 && yw_lslices != yw_slice) {
+        else if (yw_Bsize != curr_slice) {
+            __BIGINT_ASYM_MUL_DISP__(yw_beta, &alpha_window, &final_res, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+            __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        // Recalculation of Metadta on yw_lslice's iteration
+        if (i == yw_splits - 1 && yw_lslice != yw_slice) {
             yw_k = (size_t)(max(curr_slice, yw_Bsize) / 3) + 1; // Recalculating yw_k
+            y1size = (curr_slice > (yw_k)) ? (curr_slice - (yw_k)) : 0;
             y2size = (curr_slice > (yw_k << 1)) ? (curr_slice - (yw_k << 1)) : 0;
         } 
         
         /* ------- 1a. Setup & Splitting ------- */
         m0 = (bigInt){.limbs = alpha_window.limbs,                  .n = yw_k,     .cap = yw_k};
-        m1 = (bigInt){.limbs = alpha_window.limbs + yw_k,           .n = yw_k,     .cap = yw_k};
+        m1 = (bigInt){.limbs = alpha_window.limbs + yw_k,           .n = y1size,   .cap = y1size};
         m2 = (bigInt){.limbs = alpha_window.limbs + (yw_k << 1),    .n = y2size,   .cap = y2size};
-        n0 = (bigInt){.limbs = yw_beta->limbs,                         .n = yw_k,      .cap = yw_k};
-        n1 = (bigInt){.limbs = yw_beta->limbs + yw_k,                  .n = yw_k,      .cap = yw_k};
-        n2 = (bigInt){.limbs = yw_beta->limbs + (yw_k << 1),           .n = w2size,    .cap = w2size};
+        n0 = (bigInt){.limbs = yw_beta->limbs,                      .n = yw_k,     .cap = yw_k};
+        n1 = (bigInt){.limbs = yw_beta->limbs + yw_k,               .n = w1size,   .cap = w1size};
+        n2 = (bigInt){.limbs = yw_beta->limbs + (yw_k << 1),        .n = w2size,   .cap = w2size};
 
         /* ------------ 2a. Evaluation & Point-wise Multiplication ------------ */
         p_outer.cap = yw_k + 1; p1.cap = yw_k + 2;          q_outer.cap = yw_k + 1; q1.cap = yw_k + 2;
@@ -271,8 +284,8 @@ dnml_status __SYM_MATMUL_TOOM3__(
         *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
         *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
         */
-        r0.cap = (yw_k << 1); /**/ r1.cap = (yw_k << 1) + 9; /**/ r_neg1.cap = (yw_k << 1) + 9;
-        r_neg2.cap = (yw_k << 1) + 10; /**/ rinf.cap = x2size + z2size;
+        r0.cap = (yw_k << 1); /**/ r1.cap = (yw_k << 1) + 8; /**/ r_neg1.cap = (yw_k << 1) + 7;
+        r_neg2.cap = (yw_k << 1) + 7; /**/ rinf.cap = y2size + w2size;
         __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
         __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
         __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
@@ -289,15 +302,12 @@ dnml_status __SYM_MATMUL_TOOM3__(
         /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
         __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
         /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
-        /* ------------------ RECOMPOSITION ------------------ */ final_res.cap = ((yw_k << 1) + 14);
-        __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
-        __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-        __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
-        __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
-        
-        // Accumulating result into tmp_res, Same principle as normal Schoolbook but cooler, Ig
-        __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); // (tmp_res <<<= yw_slice) + tmp (Accumulating the product as a sum)
-    } __BIGINT_INTERNAL_COPY__(yw_res, &acum_tres); scratch_rewind(&toom_ctx, toom_mark); return BIGINT_SUCCESS;
+        /* ------------------ RECOMPOSITION ------------------ */
+        memset(final_res.limbs, 0, final_res.cap * U64_BYTES); final_res.n = 0; final_res.sign = 1;
+        __BIGINT_ADD_SHIFT__(&final_res, &rinf, 4); __BIGINT_ADD_SHIFT__(&final_res, &r_neg2, 3);
+        __BIGINT_ADD_SHIFT__(&final_res, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&final_res, &r1, 1);
+        __BIGINT_ADD_WC__(&final_res, &final_res, &r0); __BIGINT_ADD_SHIFT__(&acum_tres, &final_res, offset); offset += curr_slice;
+    } __BIGINT_INTERNAL_COPY__(yw_res, &acum_tres); scratch_rewind(toom_ctx, toom_mark); return BIGINT_SUCCESS;
 }
 
 
@@ -306,7 +316,7 @@ dnml_status __SYM_MATMUL_TOOM3__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __SYM_MATMUL_TOOM4__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *toom_ctx
 ) { return BIGINT_SUCCESS; }
 
 
@@ -315,7 +325,7 @@ dnml_status __SYM_MATMUL_TOOM4__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __SYM_MATMUL_TOOM5__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx toom_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *toom_ctx
 ) { return BIGINT_SUCCESS; }
 
 
@@ -325,20 +335,20 @@ dnml_status __SYM_MATMUL_TOOM5__(
 /* ------- BigInt Matrix Multiplication Toom-cook 3-way ------- */
 dnml_status __SYM_MATMUL_SSA__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx fft_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *fft_ctx
 ) {
-    size_t fft_mark = scratch_mark(&fft_ctx); dnml_status echeck = BIGINT_SUCCESS;
+    size_t fft_mark = scratch_mark(fft_ctx); dnml_status echeck = BIGINT_SUCCESS;
     // Metadata slices pre-calculations - XZ
     size_t xz_Bsize = min(x->n, z->n); // Beta size lol
     size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
     size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslics = xz_Asize - xz_slice;
+    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslice = xz_Asize % xz_splits;
     bigInt *xz_alpha = (xz_Asize == x->n) ? x : z; /**/ bigInt *xz_beta = (xz_Bsize == z->n) ? z : x;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y->n, w->n); // Beta size lol
     size_t yw_Asize = max(y->n, w->n); // Alpha chad size lol
     size_t yw_splits = ((size_t)(yw_Asize / yw_Bsize) + 1);
-    size_t yw_slice = (yw_Asize / yw_splits); size_t last_slice = yw_Asize - yw_slice;
+    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslice = yw_Asize % yw_splits;
     bigInt *yw_alpha = (yw_Asize == y->n) ? y : w; /**/ bigInt *yw_beta = (yw_Bsize == w->n) ? w : y;
     //* ============================ PRE-OPERATION ALLOCATIONS ============================ *//
     size_t xz_d, xz_m, xz_n, xz_k = __fft_best_metadata(xz_Bsize, xz_slice, &xz_d, &xz_m, &xz_n);
@@ -375,19 +385,20 @@ dnml_status __SYM_MATMUL_SSA__(
 
 
     //* ========================== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ========================== *//
-    bigInt alpha_window = {0}; size_t offset = 0;
+    bigInt alpha_window = {0}; size_t offset = 0, scaled_threshold = BIGINT_SCHOOLBOOK * ___schoolbook_scale(xz_Bsize);
     for (size_t i = 0; i < xz_splits; ++i) {
-        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslics; /**/ offset = i * curr_slice;
+        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslice;
         alpha_window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice) || 
-            (xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
+        if ((xz_Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) { 
             __BIGINT_SCHOOLBOOK__(xz_beta, &alpha_window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= xz_slice) + tmp
         } 
-        // Recalculation of Metadata on xz_lslics's iteration
-        if (i == xz_splits - 1 && xz_lslics != xz_slice) {
+        else if (xz_Bsize != curr_slice) {
+            __BIGINT_ASYM_MUL_DISP__(xz_beta, &alpha_window, &tmp_res, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
+            __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        // Recalculation of Metadata on xz_lslice's iteration
+        if (i == xz_splits - 1 && xz_lslice != xz_slice) {
             xz_k = __fft_best_metadata(xz_Bsize, curr_slice, &xz_d, &xz_m, &xz_n);
             xz_mlimbs = (xz_m + U64_BITS - 1) >> 6; /**/ xz_nlimbs = (xz_n + U64_BITS) >> 6;
         }
@@ -458,25 +469,27 @@ dnml_status __SYM_MATMUL_SSA__(
                 __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
             }
         } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
-        __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); // through adding sums: (tmp_res <<<= xz_slice) + tmp
+        __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_COPY__(xz_res, &acum_tres);
 
 
 
 
     //* ========================== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ========================== *//
+    offset = 0; alpha_window = (bigInt){0}; scaled_threshold = BIGINT_SCHOOLBOOK * ___schoolbook_scale(yw_Bsize);
     for (size_t i = 0; i < yw_splits; ++i) {
-        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = last_slice; /**/ offset = i * curr_slice;
+        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = yw_lslice;
         alpha_window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice) || 
-            (yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
+        if ((yw_Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) { 
             __BIGINT_SCHOOLBOOK__(yw_beta, &alpha_window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= yw_slice) + tmp
-        } 
-        // Recalculation of Metadata on last_slice's iteration
-        if (i == yw_splits - 1 && last_slice != yw_slice) {
+        }
+        else if (yw_Bsize != curr_slice) {
+            __BIGINT_ASYM_MUL_DISP__(yw_beta, &alpha_window, &tmp_res, fft_ctx, &echeck); SCRATCH_FOVF(echeck, fft_ctx, fft_mark);
+            __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        // Recalculation of Metadata on yw_lslice's iteration
+        if (i == yw_splits - 1 && yw_lslice != yw_slice) {
             yw_k = __fft_best_metadata(yw_Bsize, curr_slice, &yw_d, &yw_m, &yw_n);
             yw_mlimbs = (yw_m + U64_BITS - 1) >> 6; /**/ yw_nlimbs = (yw_n + U64_BITS) >> 6;
         }
@@ -547,6 +560,6 @@ dnml_status __SYM_MATMUL_SSA__(
                 __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf_view, mlimb_shift); // Addition with actual limb shifts
             }
         } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
-        __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); // through adding sums: (tmp_res <<<= yw_slice) + tmp
-    } __BIGINT_INTERNAL_COPY__(yw_res, &acum_tres); scratch_rewind(&fft_ctx, fft_mark); return BIGINT_SUCCESS;
+        __BIGINT_ADD_SHIFT__(&acum_tres, &tmp_res, offset); offset += curr_slice;
+    } __BIGINT_INTERNAL_COPY__(yw_res, &acum_tres); scratch_rewind(fft_ctx, fft_mark); return BIGINT_SUCCESS;
 }

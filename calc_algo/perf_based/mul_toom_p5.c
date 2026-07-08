@@ -46,9 +46,9 @@ size_t __BIGINT_ASYM_TOOM8p5_WS__(size_t m_size, size_t n_size) { return 0; }
 
 
 /* --------------- Algorithm Functions --------------- */
-void __BIGINT_ASYM_TOOM6p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_ASYM_TOOM7p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_ASYM_TOOM8p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_TOOM_6p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_TOOM_7p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_TOOM_8p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
+void __BIGINT_ASYM_TOOM6p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_ASYM_TOOM7p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_ASYM_TOOM8p5__(const bigInt *const m, const bigInt *const n, bigInt *const res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_TOOM_6p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_TOOM_7p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_TOOM_8p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx *toom_ctx, dnml_status *err) {}

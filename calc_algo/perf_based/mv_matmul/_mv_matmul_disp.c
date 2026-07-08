@@ -39,10 +39,10 @@ limitations under the License.
 /* --------------- Asymmetrical Dispatcher --------------- */
 dnml_status __MV_ASYM_MATMUL_21__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx mul_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *mul_ctx
 ) {
     // Symmetrical Asymmetry
-    if ((min(x->n, z->n) * 2 <= max(x->n, z->n)) && (min(y->n, w->n) * 2 <= max(y->n, w->n))) {
+    if (x->n != z->n && y->n != w->n) {
         size_t xz_Bsize = min(x->n, z->n); // Beta size lol
         size_t yw_Bsize = min(y->n, w->n); // Beta size lol
         size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
@@ -58,7 +58,7 @@ dnml_status __MV_ASYM_MATMUL_21__(
         else return __SYM_MATMUL_SSA__(x, z, y, w, xz_res, yw_res, mul_ctx);
     }
     // XZ Asymmetry
-    else if (min(x->n, z->n) * 2 <= max(x->n, z->n)) {
+    else if (x->n != z->n) {
         size_t Bsize = min(x->n, z->n); // Beta size lol
         size_t Asize = max(x->n, z->n); // Alpha chad size lol
         size_t slice = (Asize / ((size_t)(Asize / Bsize) + 1));
@@ -92,9 +92,9 @@ dnml_status __MV_ASYM_MATMUL_21__(
 /* -------------- Main Function -------------- */
 dnml_status __MV_MATMUL_21__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx mul_ctx
+    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *mul_ctx
 ) {
-    if ((min(x->n, z->n) * 2 <= max(x->n, z->n)) || (min(y->n, w->n) * 2 <= max(y->n, w->n))) return __MV_ASYM_MATMUL_21__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    if (x->n != z->n || y->n != w->n) return __MV_ASYM_MATMUL_21__(x, z, y, w, xz_res, yw_res, mul_ctx);
     else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_3) || THRESHOLD(y->n, w->n, BIGINT_TOOM_3)) return __BIGINT_MATMUL_TOOM3__(x, z, y, w, xz_res, yw_res, mul_ctx);
     // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_4) || THRESHOLD(y->n, w->n, BIGINT_TOOM_4)) return __BIGINT_MATMUL_TOOM4__(x, z, y, w, xz_res, yw_res, mul_ctx);
     // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_5)) return __BIGINT_MATMUL_TOOM5__(x, z, y, w, xz_res, yw_res, mul_ctx);

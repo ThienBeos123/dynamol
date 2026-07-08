@@ -39,7 +39,7 @@ limitations under the License.
 
 size_t __MV_ASYM_MATMUL_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
     // Symmetrical Asymmetry
-    if ((min(x_size, z_size) * 2 <= max(x_size, z_size)) && (min(y_size, w_size) * 2 <= max(y_size, w_size))) {
+    if ((x_size != z_size) && (y_size != w_size)) {
         size_t xz_Bsize = min(x_size, z_size); // Beta size lol
         size_t yw_Bsize = min(y_size, w_size); // Beta size lol
         size_t xz_Asize = max(x_size, z_size); // Alpha chad size lol
@@ -55,7 +55,7 @@ size_t __MV_ASYM_MATMUL_WS__(size_t x_size, size_t z_size, size_t y_size, size_t
         else return __SYM_MATMUL_SSA_WS__(x_size, z_size, y_size, w_size);
     }
     // XZ Asymmetry
-    else if (min(x_size, z_size) * 2 <= max(x_size, z_size)) {
+    else if (x_size != z_size) {
         size_t Bsize = min(x_size, z_size); // Beta size lol
         size_t Asize = max(x_size, z_size); // Alpha chad size lol
         size_t slice = (Asize / ((size_t)(Asize / Bsize) + 1));
@@ -85,7 +85,7 @@ size_t __MV_ASYM_MATMUL_WS__(size_t x_size, size_t z_size, size_t y_size, size_t
 
 
 size_t __MV_MATMUL_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
-    if ((min(x_size, z_size) * 2 <= max(x_size, z_size)) || (min(y_size, w_size) * 2 <= max(y_size, w_size))) return __MV_ASYM_MATMUL_WS__(x_size, z_size, y_size, w_size);
+    if ((x_size != z_size) || (y_size != w_size)) return __MV_ASYM_MATMUL_WS__(x_size, z_size, y_size, w_size);
     else if (THRESHOLD(x_size, z_size, BIGINT_TOOM_3) || THRESHOLD(y_size, w_size, BIGINT_TOOM_3)) return __BIGINT_MAT_TOOM3_WS__(x_size, z_size, y_size, w_size);
     // else if (THRESHOLD(x_size, z_size, BIGINT_TOOM_4) || THRESHOLD(y_size, w_size, BIGINT_TOOM_4)) return __BIGINT_MAT_TOOM4_WS__(x_size, z_size, y_size, w_size);
     // else if (THRESHOLD(x_size, z_size, BIGINT_TOOM_5) || THRESHOLD(y_size, w_size, BIGINT_TOOM_5)) return __BIGINT_MAT_TOOM5_WS__(x_size, z_size, y_size, w_size);

@@ -78,14 +78,14 @@ uint64_t __BINARY_GCDU64__(uint64_t u, uint64_t v) {
         u >>= __CTZ_UI64__(u); // gcd(u, 2v) == gcd(u, v)
     } return u;
 }
-void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx stein_ctx, dnml_status *err) {
+void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx *stein_ctx, dnml_status *err) {
     // Base case - Identity #1 - gcd(u, 0) = u
     if (u->n == 0) { __BIGINT_INTERNAL_COPY__(res, v); return; }
     else if (v->n == 0) { __BIGINT_INTERNAL_COPY__(res, u); return; }
 
     // Setup - Identity #2 - gcd(2u, 2v) = gcd(u, v)
     dnml_status echeck;
-    size_t stein_mark = scratch_mark(&stein_ctx), maxsize = max(u->n, v->n); // maxsize is used for SWAP
+    size_t stein_mark = scratch_mark(stein_ctx), maxsize = max(u->n, v->n); // maxsize is used for SWAP
     BIGINT_TEMP(u_copy, maxsize, stein_ctx, stein_mark, echeck, err,); u_copy.n = u->n;
     BIGINT_TEMP(v_copy, maxsize, stein_ctx, stein_mark, echeck, err,); v_copy.n = v->n;
     memcpy(u_copy.limbs, u->limbs, u->n * U64_BYTES); memcpy(v_copy.limbs, v->limbs, v->n * U64_BYTES);
@@ -106,14 +106,14 @@ void __BIGINT_STEIN__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx s
         comp_res = __BIGINT_INTERNAL_COMP__(&u_copy, &v_copy);
     }
     __BIGINT_INTERNAL_LSHIFT__(&u_copy, k); __BIGINT_INTERNAL_COPY__(res, &u_copy);
-    scratch_rewind(&stein_ctx, stein_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(stein_ctx, stein_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx lehmer_ctx, dnml_status *err) {
+void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx *lehmer_ctx, dnml_status *err) {
     if (u->n == 0) { __BIGINT_INTERNAL_COPY__(res, v); return; }
     else if (v->n == 0) { __BIGINT_INTERNAL_COPY__(res, u); return; }
 
     // Setup
-    dnml_status echeck; size_t lehmer_mark = scratch_mark(&lehmer_ctx);
+    dnml_status echeck; size_t lehmer_mark = scratch_mark(lehmer_ctx);
     size_t max_size = max(u->n + 1, v->n + 1) + 1;
     BIGINT_TEMP(u_copy, max_size, lehmer_ctx, lehmer_mark, echeck, err,);
     BIGINT_TEMP(u_tmp1, u->n + 1, lehmer_ctx, lehmer_mark, echeck, err,);
@@ -169,9 +169,9 @@ void __BIGINT_LEHMER__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx 
     // Whatever non-zero value remains is the GCD (according to Euclidean GCD algo)
     if (!u_copy.n) __BIGINT_INTERNAL_COPY__(res, &u_copy);
     else __BIGINT_INTERNAL_COPY__(res, &v_copy);
-    scratch_rewind(&lehmer_ctx, lehmer_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(lehmer_ctx, lehmer_mark); *err = BIGINT_SUCCESS;
 }
-void __BIGINT_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx gcd_ctx, dnml_status *err) {
+void __BIGINT_GCD_DISP__(P_BIGINT res, PCONST_BIGINT u, PCONST_BIGINT v, calc_ctx *gcd_ctx, dnml_status *err) {
     size_t op_size = min(u->n, v->n);
     if (u->n == 1 && v->n == 1) { res->limbs[0] = __BINARY_GCDU64__(u->limbs[0], v->limbs[0]); res->n = 1; }
     else if (op_size <= BIGINT_STEIN) __BIGINT_STEIN__(res, u, v, gcd_ctx, err);

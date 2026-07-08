@@ -129,15 +129,15 @@ uint8_t _lucas_edge_check(const bigInt *const n) {
  * performance. For greater security of primality certainty, there are compilation
  * options for mixing Miller-Rabin rounds with random-bases alongside our Lucas BPSW test
  */
-uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx bpsw_ctx, dnml_status *err) {
+uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx *bpsw_ctx, dnml_status *err) {
     if (!_lucas_edge_check(n)) { *err = BIGINT_SUCCESS; return 0; } // Early exit conditions - Light checks
     // Early exit conditions - Perfect squares checking (Full check)
-    dnml_status echeck = BIGINT_SUCCESS; size_t bpsw_mark = scratch_mark(&bpsw_ctx);
+    dnml_status echeck = BIGINT_SUCCESS; size_t bpsw_mark = scratch_mark(bpsw_ctx);
     BIGINT_TEMP(tmp1, n->n << 1, bpsw_ctx, bpsw_mark, echeck, err, 0); tmp1.cap = (n->n >> 1) + 1;
     BIGINT_TEMP(tmp2, n->n, bpsw_ctx, bpsw_mark, echeck, err, 0);
     __BIGINT_SQRT_DISP__(&tmp1, n, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
     __BIGINT_MUL_DISP__(&tmp1, &tmp1, &tmp2, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
-    if (__BIGINT_INTERNAL_COMP__(n, &tmp2)) { scratch_rewind(&bpsw_ctx, bpsw_mark); *err = BIGINT_SUCCESS; return 0; }
+    if (__BIGINT_INTERNAL_COMP__(n, &tmp2)) { scratch_rewind(bpsw_ctx, bpsw_mark); *err = BIGINT_SUCCESS; return 0; }
     
 
     
@@ -179,7 +179,7 @@ uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx bpsw_ctx, dnml_status *err) {
     BIGINT_TEMP(Dmont, n->n, bpsw_ctx, bpsw_mark, echeck, err, 0); Dmont.sign = (d < 0) ? -1 : 1;
     BIGINT_TEMP(Qmont, n->n, bpsw_ctx, bpsw_mark, echeck, err, 0); bigInt Pmont = {0};
     if (unlikely(p == 5)) {
-        Pmont.limbs = (limb_t*)scratch_alloc(&bpsw_ctx, n->n, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
+        Pmont.limbs = (limb_t*)scratch_alloc(bpsw_ctx, n->n, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
         Pmont.cap = n->n; Pmont.sign = 1; Pmont.n = 0;
     }
     __BIGINT_MONTMUL__(&pview, r2, mont_ctx, &V, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
@@ -243,7 +243,7 @@ uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx bpsw_ctx, dnml_status *err) {
             __BIGINT_MONTMUL__(&Qmont, &Q, mont_ctx, &Q, bpsw_ctx, &echeck); SCRATCH_OVF(echeck, bpsw_ctx, bpsw_mark, err, 0);
         }
     }  //* 1st Congruence Condition: U{d} = 0 mod(n) ---> n is a Lucas Probable prime
-    if (!U.n) { scratch_rewind(&bpsw_ctx, bpsw_mark); return 1; }
+    if (!U.n) { scratch_rewind(bpsw_ctx, bpsw_mark); return 1; }
 
 
 
@@ -268,6 +268,6 @@ uint8_t __BIGINT_BPSW__(PCONST_BIGINT n, calc_ctx bpsw_ctx, dnml_status *err) {
         // Our Lucas sequences term V and Q all started from V{d} and Q{d}, and move closer
         // to V{n+1} and Q{n+1}, or also can be expressed as V{d * 2^s} and Q{d * 2^s}. Therefore,
         // i represents the amount of doubling steps to go from term D to term D * 2^s (final term) in our Lucas sequence.
-        if (!V.n) { scratch_rewind(&bpsw_ctx, bpsw_mark); return 0; }
-    } scratch_rewind(&bpsw_ctx, bpsw_mark); return 0; //* n is Most Definitely Composite
+        if (!V.n) { scratch_rewind(bpsw_ctx, bpsw_mark); return 0; }
+    } scratch_rewind(bpsw_ctx, bpsw_mark); return 0; //* n is Most Definitely Composite
 }

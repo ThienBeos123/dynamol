@@ -42,7 +42,7 @@ size_t __BIGINT_ASYM_TOOM5_WS__(size_t m_size, size_t n_size) { return 0; }
 
 
 /* --------- Algorithm Functions --------- */
-void __BIGINT_TOOM_4__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_TOOM_5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_ASYM_TOOM4__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
-void __BIGINT_ASYM_TOOM5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx toom_ctx, dnml_status *err) {}
+void __BIGINT_TOOM_4__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_TOOM_5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_ASYM_TOOM4__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx *toom_ctx, dnml_status *err) {}
+void __BIGINT_ASYM_TOOM5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx *toom_ctx, dnml_status *err) {}

@@ -2,7 +2,7 @@ import random
 import itertools
 from pprint import pprint
 
-def int_to_limbs(val):
+def int_to_limbs(val: int):
     val = abs(val)
     if val == 0:
         return ["UINT64_C(0x0000000000000000)"]
@@ -12,7 +12,7 @@ def int_to_limbs(val):
         val >>= 64
     return limbs
 
-def format_limb_array(name, limbs):
+def format_limb_array(name: str, limbs) -> str:
     size = len(limbs)
     res = f"static const limb_t {name}[{size}] = {{"
     lines = []
@@ -25,13 +25,20 @@ def format_limb_array(name, limbs):
         res += " " + lines[0] + " };\n"
     return res
 
-def generate_random_value(v_type, max_len, magnituded):
+def generate_random_value(
+    v_type: str, max_len: int, magnituded: bool, 
+    balanced: bool, new_iter: bool, max_iter_len: int
+) -> int:
     if v_type in ['bigInt', 'crint']:
         # Force a random number of limbs between 2 and max_len
-        num_limbs = random.randint(2, max_len)
-        val = 0
-        for i in range(num_limbs):
-            limb = random.getrandbits(64)
+        if balanced and not new_iter: num_limbs = random.randint(int(max_iter_len // 3 * 2), max_iter_len)
+        else: num_limbs = random.randint(2, max_len)
+        val, limb = 0, 0
+        for i in range(int(num_limbs)):
+            limb = 0
+            if i != num_limbs - 1: limb = random.getrandbits(64)
+            else: 
+                while limb == 0: limb = random.getrandbits(64)
             if i == num_limbs - 1: limb |= 0x1000000000000000 
             val |= (limb << (64 * i))
         return val if magnituded or random.random() < 0.5 else -val
@@ -44,16 +51,23 @@ def run_generator():
     num_inputs = int(input("Enter the number of inputs per case: "))
     max_len = int(input("Enter the maximum amount of limbs: "))
     input_types = [input(f"Type for input {i+1} (bigInt, crint, size_t, uint8_t): ").strip() for i in range(num_inputs)]
+
     magnituded = input("Magnituded inputs? [Y/n]: ")
     magnituded = magnituded.lower()
     if magnituded == 'y': magnituded = True
     else: magnituded = False
 
-    seen_combinations = set()
-    limb_cache = {}
-    limb_strings = []
-    cases = []
-    limb_counter = 1
+    balanced = input("Balanced inputs? [Y/n]: ")
+    balanced = balanced.lower()
+    if balanced == 'y': balanced = True
+    else: balanced = False
+
+
+    seen_combinations: set = set()
+    limb_cache: dict = {}
+    limb_strings: list = []
+    cases: list = []
+    limb_counter: int = 1
 
     # Pre-generate an exhaustive pool of edge case combinations to prevent stalling
     # We take a sample of edge values to create an initial unique pool
@@ -77,9 +91,22 @@ def run_generator():
     while len(cases) < num_cases:
         # Use pool first, then fallback to random generation
         if edge_pool and random.random() < 0.5:
-            current_case_vals = edge_pool.pop()
+            current_case_vals: tuple = edge_pool.pop()
         else:
-            current_case_vals = tuple(generate_random_value(t, max_len, magnituded) for t in input_types)
+            list_case_vals: list = []
+            new_iter: bool = True
+            max_iter_len: int = 0
+            for i in range(len(input_types)):
+                tmp: int = generate_random_value(
+                    v_type=input_types[i], max_len=max_len, magnituded=magnituded,
+                    balanced=balanced, new_iter=new_iter, max_iter_len=max_iter_len
+                )
+                if i == 0: new_iter = False
+                current_limb_count = (tmp.bit_length() + 63) // 64 if tmp != 0 else 1
+                max_iter_len = max(max_iter_len, current_limb_count)
+                list_case_vals.append(tmp)
+            current_case_vals: tuple = tuple(list_case_vals)
+
         
         if current_case_vals in seen_combinations:
             attempts += 1
@@ -93,8 +120,8 @@ def run_generator():
         
         case_data = []
         for i, val in enumerate(current_case_vals):
-            v_type = input_types[i]
-            input_info = {'type': v_type, 'val': val}
+            v_type: str = input_types[i]
+            input_info: dict = {'type': v_type, 'val': val}
             
             if v_type in ['bigInt', 'crint']:
                 abs_val = abs(val)

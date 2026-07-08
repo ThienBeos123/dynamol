@@ -43,9 +43,13 @@ void __BIGINT_ADD_SHIFT__(bigInt *dst, const bigInt *src, size_t limb_shift) {
         limb_t dst_base = (di < old_n) ? dst->limbs[di] : 0;
         dst->limbs[di] = __ADD_UI64__(dst_base, src->limbs[i], &carry);
     }
-    // Propagate carry upward through dst's existing limbs
+    // Propagate carry upward through dst's existing limbs, treating new limbs as zero.
     size_t di = limb_shift + src->n;
-    while (carry && di < dst->cap) { dst->limbs[di] = __ADD_UI64__(dst->limbs[di], 0, &carry); di++;}
+    while (carry && di < dst->cap) {
+        limb_t dst_base = (di < old_n) ? dst->limbs[di] : 0;
+        dst->limbs[di] = __ADD_UI64__(dst_base, 0, &carry);
+        di++;
+    }
     if (di > dst->n) dst->n = di;
 }
 void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {

@@ -20,7 +20,7 @@ limitations under the License.
 #include "_hmv_matmul_.h"
 #include <debug_util.h>
 #include "../../util/aconv_macros.h"
-#include "mul_fft.c"
+#include "../heap_mul_fft.c"
 
 /** ----------- Matrix-Vector Multiplication Linear Combination -----------
  * THIS FILE CONTAINS THE FOLLOWING ALGORITHMS FOR MATRIX MULTIPLICATION:
@@ -45,13 +45,13 @@ dnml_status __HSYM_MATMUL_TOOM3__(
     size_t xz_Bsize = min(x->n, z->n); // Beta size lol
     size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
     size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslics = xz_Asize - xz_slice;
+    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslices = xz_Asize % xz_splits;
     bigInt *xz_alpha = (xz_Asize == x->n) ? x : z; /**/ bigInt *xz_beta = (xz_Bsize == z->n) ? z : x;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y->n, w->n); // Beta size lol
     size_t yw_Asize = max(y->n, w->n); // Alpha chad size lol
     size_t yw_splits = ((size_t)(yw_Asize / yw_Bsize) + 1);
-    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslices = yw_Asize - yw_slice;
+    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslices = yw_Asize % yw_splits;
     bigInt *yw_alpha = (yw_Asize == y->n) ? y : w; /**/ bigInt *yw_beta = (yw_Bsize == w->n) ? w : y;
 
     //* ================== PRE-OPERATION ALLOCATIONS ================== *//
@@ -61,8 +61,12 @@ dnml_status __HSYM_MATMUL_TOOM3__(
     size_t yw_k = (size_t)(max(yw_slice, yw_Bsize) / 3) + 1;
     size_t max_k = max(xz_k, yw_k);
     /* -------- 1a. Setup and Splitting Metadatas -------- */
+    size_t x1size = (xz_slice > xz_k) ? xz_slice - xz_k : 0; // Maximum = k
+    size_t z1size = (xz_Bsize > xz_k) ? xz_Bsize - xz_k : 0; // Maximum = k
     size_t x2size = (xz_slice > (xz_k << 1)) ? (xz_slice - (xz_k << 1)) : 0;
     size_t z2size = (xz_Bsize > (xz_k << 1)) ? (xz_Bsize - (xz_k << 1)) : 0;
+    size_t y1size = (yw_slice > yw_k) ? yw_slice - yw_k : 0; // Maximum = k
+    size_t w1size = (yw_Bsize > yw_k) ? yw_Bsize - yw_k : 0; // Maximum = k
     size_t y2size = (yw_slice > (yw_k << 1)) ? (yw_slice - (yw_k << 1)) : 0;
     size_t w2size = (yw_Bsize > (yw_k << 1)) ? (yw_Bsize - (yw_k << 1)) : 0;
     size_t max_m2size = max(x2size, y2size); size_t max_n2size = max(z2size, w2size);
@@ -93,11 +97,12 @@ dnml_status __HSYM_MATMUL_TOOM3__(
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
     *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
     */
-    BIHEAP_FTEMP(r0,     (max_k << 1),       echeck, early_free, early_cnt, alloc_list, alloc_cnt);
-    BIHEAP_FTEMP(r1,     (max_k << 1) + 9,   echeck, early_free, early_cnt, alloc_list, alloc_cnt);
-    BIHEAP_FTEMP(r_neg1, (max_k << 1) + 9,   echeck, early_free, early_cnt, alloc_list, alloc_cnt);
-    BIHEAP_FTEMP(r_neg2, (max_k << 1) + 10,  echeck, early_free, early_cnt, alloc_list, alloc_cnt);
-    BIHEAP_FTEMP(rinf, max_m2size + max_n2size + 4, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    bigInt r0 = {0}, r1 = {0}, r_neg1 = {0}, r_neg2 = {0}, rinf = {0};
+    alloc_list[alloc_cnt++] = &r0; early_free[early_cnt++] = &r0;
+    alloc_list[alloc_cnt++] = &r1; early_free[early_cnt++] = &r1;
+    alloc_list[alloc_cnt++] = &r_neg1; early_free[early_cnt++] = &r_neg1;
+    alloc_list[alloc_cnt++] = &r_neg2; early_free[early_cnt++] = &r_neg2;
+    alloc_list[alloc_cnt++] = &rinf; early_free[early_cnt++] = &rinf;
     /* ---------------- 3a. INTERPOLATION & RECOMPOSITION ---------------- */
     BIHEAP_FTEMP(final_res, (max_k << 1) + 14, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     BIHEAP_FRET(xz_acum_tres, x->n + z->n, echeck, early_free, early_cnt);
@@ -107,30 +112,32 @@ dnml_status __HSYM_MATMUL_TOOM3__(
 
 
     //* ============== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ============== *//
-    bigInt alpha_window = {0}; size_t offset = 0;
+    bigInt window = {0}; size_t offset = 0;
     for (size_t i = 0; i < xz_splits; ++i) {
-        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslics; /**/ offset = i * curr_slice;
-        alpha_window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice) || 
-            (xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
-            __BIGINT_SCHOOLBOOK__(xz_beta, &alpha_window, &final_res);
+        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslices;
+        window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
+        if ((xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)) {
+            __BIHEAP_SCHOOLBOOK__(xz_beta, &window, &final_res);
             __BIGINT_ADD_SHIFT__(&xz_acum_tres, &final_res, offset); continue; // (tmp_res <<<= xz_slice) + tmp
-        } 
-        // Recalculation of Metadta on xz_lslics's iteration
-        if (i == xz_splits - 1 && xz_lslics != xz_slice) {
+        }
+        else if (xz_Bsize != curr_slice) {
+            __BIHEAP_ASYM_MUL_DISP__(xz_beta, &window, &final_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+            __BIGINT_ADD_SHIFT__(&xz_acum_tres, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        // Recalculation of Metadta on xz_lslices's iteration
+        if (i == xz_splits - 1 && xz_lslices != xz_slice) {
             xz_k = (size_t)(max(curr_slice, xz_Bsize) / 3) + 1; // Recalculating xz_k
+            x1size = (curr_slice > (xz_k)) ? (curr_slice - (xz_k)) : 0;
             x2size = (curr_slice > (xz_k << 1)) ? (curr_slice - (xz_k << 1)) : 0;
         } 
         
         /* ------- 1a. Setup & Splitting ------- */
-        m0 = (bigInt){.limbs = alpha_window.limbs,                  .n = xz_k,     .cap = xz_k};
-        m1 = (bigInt){.limbs = alpha_window.limbs + xz_k,           .n = xz_k,     .cap = xz_k};
-        m2 = (bigInt){.limbs = alpha_window.limbs + (xz_k << 1),    .n = x2size,   .cap = x2size};
-        n0 = (bigInt){.limbs = xz_beta->limbs,                         .n = xz_k,      .cap = xz_k};
-        n1 = (bigInt){.limbs = xz_beta->limbs + xz_k,                  .n = xz_k,      .cap = xz_k};
-        n2 = (bigInt){.limbs = xz_beta->limbs + (xz_k << 1),           .n = z2size,    .cap = z2size};
+        m0 = (bigInt){.limbs = window.limbs,                    .n = xz_k,     .cap = xz_k};
+        m1 = (bigInt){.limbs = window.limbs + xz_k,             .n = x1size,   .cap = x1size};
+        m2 = (bigInt){.limbs = window.limbs + (xz_k << 1),      .n = x2size,   .cap = x2size};
+        n0 = (bigInt){.limbs = xz_beta->limbs,                  .n = xz_k,     .cap = xz_k};
+        n1 = (bigInt){.limbs = xz_beta->limbs + xz_k,           .n = z1size,   .cap = z1size};
+        n2 = (bigInt){.limbs = xz_beta->limbs + (xz_k << 1),    .n = z2size,   .cap = z2size};
 
         /* ------------ 2a. Evaluation & Point-wise Multiplication ------------ */
         p_outer.cap = xz_k + 1; p1.cap = xz_k + 2;          q_outer.cap = xz_k + 1; q1.cap = xz_k + 2;
@@ -174,23 +181,25 @@ dnml_status __HSYM_MATMUL_TOOM3__(
         __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
         
         // Accumulating result into tmp_res, Same principle as normal Schoolbook but cooler, Ig
-        __BIGINT_ADD_SHIFT__(&xz_acum_tres, &final_res, offset); // (tmp_res <<<= xz_slice) + tmp (Accumulating the product as a sum)
+        __BIGINT_ADD_SHIFT__(&xz_acum_tres, &final_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_MOVE__(xz_res, &xz_acum_tres);
 
 
 
 
     //* ============== Y and W MULTIPLICATION PAIR - LOOP OF SLICES ============== *//
+    offset = 0; window = (bigInt){0};
     for (size_t i = 0; i < yw_splits; ++i) {
-        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = yw_lslices; /**/ offset = i * curr_slice;
-        alpha_window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice) || 
-            (yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
-            __BIGINT_SCHOOLBOOK__(yw_beta, &alpha_window, &final_res);
+        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = yw_lslices;
+        window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
+        if ((yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)) {
+            __BIHEAP_SCHOOLBOOK__(yw_beta, &window, &final_res);
             __BIGINT_ADD_SHIFT__(&yw_acum_tres, &final_res, offset); continue; // (tmp_res <<<= yw_slice) + tmp
-        } 
+        }
+        else if (xz_Bsize != curr_slice) {
+            __BIHEAP_ASYM_MUL_DISP__(yw_beta, &window, &final_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+            __BIGINT_ADD_SHIFT__(&yw_acum_tres, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
         // Recalculation of Metadta on yw_lslices's iteration
         if (i == yw_splits - 1 && yw_lslices != yw_slice) {
             yw_k = (size_t)(max(curr_slice, yw_Bsize) / 3) + 1; // Recalculating yw_k
@@ -198,12 +207,12 @@ dnml_status __HSYM_MATMUL_TOOM3__(
         } 
         
         /* ------- 1a. Setup & Splitting ------- */
-        m0 = (bigInt){.limbs = alpha_window.limbs,                  .n = yw_k,     .cap = yw_k};
-        m1 = (bigInt){.limbs = alpha_window.limbs + yw_k,           .n = yw_k,     .cap = yw_k};
-        m2 = (bigInt){.limbs = alpha_window.limbs + (yw_k << 1),    .n = y2size,   .cap = y2size};
-        n0 = (bigInt){.limbs = yw_beta->limbs,                         .n = yw_k,      .cap = yw_k};
-        n1 = (bigInt){.limbs = yw_beta->limbs + yw_k,                  .n = yw_k,      .cap = yw_k};
-        n2 = (bigInt){.limbs = yw_beta->limbs + (yw_k << 1),           .n = w2size,    .cap = w2size};
+        m0 = (bigInt){.limbs = window.limbs,                    .n = yw_k,     .cap = yw_k};
+        m1 = (bigInt){.limbs = window.limbs + yw_k,             .n = y1size,   .cap = y1size};
+        m2 = (bigInt){.limbs = window.limbs + (yw_k << 1),      .n = y2size,   .cap = y2size};
+        n0 = (bigInt){.limbs = yw_beta->limbs,                  .n = yw_k,     .cap = yw_k};
+        n1 = (bigInt){.limbs = yw_beta->limbs + yw_k,           .n = w1size,   .cap = w1size};
+        n2 = (bigInt){.limbs = yw_beta->limbs + (yw_k << 1),    .n = w2size,   .cap = w2size};
 
         /* ------------ 2a. Evaluation & Point-wise Multiplication ------------ */
         p_outer.cap = yw_k + 1; p1.cap = yw_k + 2;          q_outer.cap = yw_k + 1; q1.cap = yw_k + 2;
@@ -247,7 +256,7 @@ dnml_status __HSYM_MATMUL_TOOM3__(
         __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
         
         // Accumulating result into tmp_res, Same principle as normal Schoolbook but cooler, Ig
-        __BIGINT_ADD_SHIFT__(&yw_acum_tres, &final_res, offset); // (tmp_res <<<= yw_slice) + tmp (Accumulating the product as a sum)
+        __BIGINT_ADD_SHIFT__(&yw_acum_tres, &final_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_MOVE__(yw_res, &yw_acum_tres); _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }
 
@@ -284,7 +293,7 @@ dnml_status __HSYM_MATMUL_SSA__(
     size_t xz_Bsize = min(x->n, z->n); // Beta size lol
     size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
     size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslics = xz_Asize - xz_slice;
+    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslices = xz_Asize % xz_splits;
     bigInt *xz_alpha = (xz_Asize == x->n) ? x : z; /**/ bigInt *xz_beta = (xz_Bsize == z->n) ? z : x;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y->n, w->n); // Beta size lol
@@ -317,7 +326,7 @@ dnml_status __HSYM_MATMUL_SSA__(
 
     /* ----------- 4+5+6. Pointwise Multiplication + Inverse Evaluation + Recomposition ----------- */
     // Output of multiplication is up to 2 * nlimbs long before reduction
-    BIHEAP_FTEMP(prod_tmp, (max_nlimbs << 1) + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    bigInt prod_tmp = {0}; alloc_list[alloc_cnt++] = &prod_tmp; early_free[early_cnt++] = &prod_tmp;
     BIHEAP_FTEMP(tmp_res, max(xz_Bsize + xz_slice, yw_Bsize + yw_slice), echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     BIHEAP_FRET(xz_acum_tres, x->n + z->n, echeck, early_free, early_cnt); // Accumulator for xz_res
     BIHEAP_FRET(yw_acum_tres, y->n + w->n, echeck, early_free, early_cnt); // Accumulator for yw_res
@@ -328,19 +337,20 @@ dnml_status __HSYM_MATMUL_SSA__(
 
 
     //* ========================== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ========================== *//
-    bigInt alpha_window = {0}; size_t offset = 0;
+    bigInt window = {0}; size_t offset = 0, scaled_threshold = BIGINT_SCHOOLBOOK * ___hschoolbook_scale(xz_Bsize);
     for (size_t i = 0; i < xz_splits; ++i) {
-        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslics; /**/ offset = i * curr_slice;
-        alpha_window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(xz_Bsize, curr_slice) * 2 <= max(xz_Bsize, curr_slice) || 
-            (xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
-            __BIGINT_SCHOOLBOOK__(xz_beta, &alpha_window, &tmp_res);
+        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslices;
+        window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
+        if ((xz_Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) {
+            __BIHEAP_SCHOOLBOOK__(xz_beta, &window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&xz_acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= xz_slice) + tmp
-        } 
-        // Recalculation of Metadata on xz_lslics's iteration
-        if (i == xz_splits - 1 && xz_lslics != xz_slice) {
+        }
+        else if (xz_Bsize != curr_slice) {
+            __BIHEAP_ASYM_MUL_DISP__(xz_beta, &window, &tmp_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+            __BIGINT_ADD_SHIFT__(&xz_acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
+        // Recalculation of Metadata on xz_lslices's iteration
+        if (i == xz_splits - 1 && xz_lslices != xz_slice) {
             xz_k = __fft_best_metadata(xz_Bsize, curr_slice, &xz_d, &xz_m, &xz_n);
             xz_mlimbs = (xz_m + U64_BITS - 1) >> 6; /**/ xz_nlimbs = (xz_n + U64_BITS) >> 6;
         }
@@ -349,7 +359,7 @@ dnml_status __HSYM_MATMUL_SSA__(
         for (size_t i = 0; i < xz_d; ++i) {
             size_t a_offset = i * xz_mlimbs; size_t a_len = (a_offset < xz_slice) ? min(xz_mlimbs, xz_slice - a_offset) : 0;
             size_t b_offset = i * xz_mlimbs; size_t b_len = (b_offset < xz_Bsize) ? min(xz_mlimbs, xz_Bsize - b_offset) : 0;
-            a_windows[i] = (bigInt){ .limbs = alpha_window.limbs + a_offset, .n = a_len, .cap = xz_mlimbs, .sign = 1 };
+            a_windows[i] = (bigInt){ .limbs = window.limbs + a_offset, .n = a_len, .cap = xz_mlimbs, .sign = 1 };
             b_windows[i] = (bigInt){ .limbs = xz_beta->limbs + b_offset,     .n = b_len, .cap = xz_mlimbs, .sign = 1 };
         }
 
@@ -367,8 +377,8 @@ dnml_status __HSYM_MATMUL_SSA__(
             __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, xz_n, xz_nlimbs);
         }
         // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
-        _bigint_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
-        _bigint_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
+        _biheap_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
+        _biheap_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
 
         /* ----------- 4a. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS ----------- */
         prod_tmp.cap = (xz_nlimbs << 1) + 2;
@@ -381,7 +391,7 @@ dnml_status __HSYM_MATMUL_SSA__(
 
         /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
         // Execute Inverse NTT (eval_a now holds the point-wise products)
-        _bigint_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
+        _biheap_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, xz_d, xz_k, xz_n, xz_nlimbs);
         for (size_t i = 0; i < xz_d; ++i) {
             size_t wexp = i * psi_step; // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
             size_t iwexp = ((xz_n << 1) - wexp) % (xz_n << 1); // Exponent cycle of 2n;
@@ -411,23 +421,25 @@ dnml_status __HSYM_MATMUL_SSA__(
                 __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf, mlimb_shift); // Addition with actual limb shifts
             }
         } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
-        __BIGINT_ADD_SHIFT__(&xz_acum_tres, &tmp_res, offset); // through adding sums: (tmp_res <<<= xz_slice) + tmp
+        __BIGINT_ADD_SHIFT__(&xz_acum_tres, &tmp_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_MOVE__(xz_res, &xz_acum_tres);
 
 
 
 
     //* ========================== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ========================== *//
+    offset = 0; window = (bigInt){0}; scaled_threshold = BIGINT_SCHOOLBOOK * ___hschoolbook_scale(yw_Bsize);
     for (size_t i = 0; i < yw_splits; ++i) {
-        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = last_slice; /**/ offset = i * curr_slice;
-        alpha_window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
-        if ( // Size imbalances still too large --> Schoolbook
-            min(yw_Bsize, curr_slice) * 2 <= max(yw_Bsize, curr_slice) || 
-            (yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)
-        ) { 
-            __BIGINT_SCHOOLBOOK__(yw_beta, &alpha_window, &tmp_res);
+        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = last_slice;
+        window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
+        if ((yw_Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) {
+            __BIHEAP_SCHOOLBOOK__(yw_beta, &window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&yw_acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= yw_slice) + tmp
-        } 
+        }
+        else if (yw_Bsize != curr_slice) {
+            __BIHEAP_ASYM_MUL_DISP__(yw_beta, &window, &tmp_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+            __BIGINT_ADD_SHIFT__(&yw_acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
+        }
         // Recalculation of Metadata on last_slice's iteration
         if (i == yw_splits - 1 && last_slice != yw_slice) {
             yw_k = __fft_best_metadata(yw_Bsize, curr_slice, &yw_d, &yw_m, &yw_n);
@@ -439,8 +451,8 @@ dnml_status __HSYM_MATMUL_SSA__(
         for (size_t i = 0; i < yw_d; ++i) {
             size_t a_offset = i * yw_mlimbs; size_t a_len = (a_offset < yw_slice) ? min(yw_mlimbs, yw_slice - a_offset) : 0;
             size_t b_offset = i * yw_mlimbs; size_t b_len = (b_offset < yw_Bsize) ? min(yw_mlimbs, yw_Bsize - b_offset) : 0;
-            a_windows[i] = (bigInt){ .limbs = alpha_window.limbs + a_offset, .n = a_len, .cap = yw_mlimbs, .sign = 1 };
-            b_windows[i] = (bigInt){ .limbs = yw_beta->limbs + b_offset,     .n = b_len, .cap = yw_mlimbs, .sign = 1 };
+            a_windows[i] = (bigInt){ .limbs = window.limbs + a_offset,      .n = a_len, .cap = yw_mlimbs, .sign = 1 };
+            b_windows[i] = (bigInt){ .limbs = yw_beta->limbs + b_offset,    .n = b_len, .cap = yw_mlimbs, .sign = 1 };
         }
         /* ---------- 2a+3a. PRE-EVALUATION NEGACYCLIC OPTIMIZATION + FFT EVALUATION ---------- */
         // 2. Looping over D of each windows and Pre-scale them through Negacyclic Convolutions
@@ -456,8 +468,8 @@ dnml_status __HSYM_MATMUL_SSA__(
             __cyclic_shift_mod(&eval_b[i], &b_windows[i], lo_buf.limbs, hi_buf.limbs, weight_exp, yw_n, yw_nlimbs);
         }
         // 3. Execute forward Cooley-Tukey NTT to move elements into frequency domain
-        _bigint_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
-        _bigint_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
+        _biheap_ctk_fft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
+        _biheap_ctk_fft(eval_b, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
 
         /* ----------- 4a. RECURSIVE POINT-WISE MULTIPLICATIONS OF RING ELEMENTS ----------- */
         prod_tmp.cap = (yw_nlimbs << 1) + 2;
@@ -470,7 +482,7 @@ dnml_status __HSYM_MATMUL_SSA__(
 
         /* ---------------- 5a+6a. INTERPOLATION & RECOMPOSITION ---------------- */
         // Execute Inverse NTT (eval_a now holds the point-wise products)
-        _bigint_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
+        _biheap_ctk_ifft(eval_a, tbuf.limbs, usave.limbs, lo_buf.limbs, hi_buf.limbs, yw_d, yw_k, yw_n, yw_nlimbs);
         for (size_t i = 0; i < yw_d; ++i) {
             size_t wexp = i * psi_step; // Post-FFT Unscaling: Multiply by inverse negacyclic weights ψ^(-i)
             size_t iwexp = ((yw_n << 1) - wexp) % (yw_n << 1); // Exponent cycle of 2n;
@@ -500,6 +512,6 @@ dnml_status __HSYM_MATMUL_SSA__(
                 __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf, mlimb_shift); // Addition with actual limb shifts
             }
         } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
-        __BIGINT_ADD_SHIFT__(&yw_acum_tres, &tmp_res, offset); // through adding sums: (tmp_res <<<= yw_slice) + tmp
+        __BIGINT_ADD_SHIFT__(&yw_acum_tres, &tmp_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_MOVE__(yw_res, &yw_acum_tres); _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }

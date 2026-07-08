@@ -124,7 +124,7 @@ uint8_t __BIGINT_SMALL_MRABIN__(uint64_t n) {
 
 
 /* ---------- Large Probablistic Tests - Miller Rabin ---------- */
-uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx rabin_ctx, dnml_status *err) {
+uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx *rabin_ctx, dnml_status *err) {
     // Early exit conditions - Even/Odd + Divisibility by 5
     if (n->sign < 0) { *err = BIGINT_SUCCESS; return 0; }
     if (!n->n || (n->n == 1 && n->limbs[0] == 1)) { *err = BIGINT_SUCCESS; return 0; }
@@ -144,7 +144,7 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
     /* ---------------- Normal Operation - Miller Rabin ---------------- */
     dnml_status echeck = BIGINT_SUCCESS;
     uint8_t prim_status = 0; uint64_t a = 1;
-    size_t mrabin_mark = scratch_mark(&rabin_ctx);
+    size_t mrabin_mark = scratch_mark(rabin_ctx);
 
     BIGINT_TEMP(n_min1, n->n, rabin_ctx, mrabin_mark, echeck, err, 0); n_min1.n = n->n;
     memcpy(n_min1.limbs, n->limbs, n->n * U64_BYTES);
@@ -188,7 +188,7 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
             if (!__BIGINT_INTERNAL_COMP__(&x, &constant_one)) { prim_status = 1; break; }
             else if (!__BIGINT_INTERNAL_COMP__(&x, &n_min1)) { prim_status = 1; break; }
         }
-    } scratch_rewind(&rabin_ctx, mrabin_mark); *err = BIGINT_SUCCESS; return prim_status;
+    } scratch_rewind(rabin_ctx, mrabin_mark); *err = BIGINT_SUCCESS; return prim_status;
 }
 
 
@@ -196,7 +196,7 @@ uint8_t __BIGINT_MILLER_RABIN__(PCONST_BIGINT n, PCONST_BIGINT base, calc_ctx ra
 
 
 /* Deterministic Primality Certificate Tests */
-uint8_t __BIGINT_ECPP__(PCONST_BIGINT n, calc_ctx ecpp_ctx, dnml_status *err) { return 0; }
+uint8_t __BIGINT_ECPP__(PCONST_BIGINT n, calc_ctx *ecpp_ctx, dnml_status *err) { return 0; }
 
 
 
@@ -204,7 +204,7 @@ uint8_t __BIGINT_ECPP__(PCONST_BIGINT n, calc_ctx ecpp_ctx, dnml_status *err) { 
 
 
 /* Algorithm Dispatcher */
-uint8_t __BIGINT_PTEST_DISP__(PCONST_BIGINT x, calc_ctx ptest_ctx, dnml_status *err) {
+uint8_t __BIGINT_PTEST_DISP__(PCONST_BIGINT x, calc_ctx *ptest_ctx, dnml_status *err) {
     if (x->n < MIXED_MAIN) {
         if (x->limbs[0] <= TRIAL_DIVISION) return __BIGINT_TRIAL_DIV__(x->limbs[0]);
         else return __BIGINT_SMALL_MRABIN__(x->limbs[0]);
@@ -222,16 +222,16 @@ uint8_t __BIGINT_PTEST_DISP__(PCONST_BIGINT x, calc_ctx ptest_ctx, dnml_status *
             xoshiro256_state ptmain_state = {0}; uint64_t side_mix = 0;
             __GET_ENTROPY_FAST(&side_mix, sizeof(side_mix));
             __GET_ENTROPY_FAST(ptmain_state.s, (sizeof(uint64_t)) << 2);
-            seed_xoshiro256(&ptmain_state, side_mix); size_t ptest_mark = scratch_mark(&ptest_ctx);
+            seed_xoshiro256(&ptmain_state, side_mix); size_t ptest_mark = scratch_mark(ptest_ctx);
             size_t uppperbound = (size_t)(sqrtl((long double)x->n)) + 1;
             size_t rand_upper = __rng_skrange(&ptmain_state, 6, uppperbound, 70.0f);
             BIGINT_TEMP(random_base, rand_upper, ptest_ctx, ptest_mark, echeck, err, 0);
             for (size_t i = 0; i < _DNML_MR_ROUNDS_DYNAMOL; ++i) {
                 _randbase_fill(&random_base, &ptmain_state, rand_upper);
                 uint8_t mrabin_ret = __BIGINT_MILLER_RABIN__(x, &random_base, ptest_ctx, &echeck);
-                if (echeck == DARENA_OVERFLOW) { scratch_rewind(&ptest_ctx, ptest_mark); *err = DARENA_OVERFLOW; return 0; }
-                if (!mrabin_ret) { scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 0; }
-            } scratch_rewind(&ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 1;
+                if (echeck == DARENA_OVERFLOW) { scratch_rewind(ptest_ctx, ptest_mark); *err = DARENA_OVERFLOW; return 0; }
+                if (!mrabin_ret) { scratch_rewind(ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 0; }
+            } scratch_rewind(ptest_ctx, ptest_mark); *err = BIGINT_SUCCESS; return 1;
         }
     }
 }

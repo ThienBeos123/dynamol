@@ -22,6 +22,7 @@ limitations under the License.
 #include "../include.h" // In /include, relative path for easier pathfind
 #include "../dnml_sys/sys.h" // In /include, relative path for easier pathfind
 #include "../dnml_status.h" // In /include, relative path for easier pathfind
+#include "../_libdnml_config/numeric_config.h"
 #include <stdalign.h>
 
 
@@ -39,7 +40,7 @@ typedef struct dnml_arena {
 //* ============= FUNCTIONALITIES ============= *//
 static inline dnml_status init_arena(dnml_arena *a, size_t init_cap) {
     if (a->base != NULL) return DARENA_SUCCESS;
-    uint64_t* __BUFFER_P = (uint64_t*)malloc(init_cap);
+    uint64_t* __BUFFER_P = (uint64_t*)calloc(init_cap, U64_BYTES);
     if (__BUFFER_P == NULL) { a->poisoined = true; return DNML_ALLOC_OOM; }
     a->base = __BUFFER_P; a->cap = init_cap;
     a->offset = 0; a->poisoined = false;
@@ -55,7 +56,7 @@ static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
     if (a->cap >= min_cap) return DARENA_SUCCESS;
     size_t new_cap = (a->cap) ? a->cap : 1;
     while (new_cap < min_cap) new_cap *= 2;
-    uint64_t* __BUFFER_P = (uint64_t*)realloc(a->base, new_cap);
+    uint64_t* __BUFFER_P = (uint64_t*)realloc(a->base, (new_cap) * U64_BYTES);
     if (__BUFFER_P == NULL) {  a->poisoined = true; return DNML_ALLOC_OOM; }
     a->base = __BUFFER_P; a->cap = new_cap;
     return DARENA_SUCCESS;

@@ -59,10 +59,10 @@ size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size) {
 static void __burk_3b2(
     PCONST_BIGINT a1, PCONST_BIGINT a2, PCONST_BIGINT a3,
     PCONST_BIGINT b1, PCONST_BIGINT b2, PCONST_BIGINT B,
-    P_BIGINT q, P_BIGINT r, calc_ctx burk_helper_ctx, dnml_status *err
+    P_BIGINT q, P_BIGINT r, calc_ctx *burk_helper_ctx, dnml_status *err
 ) {
     dnml_status echeck = BIGINT_SUCCESS, rec_err = BIGINT_SUCCESS;
-    size_t burk_helper_mark = scratch_mark(&burk_helper_ctx);
+    size_t burk_helper_mark = scratch_mark(burk_helper_ctx);
     BIGINT_TEMP(c, B->n, burk_helper_ctx, burk_helper_mark, echeck, err,);
     BIGINT_TEMP(iq, a1->n + a2->n, burk_helper_ctx, burk_helper_mark, echeck, err,);
     __BIGINT_BURNIKEL__(a1, a2, b1, q, &c, burk_helper_ctx, &rec_err);
@@ -76,7 +76,7 @@ static void __burk_3b2(
     while (__BIGINT_INTERNAL_COMP__(&c, &d) == -1) {
         __BIGINT_SUB_WB__(&iq, &iq, &one); __BIGINT_ADD_WC__(&c, &c, B);
     } __BIGINT_SUB_WB__(&c, &c, &d); __BIGINT_INTERNAL_COPY__(q, &iq); __BIGINT_INTERNAL_COPY__(r, &c);
-    scratch_rewind(&burk_helper_ctx, burk_helper_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(burk_helper_ctx, burk_helper_mark); *err = BIGINT_SUCCESS;
 }
 
 
@@ -93,10 +93,10 @@ void __BIGINT_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT quot, P_BIG
     if (rem->limbs == quot->limbs) { quot->limbs[0] = quot_first; quot->n = quot_n; quot_sign = quot->sign; }
     __BIGINT_INTERNAL_TRIM_LZ__(quot); /**/ if (quot->n == 0) quot->sign = 1;
 }
-void __BIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, calc_ctx knuth_ctx, dnml_status *err) {
+void __BIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, calc_ctx *knuth_ctx, dnml_status *err) {
     /* ---- Setup ---- */ dnml_status echeck;
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
-    size_t m = a->n, n = b->n, knuth_mark = scratch_mark(&knuth_ctx);
+    size_t m = a->n, n = b->n, knuth_mark = scratch_mark(knuth_ctx);
     BIGINT_TEMP(a_copy, m + 1, knuth_ctx, knuth_mark, echeck, err,);
     BIGINT_TEMP(b_copy, n, knuth_ctx, knuth_mark, echeck, err,);
     BIGINT_TEMP(ret_quot, m, knuth_ctx, knuth_mark, echeck, err,);
@@ -140,7 +140,7 @@ void __BIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGIN
         uint64_t b0 = (n >= 2) ? b_copy.limbs[n - 2] : 0;       // 2nd highest limb of b (used to validate quotient estimation - DETECT OVERESTIMATION)
         uint64_t qhat, rhat; uint8_t overflow_check;
         qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat, &overflow_check);
-        if (overflow_check) { scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_ERR_RANGE; return; }
+        if (overflow_check) { scratch_rewind(knuth_ctx, knuth_mark); *err = BIGINT_ERR_RANGE; return; }
 
         // Validating quotient estimation (Prevent overestimation before multi-limb subtraction)
         if (qhat == UINT64_MAX) --qhat; // Check if estimates quotient is too large
@@ -221,20 +221,20 @@ void __BIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGIN
     __BIGINT_INTERNAL_TRIM_LZ__(&ret_quot); /**/ __BIGINT_INTERNAL_TRIM_LZ__(&ret_rem);
     if (!ret_quot.n) ret_quot.sign = 1; /**/ if (!ret_rem.n) ret_rem.sign = 1;
     __BIGINT_INTERNAL_COPY__(rem, &ret_rem); __BIGINT_INTERNAL_COPY__(quot, &ret_quot);
-    scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS; // Free all temporaries
+    scratch_rewind(knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS; // Free all temporaries
 }
 void __BIGINT_BURNIKEL__(
     PCONST_BIGINT AH, PCONST_BIGINT AL,
     PCONST_BIGINT b, P_BIGINT quot, P_BIGINT rem, 
-    calc_ctx burk_ctx, dnml_status *err
+    calc_ctx *burk_ctx, dnml_status *err
 ) {
     if (AH->n + AL->n <= (BIGINT_SHORT << 1) && b->n <= BIGINT_SHORT) {
-        dnml_status echeck = BIGINT_SUCCESS; size_t base_mark = scratch_mark(&burk_ctx);
+        dnml_status echeck = BIGINT_SUCCESS; size_t base_mark = scratch_mark(burk_ctx);
         BIGINT_TEMP(a, AH->n + AL->n, burk_ctx, base_mark, echeck, err,);
         memcpy(a.limbs, AL->limbs, AL->n * U64_BYTES);
         memcpy(a.limbs + AH->n, AH->limbs, AH->n * U64_BYTES);
         __BIGINT_SHORT_DIVISION__(&a, b->limbs[0], quot, rem); 
-        scratch_rewind(&burk_ctx, base_mark); *err = BIGINT_SUCCESS;
+        scratch_rewind(burk_ctx, base_mark); *err = BIGINT_SUCCESS;
     }
     //* -------- 1. SPLIT ---------- *//
     size_t k = (size_t)(b->n >> 1) + 1;
@@ -249,7 +249,7 @@ void __BIGINT_BURNIKEL__(
 
     //* --------- 2. ACTUAL OPERATION --------- *//
     // q2 has 2x q1's cap due to it being used to also accomodate q1 to later acts like the returning quotient
-    dnml_status echeck = BIGINT_SUCCESS, rec_err = BIGINT_SUCCESS; size_t burk_mark = scratch_mark(&burk_ctx);
+    dnml_status echeck = BIGINT_SUCCESS, rec_err = BIGINT_SUCCESS; size_t burk_mark = scratch_mark(burk_ctx);
     BIGINT_TEMP(q1, (k << 1), burk_ctx, burk_mark, echeck, err,);
     BIGINT_TEMP(q2, (k << 2), burk_ctx, burk_mark, echeck, err,);
     BIGINT_TEMP(r,  (k << 1), burk_ctx, burk_mark, echeck, err,);
@@ -270,7 +270,7 @@ void __BIGINT_BURNIKEL__(
     memcpy(q2.limbs + q2.cap, q1.limbs, q1.cap * U64_BYTES);
     q2.n = 2*k; __BIGINT_INTERNAL_TRIM_LZ__(&q2);
     __BIGINT_INTERNAL_COPY__(rem, &r); __BIGINT_INTERNAL_COPY__(quot, &q2);
-    scratch_rewind(&burk_ctx, burk_mark); *err = BIGINT_SUCCESS;
+    scratch_rewind(burk_ctx, burk_mark); *err = BIGINT_SUCCESS;
 }
 
 
@@ -285,10 +285,10 @@ void __RBIGINT_SHORT_DIVISION__(PCONST_BIGINT a, uint64_t b, P_BIGINT rem) {
         dummy = __DIV_HELPER_UI64__(remainder, a->limbs[i - 1], b, &remainder, &overflow_check);
     } rem->limbs[0] = remainder; /**/ rem->n = (remainder) ? 1 : 0; /**/ rem->sign = 1;
 }
-void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT rem, calc_ctx knuth_ctx, dnml_status *err) {
+void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT rem, calc_ctx *knuth_ctx, dnml_status *err) {
     /* ---- Setup ---- */ dnml_status echeck;
     uint8_t shift = __CLZ_UI64__(b->limbs[b->n - 1]);
-    size_t m = a->n, n = b->n, knuth_mark = scratch_mark(&knuth_ctx);
+    size_t m = a->n, n = b->n, knuth_mark = scratch_mark(knuth_ctx);
     BIGINT_TEMP(a_copy, m + 1, knuth_ctx, knuth_mark, echeck, err,);
     BIGINT_TEMP(b_copy, n, knuth_ctx, knuth_mark, echeck, err,);
     BIGINT_TEMP(ret_rem, n, knuth_ctx, knuth_mark, echeck, err,);
@@ -330,7 +330,7 @@ void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT rem, calc_ct
         uint64_t b0 = (n >= 2) ? b_copy.limbs[n - 2] : 0;       // 2nd highest limb of b (used to validate quotient estimation - DETECT OVERESTIMATION)
         uint64_t qhat, rhat; uint8_t overflow_check;
         qhat = __DIV_HELPER_UI64__(a2, a1, b1, &rhat, &overflow_check);
-        if (overflow_check) { scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_ERR_RANGE; return; }
+        if (overflow_check) { scratch_rewind(knuth_ctx, knuth_mark); *err = BIGINT_ERR_RANGE; return; }
 
         // Validating quotient estimation (Prevent overestimation before multi-limb subtraction)
         if (qhat == UINT64_MAX) --qhat; // Check if estimates quotient is too large
@@ -409,14 +409,14 @@ void __RBIGINT_KNUTH_D__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT rem, calc_ct
         carry = (shift ? x << (U64_BITS - shift) : 0);
     } ret_rem.n = n;
     __BIGINT_INTERNAL_TRIM_LZ__(&ret_rem); if (!ret_rem.n) ret_rem.sign = 1;
-    __BIGINT_INTERNAL_COPY__(rem, &ret_rem); scratch_rewind(&knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS;
+    __BIGINT_INTERNAL_COPY__(rem, &ret_rem); scratch_rewind(knuth_ctx, knuth_mark); *err = BIGINT_SUCCESS;
 }
 
 
 
 
 /* --------------- ALGORITHM DISPATCHER --------------- */
-void __BIGINT_DIV_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT tmp_rem, calc_ctx div_ctx, dnml_status *err) {
+void __BIGINT_DIV_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT quot, P_BIGINT tmp_rem, calc_ctx *div_ctx, dnml_status *err) {
     if (b->n < BIGINT_SHORT) {  __BIGINT_SHORT_DIVISION__(a, b->limbs[0], quot, tmp_rem); *err = BIGINT_SUCCESS; }
     else if (b->n < BIGINT_KNUTH) __BIGINT_KNUTH_D__(a, b, quot, tmp_rem, div_ctx, err);
     else if (b->n < BIGINT_BURNIKEL) { 
