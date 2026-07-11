@@ -42,30 +42,20 @@ extern "C" {
 #define log2_8  3.00000000000L
 
 //*========================================== Thresholds //*========================================== *//
-/* String Parsing */
-#define DASI_NAIVE_PARSE            750 // digits <= 750
-#define DASI_DC_PARSE            750 // digits > 750
-
 /* Multiplication */
 typedef enum MUL_THRESHOLDS {
-    BIGINT_SCHOOLBOOK = 4,
-    BIGINT_KARATSUBA = 24,
-    BIGINT_TOOM_3 = 36,
-    BIGINT_TOOM_4 = 72,
-    BIGINT_TOOM_5 = 144,
-    BIGINT_TOOM_6p5 = 192,
-    BIGINT_TOOM_7p5 = 256,
-    BIGINT_TOOM_8p5 = 512,
-    BIGINT_SSA
+    BIGINT_SCHOOLBOOK = 16, BIGINT_KARATSUBA = 96, BIGINT_TOOM_3 = 256,
+    BIGINT_TOOM_4 = 512, BIGINT_TOOM_5 = 1024, BIGINT_TOOM_6p5 = 2048,
+    BIGINT_TOOM_7p5 = 4096, BIGINT_TOOM_8p5 = 8192, BIGINT_SSA,
 } MUL_THRESHOLDS;
 
 /* Division + Euclidean Modulo */
 typedef enum DIV_THRESHOLDS {
     BIGINT_SHORT = 1,           // n < 1        DIV + MOD
-    BIGINT_KNUTH = 24,          // n < 24       DIV + MOD
-    BIGINT_BURNIKEL = 96,       // n < 96       DIV
-    BIGINT_BARETT = 192,        // n < 192            MOD
-    BIGINT_NEWTON,              // n >= 96      DIV + MOD
+    BIGINT_KNUTH = 32,          // n < 32       DIV + MOD
+    BIGINT_BURNIKEL = 128,      // n < 128      DIV
+    BIGINT_BARETT = 128,        // n < 128            MOD
+    BIGINT_NEWTON,              // n >= 128     DIV + MOD
 } DIV_THRESHOLDS;
 
 /* Power, Roots, & Miscallenous Algebraic Operations */
@@ -82,7 +72,7 @@ typedef enum ALG_THRESHOLDS {
 typedef enum {
     /* GCD - Greatest Common Divisor */
     BIGINT_EUCLID = 1,
-    BIGINT_STEIN = 24,
+    BIGINT_STEIN = 64,
     BIGINT_LEHMER = 256,
     BIGINT_SUBQ_GCD,
 
@@ -101,12 +91,12 @@ typedef enum {
     BIGINT_MONTGOMERY,
     /* Modular Exponentiation */
     BIGINT_MOD_BINARY = 1,
-    BIGINT_MONT_BINARY = 4,
-    BIGINT_MOD_FIXED = 16,
+    BIGINT_MONT_BINARY = 2,
+    BIGINT_MOD_FIXED = 8,
     BIGINT_MOD_SLIDING,
     /* Modular Inverse */
-    BIGINT_XEUCLID = 256,
-    BIGINT_BINARY_XGCD = 2048,
+    BIGINT_XEUCLID = 1,
+    BIGINT_BINARY_XGCD = 64,
     BIGINT_HALF_XGCD
 } MOD_ARITHMETIC_THRESHOLDS;
 

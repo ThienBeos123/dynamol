@@ -37,31 +37,31 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res
 ) {
-    size_t xz_k = (size_t)(max(x->n, z->n) / 3) + 1;
-    size_t yw_k = (size_t)(max(y->n, w->n) / 3) + 1;
+    size_t xz_k = (max(x->n, z->n) + 2) / 3;
+    size_t yw_k = (max(y->n, w->n) + 2) / 3;
     size_t max_k = max(xz_k, yw_k);
     //* ============== X and Z MULTIPLICATION PAIR ============== *//
     /* ------- 1a. Setup & Splitting ------- */
-    size_t x1size = (x->n > yw_k) ? x->n - yw_k : 0; // Maximum = k
-    size_t z1size = (z->n > yw_k) ? z->n - yw_k : 0; // Maximum = k
+    size_t x0size = min(xz_k, x->n); size_t z0size = min(xz_k, z->n);
+    size_t x1size = (x->n > xz_k) ? x->n - xz_k : 0; // Maximum = k
+    size_t z1size = (z->n > xz_k) ? z->n - xz_k : 0; // Maximum = k
     size_t x2size = (x->n > (xz_k << 1)) ? (x->n - (xz_k << 1)) : 0;
     size_t z2size = (z->n > (xz_k << 1)) ? (z->n - (xz_k << 1)) : 0;
+    size_t y0size = min(yw_k, y->n); size_t w0size = min(yw_k, w->n);
     size_t y1size = (y->n > yw_k) ? y->n - yw_k : 0; // Maximum = k
     size_t w1size = (w->n > yw_k) ? w->n - yw_k : 0; // Maximum = k
     size_t y2size = (y->n > (yw_k << 1)) ? (y->n - (yw_k << 1)) : 0;
     size_t w2size = (w->n > (yw_k << 1)) ? (w->n - (yw_k << 1)) : 0;
     size_t max_m2size = max(x2size, y2size); size_t max_n2size = max(z2size, w2size);
-    bigInt m0 = {.limbs = x->limbs,                 .n = xz_k,      .cap = xz_k};
+    bigInt m0 = {.limbs = x->limbs,                 .n = x0size,    .cap = x0size};
     bigInt m1 = {.limbs = x->limbs + xz_k,          .n = x1size,    .cap = x1size};
     bigInt m2 = {.limbs = x->limbs + (xz_k << 1),   .n = x2size,    .cap = x2size};
-    bigInt n0 = {.limbs = z->limbs,                 .n = xz_k,      .cap = xz_k};
+    bigInt n0 = {.limbs = z->limbs,                 .n = z0size,    .cap = z0size};
     bigInt n1 = {.limbs = z->limbs + xz_k,          .n = z1size,    .cap = z1size};
     bigInt n2 = {.limbs = z->limbs + (xz_k << 1),   .n = z2size,    .cap = z2size};
 
     /* ------------ 2a. Evaluation & Point-wise Multiplication ------------ */
-    dnml_status echeck;
-    bigInt *early_free[14]; uint8_t early_cnt = 0;
-    bigInt *alloc_list[13]; uint8_t alloc_cnt = 0;
+    dnml_status echeck; bigInt *early_free[14]; uint8_t early_cnt = 0; /**/ bigInt *alloc_list[13]; uint8_t alloc_cnt = 0;
     // p(x) TEMPORARIES
     //  +) pOuter   = m0 + m2                           |   +) p(-1)    = pOuter - m1
     //  +) p(0)     = m0          (NO FULL TEMPORARY)   |   +) p(-2)    = 2*(p(-1) + m2) - m0
@@ -74,10 +74,10 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     //  +) qOuter   = n0 + n2                           |   +) q(-1)    = qOuter - n1
     //  +) q(0)     = n0          (NO FULL TEMPORARY)   |   +) q(-2)    = 2*(q(-1) + n2) - n0
     //  +) q(1)     = qOuter + n1                       |   +) q(inf)   = n2                    (NO FULL TEMPORARY)
+    BIHEAP_FTEMP(q_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); q_neg2.cap = xz_k + 2;
     BIHEAP_FTEMP(q_outer, max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt); q_outer.cap = xz_k + 1;
     BIHEAP_FTEMP(q1,      max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); q1.cap = xz_k + 2;
     BIHEAP_FTEMP(q_neg1,  max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt); q_neg1.cap = xz_k + 1;
-    BIHEAP_FTEMP(q_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt); q_neg2.cap = xz_k + 2;
     // p(x) CALCULATIONS                                // q(x) CALCULATIONS
     __BIGINT_ADD_WC__(&p_outer, &m0, &m2);              __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);              __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
@@ -87,10 +87,10 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);          __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
     /* ------------ POINT-WISE MULTIPLICATION ------------
     *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
-    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
-    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
-    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
+    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
     */
     bigInt r0 = {0}, r1 = {0}, r_neg1 = {0}, r_neg2 = {0}, rinf = {0};
     alloc_list[alloc_cnt++] = &r0; early_free[early_cnt++] = &r0;
@@ -103,10 +103,14 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
+    __BIGINT_INTERNAL_ENSCAP__(&r1, (xz_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
 
     /* ----------------- 3a. INTERPOLATION & RECOMPOSITION ----------------- */
-    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
-    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
+    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
+    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r1, 1);
     /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
     /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
     __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
@@ -115,22 +119,20 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     // ------------------ RECOMPOSITION ------------------ //
-    BIHEAP_FRET(xz_tres, (max_k << 1) + 14, echeck, early_free, early_cnt); xz_tres.cap = (xz_k << 1) + 14;
-    __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
-    __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-    __BIGINT_ADD_WC__(&xz_tres, &rinf, &r_neg2); __BIGINT_ADD_WC__(&xz_tres, &xz_tres, &r_neg1);
-    __BIGINT_ADD_WC__(&xz_tres, &xz_tres, &r1); __BIGINT_ADD_WC__(&xz_tres, &xz_tres, &r0);
-    __BIGINT_INTERNAL_COPY__(xz_res, &xz_tres);
+    BIHEAP_FRET(xz_tres, x->n + z->n, echeck, early_free, early_cnt);
+    __BIGINT_ADD_SHIFT__(&xz_tres, &rinf, 4); __BIGINT_ADD_SHIFT__(&xz_tres, &r_neg2, 3);
+    __BIGINT_ADD_SHIFT__(&xz_tres, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&xz_tres, &r1, 1);
+    __BIGINT_ADD_SHIFT__(&xz_tres, &r0, 0); __BIGINT_INTERNAL_MOVE__(xz_res, &xz_tres);
 
 
 
 
     //* ============== Y and W MULTIPLICATION PAIR ============== *//
     /* -------- 1b. Setup & Splitting ---------- */
-    m0 = (bigInt){.limbs = y->limbs,                 .n = yw_k,      .cap = yw_k};
+    m0 = (bigInt){.limbs = y->limbs,                 .n = y0size,    .cap = y0size};
     m1 = (bigInt){.limbs = y->limbs + yw_k,          .n = y1size,    .cap = y1size};
     m2 = (bigInt){.limbs = y->limbs + (yw_k << 1),   .n = y2size,    .cap = y2size};
-    n0 = (bigInt){.limbs = w->limbs,                 .n = yw_k,      .cap = yw_k};
+    n0 = (bigInt){.limbs = w->limbs,                 .n = w0size,    .cap = w0size};
     n1 = (bigInt){.limbs = w->limbs + yw_k,          .n = w1size,    .cap = w1size};
     n2 = (bigInt){.limbs = w->limbs + (yw_k << 1),   .n = w2size,    .cap = w2size};
 
@@ -149,25 +151,27 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);     __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
     __BIGINT_ADD_SAW__(&p_neg2, &p_neg1, &m2);      __BIGINT_ADD_SAW__(&q_neg2, &q_neg1, &n2);
     __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);         __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
-    __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &m0);      __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
+    __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);      __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
     /* ------------ POINT-WISE MULTIPLICATION ------------
     *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
-    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
-    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
-    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
+    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
     */
-    r0.cap = yw_k << 1; /**/ r1.cap = (yw_k << 1) + 9; /**/ r_neg1.cap = (yw_k << 1) + 9;
-    r_neg2.cap = (yw_k << 1) + 9; /**/ rinf.cap = (yw_k << 1) + 10;
     __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+    r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
+    __BIGINT_INTERNAL_ENSCAP__(&r1, (yw_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
     
     /* -------------------------- 3b. INTERPOLATION & RECOMPOSITION -------------------------- */
-    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
-    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
+    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
+    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r1, 1);
     /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
     /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
     __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
@@ -176,12 +180,11 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     /* ------------------ RECOMPOSITION ------------------ */ 
-    BIHEAP_FRET(yw_tres, (max_k << 1) + 14, echeck, early_free, early_cnt); yw_tres.cap = (xz_k << 1) + 14;
-    __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
-    __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-    __BIGINT_ADD_WC__(&yw_tres, &rinf, &r_neg2); __BIGINT_ADD_WC__(&yw_tres, &yw_tres, &r_neg1);
-    __BIGINT_ADD_WC__(&yw_tres, &yw_tres, &r1); __BIGINT_ADD_WC__(&yw_tres, &yw_tres, &r0);
-    __BIGINT_INTERNAL_COPY__(yw_res, &yw_tres); _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
+    BIHEAP_FRET(yw_tres, y->n + w->n, echeck, early_free, early_cnt);
+    __BIGINT_ADD_SHIFT__(&yw_tres, &rinf, 4); __BIGINT_ADD_SHIFT__(&yw_tres, &r_neg2, 3);
+    __BIGINT_ADD_SHIFT__(&yw_tres, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&yw_tres, &r1, 1);
+    __BIGINT_ADD_SHIFT__(&yw_tres, &r0, 0); __BIGINT_INTERNAL_MOVE__(yw_res, &yw_tres);
+    _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }
 
 

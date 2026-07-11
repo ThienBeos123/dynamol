@@ -30,7 +30,7 @@ limitations under the License.
 #define MAX_SIZE 128
 #define BUF_SIZE 256
 typedef struct { const bigInt a; const bigInt b; const bigInt exp; } bi_mul_case;
-/** ------------------- SIZE REQUIREMENTS AND ALGORITHM CHOICES -------------------
+/** ------------------- SIZE REQUIREMENTS AND ALGORITHM CHOICES ------------------- 
  * This file only test algorithms from Karatsuba -> Toom 8.5-way due to the absurd
  * operation's size threshold required for Schonhage-Strassen to consistently
  * and reproduciably work across multiple operating systems. This file operate at only
@@ -1517,13 +1517,17 @@ static const bi_mul_case mul_cases[CASE_CNT] = {
 
 
 int main(void) { _libdnml_init();
-    // Normal Setup
-    int total_tests = 0, passed_tests = 0; FILE* log_arr[3] = {0}; uint8_t log_cnt = 0;
-    struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start); uint8_t curr_log = 0;
+    // Normal Setup - Timing + Logging
+    int total_tests = 0, passed_tests = 0; /**/ FILE* log_arr[3] = {0}; uint8_t log_cnt = 0; 
+    struct timespec start, end; double rtime = 0.0; /**/ uint8_t curr_log = 0;
+    struct timespec test_start, test_end;  clock_gettime(CLOCK_MONOTONIC, &test_start);
+
+    // Buffers Setup
     limb_t *ret_buf = (limb_t *)malloc(BUF_SIZE * U64_BYTES); assert(ret_buf != NULL);
     bigInt ret = { .limbs = ret_buf, .n = 0, .cap = BUF_SIZE, .sign = 1 };
     init_log("../../perf_algos/log/mul_karat.log", log_arr, log_cnt, free(ret_buf)); // Schoolbook, Karatsuba, Toom-3, Toom-4,
     // init_log("../../perf_algos/log/mul_toom.log", log_arr, log_cnt, free(ret_buf)); // Toom 5, Toom 6.5, Toom 7.5, Toom 8.5
+
     // Arena + Scratch Context Setup
     size_t max_size1 = max(__BIGINT_KARATSUBA_WS__(MAX_SIZE, MAX_SIZE), __BIGINT_TOOM_3_WS__(MAX_SIZE, MAX_SIZE));
     size_t max_size2 = max(__BIGINT_TOOM_4_WS__(MAX_SIZE, MAX_SIZE), __BIGINT_TOOM_5_WS__(MAX_SIZE, MAX_SIZE));
@@ -1537,14 +1541,18 @@ int main(void) { _libdnml_init();
         .clear = arena_clear_adapter, .destruct = arena_destruct_adapter,
         .rewind = arena_rewind_adapter, .state = &mul_arena
     }; dnml_status echeck = BIGINT_SUCCESS;
+
+
+    
     fputs("====================================================================\n", stdout);
     fputs("          LIB-DNML ALGORITHM TESTS - BIGINT MULTIPLICATION          \n", stdout);
     fputs("====================================================================\n", stdout);
     /* -------------- Small range - Schoolbook, Karatsuba, Toom-3, Toom-4 -------------- */ 
-    fputs("----- __BIGINT_SCHOOLBOOK__ -----\n", log_arr[curr_log]);
-    for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-        __BIGINT_SCHOOLBOOK__(&mul_cases[i].a, &mul_cases[i].b, &ret);
-        int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
+    fputs("----- __BIGINT_SCHOOLBOOK__ -----\n", log_arr[curr_log]); rtime = 0;
+    for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+        __BIGINT_SCHOOLBOOK__(&mul_cases[i].a, &mul_cases[i].b, &ret); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+        double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+        rtime += elapsed_time; /**/ int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
         if (!match) passed_tests++;
         else {
             fprintf(log_arr[curr_log],
@@ -1556,11 +1564,12 @@ int main(void) { _libdnml_init();
             print_bi_limbs("ret", &ret, log_arr[curr_log]);
             print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
         }
-    } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_karat.log\n", stdout);
-    fputs("----- __BIGINT_KARATSUBA__ -----\n", log_arr[curr_log]);
-    for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-        __BIGINT_KARATSUBA__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck, log_arr[curr_log]);
-        if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
+    } printf("[SCHOOLBOOK] Result in test/calc_algo_test/perf_algos/log/mul_karat.log (runtime: %lf ms)\n", rtime * 1000.0);
+    fputs("----- __BIGINT_KARATSUBA__ -----\n", log_arr[curr_log]); rtime = 0;
+    for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+        __BIGINT_KARATSUBA__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+        double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+        rtime += elapsed_time; /**/ if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
         int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
         if (!match) passed_tests++;
         // else { arena_destruct(&mul_arena); free(ret_buf); close_logs(log_arr, log_cnt); exit(SIGABRT); }
@@ -1574,11 +1583,12 @@ int main(void) { _libdnml_init();
             print_bi_limbs("ret", &ret, log_arr[curr_log]);
             print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
         }
-    } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_karat.log\n", stdout);
-    fputs("----- __BIGINT_TOOM_3__ -----\n", log_arr[curr_log]);
-    for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-        __BIGINT_TOOM_3__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck);
-        if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
+    } printf("[KARATSUBA] Result in test/calc_algo_test/perf_algos/log/mul_karat.log (runtime: %lf ms)\n", rtime * 1000.0);
+    fputs("----- __BIGINT_TOOM_3__ -----\n", log_arr[curr_log]); rtime = 0;
+    for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+        __BIGINT_TOOM_3__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+        double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+        rtime += elapsed_time; /**/ if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
         int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
         if (!match) passed_tests++;
         else {
@@ -1591,11 +1601,12 @@ int main(void) { _libdnml_init();
             print_bi_limbs("ret", &ret, log_arr[curr_log]);
             print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
         }
-    } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_karat.log\n", stdout);
-    // fputs("----- __BIGINT_TOOM_4__ -----\n", log_arr[curr_log]);
-    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-    //     __BIGINT_TOOM_4__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck);
-    //     if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
+    } printf("[TOOM-3] Result in test/calc_algo_test/perf_algos/log/mul_karat.log (runtime: %lf ms)\n", rtime * 1000.0);
+    // fputs("----- __BIGINT_TOOM_4__ -----\n", log_arr[curr_log]); rtime = 0;
+    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+    //     __BIGINT_TOOM_4__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+    //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    //     rtime += elapsed_time; /**/ if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -1608,7 +1619,7 @@ int main(void) { _libdnml_init();
     //         print_bi_limbs("ret", &ret, log_arr[curr_log]);
     //         print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
     //     }
-    // } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_karat.log\n", stdout);
+    // } printf("[TOOM-4] Result in test/calc_algo_test/perf_algos/log/mul_karat.log (runtime: %lf ms)\n", rtime * 1000.0);
 
 
 
@@ -1617,10 +1628,11 @@ int main(void) { _libdnml_init();
 
     /* -------------- Medium range - Toom-5, Toom-6.5, Toom-7.5, Toom 8.5 -------------- */ 
     // ++curr_log;
-    // fputs("----- __BIGINT_TOOM_5__ -----\n", log_arr[curr_log]);
-    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-    //     __BIGINT_TOOM_5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck);
-    //     if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
+    // fputs("----- __BIGINT_TOOM_5__ -----\n", log_arr[curr_log]); rtime = 0;
+    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+    //     __BIGINT_TOOM_5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+    //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    //     rtime += elapsed_time; /**/ if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -1633,11 +1645,12 @@ int main(void) { _libdnml_init();
     //         print_bi_limbs("ret", &ret, log_arr[curr_log]);
     //         print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
     //     }
-    // } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_toom.log\n", stdout);
-    // fputs("----- __BIGINT_TOOM_6p5__ -----\n", log_arr[curr_log]);
-    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-    //     __BIGINT_TOOM_6p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck);
-    //     if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
+    // } printf("[TOOM-5] Result in test/calc_algo_test/perf_algos/log/mul_toom.log (runtime: %lf ms)\n", rtime * 1000.0);
+    // fputs("----- __BIGINT_TOOM_6p5__ -----\n", log_arr[curr_log]); rtime = 0;
+    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+    //     __BIGINT_TOOM_6p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+    //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    //     rtime += elapsed_time; /**/ if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -1650,11 +1663,12 @@ int main(void) { _libdnml_init();
     //         print_bi_limbs("ret", &ret, log_arr[curr_log]);
     //         print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
     //     }
-    // } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_toom.log\n", stdout);
-    // fputs("----- __BIGINT_TOOM_7p5__ -----\n", log_arr[curr_log]);
-    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-    //     __BIGINT_TOOM_7p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck);
-    //     if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
+    // } printf("[TOOM-6.5] Result in test/calc_algo_test/perf_algos/log/mul_toom.log (runtime: %lf ms)\n", rtime * 1000.0);
+    // fputs("----- __BIGINT_TOOM_7p5__ -----\n", log_arr[curr_log]); rtime = 0;
+    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+    //     __BIGINT_TOOM_7p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+    //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    //     rtime += elapsed_time; /**/ if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -1667,11 +1681,12 @@ int main(void) { _libdnml_init();
     //         print_bi_limbs("ret", &ret, log_arr[curr_log]);
     //         print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
     //     }
-    // } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_toom.log\n", stdout);
-    // fputs("----- __BIGINT_TOOM_8p5__ -----\n", log_arr[curr_log]);
-    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++;
-    //     __BIGINT_TOOM_8p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck);
-    //     if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
+    // } printf("[TOOM-7.5] Result in test/calc_algo_test/perf_algos/log/mul_toom.log (runtime: %lf ms)\n", rtime * 1000.0);
+    // fputs("----- __BIGINT_TOOM_8p5__ -----\n", log_arr[curr_log]); rtime = 0;
+    // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
+    //     __BIGINT_TOOM_8p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &mul_ctx, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
+    //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    //     rtime += elapsed_time; /**/ if (echeck == DARENA_OVERFLOW) test_cleanup(&mul_arena, ret_buf, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -1684,22 +1699,24 @@ int main(void) { _libdnml_init();
     //         print_bi_limbs("ret", &ret, log_arr[curr_log]);
     //         print_bi_limbs("exp", &mul_cases[i].exp, log_arr[curr_log]);
     //     }
-    // } fputs("Result written to test/calc_algo_test/perf_algos/log/mul_fft.log\n", stdout);
+    // } printf("[TOOM-8.5] Result in test/calc_algo_test/perf_algos/log/mul_toom.log (runtime: %lf ms)\n", rtime * 1000.0);
 
 
 
     /* Summary output block */
-    #undef CASE_CNT
-    #undef MAX_SIZE
-    #undef BUF_SIZE
-    clock_gettime(CLOCK_MONOTONIC, &end); arena_clear(&mul_arena); 
+    clock_gettime(CLOCK_MONOTONIC, &test_end); arena_clear(&mul_arena); 
     arena_destruct(&mul_arena); free(ret_buf); close_logs(log_arr, log_cnt);
-    double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    char mem_use[9]; double fsize = (BUF_SIZE << 6) + (arena_size << 6); format_size(mem_use, fsize);
+    double elapsed_time = (test_end.tv_sec - test_start.tv_sec) + (test_end.tv_nsec - test_start.tv_nsec) / 1e9;
     fputs( "=========================================================\n", stdout);
     fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
     printf("+) Success rate: %.2f%%\n", (total_tests > 0) ? ((passed_tests * 100.0) / total_tests) : 0.0);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
+    printf("+) Total Heap Memory Footprint: %s (%lf bytes)\n", mem_use, fsize);
     fputs( "=========================================================\n", stdout);
+    #undef CASE_CNT
+    #undef MAX_SIZE
+    #undef BUF_SIZE
     _libdnml_cleanup(); return 0;
 }

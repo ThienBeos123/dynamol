@@ -23,6 +23,8 @@ limitations under the License.
 //* =============== ADDITION ARITHMETIC ENGINE =============== *//
 void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     if (res != a && res != b) { res->n = 0; res->sign = 1; }
+    if (!b->n) { __BIGINT_INTERNAL_COPY__(res, a); return; }
+    else if (!a->n) { __BIGINT_INTERNAL_COPY__(res, b); return; }
     size_t max = max(a->n, b->n); uint8_t carry = 0;
     for (size_t i = 0; i < max; ++i) {
         limb_t x = (i < a->n) ? a->limbs[i] : 0; // Assigning limb at position i of a to x
@@ -31,6 +33,7 @@ void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b) {
     } res->n = max; /**/ if (carry) res->limbs[res->n++] = carry;
 }
 void __BIGINT_ADD_SHIFT__(bigInt *dst, const bigInt *src, size_t limb_shift) {
+    if (!src->n) return;
     if (!limb_shift) { __BIGINT_ADD_WC__(dst, dst, src); return; }
     if (!src->n) return; /**/ uint8_t carry = 0; size_t old_n = dst->n;
     if (dst->n < limb_shift) { // Fill in gaps if add src beyound dst->n
@@ -55,7 +58,7 @@ void __BIGINT_ADD_SHIFT__(bigInt *dst, const bigInt *src, size_t limb_shift) {
 void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
     // Main operation
     if (res != x && res != y) { res->n = 0; res->sign = 1; }
-    if (!y->n) return;
+    if (!y->n) __BIGINT_INTERNAL_COPY__(res, x);
     else if (!x->n) __BIGINT_INTERNAL_COPY__(res, y);
     else if (x->sign == y->sign) {
         __BIGINT_ADD_WC__(res, x, y);
@@ -71,6 +74,7 @@ void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
 //* =============== SUBTRACTION ARITHMETIC ENGINE =============== *//
 void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b) {
     if (res != a && res != b) { res->n = 0; res->sign = 1; }
+    if (!b->n) { __BIGINT_INTERNAL_COPY__(res, a); return; }
     uint8_t borrow = 0; size_t top_nonzero = 0;
     for (size_t i = 0; i < a->n; ++i) {
         limb_t y = (i < b->n) ? b->limbs[i] : 0;
@@ -82,7 +86,7 @@ void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b) {
 void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y) {
     // Main Operation
     if (res != x && res != y) { res->n = 0; res->sign = 1; }
-    if (!y->n) return;
+    if (!y->n) __BIGINT_INTERNAL_COPY__(res, x);
     else if (!x->n) { __BIGINT_INTERNAL_COPY__(res, y); res->sign = -y->sign; }
     else if (x->sign == y->sign) {
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(x, y);

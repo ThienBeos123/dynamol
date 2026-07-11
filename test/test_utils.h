@@ -50,4 +50,18 @@ static inline void test_cleanup(dnml_arena *arena, limb_t *ret_buf, FILE** log_a
 
 
 
+static inline void format_size(char *buf, double size) {
+    const char *units[4] = {"B ", "KB", "MB", "GB"}; /**/ int unit_index = 0;
+    while (size >= 1024.0 && unit_index < 3) { size /= 1024.0; unit_index++; }
+    // Look-ahead rounding check:
+    // Since we use %.1f, any value >= 1023.95 will round up to 1024.0.
+    // If that happens, we must bump it up to the next unit tier.
+    if (unit_index < 3 && (size + 0.05) >= 1024.0) { size = 1.0; unit_index++; }
+    // Always 1 decimal place (%.1f). 
+    // Pass 9 as the size limit assuming you update your buffer to char buf[9].
+    snprintf(buf, 9, "%.1f%s", size, units[unit_index]);
+}
+
+
+
 #endif

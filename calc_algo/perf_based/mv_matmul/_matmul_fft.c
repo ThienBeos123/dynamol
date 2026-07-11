@@ -35,8 +35,8 @@ limitations under the License.
 /* ------------ Sizing Function ------------ */
 size_t __BIGINT_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size_t w_size) {
     // Calculate based on the maximum multiplication branch --> Correct
-    size_t xz_k = (size_t)(max(x_size, z_size) / 3) + 1;
-    size_t yw_k = (size_t)(max(y_size, w_size) / 3) + 1; /**/ size_t max_k = max(xz_k, yw_k);
+    size_t xz_k = (max(x_size, z_size) + 2) / 3;
+    size_t yw_k = (max(y_size, w_size) + 2) / 3; /**/ size_t max_k = max(xz_k, yw_k);
     size_t x2size = (x_size > (xz_k << 1)) ? (x_size - (xz_k << 1)) : 0;
     size_t z2size = (z_size > (xz_k << 1)) ? (z_size - (xz_k << 1)) : 0;
     size_t y2size = (y_size > (yw_k << 1)) ? (y_size - (yw_k << 1)) : 0;
@@ -73,24 +73,26 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w, 
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *toom_ctx
 ) {
-    size_t xz_k = (size_t)(max(x->n, z->n) / 3) + 1;
-    size_t yw_k = (size_t)(max(y->n, w->n) / 3) + 1;
+    size_t xz_k = (max(x->n, z->n) + 2) / 3;
+    size_t yw_k = (max(y->n, w->n) + 2) / 3;
     size_t max_k = max(xz_k, yw_k);
     //* ============== X and Z MULTIPLICATION PAIR ============== *//
     /* ------- 1a. Setup & Splitting ------- */
-    size_t x1size = (x->n > yw_k) ? x->n - yw_k : 0; // Maximum = k
-    size_t z1size = (z->n > yw_k) ? z->n - yw_k : 0; // Maximum = k
+    size_t x0size = min(xz_k, x->n); size_t z0size = min(xz_k, z->n);
+    size_t x1size = (x->n > xz_k) ? x->n - xz_k : 0; // Maximum = k
+    size_t z1size = (z->n > xz_k) ? z->n - xz_k : 0; // Maximum = k
     size_t x2size = (x->n > (xz_k << 1)) ? (x->n - (xz_k << 1)) : 0;
     size_t z2size = (z->n > (xz_k << 1)) ? (z->n - (xz_k << 1)) : 0;
+    size_t y0size = min(yw_k, y->n); size_t w0size = min(yw_k, w->n);
     size_t y1size = (y->n > yw_k) ? y->n - yw_k : 0; // Maximum = k
     size_t w1size = (w->n > yw_k) ? w->n - yw_k : 0; // Maximum = k
     size_t y2size = (y->n > (yw_k << 1)) ? (y->n - (yw_k << 1)) : 0;
     size_t w2size = (w->n > (yw_k << 1)) ? (w->n - (yw_k << 1)) : 0;
     size_t max_m2size = max(x2size, y2size); size_t max_n2size = max(z2size, w2size);
-    bigInt m0 = {.limbs = x->limbs,                 .n = xz_k,      .cap = xz_k};
+    bigInt m0 = {.limbs = x->limbs,                 .n = x0size,    .cap = x0size};
     bigInt m1 = {.limbs = x->limbs + xz_k,          .n = x1size,    .cap = x1size};
     bigInt m2 = {.limbs = x->limbs + (xz_k << 1),   .n = x2size,    .cap = x2size};
-    bigInt n0 = {.limbs = z->limbs,                 .n = xz_k,      .cap = xz_k};
+    bigInt n0 = {.limbs = z->limbs,                 .n = z0size,    .cap = z0size};
     bigInt n1 = {.limbs = z->limbs + xz_k,          .n = z1size,    .cap = z1size};
     bigInt n2 = {.limbs = z->limbs + (xz_k << 1),   .n = z2size,    .cap = z2size};
 
@@ -109,9 +111,9 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     //  +) q(0)     = n0          (NO FULL TEMPORARY)   |   +) q(-2)    = 2*(q(-1) + n2) - n0
     //  +) q(1)     = qOuter + n1                       |   +) q(inf)   = n2                    (NO FULL TEMPORARY)
     BIGINT_FTEMP(q_outer, max_k + 1, toom_ctx, toom_mark, echeck); q_outer.cap = xz_k + 1;
+    BIGINT_FTEMP(q_neg2,  max(x->n + z->n, y->n + w->n), toom_ctx, toom_mark, echeck); // Actual cap: max_k + 2
     BIGINT_FTEMP(q1,      max_k + 2, toom_ctx, toom_mark, echeck); q1.cap = xz_k + 2;
     BIGINT_FTEMP(q_neg1,  max_k + 1, toom_ctx, toom_mark, echeck); q_neg1.cap = xz_k + 1;
-    BIGINT_FTEMP(q_neg2,  max(x->n + z->n, y->n + w->n), toom_ctx, toom_mark, echeck); // Actual cap: max_k + 2
     // p(x) CALCULATIONS                                // q(x) CALCULATIONS
     __BIGINT_ADD_WC__(&p_outer, &m0, &m2);              __BIGINT_ADD_WC__(&q_outer, &n0, &n2);
     __BIGINT_ADD_WC__(&p1, &p_outer, &m1);              __BIGINT_ADD_WC__(&q1, &q_outer, &n1);
@@ -126,9 +128,9 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
     *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
     */
-    BIGINT_FTEMP(r0,     (max_k << 1),       toom_ctx, toom_mark, echeck); r0.cap = (xz_k << 1);
-    BIGINT_FTEMP(r1,     (max_k << 1) + 8,   toom_ctx, toom_mark, echeck); r1.cap = (xz_k << 1) + 8;
     BIGINT_FTEMP(r_neg1, (max_k << 1) + 7,   toom_ctx, toom_mark, echeck); r_neg1.cap = (xz_k << 1) + 7;
+    BIGINT_FTEMP(r1,     (max_k << 1) + 8,   toom_ctx, toom_mark, echeck); r1.cap = (xz_k << 1) + 8;
+    BIGINT_FTEMP(r0,     (max_k << 1),       toom_ctx, toom_mark, echeck); r0.cap = (xz_k << 1);
     BIGINT_FTEMP(r_neg2, (max_k << 1) + 7,  toom_ctx, toom_mark, echeck); r_neg2.cap = (xz_k << 1) + 7;
     BIGINT_FTEMP(rinf, max_m2size + max_m2size, toom_ctx, toom_mark, echeck); rinf.cap = x2size + z2size;
     __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
@@ -136,10 +138,11 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+    r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
 
     /* ----------------- 3a. INTERPOLATION & RECOMPOSITION ----------------- */
-    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
-    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
+    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
+    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r1, 1);
     /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
     /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
     __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
@@ -147,8 +150,7 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
-    // ------------------ RECOMPOSITION ------------------ //
-    memset(q_neg2.limbs, 0, q_neg2.n * U64_BYTES); q_neg2.n = 0; q_neg2.sign = 1;
+    /* ------------------ RECOMPOSITION ------------------ */ q_neg2.n = 0; q_neg2.sign = 1;
     __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, 4); __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, 3);
     __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&q_neg2, &r1, 1);
     __BIGINT_ADD_SHIFT__(&q_neg2, &r0, 0); __BIGINT_INTERNAL_COPY__(xz_res, &q_neg2);
@@ -158,10 +160,10 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
 
     //* ============== Y and W MULTIPLICATION PAIR ============== *//
     /* -------- 1b. Setup & Splitting ---------- */
-    m0 = (bigInt){.limbs = y->limbs,                 .n = yw_k,      .cap = yw_k};
+    m0 = (bigInt){.limbs = y->limbs,                 .n = y0size,    .cap = y0size};
     m1 = (bigInt){.limbs = y->limbs + yw_k,          .n = y1size,    .cap = y1size};
     m2 = (bigInt){.limbs = y->limbs + (yw_k << 1),   .n = y2size,    .cap = y2size};
-    n0 = (bigInt){.limbs = w->limbs,                 .n = yw_k,      .cap = yw_k};
+    n0 = (bigInt){.limbs = w->limbs,                 .n = w0size,    .cap = w0size};
     n1 = (bigInt){.limbs = w->limbs + yw_k,          .n = w1size,    .cap = w1size};
     n2 = (bigInt){.limbs = w->limbs + (yw_k << 1),   .n = w2size,    .cap = w2size};
 
@@ -180,7 +182,7 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     __BIGINT_SUB_SAW__(&p_neg1, &p_outer, &m1);     __BIGINT_SUB_SAW__(&q_neg1, &q_outer, &n1);
     __BIGINT_ADD_SAW__(&p_neg2, &p_neg1, &m2);      __BIGINT_ADD_SAW__(&q_neg2, &q_neg1, &n2);
     __BIGINT_INTERNAL_LSHIFT__(&p_neg2, 1);         __BIGINT_INTERNAL_LSHIFT__(&q_neg2, 1);
-    __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &m0);      __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
+    __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);      __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
     /* ------------ POINT-WISE MULTIPLICATION ------------
     *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
     *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
@@ -195,10 +197,11 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&m2, &n2, &rinf, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
+    r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
     
     /* -------------------------- 3b. INTERPOLATION & RECOMPOSITION -------------------------- */
-    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
-    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
+    /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
+    /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r1, 1);
     /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
     /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
     __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
@@ -206,8 +209,7 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
-    /* ------------------ RECOMPOSITION ------------------ */
-    memset(q_neg2.limbs, 0, q_neg2.n * U64_BYTES); q_neg2.n = 0; q_neg2.sign = 1;
+    /* ------------------ RECOMPOSITION ------------------ */ q_neg2.n = 0; q_neg2.sign = 1;
     __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, 4); __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, 3);
     __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&q_neg2, &r1, 1);
     __BIGINT_ADD_SHIFT__(&q_neg2, &r0, 0); __BIGINT_INTERNAL_COPY__(yw_res, &q_neg2);

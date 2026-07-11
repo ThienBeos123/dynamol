@@ -180,7 +180,7 @@ void __BIGINT_DIV3__(bigInt *x) {
         // 0x5555555555555555ULL is floor(2^64 / 3)
         x->limbs[idx] = qa + r * UINT64_C(0x5555555555555555) + flag;
         r = sum_r - (flag ? 3 : 0);
-    } __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+    } __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
     if (val == 1 || !x->n) return 0; uint64_t remainder = 0;
@@ -194,7 +194,7 @@ uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
         for (size_t i = x->n; i > 0; --i) {
             x->limbs[i - 1] = __DIV_HELPER_UI64__(x->limbs[i - 1], remainder, val, &remainder, &ovf_check);
             DNML_TEST_ASSERT(!(ovf_check), "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
-        } __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+        } __BIGINT_INTERNAL_TRIM_LZ__(x);
     } return remainder;
 }
 void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) { // Assumes k < 64
@@ -223,7 +223,7 @@ void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs) {
     if (!klimbs) return;
     if (klimbs >= x->n) { __BIGINT_INTERNAL_ZSET__(x); return; }
     memcpy(x->limbs, (x->limbs + klimbs), (x->n - klimbs) * U64_BYTES);
-    x->n -= klimbs; __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+    x->n -= klimbs; __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs) {
     if (!klimbs || !x->n) return;
@@ -231,5 +231,5 @@ void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs) {
     size_t moved = (x->n + klimbs > x->cap) ? x->cap - klimbs : x->n;
     memmove(x->limbs + klimbs, x->limbs, moved * U64_BYTES);
     x->n = (x->n + klimbs > x->cap) ? x->cap : x->n + klimbs;
-    __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+    __BIGINT_INTERNAL_TRIM_LZ__(x);
 }

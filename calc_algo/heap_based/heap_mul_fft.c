@@ -550,8 +550,8 @@ void __BIHEAP_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status 
 void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_status *err) {
     size_t Bsize = min(a->n, b->n); // Beta size lol
     size_t Asize = max(a->n, b->n); // Alpha chad size lol
-    size_t splits = ((size_t)(Asize / Bsize) + 1);
-    size_t slice = (Asize / splits), last_slice = Asize % splits;
+    size_t splits = (Asize / Bsize) + !!(Asize % Bsize);
+    size_t slice = Bsize, last_slice = Asize % Bsize;
     const bigInt *const alpha = (Asize == a->n) ? a : b; 
     const bigInt *const beta = (Bsize == b->n) ? b : a;
     //* ============= Pre-operation Calculations & Allocations ============= *//
@@ -587,7 +587,7 @@ void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_st
     //* ============================= MULTIPLICATION LOOP WITH SLICES ============================= *//
     bigInt window = {0}; size_t offset = 0, scaled_threshold = BIGINT_SCHOOLBOOK * ___hschoolbook_scale(Bsize);
     for (size_t i = 0; i < splits; ++i) {
-        size_t curr_slice = slice; if (unlikely(i = splits - 1)) curr_slice = last_slice; /**/ offset = i * curr_slice;
+        size_t curr_slice = slice; if (unlikely(i = splits - 1) && last_slice) curr_slice = last_slice;
         window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
         if ((Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) { 
             __BIHEAP_SCHOOLBOOK__(beta, &window, &tmp_res);
@@ -598,7 +598,7 @@ void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_st
             __BIGINT_ADD_SHIFT__(&acum, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
         // Recalculation of Metadata on last_slice's iteration
-        if (i == splits - 1 && last_slice != slice) {
+        if (i == splits - 1 && last_slice) {
             k = __fft_best_metadata(Bsize, curr_slice, &d, &m, &n);
             mlimbs = (m + U64_BITS - 1) >> 6; /**/ nlimbs = (n + U64_BITS) >> 6;
             tmp_prod.cap = (nlimbs << 1) + 2; /**/ tmp_res.cap = Bsize + curr_slice;
@@ -675,6 +675,6 @@ void __BIHEAP_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, dnml_st
                 __BIGINT_ADD_SHIFT__(&tmp_res, &tbuf, mlimb_shift); // Addition with actual limb shifts
             }
         } __BIGINT_INTERNAL_TRIM_LZ__(&tmp_res); // Accumulating results into tmp_res, Same principle as schoolbook
-        __BIGINT_ADD_SHIFT__(&acum, &tmp_res, offset); // through adding sums: (tmp_res <<<= slice) + tmp
+        __BIGINT_ADD_SHIFT__(&acum, &tmp_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_MOVE__(res, &acum); _free_alloc_list(alloc_list, alloc_cnt); *err = BIGINT_SUCCESS;
 }

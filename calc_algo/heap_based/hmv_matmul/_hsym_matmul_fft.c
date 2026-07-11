@@ -44,27 +44,29 @@ dnml_status __HSYM_MATMUL_TOOM3__(
     // Metadata slices pre-calculations - XZ
     size_t xz_Bsize = min(x->n, z->n); // Beta size lol
     size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
-    size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslices = xz_Asize % xz_splits;
+    size_t xz_splits = (xz_Asize / xz_Bsize) + !!(xz_Asize % xz_Bsize);
+    size_t xz_slice = xz_Bsize, xz_lslice = xz_Asize % xz_Bsize;
     bigInt *xz_alpha = (xz_Asize == x->n) ? x : z; /**/ bigInt *xz_beta = (xz_Bsize == z->n) ? z : x;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y->n, w->n); // Beta size lol
     size_t yw_Asize = max(y->n, w->n); // Alpha chad size lol
-    size_t yw_splits = ((size_t)(yw_Asize / yw_Bsize) + 1);
-    size_t yw_slice = (yw_Asize / yw_splits); size_t yw_lslices = yw_Asize % yw_splits;
+    size_t yw_splits = (yw_Asize / yw_Bsize) + !!(yw_Asize % yw_Bsize);
+    size_t yw_slice = yw_Bsize, yw_lslice = yw_Asize % yw_Bsize;
     bigInt *yw_alpha = (yw_Asize == y->n) ? y : w; /**/ bigInt *yw_beta = (yw_Bsize == w->n) ? w : y;
 
     //* ================== PRE-OPERATION ALLOCATIONS ================== *//
     dnml_status echeck; /**/ uint8_t alloc_cnt = 0, early_cnt = 0;
     bigInt *alloc_list[14] = {0}, *early_free[16] = {0};
-    size_t xz_k = (size_t)(max(xz_slice, xz_Bsize) / 3) + 1;
-    size_t yw_k = (size_t)(max(yw_slice, yw_Bsize) / 3) + 1;
+    size_t xz_k = (max(xz_slice, xz_Bsize) + 2) / 3;
+    size_t yw_k = (max(yw_slice, yw_Bsize) + 2) / 3;
     size_t max_k = max(xz_k, yw_k);
     /* -------- 1a. Setup and Splitting Metadatas -------- */
+    size_t x0size = min(xz_k, xz_slice); size_t z0size = min(xz_k, xz_Bsize);
     size_t x1size = (xz_slice > xz_k) ? xz_slice - xz_k : 0; // Maximum = k
     size_t z1size = (xz_Bsize > xz_k) ? xz_Bsize - xz_k : 0; // Maximum = k
     size_t x2size = (xz_slice > (xz_k << 1)) ? (xz_slice - (xz_k << 1)) : 0;
     size_t z2size = (xz_Bsize > (xz_k << 1)) ? (xz_Bsize - (xz_k << 1)) : 0;
+    size_t y0size = min(yw_k, yw_slice); size_t w0size = min(yw_k, yw_Bsize);
     size_t y1size = (yw_slice > yw_k) ? yw_slice - yw_k : 0; // Maximum = k
     size_t w1size = (yw_Bsize > yw_k) ? yw_Bsize - yw_k : 0; // Maximum = k
     size_t y2size = (yw_slice > (yw_k << 1)) ? (yw_slice - (yw_k << 1)) : 0;
@@ -86,16 +88,16 @@ dnml_status __HSYM_MATMUL_TOOM3__(
     * +) q(0)   = n0 (NO FULL TEMPORARY)    | +) q(-2)  = 2*(q(-1) + n2) - n0
     * +) q(1)   = qOuter + n1               | +) q(inf) = n2 (NO FULL TEMPORARY) 
     */
+    BIHEAP_FTEMP(q_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     BIHEAP_FTEMP(q_outer, max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     BIHEAP_FTEMP(q1,      max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     BIHEAP_FTEMP(q_neg1,  max_k + 1, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
-    BIHEAP_FTEMP(q_neg2,  max_k + 2, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
     /* ------------ POINT-WISE MULTIPLICATION ------------
     *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
-    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
-    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
-    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+    *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+    *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
+    *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
     */
     bigInt r0 = {0}, r1 = {0}, r_neg1 = {0}, r_neg2 = {0}, rinf = {0};
     alloc_list[alloc_cnt++] = &r0; early_free[early_cnt++] = &r0;
@@ -104,9 +106,10 @@ dnml_status __HSYM_MATMUL_TOOM3__(
     alloc_list[alloc_cnt++] = &r_neg2; early_free[early_cnt++] = &r_neg2;
     alloc_list[alloc_cnt++] = &rinf; early_free[early_cnt++] = &rinf;
     /* ---------------- 3a. INTERPOLATION & RECOMPOSITION ---------------- */
-    BIHEAP_FTEMP(final_res, (max_k << 1) + 14, echeck, early_free, early_cnt, alloc_list, alloc_cnt);
-    BIHEAP_FRET(xz_acum_tres, x->n + z->n, echeck, early_free, early_cnt);
-    BIHEAP_FRET(yw_acum_tres, y->n + w->n, echeck, early_free, early_cnt);
+    BIHEAP_FTEMP(final_res, max(xz_Bsize + xz_slice, yw_Bsize + yw_slice), echeck, early_free, early_cnt, alloc_list, alloc_cnt);
+    BIHEAP_FRET(xz_acum_tres, x->n + z->n, echeck, early_free, early_cnt); memset(xz_acum_tres.limbs, 0, xz_acum_tres.cap * U64_BYTES);
+    BIHEAP_FRET(yw_acum_tres, y->n + w->n, echeck, early_free, early_cnt); memset(yw_acum_tres.limbs, 0, yw_acum_tres.cap * U64_BYTES);
+    final_res.cap = xz_Bsize + xz_slice;
 
 
 
@@ -114,7 +117,7 @@ dnml_status __HSYM_MATMUL_TOOM3__(
     //* ============== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ============== *//
     bigInt window = {0}; size_t offset = 0;
     for (size_t i = 0; i < xz_splits; ++i) {
-        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslices;
+        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1) && xz_lslice) curr_slice = xz_lslice;
         window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
         if ((xz_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)) {
             __BIHEAP_SCHOOLBOOK__(xz_beta, &window, &final_res);
@@ -124,18 +127,18 @@ dnml_status __HSYM_MATMUL_TOOM3__(
             __BIHEAP_ASYM_MUL_DISP__(xz_beta, &window, &final_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
             __BIGINT_ADD_SHIFT__(&xz_acum_tres, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
-        // Recalculation of Metadta on xz_lslices's iteration
-        if (i == xz_splits - 1 && xz_lslices != xz_slice) {
-            xz_k = (size_t)(max(curr_slice, xz_Bsize) / 3) + 1; // Recalculating xz_k
-            x1size = (curr_slice > (xz_k)) ? (curr_slice - (xz_k)) : 0;
+        // Recalculation of Metadta on xz_lslice's iteration
+        if (i == xz_splits - 1 && xz_lslice) {
+            xz_k = (max(curr_slice, xz_Bsize) + 2) / 3; // Recalculating xz_k
+            x0size = min(xz_k, curr_slice); /**/ x1size = (curr_slice > (xz_k)) ? (curr_slice - (xz_k)) : 0;
             x2size = (curr_slice > (xz_k << 1)) ? (curr_slice - (xz_k << 1)) : 0;
         } 
         
         /* ------- 1a. Setup & Splitting ------- */
-        m0 = (bigInt){.limbs = window.limbs,                    .n = xz_k,     .cap = xz_k};
+        m0 = (bigInt){.limbs = window.limbs,                    .n = x0size,   .cap = x0size};
         m1 = (bigInt){.limbs = window.limbs + xz_k,             .n = x1size,   .cap = x1size};
         m2 = (bigInt){.limbs = window.limbs + (xz_k << 1),      .n = x2size,   .cap = x2size};
-        n0 = (bigInt){.limbs = xz_beta->limbs,                  .n = xz_k,     .cap = xz_k};
+        n0 = (bigInt){.limbs = xz_beta->limbs,                  .n = z0size,   .cap = z0size};
         n1 = (bigInt){.limbs = xz_beta->limbs + xz_k,           .n = z1size,   .cap = z1size};
         n2 = (bigInt){.limbs = xz_beta->limbs + (xz_k << 1),    .n = z2size,   .cap = z2size};
 
@@ -151,22 +154,24 @@ dnml_status __HSYM_MATMUL_TOOM3__(
         __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);          __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
         /* ------------ POINT-WISE MULTIPLICATION ------------
         *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
-        *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
-        *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
-        *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
-        *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+        *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+        *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
+        *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+        *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
         */
-        r0.cap = (xz_k << 1); /**/ r1.cap = (xz_k << 1) + 9; /**/ r_neg1.cap = (xz_k << 1) + 9;
-        r_neg2.cap = (xz_k << 1) + 10; /**/ rinf.cap = x2size + z2size;
         __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
+        __BIGINT_INTERNAL_ENSCAP__(&r1, (xz_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
 
         /* ----------------- 3a. INTERPOLATION & RECOMPOSITION ----------------- */
-        /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
-        /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
+        /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
+        /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r1, 1);
         /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
         /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
         __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
@@ -174,23 +179,19 @@ dnml_status __HSYM_MATMUL_TOOM3__(
         /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
         __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
         /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
-        /* ------------------ RECOMPOSITION ------------------ */ final_res.cap = ((xz_k << 1) + 14);
-        __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
-        __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-        __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
-        __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
-        
-        // Accumulating result into tmp_res, Same principle as normal Schoolbook but cooler, Ig
-        __BIGINT_ADD_SHIFT__(&xz_acum_tres, &final_res, offset); offset += curr_slice;
+        /* ------------------ RECOMPOSITION ------------------ */ final_res.n = 0; final_res.sign = 1;
+        __BIGINT_ADD_SHIFT__(&final_res, &rinf, 4); __BIGINT_ADD_SHIFT__(&final_res, &r_neg2, 3);
+        __BIGINT_ADD_SHIFT__(&final_res, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&final_res, &r1, 1);
+        __BIGINT_ADD_WC__(&final_res, &final_res, &r0); __BIGINT_ADD_SHIFT__(&xz_acum_tres, &final_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_MOVE__(xz_res, &xz_acum_tres);
 
 
 
 
     //* ============== Y and W MULTIPLICATION PAIR - LOOP OF SLICES ============== *//
-    offset = 0; window = (bigInt){0};
+    offset = 0; window = (bigInt){0}; final_res.cap = yw_Bsize + yw_slice;
     for (size_t i = 0; i < yw_splits; ++i) {
-        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = yw_lslices;
+        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1) && yw_lslice) curr_slice = yw_lslice;
         window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
         if ((yw_Bsize <= BIGINT_SCHOOLBOOK || curr_slice <= BIGINT_SCHOOLBOOK)) {
             __BIHEAP_SCHOOLBOOK__(yw_beta, &window, &final_res);
@@ -200,17 +201,18 @@ dnml_status __HSYM_MATMUL_TOOM3__(
             __BIHEAP_ASYM_MUL_DISP__(yw_beta, &window, &final_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
             __BIGINT_ADD_SHIFT__(&yw_acum_tres, &final_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
-        // Recalculation of Metadta on yw_lslices's iteration
-        if (i == yw_splits - 1 && yw_lslices != yw_slice) {
-            yw_k = (size_t)(max(curr_slice, yw_Bsize) / 3) + 1; // Recalculating yw_k
+        // Recalculation of Metadta on yw_lslice's iteration
+        if (i == yw_splits - 1 && yw_lslice) {
+            yw_k = (max(curr_slice, yw_Bsize) + 2) / 3; // Recalculating yw_k
+            y0size = min(yw_k, curr_slice); /**/ y1size = (curr_slice > (yw_k)) ? (curr_slice - (yw_k)) : 0;
             y2size = (curr_slice > (yw_k << 1)) ? (curr_slice - (yw_k << 1)) : 0;
         } 
         
         /* ------- 1a. Setup & Splitting ------- */
-        m0 = (bigInt){.limbs = window.limbs,                    .n = yw_k,     .cap = yw_k};
+        m0 = (bigInt){.limbs = window.limbs,                    .n = y0size,   .cap = y0size};
         m1 = (bigInt){.limbs = window.limbs + yw_k,             .n = y1size,   .cap = y1size};
         m2 = (bigInt){.limbs = window.limbs + (yw_k << 1),      .n = y2size,   .cap = y2size};
-        n0 = (bigInt){.limbs = yw_beta->limbs,                  .n = yw_k,     .cap = yw_k};
+        n0 = (bigInt){.limbs = yw_beta->limbs,                  .n = w0size,   .cap = w0size};
         n1 = (bigInt){.limbs = yw_beta->limbs + yw_k,           .n = w1size,   .cap = w1size};
         n2 = (bigInt){.limbs = yw_beta->limbs + (yw_k << 1),    .n = w2size,   .cap = w2size};
 
@@ -226,22 +228,24 @@ dnml_status __HSYM_MATMUL_TOOM3__(
         __BIGINT_SUB_SAW__(&p_neg2, &p_neg2, &m0);          __BIGINT_SUB_SAW__(&q_neg2, &q_neg2, &n0);
         /* ------------ POINT-WISE MULTIPLICATION ------------
         *   +) r(0)   = p(0)   * q(0)       ---> Cap: 2k
-        *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 9 (interpolation - r1 + llshift)
-        *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (original) --> 2k + 9 (interpolation - r2 + llshift)
-        *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 10 (interpolation - r3 + llshift)
-        *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) ---> 2k + 4 (bit-shifts accounted)
+        *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
+        *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
+        *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
+        *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
         */
-        r0.cap = (yw_k << 1); /**/ r1.cap = (yw_k << 1) + 9; /**/ r_neg1.cap = (yw_k << 1) + 9;
-        r_neg2.cap = (yw_k << 1) + 10; /**/ rinf.cap = x2size + z2size;
         __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
         __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
+        r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
+        __BIGINT_INTERNAL_ENSCAP__(&r1, (yw_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+        __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
 
         /* ----------------- 3a. INTERPOLATION & RECOMPOSITION ----------------- */
-        /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r_neg1); __BIGINT_DIV3__(&r_neg2);
-        /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r_neg1, 1);
+        /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
+        /* r1 = 2k + 5 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg1); __BIGINT_INTERNAL_RSHIFT__(&r1, 1);
         /* r2 = 2k + 3 */ __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &r0);
         /* r3 = 2k + 7 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg1, &r_neg2);
         __BIGINT_INTERNAL_RSHIFT__(&r_neg2, 1); __BIGINT_INTERNAL_LSHIFT__(&rinf, 1);
@@ -249,14 +253,10 @@ dnml_status __HSYM_MATMUL_TOOM3__(
         /* r2 = 2k + 7 */ __BIGINT_ADD_SAW__(&r_neg1, &r_neg1, &r1);
         __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
         /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
-        /* ------------------ RECOMPOSITION ------------------ */ final_res.cap = ((yw_k << 1) + 14);
-        __BIGINT_INTERNAL_LLSHIFT__(&rinf, 4);   __BIGINT_INTERNAL_LLSHIFT__(&r_neg2, 3);
-        __BIGINT_INTERNAL_LLSHIFT__(&r_neg1, 2); __BIGINT_INTERNAL_LLSHIFT__(&r1, 1);
-        __BIGINT_ADD_WC__(&final_res, &rinf, &r_neg2); __BIGINT_ADD_WC__(&final_res, &final_res, &r_neg1);
-        __BIGINT_ADD_WC__(&final_res, &final_res, &r1); __BIGINT_ADD_WC__(&final_res, &final_res, &r0);
-        
-        // Accumulating result into tmp_res, Same principle as normal Schoolbook but cooler, Ig
-        __BIGINT_ADD_SHIFT__(&yw_acum_tres, &final_res, offset); offset += curr_slice;
+        /* ------------------ RECOMPOSITION ------------------ */ final_res.n = 0; final_res.sign = 1;
+        __BIGINT_ADD_SHIFT__(&final_res, &rinf, 4); __BIGINT_ADD_SHIFT__(&final_res, &r_neg2, 3);
+        __BIGINT_ADD_SHIFT__(&final_res, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&final_res, &r1, 1);
+        __BIGINT_ADD_WC__(&final_res, &final_res, &r0); __BIGINT_ADD_SHIFT__(&yw_acum_tres, &final_res, offset); offset += curr_slice;
     } __BIGINT_INTERNAL_MOVE__(yw_res, &yw_acum_tres); _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }
 
@@ -292,14 +292,14 @@ dnml_status __HSYM_MATMUL_SSA__(
     // Metadata slices pre-calculations - XZ
     size_t xz_Bsize = min(x->n, z->n); // Beta size lol
     size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
-    size_t xz_splits = ((size_t)(xz_Asize / xz_Bsize) + 1);
-    size_t xz_slice = (xz_Asize / xz_splits); size_t xz_lslices = xz_Asize % xz_splits;
+    size_t xz_splits = (xz_Asize / xz_Bsize) + !!(xz_Asize % xz_Bsize);
+    size_t xz_slice = xz_Bsize, xz_lslice = xz_Asize % xz_Bsize;
     bigInt *xz_alpha = (xz_Asize == x->n) ? x : z; /**/ bigInt *xz_beta = (xz_Bsize == z->n) ? z : x;
     // Metadata slices pre-calculations - YW
     size_t yw_Bsize = min(y->n, w->n); // Beta size lol
     size_t yw_Asize = max(y->n, w->n); // Alpha chad size lol
-    size_t yw_splits = ((size_t)(yw_Asize / yw_Bsize) + 1);
-    size_t yw_slice = (yw_Asize / yw_splits); size_t last_slice = yw_Asize - yw_slice;
+    size_t yw_splits = (yw_Asize / yw_Bsize) + !!(yw_Asize % yw_Bsize);
+    size_t yw_slice = yw_Bsize, yw_lslice = yw_Asize % yw_Bsize;
     bigInt *yw_alpha = (yw_Asize == y->n) ? y : w; /**/ bigInt *yw_beta = (yw_Bsize == w->n) ? w : y;
     //* ============================ PRE-OPERATION ALLOCATIONS ============================ *//
     size_t xz_d, xz_m, xz_n, xz_k = __fft_best_metadata(xz_Bsize, xz_slice, &xz_d, &xz_m, &xz_n);
@@ -339,7 +339,7 @@ dnml_status __HSYM_MATMUL_SSA__(
     //* ========================== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ========================== *//
     bigInt window = {0}; size_t offset = 0, scaled_threshold = BIGINT_SCHOOLBOOK * ___hschoolbook_scale(xz_Bsize);
     for (size_t i = 0; i < xz_splits; ++i) {
-        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1)) curr_slice = xz_lslices;
+        size_t curr_slice = xz_slice; if (unlikely(i = xz_splits - 1) && xz_lslice) curr_slice = xz_lslice;
         window = (bigInt){.limbs = xz_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
         if ((xz_Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) {
             __BIHEAP_SCHOOLBOOK__(xz_beta, &window, &tmp_res);
@@ -349,8 +349,8 @@ dnml_status __HSYM_MATMUL_SSA__(
             __BIHEAP_ASYM_MUL_DISP__(xz_beta, &window, &tmp_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
             __BIGINT_ADD_SHIFT__(&xz_acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
-        // Recalculation of Metadata on xz_lslices's iteration
-        if (i == xz_splits - 1 && xz_lslices != xz_slice) {
+        // Recalculation of Metadata on xz_lslice's iteration
+        if (i == xz_splits - 1 && xz_lslice) {
             xz_k = __fft_best_metadata(xz_Bsize, curr_slice, &xz_d, &xz_m, &xz_n);
             xz_mlimbs = (xz_m + U64_BITS - 1) >> 6; /**/ xz_nlimbs = (xz_n + U64_BITS) >> 6;
         }
@@ -430,7 +430,7 @@ dnml_status __HSYM_MATMUL_SSA__(
     //* ========================== X and Z MULTIPLICATION PAIR - LOOP OF SLICES ========================== *//
     offset = 0; window = (bigInt){0}; scaled_threshold = BIGINT_SCHOOLBOOK * ___hschoolbook_scale(yw_Bsize);
     for (size_t i = 0; i < yw_splits; ++i) {
-        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1)) curr_slice = last_slice;
+        size_t curr_slice = yw_slice; if (unlikely(i = yw_splits - 1) && yw_lslice) curr_slice = yw_lslice;
         window = (bigInt){.limbs = yw_alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
         if ((yw_Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) {
             __BIHEAP_SCHOOLBOOK__(yw_beta, &window, &tmp_res);
@@ -440,8 +440,8 @@ dnml_status __HSYM_MATMUL_SSA__(
             __BIHEAP_ASYM_MUL_DISP__(yw_beta, &window, &tmp_res, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
             __BIGINT_ADD_SHIFT__(&yw_acum_tres, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
-        // Recalculation of Metadata on last_slice's iteration
-        if (i == yw_splits - 1 && last_slice != yw_slice) {
+        // Recalculation of Metadata on yw_lslice's iteration
+        if (i == yw_splits - 1 && yw_lslice) {
             yw_k = __fft_best_metadata(yw_Bsize, curr_slice, &yw_d, &yw_m, &yw_n);
             yw_mlimbs = (yw_m + U64_BITS - 1) >> 6; /**/ yw_nlimbs = (yw_n + U64_BITS) >> 6;
         }

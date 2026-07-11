@@ -75,8 +75,7 @@ size_t __BIGINT_ASYM_FFT_WS__(size_t a_size, size_t b_size) {
     /* Block splitting Calculations */
     size_t Bsize = min(a_size, b_size); // Beta size lol
     size_t Asize = max(a_size, b_size); // Alpha chad size lol
-    size_t splits = ((size_t)(Asize / Bsize) + 1);
-    size_t slice = (Asize / splits); size_t last_slice = (Asize % splits);
+    size_t slice = Bsize, last_slice = Asize % Bsize;
     /* Raw Buffer Sizes */
     size_t n = 0, k = __fft_best_metadata(Bsize, slice, NULL, NULL, &n);
     size_t nlimbs = (n + U64_BITS) >> 6;
@@ -89,7 +88,7 @@ size_t __BIGINT_ASYM_FFT_WS__(size_t a_size, size_t b_size) {
     /* Function Calls */
     size_t scaled_threshold = BIGINT_SCHOOLBOOK * ___schoolbook_scale(Bsize);
     size_t downstream_size = __BIGINT_FFT_WS__(nlimbs, nlimbs); size_t asym_call = 0; 
-    if (last_slice != slice && last_slice > scaled_threshold) asym_call = __BIGINT_ASYM_MUL_WS__(Bsize, last_slice); 
+    if (last_slice > scaled_threshold) asym_call = __BIGINT_ASYM_MUL_WS__(Bsize, last_slice); 
     return local_tmp + (a_size + b_size) + max(downstream_size, asym_call);
 }
 
@@ -591,8 +590,8 @@ void __BIGINT_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx *ff
 void __BIGINT_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx *fft_ctx, dnml_status *err) {
     size_t Bsize = min(a->n, b->n); // Beta size lol
     size_t Asize = max(a->n, b->n); // Alpha chad size lol
-    size_t splits = ((size_t)(Asize / Bsize) + 1);
-    size_t slice = (Asize / splits), last_slice = Asize % splits;
+    size_t splits = (Asize / Bsize) + !!(Asize % Bsize);
+    size_t slice = Bsize, last_slice = Asize % Bsize;
     const bigInt *const alpha = (Asize == a->n) ? a : b; 
     const bigInt *const beta = (Bsize == b->n) ? b : a;
     //* ============= Pre-operation Calculations & Allocations ============= *//
@@ -627,18 +626,18 @@ void __BIGINT_ASYM_FFT__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ct
     //* ============================= MULTIPLICATION LOOP WITH SLICES ============================= *//
     bigInt window = {0}; size_t offset = 0, scaled_threshold = BIGINT_SCHOOLBOOK * ___schoolbook_scale(Bsize);
     for (size_t i = 0; i < splits; ++i) {
-        size_t curr_slice = slice; if (unlikely(i = splits - 1)) curr_slice = last_slice;
+        size_t curr_slice = slice; if (unlikely(i == splits - 1) && last_slice) curr_slice = last_slice;
         window = (bigInt){.limbs = alpha->limbs + offset, .n = curr_slice, .cap = curr_slice, .sign = 1};
         if ((Bsize <= scaled_threshold || curr_slice <= scaled_threshold)) { 
             __BIGINT_SCHOOLBOOK__(beta, &window, &tmp_res);
             __BIGINT_ADD_SHIFT__(&acum, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
-        if (Bsize != curr_slice) {
+        if (Bsize != curr_slice) { // Rectangular Recursion
             __BIGINT_ASYM_MUL_DISP__(beta, &window, &tmp_res, fft_ctx, &echeck); SCRATCH_OVF(echeck, fft_ctx, fft_mark, err,);
             __BIGINT_ADD_SHIFT__(&tmp_res, &tmp_res, offset); continue; // (tmp_res <<<= slice) + tmp
         }
         // Recalculation of Metadata on last_slice's iteration
-        if (i == splits - 1 && last_slice != slice) {
+        if (i == splits - 1 && last_slice) {
             k = __fft_best_metadata(Bsize, curr_slice, &d, &m, &n);
             mlimbs = (m + U64_BITS - 1) >> 6; /**/ nlimbs = (n + U64_BITS) >> 6;
             prod_tmp.cap = (nlimbs << 1) + 2; /**/ tmp_res.cap = Bsize + curr_slice;
