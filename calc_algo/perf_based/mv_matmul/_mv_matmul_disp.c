@@ -33,69 +33,12 @@ limitations under the License.
  *
  *          X * Z + Y * W
  */
-
-
-
-/* --------------- Asymmetrical Dispatcher --------------- */
-dnml_status __MV_ASYM_MATMUL_21__(
-    P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
-    P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *mul_ctx
-) {
-    // Symmetrical Asymmetry
-    if (x->n != z->n && y->n != w->n) {
-        size_t xz_Bsize = min(x->n, z->n); // Beta size lol
-        size_t yw_Bsize = min(y->n, w->n); // Beta size lol
-        size_t xz_Asize = max(x->n, z->n); // Alpha chad size lol
-        size_t yw_Asize = max(y->n, w->n); // Alpha chad size lol
-        size_t xz_slice = (xz_Asize / ((size_t)(xz_Asize / xz_Bsize) + 1));
-        size_t yw_slice = (yw_Asize / ((size_t)(yw_Asize / yw_Bsize) + 1));
-        if (THRESHOLD(xz_Bsize, xz_slice, BIGINT_TOOM_3) || THRESHOLD(yw_Asize, yw_slice, BIGINT_TOOM_3)) return __SYM_MATMUL_TOOM3__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(xz_Bsize, xz_slice, BIGINT_TOOM_4) || THRESHOLD(yw_Asize, yw_slice, BIGINT_TOOM_4)) return __SYM_MATMUL_TOOM4__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(xz_Bsize, xz_slice, BIGINT_TOOM_5) || THRESHOLD(yw_Asize, yw_slice, BIGINT_TOOM_5)) return __SYM_MATMUL_TOOM5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(xz_Bsize, xz_slice, BIGINT_TOOM_6p5) || THRESHOLD(yw_Asize, yw_slice, BIGINT_TOOM_6p5)) return __SYM_MATMUL_TOOM6p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(xz_Bsize, xz_slice, BIGINT_TOOM_7p5) || THRESHOLD(yw_Asize, yw_slice, BIGINT_TOOM_7p5)) return __SYM_MATMUL_TOOM7p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(xz_Bsize, xz_slice, BIGINT_TOOM_8p5) || THRESHOLD(yw_Asize, yw_slice, BIGINT_TOOM_8p5)) return __SYM_MATMUL_TOOM8p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        else return __SYM_MATMUL_SSA__(x, z, y, w, xz_res, yw_res, mul_ctx);
-    }
-    // XZ Asymmetry
-    else if (x->n != z->n) {
-        size_t Bsize = min(x->n, z->n); // Beta size lol
-        size_t Asize = max(x->n, z->n); // Alpha chad size lol
-        size_t slice = (Asize / ((size_t)(Asize / Bsize) + 1));
-        if (THRESHOLD(Bsize, slice, BIGINT_TOOM_3) || THRESHOLD(y->n, w->n, BIGINT_TOOM_3)) return __ASYMXZ_MATMUL_TOOM3__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(Bsize, slice, BIGINT_TOOM_4) || THRESHOLD(y->n, w->n, BIGINT_TOOM_4)) return __ASYMXZ_MATMUL_TOOM4__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(Bsize, slice, BIGINT_TOOM_5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_5)) return __ASYMXZ_MATMUL_TOOM5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(Bsize, slice, BIGINT_TOOM_6p5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_6p5)) return __ASYMXZ_MATMUL_TOOM6p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(Bsize, slice, BIGINT_TOOM_7p5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_7p5)) return __ASYMXZ_MATMUL_TOOM7p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(Bsize, slice, BIGINT_TOOM_8p5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_8p5)) return __ASYMXZ_MATMUL_TOOM8p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        else return __ASYMXZ_MATMUL_SSA__(x, z, y, w, xz_res, yw_res, mul_ctx);
-    }
-    // YZ Asymmetry
-    else {
-        size_t Bsize = min(y->n, w->n); // Beta size lol
-        size_t Asize = max(y->n, w->n); // Alpha chad size lol
-        size_t slice = (Asize / ((size_t)(Asize / Bsize) + 1));
-        if (THRESHOLD(x->n, z->n, BIGINT_TOOM_3) || THRESHOLD(Bsize, slice, BIGINT_TOOM_3)) return __ASYMYW_MATMUL_TOOM3__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_4) || THRESHOLD(Bsize, slice, BIGINT_TOOM_4)) return __ASYMYW_MATMUL_TOOM4__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_5) || THRESHOLD(Bsize, slice, BIGINT_TOOM_5)) return __ASYMYW_MATMUL_TOOM5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_6p5) || THRESHOLD(Bsize, slice, BIGINT_TOOM_6p5)) return __ASYMYW_MATMUL_TOOM6p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_7p5) || THRESHOLD(Bsize, slice, BIGINT_TOOM_7p5)) return __ASYMYW_MATMUL_TOOM7p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_8p5) || THRESHOLD(Bsize, slice, BIGINT_TOOM_8p5)) return __ASYMYW_MATMUL_TOOM8p5__(x, z, y, w, xz_res, yw_res, mul_ctx);
-        else return __ASYMYW_MATMUL_SSA__(x, z, y, w, xz_res, yw_res, mul_ctx);
-    }
-}
-
-
-
-
-
 /* -------------- Main Function -------------- */
 dnml_status __MV_MATMUL_21__(
     P_BIGINT x, P_BIGINT z, /**/ P_BIGINT y, P_BIGINT w,
     P_BIGINT xz_res, P_BIGINT yw_res, calc_ctx *mul_ctx
 ) {
-    if (x->n != z->n || y->n != w->n) return __MV_ASYM_MATMUL_21__(x, z, y, w, xz_res, yw_res, mul_ctx);
-    else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_3) || THRESHOLD(y->n, w->n, BIGINT_TOOM_3)) return __BIGINT_MATMUL_TOOM3__(x, z, y, w, xz_res, yw_res, mul_ctx);
+    if (THRESHOLD(x->n, z->n, BIGINT_TOOM_3) || THRESHOLD(y->n, w->n, BIGINT_TOOM_3)) return __BIGINT_MATMUL_TOOM3__(x, z, y, w, xz_res, yw_res, mul_ctx);
     // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_4) || THRESHOLD(y->n, w->n, BIGINT_TOOM_4)) return __BIGINT_MATMUL_TOOM4__(x, z, y, w, xz_res, yw_res, mul_ctx);
     // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_5)) return __BIGINT_MATMUL_TOOM5__(x, z, y, w, xz_res, yw_res, mul_ctx);
     // else if (THRESHOLD(x->n, z->n, BIGINT_TOOM_6p5) || THRESHOLD(y->n, w->n, BIGINT_TOOM_6p5)) return __BIGINT_MATMUL_TOOM6p5__(x, z, y, w, xz_res, yw_res, mul_ctx);

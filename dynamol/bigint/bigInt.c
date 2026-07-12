@@ -60,7 +60,6 @@ dnml_status bigInt_free(bigInt *const x) {
 }
 dnml_status bigInt_new(bigInt *const x) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
-    if (x->limbs) return BIGINT_SUCCESS; // The bigInt is already initialized
     limb_t *__BUFFER_P = malloc(sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->cap = 1; x->n = 0; x->sign = 1;
@@ -68,7 +67,6 @@ dnml_status bigInt_new(bigInt *const x) {
 }
 dnml_status bigInt_snew(bigInt *const x, size_t n) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
-    if (x->limbs != NULL) return BIGINT_SUCCESS; // already initialized
     limb_t *__BUFFER_P = malloc(n * sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->cap = n; x->n = 0; x->sign = 1;
@@ -76,7 +74,6 @@ dnml_status bigInt_snew(bigInt *const x, size_t n) {
 }
 dnml_status bigInt_binew(bigInt *const x, bigInt *const y) {
     test_assert(x != NULL | y != NULL, input_null, clear_arena, {}, BIGINT_NULL);
-    if (x->limbs != NULL) return BIGINT_SUCCESS; // Already Initialized
     test_assert(bigInt_pvalidate(y), bi_full_contract, { clear_arena; __BIGINT_INTERNAL_FREE__(y); }, {}, BIGINT_ERR_INVAL);
     if (x->limbs == y->limbs) {
         if (x == y) return BIGINT_SUCCESS;
@@ -91,7 +88,6 @@ dnml_status bigInt_binew(bigInt *const x, bigInt *const y) {
 }
 dnml_status bigInt_newu64(bigInt *const x, const uint64_t in) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
-    if (x->limbs != NULL) return BIGINT_SUCCESS; // ALREADY INITIALIZED
     limb_t *__BUFFER_P = malloc(sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->limbs[0] = in;
@@ -100,7 +96,6 @@ dnml_status bigInt_newu64(bigInt *const x, const uint64_t in) {
 }
 dnml_status bigInt_newi64(bigInt *const x, const int64_t in) {
     test_assert(x != NULL, input_null, clear_arena, {}, BIGINT_NULL);
-    if (x->limbs != NULL) return BIGINT_SUCCESS; // ALREADY INITIALIZED
     limb_t *__BUFFER_P = malloc(sizeof(limb_t));
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
     x->limbs = __BUFFER_P; x->limbs[0] = __MAG_I64__(in);

@@ -47,6 +47,10 @@ static inline void test_cleanup(dnml_arena *arena, limb_t *ret_buf, FILE** log_a
     arena_clear(arena); arena_destruct(arena); free(ret_buf); close_logs(log_arr, log_cnt);
     fputs("Scratch workspace size is inadequate for operation\n", stderr); exit(SIGABRT);
 }
+static inline void htest_cleanup(limb_t *ret_buf, FILE** log_arr, uint8_t log_cnt) {
+    free(ret_buf); close_logs(log_arr, log_cnt);
+    fputs("Heap-memory witnessed an Out-of-Memory error\n", stderr); exit(SIGABRT);
+}
 
 
 

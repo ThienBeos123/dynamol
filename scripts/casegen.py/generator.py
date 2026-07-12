@@ -31,7 +31,7 @@ def generate_random_value(
 ) -> int:
     if v_type in ['bigInt', 'crint']:
         # Force a random number of limbs between 2 and max_len
-        if balanced and not new_iter: num_limbs = random.randint(int(max_iter_len // 3 * 2), max_iter_len)
+        if balanced and not new_iter: num_limbs = random.randint(int(float(max_iter_len / 19) * 10), max_iter_len)
         else: num_limbs = random.randint(2, max_len)
         val, limb = 0, 0
         for i in range(int(num_limbs)):

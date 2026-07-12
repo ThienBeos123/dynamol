@@ -90,7 +90,7 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
     *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) --> 2k + 1 (interpolation - r4)
     */
     bigInt r0 = {0}, r1 = {0}, r_neg1 = {0}, r_neg2 = {0}, rinf = {0};
     alloc_list[alloc_cnt++] = &r0; early_free[early_cnt++] = &r0;
@@ -104,9 +104,11 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
-    __BIGINT_INTERNAL_ENSCAP__(&r1, (xz_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
-    __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
-    __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&r1, (xz_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (xz_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&rinf, (x2size + z2size) + 1); HEAP_FOOM(echeck, early_free, early_cnt);
+
 
     /* ----------------- 3a. INTERPOLATION & RECOMPOSITION ----------------- */
     /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
@@ -120,8 +122,8 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     // ------------------ RECOMPOSITION ------------------ //
     BIHEAP_FRET(xz_tres, x->n + z->n, echeck, early_free, early_cnt);
-    __BIGINT_ADD_SHIFT__(&xz_tres, &rinf, 4); __BIGINT_ADD_SHIFT__(&xz_tres, &r_neg2, 3);
-    __BIGINT_ADD_SHIFT__(&xz_tres, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&xz_tres, &r1, 1);
+    __BIGINT_ADD_SHIFT__(&xz_tres, &rinf, (xz_k << 2)); __BIGINT_ADD_SHIFT__(&xz_tres, &r_neg2, (xz_k * 3));
+    __BIGINT_ADD_SHIFT__(&xz_tres, &r_neg1, (xz_k << 1)); __BIGINT_ADD_SHIFT__(&xz_tres, &r1, (xz_k));
     __BIGINT_ADD_SHIFT__(&xz_tres, &r0, 0); __BIGINT_INTERNAL_MOVE__(xz_res, &xz_tres);
 
 
@@ -157,7 +159,7 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
     *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) --> 2k + 1 (interpolation - r4)
     */
     __BIHEAP_TOOM_3__(&m0, &n0, &r0, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&p1, &q1, &r1, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
@@ -165,9 +167,10 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     __BIHEAP_TOOM_3__(&p_neg2, &q_neg2, &r_neg2, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     __BIHEAP_TOOM_3__(&m2, &n2, &rinf, &echeck); HEAP_FOOM(echeck, early_free, early_cnt);
     r1.sign = p1.sign * q1.sign; /**/ r_neg1.sign = p_neg1.sign * q_neg1.sign; /**/ r_neg2.sign = p_neg2.sign * q_neg2.sign;
-    __BIGINT_INTERNAL_ENSCAP__(&r1, (yw_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
-    __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
-    __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&r1, (yw_k << 1) + 8); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&r_neg2, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&r_neg1, (yw_k << 1) + 7); HEAP_FOOM(echeck, early_free, early_cnt);
+    echeck = __BIGINT_INTERNAL_ENSCAP__(&rinf, (y2size + w2size) + 1); HEAP_FOOM(echeck, early_free, early_cnt);
     
     /* -------------------------- 3b. INTERPOLATION & RECOMPOSITION -------------------------- */
     /* r3 = 2k + 5 */ __BIGINT_SUB_SAW__(&r_neg2, &r_neg2, &r1); __BIGINT_DIV3__(&r_neg2);
@@ -181,8 +184,8 @@ dnml_status __BIHEAP_MATMUL_TOOM3__(
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     /* ------------------ RECOMPOSITION ------------------ */ 
     BIHEAP_FRET(yw_tres, y->n + w->n, echeck, early_free, early_cnt);
-    __BIGINT_ADD_SHIFT__(&yw_tres, &rinf, 4); __BIGINT_ADD_SHIFT__(&yw_tres, &r_neg2, 3);
-    __BIGINT_ADD_SHIFT__(&yw_tres, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&yw_tres, &r1, 1);
+    __BIGINT_ADD_SHIFT__(&yw_tres, &rinf, (yw_k << 2)); __BIGINT_ADD_SHIFT__(&yw_tres, &r_neg2, (yw_k * 3));
+    __BIGINT_ADD_SHIFT__(&yw_tres, &r_neg1, (yw_k << 1)); __BIGINT_ADD_SHIFT__(&yw_tres, &r1, (yw_k));
     __BIGINT_ADD_SHIFT__(&yw_tres, &r0, 0); __BIGINT_INTERNAL_MOVE__(yw_res, &yw_tres);
     _free_alloc_list(alloc_list, alloc_cnt); return BIGINT_SUCCESS;
 }

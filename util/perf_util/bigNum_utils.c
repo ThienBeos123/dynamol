@@ -25,7 +25,6 @@ const uint64_t inv3 = UINT64_C(0xAAAAAAAAAAAAAAAB);
 
 /* Safety & State Utilities */
 dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k) {
-    if (x->limbs != NULL) return BIGINT_SUCCESS; // Already initalized
     k = (k) ? k : 1; // Normalizing the size to always be >= 1
     limb_t *__BUFFER_P = calloc(k, U64_BYTES);
     if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;

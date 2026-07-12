@@ -35,19 +35,15 @@ limitations under the License.
  */
 /* BigInt Toom 5-way Multiplication - Heap-allocating */
 void __BIHEAP_TOOM_5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
-void __BIHEAP_ASYM_TOOM_5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
 
 
 /* BigInt Toom 6.5-way Multiplication - Heap-allocating */
 void __BIHEAP_TOOM_6p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
-void __BIHEAP_ASYM_TOOM_6p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
 
 
 /* BigInt Toom 7.5-way Multiplication - Heap-allocating */
 void __BIHEAP_TOOM_7p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
-void __BIHEAP_ASYM_TOOM_7p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
 
 
 /* BigInt Toom 8.5-way Multiplication - Heap-allocating */
 void __BIHEAP_TOOM_8p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}
-void __BIHEAP_ASYM_TOOM_8p5__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, dnml_status *err) {}

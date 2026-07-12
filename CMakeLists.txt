@@ -76,12 +76,6 @@ add_library(dnml_core STATIC
     calc_algo/perf_based/mul_toom_p5.c
     calc_algo/perf_based/mul.c
     # Sub-5a. Matrix-Vector Multiplication helpers
-    calc_algo/perf_based/mv_matmul/_asymxz_matmul_fft.c
-    calc_algo/perf_based/mv_matmul/_asymxz_matmul_toom.c
-    calc_algo/perf_based/mv_matmul/_asymyw_matmul_fft.c
-    calc_algo/perf_based/mv_matmul/_asymyw_matmul_toom.c
-    calc_algo/perf_based/mv_matmul/_sym_matmul_fft.c
-    calc_algo/perf_based/mv_matmul/_sym_matmul_toom.c
     calc_algo/perf_based/mv_matmul/_matmul_fft.c
     calc_algo/perf_based/mv_matmul/_matmul_toom.c
     calc_algo/perf_based/mv_matmul/_mv_matmul_disp.c
@@ -100,12 +94,6 @@ add_library(dnml_core STATIC
     calc_algo/heap_based/heap_mul_fft.c
     calc_algo/heap_based/heap_mul.c
     # Sub-5b. Matrix-Vector Multiplication Helpers
-    calc_algo/heap_based/hmv_matmul/_hasymxz_matmul_fft.c
-    calc_algo/heap_based/hmv_matmul/_hasymxz_matmul_toom.c
-    calc_algo/heap_based/hmv_matmul/_hasymyw_matmul_fft.c
-    calc_algo/heap_based/hmv_matmul/_hasymyw_matmul_toom.c
-    calc_algo/heap_based/hmv_matmul/_hsym_matmul_fft.c
-    calc_algo/heap_based/hmv_matmul/_hsym_matmul_toom.c
     calc_algo/heap_based/hmv_matmul/_hmatmul_fft.c
     calc_algo/heap_based/hmv_matmul/_hmatmul_toom.c
     calc_algo/heap_based/hmv_matmul/_hmv_matmul.c

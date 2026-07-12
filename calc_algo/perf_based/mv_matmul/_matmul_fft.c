@@ -43,7 +43,7 @@ size_t __BIGINT_MAT_TOOM3_WS__(size_t x_size, size_t z_size, size_t y_size, size
     size_t w2size = (w_size > (yw_k << 1)) ? (w_size - (yw_k << 1)) : 0;
     size_t max_m2size = max(x2size, y2size); size_t max_n2size = max(z2size, w2size);
     size_t eval_pts_p = ((max_k << 2) + 6); size_t eval_pts_q = ((max_k << 1) + 3) + (max_k + 1);
-    size_t ptmul_tmp = ((max_k << 3) + (max_m2size + max_n2size) + 22);
+    size_t ptmul_tmp = ((max_k << 3) + (max_m2size + max_n2size) + 23);
     size_t res_alias = max(x_size + z_size, y_size + w_size);
     size_t max_fcall = max(__BIGINT_TOOM_3_WS__(max_k+2, max_k+2), __BIGINT_TOOM_3_WS__(max_m2size, max_n2size));
     return eval_pts_p + eval_pts_q + ptmul_tmp + res_alias + max_fcall;
@@ -126,13 +126,13 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
     *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) --> 2k + 1 (interpolation - r4)
     */
     BIGINT_FTEMP(r_neg1, (max_k << 1) + 7,   toom_ctx, toom_mark, echeck); r_neg1.cap = (xz_k << 1) + 7;
     BIGINT_FTEMP(r1,     (max_k << 1) + 8,   toom_ctx, toom_mark, echeck); r1.cap = (xz_k << 1) + 8;
     BIGINT_FTEMP(r0,     (max_k << 1),       toom_ctx, toom_mark, echeck); r0.cap = (xz_k << 1);
-    BIGINT_FTEMP(r_neg2, (max_k << 1) + 7,  toom_ctx, toom_mark, echeck); r_neg2.cap = (xz_k << 1) + 7;
-    BIGINT_FTEMP(rinf, max_m2size + max_m2size, toom_ctx, toom_mark, echeck); rinf.cap = x2size + z2size;
+    BIGINT_FTEMP(r_neg2, (max_k << 1) + 7,   toom_ctx, toom_mark, echeck); r_neg2.cap = (xz_k << 1) + 7;
+    BIGINT_FTEMP(rinf, max_m2size + max_m2size + 1, toom_ctx, toom_mark, echeck); rinf.cap = x2size + z2size + 1;
     __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
@@ -151,8 +151,8 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     /* ------------------ RECOMPOSITION ------------------ */ q_neg2.n = 0; q_neg2.sign = 1;
-    __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, 4); __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, 3);
-    __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&q_neg2, &r1, 1);
+    __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, (xz_k << 2)); __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, (xz_k * 3));
+    __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, (xz_k << 1)); __BIGINT_ADD_SHIFT__(&q_neg2, &r1, (xz_k));
     __BIGINT_ADD_SHIFT__(&q_neg2, &r0, 0); __BIGINT_INTERNAL_COPY__(xz_res, &q_neg2);
 
 
@@ -188,10 +188,10 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     *   +) r(1)   = p(1)   * q(1)       ---> Cap: 2k + 4 (original) --> 2k + 8 (interpolation - r1)
     *   +) r(-1)  = p(-1)  * q(-1)      ---> Cap: 2k + 2 (originxal) --> 2k + 7 (interpolation - r2)
     *   +) r(-2)  = p(-2)  * q(-2)      ---> Cap: 2k + 4 (original) --> 2k + 7 (interpolation - r3)
-    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original)
+    *   +) r(inf) = p(inf) * q(inf)     ---> Cap: 2k (original) --> 2k + 1 (interpolation - r4)
     */
     r0.cap = yw_k << 1; /**/ r1.cap = (yw_k << 1) + 8; /**/ r_neg1.cap = (yw_k << 1) + 7;
-    r_neg2.cap = (yw_k << 1) + 7; /**/ rinf.cap = y2size + w2size;
+    r_neg2.cap = (yw_k << 1) + 7; /**/ rinf.cap = y2size + w2size + 1;
     __BIGINT_TOOM_3__(&m0, &n0, &r0, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&p1, &q1, &r1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
     __BIGINT_TOOM_3__(&p_neg1, &q_neg1, &r_neg1, toom_ctx, &echeck); SCRATCH_FOVF(echeck, toom_ctx, toom_mark);
@@ -210,8 +210,8 @@ dnml_status __BIGINT_MATMUL_TOOM3__(
     __BIGINT_INTERNAL_RSHIFT__(&rinf, 1); __BIGINT_SUB_SAW__(&r_neg1, &r_neg1, &rinf);
     /* r1 = 2k + 8 */ __BIGINT_SUB_SAW__(&r1, &r1, &r_neg2);
     /* ------------------ RECOMPOSITION ------------------ */ q_neg2.n = 0; q_neg2.sign = 1;
-    __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, 4); __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, 3);
-    __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, 2); __BIGINT_ADD_SHIFT__(&q_neg2, &r1, 1);
+    __BIGINT_ADD_SHIFT__(&q_neg2, &rinf, (yw_k << 2)); __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg2, (yw_k * 3));
+    __BIGINT_ADD_SHIFT__(&q_neg2, &r_neg1, (yw_k << 1)); __BIGINT_ADD_SHIFT__(&q_neg2, &r1, (yw_k));
     __BIGINT_ADD_SHIFT__(&q_neg2, &r0, 0); __BIGINT_INTERNAL_COPY__(yw_res, &q_neg2);
     scratch_rewind(toom_ctx, toom_mark); return BIGINT_SUCCESS;
 }
