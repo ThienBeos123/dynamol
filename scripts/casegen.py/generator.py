@@ -29,7 +29,7 @@ def generate_random_value(
     v_type: str, max_len: int, magnituded: bool, 
     balanced: bool, new_iter: bool, max_iter_len: int
 ) -> int:
-    if v_type in ['bigInt', 'crint']:
+    if v_type in ['bigint', 'crint']:
         # Force a random number of limbs between 2 and max_len
         if balanced and not new_iter: num_limbs = random.randint(int(float(max_iter_len / 19) * 10), max_iter_len)
         else: num_limbs = random.randint(2, max_len)
@@ -50,7 +50,7 @@ def run_generator():
     num_cases = int(input("Enter the amount of test cases: "))
     num_inputs = int(input("Enter the number of inputs per case: "))
     max_len = int(input("Enter the maximum amount of limbs: "))
-    input_types = [input(f"Type for input {i+1} (bigInt, crint, size_t, uint8_t): ").strip() for i in range(num_inputs)]
+    input_types = [input(f"Type for input {i+1} (bigInt, crint, size_t, uint8_t): ").strip().lower() for i in range(num_inputs)]
 
     magnituded = input("Magnituded inputs? [Y/n]: ")
     magnituded = magnituded.lower()
@@ -118,12 +118,12 @@ def run_generator():
         attempts = 0
         seen_combinations.add(current_case_vals)
         
-        case_data = []
+        case_data = [{'input_count': num_inputs, 'output_count': 0}]
         for i, val in enumerate(current_case_vals):
             v_type: str = input_types[i]
             input_info: dict = {'type': v_type, 'val': val}
             
-            if v_type in ['bigInt', 'crint']:
+            if v_type in ['bigint', 'crint']:
                 abs_val = abs(val)
                 if abs_val not in limb_cache:
                     if (magnituded): arr_name = f"in_limb_{limb_counter}"
@@ -134,10 +134,12 @@ def run_generator():
                 input_info['limb_name'] = limb_cache[abs_val]
                 
             case_data.append(input_info)
-        if magnituded and case_data[0]['val'] < case_data[1]['val']:
-            tmp = case_data[0] # Swap the entire dictionary, not just the value
-            case_data[0] = case_data[1]
-            case_data[1] = tmp
+        for i in range(1, num_inputs, 2):
+            if magnituded and i + 1 < num_inputs:
+                if case_data[i]['type'] == case_data[i+1]['type'] and case_data[i]['type'] in ['bigint', 'crint']:
+                    if case_data[i]['val'] < case_data[i + 1]['val']: 
+                        case_data[i], case_data[i + 1] = case_data[i + 1], case_data[i]
         cases.append(case_data)
 
+    
     return cases, "".join(limb_strings)

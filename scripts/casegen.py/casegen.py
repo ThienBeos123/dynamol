@@ -24,20 +24,19 @@ def main():
     print("="*60 + "\n")
     
     final_output = (
-        "//* ================= GENERATED LIMB ARRAYS ================= *//\n\n"
+        "//* ================= GENERATED LIMB ARRAYS ================= *//\n"
         "// INPUT LIMBS VECTORS\n"
         f"{input_limbs_c}\n"
         "// EXPECTED LIMBS VECTORS\n"
         f"{exp_limbs_c}\n"
-        "//* ================= GLOBAL ARRAY OF CASES ================= *//\n\n"
-        f"#define CASE_CNT {len(cases)}\n\n"
+        "//* ================= GLOBAL ARRAY OF CASES ================= *//\n"
         f"{cases_array_c}\n"
     )
     
         # Save to file or print
-    with open("generated_cases.sout", "w+") as f:
+    with open("a_generated_cases.sout", "w+") as f:
         f.write(final_output)
-    print("Output written to 'generated_cases.sout'. Preview below:\n")
+    print("Output written to 'a_generated_cases.sout'. Preview below:\n")
     print(final_output[:1500] + "\n\n... [Truncated for console] ...")
 
 if __name__ == "__main__":

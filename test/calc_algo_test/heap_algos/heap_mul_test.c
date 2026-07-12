@@ -3130,9 +3130,10 @@ static const bi_mul_case mul_cases[CASE_CNT] = {
 
 int main(void) { _libdnml_init();
     // Normal Setup - Timing + Logging
-    int total_tests = 0, passed_tests = 0; /**/ FILE* log_arr[3] = {0}; uint8_t log_cnt = 0; 
+    int total_tests = 0, passed_tests = 0; /**/ FILE* log_arr[2] = {0}; uint8_t log_cnt = 0; 
     struct timespec start, end; double rtime = 0.0; /**/ uint8_t curr_log = 0; /**/ dnml_status echeck = BIGINT_SUCCESS;
-    struct timespec test_start, test_end;  clock_gettime(CLOCK_MONOTONIC, &test_start); /**/ bigInt ret = {0};
+    struct timespec test_start, test_end;  clock_gettime(CLOCK_MONOTONIC, &test_start);
+    bigInt ret = {0}; /**/ limb_t *ret_arr[1] = { ret.limbs }; uint8_t ret_cnt = 1;
     init_log("../../heap_algos/log/hmul_karat.log", log_arr, log_cnt, free(ret.limbs)); // Schoolbook, Karatsuba, Toom-3, Toom-4,
     // init_log("../../heap_algos/log/hmul_toom.log", log_arr, log_cnt, free(ret_buf)); // Toom 5, Toom 6.5, Toom 7.5, Toom 8.5
 
@@ -3163,7 +3164,7 @@ int main(void) { _libdnml_init();
     for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
         __BIHEAP_KARATSUBA__(&mul_cases[i].a, &mul_cases[i].b, &ret, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
         double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-        rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret.limbs, log_arr, log_cnt); 
+        rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret_arr, ret_cnt, log_arr, log_cnt); 
         int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
         if (!match) passed_tests++;
         // else { arena_destruct(&mul_arena); free(ret_buf); close_logs(log_arr, log_cnt); exit(SIGABRT); }
@@ -3182,7 +3183,7 @@ int main(void) { _libdnml_init();
     for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
         __BIHEAP_TOOM_3__(&mul_cases[i].a, &mul_cases[i].b, &ret, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
         double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-        rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret.limbs, log_arr, log_cnt); 
+        rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret_arr, ret_cnt, log_arr, log_cnt); 
         int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
         if (!match) passed_tests++;
         else {
@@ -3200,7 +3201,7 @@ int main(void) { _libdnml_init();
     // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
     //     __BIHEAP_TOOM_4__(&mul_cases[i].a, &mul_cases[i].b, &ret, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
     //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret.limbs, log_arr, log_cnt); 
+    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret_arr, ret_cnt, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -3226,7 +3227,7 @@ int main(void) { _libdnml_init();
     // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
     //     __BIHEAP_TOOM_5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
     //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret.limbs, log_arr, log_cnt); 
+    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret_arr, ret_cnt, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -3244,7 +3245,7 @@ int main(void) { _libdnml_init();
     // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
     //     __BIHEAP_TOOM_6p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
     //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret.limbs, log_arr, log_cnt); 
+    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret_arr, ret_cnt, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -3262,7 +3263,7 @@ int main(void) { _libdnml_init();
     // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
     //     __BIHEAP_TOOM_7p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
     //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret.limbs, log_arr, log_cnt); 
+    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret_arr, ret_cnt, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {
@@ -3280,7 +3281,7 @@ int main(void) { _libdnml_init();
     // for (int i = 0; i < CASE_CNT; ++i) { total_tests++; /**/ clock_gettime(CLOCK_MONOTONIC, &start);
     //     __BIHEAP_TOOM_8p5__(&mul_cases[i].a, &mul_cases[i].b, &ret, &echeck); /**/ clock_gettime(CLOCK_MONOTONIC, &end); 
     //     double elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret.limbs, log_arr, log_cnt); 
+    //     rtime += elapsed_time; /**/ if (echeck == DNML_ALLOC_OOM) htest_cleanup(ret_arr, ret_cnt, log_arr, log_cnt); 
     //     int8_t match = __BIGINT_INTERNAL_COMP__(&ret, &mul_cases[i].exp);
     //     if (!match) passed_tests++;
     //     else {

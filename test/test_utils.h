@@ -40,15 +40,14 @@ static inline void print_ci_limbs(const char *xname, const crint *x, FILE* f) {
 }
 
 
-static inline void close_logs(FILE** log_arr, uint8_t log_cnt) {
-    for (uint8_t i = 0; i < log_cnt; ++i) fclose(log_arr[i]);
-}
-static inline void test_cleanup(dnml_arena *arena, limb_t *ret_buf, FILE** log_arr, uint8_t log_cnt) {
-    arena_clear(arena); arena_destruct(arena); free(ret_buf); close_logs(log_arr, log_cnt);
+static inline void close_logs(FILE** log_arr, uint8_t log_cnt) { for (uint8_t i = 0; i < log_cnt; ++i) fclose(log_arr[i]); }
+static inline void free_bufs(limb_t **ret_arr, uint8_t ret_cnt) { for (uint8_t i = 0; i < ret_cnt; ++i) free(ret_arr[i]);  }
+static inline void test_cleanup(dnml_arena *arena, limb_t **ret_arr, uint8_t ret_cnt, FILE** log_arr, uint8_t log_cnt) {
+    arena_clear(arena); arena_destruct(arena); close_logs(log_arr, log_cnt); free_bufs(ret_arr, ret_cnt);
     fputs("Scratch workspace size is inadequate for operation\n", stderr); exit(SIGABRT);
 }
-static inline void htest_cleanup(limb_t *ret_buf, FILE** log_arr, uint8_t log_cnt) {
-    free(ret_buf); close_logs(log_arr, log_cnt);
+static inline void htest_cleanup(limb_t **ret_arr, uint8_t ret_cnt, FILE** log_arr, uint8_t log_cnt) {
+    close_logs(log_arr, log_cnt); free_bufs(ret_arr, ret_cnt);
     fputs("Heap-memory witnessed an Out-of-Memory error\n", stderr); exit(SIGABRT);
 }
 
