@@ -7,7 +7,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Include directories specific to the local test folder itself
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../include
 )
 
 # When building test/low as a standalone subproject, look for a local root build
@@ -16,7 +16,7 @@ include_directories(
 list(APPEND CMAKE_PREFIX_PATH
     # Basic paths for barebone builds
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/install"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../build"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build"
 
     # Paths on standard Development builds
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/unix/install"
@@ -25,16 +25,28 @@ list(APPEND CMAKE_PREFIX_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/msvc"
 
     # Paths on testing release builds - Drypto
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-crt/unix/install"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-crt/unix"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-crt/msvc/install"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-crt/msvc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-drt/unix/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-drt/unix"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-drt/msvc/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-drt/msvc"
 
-    # Paths on testing release builds - Dynamol
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-perf/unix/install"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-perf/unix"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-perf/msvc/install"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-perf/msvc"
+    # Paths on testing release builds - Dynamol Max
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-mdnml/unix/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-mdnml/unix"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-mdnml/msvc/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-mdnml/msvc"
+
+    # Paths on testing release builds - Dynamol Medium
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-pdnml/unix/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-pdnml/unix"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-pdnml/msvc/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-pdnml/msvc"
+
+    # Paths on testing release builds - Dynamol Stable
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-sdnml/unix/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-sdnml/unix"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-sdnml/msvc/install"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build-sdnml/msvc"
 )
 if(NOT TARGET dnml::dnml_core)
     find_package(dnml_core REQUIRED CONFIG)

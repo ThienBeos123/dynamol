@@ -18,6 +18,9 @@ limitations under the License.
 
 #include "cryptInt_func.h"
 #include "crint_algo_core.h"
+#include <debug_util.h>
+#include <tables.h>
+#include "_crint_macros.h"
 
 
 //* ========================================= MAGNITUDE MATHEMATICA ========================================== *//
@@ -41,81 +44,28 @@ limitations under the License.
 *      error returns for function that utilizes arena allocation for its algorithmic core
 */
 /* ------------------- MAGNITUDED ARITHMETIC ------------------- */
-void __CRINT_MAGADD__(crint *res, crint *a, crint *b) {
-    _pre_assert(res, { crint_free(res); crint_free(a); crint_free(b); });
-    _pre_assert(a, { crint_free(res); crint_free(a); crint_free(b); });
-    _pre_assert(b, { crint_free(res); crint_free(a); crint_free(b); });
-    DNML_TEST_ASSERT((_lib_crt_geq(res->cap, crtmax(a->n, b->n) + 1)),
-        "Insufficient Sum Buffer: Capacity Unsatisfactory for a + b (-Eadd_insufficient_cap)",
-        { crint_free(res); crint_free(a); crint_free(b); }
-    ); __CRINT_ADD_WC__(res, a, b); // clang-format off
+void __CRINT_MAGADD__(crint *res, crint *a, crint *b) {                             //TODO REFACTOR TO HAVE NOP (POSSIBLE)
+    __CRINT_ADD_WC__(res, a, b); // clang-format off
     res = 0; a = 0; b = 0; // clang-format on
 }
-void __CRINT_MAGSUB__(crint *res, crint *a, crint *b) {
-    _pre_assert(res, { crint_free(res); crint_free(a); crint_free(b); });
-    _pre_assert(a, { crint_free(res); crint_free(a); crint_free(b); });
-    _pre_assert(b, { crint_free(res); crint_free(a); crint_free(b); });
-    DNML_TEST_ASSERT((__CRINT_INTERNAL_CMP__(a, b) != -1),
-        "Subtraction Underflow: Subtrahend's magnitude is too large for Minuend"
-        " (-Esub_underflow)", { crint_free(res); crint_free(a); crint_free(b); }
-    ); __CRINT_SUB_WC__(res, a, b); // clang-format off
+void __CRINT_MAGSUB__(crint *res, crint *a, crint *b) {                             //TODO REFACTOR TO HAVE NOP (POSSIBLE)
+    __CRINT_SUB_WC__(res, a, b); // clang-format off
     res = 0; a = 0; b = 0; // clang-format on
 }
-void __CRINT_MAGMUL___(crint *res, crint *a, crint *b) {
-    _pre_assert(res, { crint_free(res); crint_free(a); crint_free(b); });
-    _pre_assert(a, { crint_free(res); crint_free(a); crint_free(b); });
-    _pre_assert(b, { crint_free(res); crint_free(a); crint_free(b); });
-    DNML_TEST_ASSERT(
-        (_lib_crt_geq(res->cap, a->n + b->n)), // Result Capacity >= Sum of multiplicand's length
-        "Insufficient Product Capacity: Capacity insatisfactory for a * b (-Emul_insufficient_cap)",
-        { crint_free(res); crint_free(a); crint_free(b); }
-    ); __CRINT_MUL_DISP__(a, b, res); // clang-format off
+void __CRINT_MAGMUL___(crint *res, crint *a, crint *b, bool nop) {
+    __CRINT_MUL_DISP__(a, b, res, nop); // clang-format off
     res = 0; a = 0; b = 0; // clang-format on
 }
-void __CRINT_MAGDIV__(crint *quot, crint *tmp_rem, crint *a, crint *b) {
-    _pre_assert(quot, { crint_free(quot); crint_free(tmp_rem); crint_free(a); crint_free(b); })
-    _pre_assert(tmp_rem, { crint_free(quot); crint_free(tmp_rem); crint_free(a); crint_free(b); })
-    _pre_assert(a, { crint_free(quot); crint_free(tmp_rem); crint_free(a); crint_free(b); })
-    _pre_assert(b, { crint_free(quot); crint_free(tmp_rem); crint_free(a); crint_free(b); })
-    DNML_TEST_ASSERT((b->n),
-        "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)",
-        { crint_free(quot); crint_free(tmp_rem); crint_free(a); crint_free(b); }
-    );
-    DNML_TEST_ASSERT((quot->cap >= a->n),
-        "Insufficient Quotient Capacity: Capacity unsatisfactory for a / b (-Ediv_insufficient_qcap)",
-        { crint_free(quot); crint_free(tmp_rem); crint_free(a); crint_free(b); }
-    );
-    DNML_TEST_ASSERT((tmp_rem->cap >= b->n),
-        "Insufficient Remainder Capacity: Capacity unsatisfactory for a mod(b) (-Ediv_insufficient_rcap)",
-        { crint_free(quot); crint_free(tmp_rem); crint_free(a); crint_free(b); }
-    ); __CRINT_DIV_DISP__(a, b, quot, tmp_rem); // clang-format off
+void __CRINT_MAGDIV__(crint *quot, crint *tmp_rem, crint *a, crint *b) {            //TODO REFACTOR TO HAVE NOP (POSSIBLE)
+    __CRINT_DIV_DISP__(a, b, quot, tmp_rem); // clang-format off
     quot = 0; tmp_rem = 0; a = 0; b = 0; // clang-format on
 }
-void __CRINT_MAGMOD__(crint *temp_quot, crint *rem, crint *a, crint *b) {
-    _pre_assert(temp_quot, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
-    _pre_assert(rem, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
-    _pre_assert(a, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
-    _pre_assert(b, { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); })
-    DNML_TEST_ASSERT((b->n),
-        "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)",
-        { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); }
-    );
-    DNML_TEST_ASSERT((temp_quot->cap >= a->n),
-        "Insufficient Quotient Capacity: Capacity unsatisfactory for a / b (-Ediv_insufficient_qcap)",
-        { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); }
-    );
-    DNML_TEST_ASSERT((rem->cap >= b->n),
-        "Insufficient Remainder Capacity: Capacity unsatisfactory for a mod(b) (-Ediv_insufficient_rcap)",
-        { crint_free(temp_quot); crint_free(rem); crint_free(a); crint_free(b); }
-    ); __CRINT_MOD_DISP__(a, b, rem, temp_quot); // clang-format off
+void __CRINT_MAGMOD__(crint *temp_quot, crint *rem, crint *a, crint *b) {           //TODO REFACTOR TO HAVE NOP (POSSIBLE)
+    __CRINT_MOD_DISP__(a, b, rem, temp_quot); // clang-format off
     temp_quot = 0; rem = 0; a = 0; b = 0; // clang-format on
 }
-void __CRINT_MAGMUL_U64__(crint *res, crint *x, uint64_t val) {
-    DNML_TEST_ASSERT(
-        (_lib_crt_geq(res->cap, x->n + 1)), // Result Capacity >= Sum of multiplicand's length
-        "Insufficient Product Capacity: Capacity insatisfactory for a * b (-Emul_insufficient_cap)",
-        { crint_free(res); crint_free(x); val = 0; }
-    ); uint64_t carry = 0, lo, hi, sum;
+void __CRINT_MAGMUL_U64__(crint *res, crint *x, uint64_t val) {                     //TODO REFACTOR TO HAVE NOP (POSSIBLE)
+    uint64_t carry = 0, lo, hi, sum;
     for (size_t i = 0; _lib_crt_lt(i, x->n); ++i) {
         lo = __CRT_MUL_U64__(x->limbs[i], val, &hi); sum = lo + carry;
         carry = hi + (_lib_crt_lt(sum, lo)) + (_lib_crt_lt(sum, carry));
@@ -125,15 +75,7 @@ void __CRINT_MAGMUL_U64__(crint *res, crint *x, uint64_t val) {
     CHOOSE_OPTION((res->limbs[res->n - !(carry)]), (carry), (carry), (curr)); // clang-format off
     carry = 0; lo = 0; hi = 0; sum = 0; curr = 0; val = 0; res = 0; x = 0; val = 0; // clang-format on
 }
-void __CRINT_MAGDIVMOD_U64__(crint *quot, uint64_t *rem, crint *a, uint64_t val) {
-    DNML_TEST_ASSERT( /* Check for a zero divisor */
-        val, "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)",
-        { crint_free(quot); crint(a); val = 0; }
-    );
-    DNML_TEST_ASSERT((quot->cap >= a->n),
-        "Insufficient Quotient Capacity: Capacity unsatisfactory for a / b (-Ediv_insufficient_qcap)",
-        { crint_free(quot); crint_free(a); val = 0; }
-    );
+void __CRINT_MAGDIVMOD_U64__(crint *quot, uint64_t *rem, crint *a, uint64_t val) {  //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     limb_t trem_limbs[1] = {0};
     crint tmp_rem = { .limbs = trem_limbs, .cap = 1, .n = 0, .sign = 1, .poisoned = false };
     __CRINT_SHORT_DIVISION__(a, val, quot, &tmp_rem); // clang-format off
@@ -156,7 +98,7 @@ void __CRINT_MAGMINV__(crint *res, crint *a, crint *b, crint *mod) {}
 
 //* ============================================ SIGNED ARITHMETIC ========================================== */
 /* ------------------- MUTATIVE ARITHMETIC -------------------- */
-dnml_status crint_mut_mulu64(crint *x, uint64_t val) {
+dnml_status crint_mut_mulu64(crint *x, uint64_t val) {          //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
     DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
     DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
@@ -191,7 +133,7 @@ dnml_status crint_mut_mulu64(crint *x, uint64_t val) {
     fake_mul = 0; pbv_crint_clear(fake_src);  pbv_crint_clear(fake_prod); x = 0;
     val = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_divu64(crint *x, uint64_t val) {
+dnml_status crint_mut_divu64(crint *x, uint64_t val) {          //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(x); });
     DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
@@ -229,7 +171,7 @@ dnml_status crint_mut_divu64(crint *x, uint64_t val) {
     prev_src_buf = 0; tmp_rem = 0; fake_div = 0; pbv_crint_clear(fake_src);
     pbv_crint_clear(fake_quot); x = 0; val = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_modu64(crint *x, uint64_t val) {
+dnml_status crint_mut_modu64(crint *x, uint64_t val) {          //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(x); });
     DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
@@ -266,7 +208,7 @@ dnml_status crint_mut_modu64(crint *x, uint64_t val) {
     pbv_crint_clear(tmp_quot); snew_stat = 0; quot = 0; src = 0; tmp_rem = 0; fake_div = 0;
     pbv_crint_clear(fake_src); pbv_crint_clear(fake_quot); x = 0; val = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_muli64(crint *x, int64_t val) {
+dnml_status crint_mut_muli64(crint *x, int64_t val) {           //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
     DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
     DNML_TEST_ASSERT((!x->poisoned), crint_poisoned, { crint_free(x); });
@@ -303,7 +245,7 @@ dnml_status crint_mut_muli64(crint *x, int64_t val) {
     fake_mul = 0; pbv_crint_clear(fake_src); pbv_crint_clear(fake_prod); mag_val = 0;
     x = 0; val = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_divi64(crint *x, int64_t val) {
+dnml_status crint_mut_divi64(crint *x, int64_t val) {           //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(x); });
     DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
@@ -343,7 +285,7 @@ dnml_status crint_mut_divi64(crint *x, int64_t val) {
     prev_src_buf = 0; tmp_rem = 0; fake_div = 0; pbv_crint_clear(fake_src);
     pbv_crint_clear(fake_quot); mag_val = 0; x = 0; val = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_modi64(crint *x, int64_t val) {
+dnml_status crint_mut_modi64(crint *x, int64_t val) {           //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {});
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(x); });
     DNML_TEST_ASSERT((crint_pvalidate(x)), ci_full_contract, { crint_free(x); });
@@ -381,7 +323,7 @@ dnml_status crint_mut_modi64(crint *x, int64_t val) {
     pbv_crint_clear(tmp_quot); snew_stat = 0; quot = 0; src = 0; tmp_rem = 0; fake_div = 0; mag_val = 0;
     pbv_crint_clear(fake_src); pbv_crint_clear(fake_quot); x = 0; val = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_add(crint *x, crint y) {
+dnml_status crint_mut_add(crint *x, crint y) {                  //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
     DNML_TEST_ASSERT(crint_pvalidate(x) & crint_validate(y), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
@@ -448,7 +390,7 @@ dnml_status crint_mut_add(crint *x, crint y) {
     sub_ssubtrahend = 0; sum = 0; diff = 0; chosen_freed = 0; prev_src_buf = 0; trans_tres = 0; rem_tres = 0;
     pbv_crint_clear(y); x = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_sub(crint *x, crint y) {
+dnml_status crint_mut_sub(crint *x, crint y) {                  //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
     DNML_TEST_ASSERT(crint_pvalidate(x) & crint_validate(y), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
@@ -515,7 +457,7 @@ dnml_status crint_mut_sub(crint *x, crint y) {
     sub_ssubtrahend = 0; sum = 0; diff = 0; chosen_freed = 0; prev_src_buf = 0; trans_tres = 0; rem_tres = 0;
     pbv_crint_clear(y); x = 0; return ret_stat; // clang-format on
 }
-dnml_status crint_mut_mul(crint *x, crint y) {
+dnml_status crint_mut_mul(crint *x, crint y) {                  //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
     DNML_TEST_ASSERT(crint_pvalidate(x) & crint_validate(y), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT((!x->poisoned & !y.poisoned), crint_poisoned, { crint_free(x); crint_free(&y); });
@@ -541,7 +483,7 @@ dnml_status crint_mut_mul(crint *x, crint y) {
     crint *mulx = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? x : &fake_x;
     crint *muly = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &y : &fake_y;
     crint *prod = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &tmp_prod : &fake_prod;
-    __CRINT_MAGMUL___(prod, mulx, muly); prod->sign = mulx->sign * muly->sign;
+    __CRINT_MAGMUL___(prod, mulx, muly, false); prod->sign = mulx->sign * muly->sign;
     prod->sign = _lib_crt_select(prod->n, prod->sign, 1);
     crint_normalize(prod); // Ensure the conservative size guessing of x->n + 1 is reduced correctly
 
@@ -557,7 +499,7 @@ dnml_status crint_mut_mul(crint *x, crint y) {
     prev_src_buf = 0; pbv_crint_clear(fake_x); pbv_crint_clear(fake_y); x = 0;
     pbv_crint_clear(tmp_prod); pbv_crint_clear(y); return ret_stat; // clang-format on
 }
-dnml_status crint_mut_div(crint *x, crint y) {
+dnml_status crint_mut_div(crint *x, crint y) {                  //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
     DNML_TEST_ASSERT(crint_pvalidate(x) & crint_validate(y), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT(((!y.n)), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(x); crint_free(&y); });
@@ -613,7 +555,7 @@ dnml_status crint_mut_div(crint *x, crint y) {
     pbv_crint_clear(fake_quot); pbv_crint_clear(fake_rem); quot = 0; rem = 0;
     chosen_freed = 0; x = 0; pbv_crint_clear(y); return ret_stat; // clang-format on
 }
-dnml_status crint_mut_mod(crint *x, crint y) {
+dnml_status crint_mut_mod(crint *x, crint y) {                  //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, { crint_free(&y); });
     DNML_TEST_ASSERT(crint_pvalidate(x) & crint_validate(y), ci_full_contract, { crint_free(x); crint_free(&y); });
     DNML_TEST_ASSERT(((!y.n)), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(x); crint_free(&y); });
@@ -670,7 +612,7 @@ dnml_status crint_mut_mod(crint *x, crint y) {
     chosen_freed = 0; x = 0; pbv_crint_clear(y); return ret_stat; // clang-format on
 }
 /* ------------------ FUNCTIONAL ARITHMETIC ------------------- */
-crint crint_mulu64(crint x, uint64_t val, dnml_status *err) {
+crint crint_mulu64(crint x, uint64_t val, dnml_status *err) {           //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate(x)), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; });
@@ -704,7 +646,7 @@ crint crint_mulu64(crint x, uint64_t val, dnml_status *err) {
     ret_stat = 0; pbv_crint_clear(fake_src); pbv_crint_clear(fake_prod); snew_stat = 0; fake_mul = 0;
     src = 0; prod = 0; chosen_freed = 0; pbv_crint_clear(x); val = 0; err = 0; return ret_prod; // clang-format on
 }
-crint crint_divu64(crint x, uint64_t val, dnml_status *err) {
+crint crint_divu64(crint x, uint64_t val, dnml_status *err) {           //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
@@ -742,7 +684,7 @@ crint crint_divu64(crint x, uint64_t val, dnml_status *err) {
     snew_stat = 0; mask = 0; tmp_rem = 0; fake_div = 0; src = 0; quot = 0;
     chosen_freed = 0; pbv_crint_clear(x); val = 0; err = 0; return ret_quot; // clang-format on
 }
-crint crint_modu64(crint x, uint64_t val, dnml_status *err) {
+crint crint_modu64(crint x, uint64_t val, dnml_status *err) {           //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
@@ -789,7 +731,7 @@ crint crint_modu64(crint x, uint64_t val, dnml_status *err) {
     rnew_stat = 0; tmp_p = 0; mask = 0; tmp_rem = 0; fake_div = 0; src = 0; quot = 0;
     chosen_freed = 0; pbv_crint_clear(x); val = 0; err = 0; return ret_rem; // clang-format on
 }
-crint crint_muli64(crint x, int64_t val, dnml_status *err) {
+crint crint_muli64(crint x, int64_t val, dnml_status *err) {            //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
     preop_err((!crint_validate(x)), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); val = 0; err = 0; });
@@ -825,7 +767,7 @@ crint crint_muli64(crint x, int64_t val, dnml_status *err) {
     mag_val = 0; snew_stat = 0; fake_mul = 0; src = 0; prod = 0; chosen_freed = 0;
     pbv_crint_clear(x); val = 0; err = 0; return ret_prod; // clang-format on
 }
-crint crint_divi64(crint x, int64_t val, dnml_status *err) {
+crint crint_divi64(crint x, int64_t val, dnml_status *err) {            //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
@@ -864,7 +806,7 @@ crint crint_divi64(crint x, int64_t val, dnml_status *err) {
     snew_stat = 0; mag_val = 0; mask = 0; tmp_rem = 0; fake_div = 0; src = 0;
     quot = 0; chosen_freed = 0; pbv_crint_clear(x); val = 0; err = 0; return ret_quot; // clang-format on
 }
-crint crint_modi64(crint x, int64_t val, dnml_status *err) {
+crint crint_modi64(crint x, int64_t val, dnml_status *err) {            //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT((crint_validate(x)), ci_full_contract, { crint_free(&x); });
     DNML_TEST_ASSERT((val), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(&x); });
     DNML_TEST_ASSERT((!x.poisoned), crint_poisoned, { crint_free(&x); });
@@ -911,7 +853,7 @@ crint crint_modi64(crint x, int64_t val, dnml_status *err) {
     rnew_stat = 0; tmp_p = 0; mask = 0; tmp_rem = 0; fake_div = 0; src = 0; quot = 0;
     chosen_freed = 0; mag_val = 0; pbv_crint_clear(x); val = 0; err = 0; return ret_rem; // clang-format on
 }
-crint crint_add(crint x, crint y, dnml_status *err) {
+crint crint_add(crint x, crint y, dnml_status *err) {                   //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT(crint_validate(x) & crint_validate(y), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     preop_err((!crint_validate(x) | (!crint_validate(y))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); pbv_crint_clear(y); err = 0; });
@@ -974,7 +916,7 @@ crint crint_add(crint x, crint y, dnml_status *err) {
     msub_minued = 0; msub_subtrahend = 0; sub_sminuend = 0; sub_ssubtrahend = 0; sum = 0; diff = 0;
     mask = 0; free_ret = 0; pbv_crint_clear(x); pbv_crint_clear(y); err = 0; return *true_ret; // clang-format on
 }
-crint crint_sub(crint x, crint y, dnml_status *err) {
+crint crint_sub(crint x, crint y, dnml_status *err) {                   //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT(crint_validate(x) & crint_validate(y), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     preop_err((!crint_validate(x) | (!crint_validate(y))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); pbv_crint_clear(y); err = 0; });
@@ -1037,7 +979,7 @@ crint crint_sub(crint x, crint y, dnml_status *err) {
     msub_minued = 0; msub_subtrahend = 0; sub_sminuend = 0; sub_ssubtrahend = 0; sum = 0; diff = 0;
     mask = 0; free_ret = 0; pbv_crint_clear(x); pbv_crint_clear(y); err = 0; return *true_ret; // clang-format on
 }
-crint crint_mul(crint x, crint y, dnml_status *err) {
+crint crint_mul(crint x, crint y, dnml_status *err) {                   //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT(crint_validate(x) & crint_validate(y), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     preop_err((!crint_validate(x) | (!crint_validate(y))), err, CRINT_ERR_INVAL, { pbv_crint_clear(x); pbv_crint_clear(y); err = 0; });
@@ -1062,7 +1004,7 @@ crint crint_mul(crint x, crint y, dnml_status *err) {
     crint *mulx = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &x : &fake_x;
     crint *muly = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &y : &fake_y;
     crint *prod = (_lib_crt_eq(ret_stat, CRINT_SUCCESS)) ? &ret_prod : &fake_prod;
-    __CRINT_MAGMUL___(prod, mulx, muly); prod->sign = mulx->sign * muly->sign;
+    __CRINT_MAGMUL___(prod, mulx, muly, false); prod->sign = mulx->sign * muly->sign;
     prod->sign = _lib_crt_select(prod->n, prod->sign, 1); crint_normalize(prod);
     limb_t *chosen_freed; mask_ret(&ret_prod, mask, ret_stat, chosen_freed);
 
@@ -1075,7 +1017,7 @@ crint crint_mul(crint x, crint y, dnml_status *err) {
     pbv_crint_clear(fake_prod); mulx = 0; muly = 0; prod = 0; chosen_freed = 0;
     pbv_crint_clear(x); pbv_crint_clear(y); err = 0; return ret_prod; // clang-format on
 }
-crint crint_div(crint x, crint y, dnml_status *err) {
+crint crint_div(crint x, crint y, dnml_status *err) {                   //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT(crint_validate(x) & crint_validate(y), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT(((!y.n)), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(&x); crint_free(&y); });
@@ -1127,7 +1069,7 @@ crint crint_div(crint x, crint y, dnml_status *err) {
     pbv_crint_clear(fake_quot); pbv_crint_clear(fake_rem); quot = 0; rem = 0;
     chosen_freed = 0; pbv_crint_clear(x); pbv_crint_clear(y); return ret_quot; // clang-format on
 }
-crint crint_mod(crint x, crint y, dnml_status *err) {
+crint crint_mod(crint x, crint y, dnml_status *err) {                   //TODO REFACTOR TO HAVE NOP (POSSIBLE)
     DNML_TEST_ASSERT(crint_validate(x) & crint_validate(y), ci_full_contract, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT((!x.poisoned & !y.poisoned), crint_poisoned, { crint_free(&x); crint_free(&y); });
     DNML_TEST_ASSERT(((!y.n)), "Mathematical Undefinindness: Division by 0 (-Ediv_by_zero)", { crint_free(&x); crint_free(&y); });

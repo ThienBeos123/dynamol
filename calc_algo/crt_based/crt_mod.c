@@ -17,6 +17,8 @@ limitations under the License.
 
 
 #include "crt_mod.h"
+#include <debug_util.h>
+#include "../../util/aconv_macros.h"
 
 
 /* CRYPTINT ALGORITHMS */
@@ -24,6 +26,5 @@ dnml_status __CRINT_BARETT_REDC__(crint *dend, crint *mod, crint *rem) { return 
 dnml_status __CRINT_MONT_REDC__(crint *t, mont_ctx mredc_ctx, crint *rem) { return CRINT_SUCCESS; }
 dnml_status __CRINT_MOD_DISP__(crint *dend, crint *mod, crint *rem, crint *tmp_quot) {
     if (mod->n < BIGINT_SHORT) return __CRINT_SHORT_DIVISION__(dend, mod->limbs[0], tmp_quot, rem);
-    else if (mod->n < BIGINT_BARETT) return __CRINT_BARETT_REDC__(dend, mod, rem);
-    else return __CRINT_NEWTON_RECP__(dend, mod, tmp_quot, rem);
+    return __CRINT_BARETT_REDC__(dend, mod, rem);
 }

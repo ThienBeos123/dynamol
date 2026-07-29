@@ -20,7 +20,6 @@ limitations under the License.
 #define DNML_ADD_SUB
 
 
-#include <debug_util.h>
 #include <libdnml_types.h>
 #include <include.h>
 #include <dnml_status.h>
@@ -34,6 +33,7 @@ limitations under the License.
 extern "C" {
 #endif
 void __BIGINT_ADD_WC__(bigInt *res, const bigInt *a, const bigInt *b);
+void __BIGINT_ADD_SHIFT__(bigInt *dst, const bigInt *src, size_t limb_shift);
 void __BIGINT_ADD_SAW__(bigInt *res, const bigInt *x, const bigInt *y);
 void __BIGINT_SUB_WB__(bigInt *res, const bigInt *a, const bigInt *b);
 void __BIGINT_SUB_SAW__(bigInt *res, const bigInt *x, const bigInt *y);

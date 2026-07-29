@@ -38,13 +38,9 @@ static inline uint64_t rotl(const uint64_t x, int k) { return (x << k) | (x >> (
 uint64_t xoshiro256pp_next(xoshiro256_state *state) {
     const uint64_t res = rotl(state->s[0] + state->s[3], 23) + state->s[0];
     const uint64_t t = state->s[1] << 17;
-    state->s[2] ^= state->s[0];
-    state->s[3] ^= state->s[1];
-    state->s[1] ^= state->s[2];
-    state->s[0] ^= state->s[3];
-
-    state->s[2] ^= t;
-    state->s[3] = rotl(state->s[3], 45);
+    state->s[2] ^= state->s[0]; state->s[3] ^= state->s[1];
+    state->s[1] ^= state->s[2]; state->s[0] ^= state->s[3];
+    state->s[2] ^= t; state->s[3] = rotl(state->s[3], 45);
     return res;
 }
 float xoshiro256pp_fnext01(xoshiro256_state *state) {

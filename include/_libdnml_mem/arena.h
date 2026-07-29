@@ -22,6 +22,7 @@ limitations under the License.
 #include "../include.h" // In /include, relative path for easier pathfind
 #include "../dnml_sys/sys.h" // In /include, relative path for easier pathfind
 #include "../dnml_status.h" // In /include, relative path for easier pathfind
+#include "../_libdnml_config/numeric_config.h"
 #include <stdalign.h>
 
 
@@ -39,7 +40,7 @@ typedef struct dnml_arena {
 //* ============= FUNCTIONALITIES ============= *//
 static inline dnml_status init_arena(dnml_arena *a, size_t init_cap) {
     if (a->base != NULL) return DARENA_SUCCESS;
-    uint64_t* __BUFFER_P = (uint64_t*)malloc(init_cap);
+    uint64_t* __BUFFER_P = (uint64_t*)calloc(init_cap, U64_BYTES);
     if (__BUFFER_P == NULL) { a->poisoined = true; return DNML_ALLOC_OOM; }
     a->base = __BUFFER_P; a->cap = init_cap;
     a->offset = 0; a->poisoined = false;
@@ -55,7 +56,7 @@ static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
     if (a->cap >= min_cap) return DARENA_SUCCESS;
     size_t new_cap = (a->cap) ? a->cap : 1;
     while (new_cap < min_cap) new_cap *= 2;
-    uint64_t* __BUFFER_P = (uint64_t*)realloc(a->base, new_cap);
+    uint64_t* __BUFFER_P = (uint64_t*)realloc(a->base, (new_cap) * U64_BYTES);
     if (__BUFFER_P == NULL) {  a->poisoined = true; return DNML_ALLOC_OOM; }
     a->base = __BUFFER_P; a->cap = new_cap;
     return DARENA_SUCCESS;
@@ -63,11 +64,8 @@ static inline dnml_status arena_grow(dnml_arena *a, size_t min_cap) {
 static inline void* arena_alloc(dnml_arena *a, size_t space, dnml_status *err) {
     if (a->poisoined) { *err = DARENA_POISON; return NULL; }
     size_t new_offset = a->offset + space;
-    if (new_offset > a->cap) {
-        if (err!= NULL) *err = DARENA_OVERFLOW;
-        return NULL;
-    }
-    void *ptr = a->base + new_offset;
+    if (new_offset > a->cap) { if (err != NULL) *err = DARENA_OVERFLOW; return NULL; }
+    void *ptr = a->base + a->offset;
     a->offset = new_offset;
     if (err != NULL) *err = DARENA_SUCCESS; return ptr;
 }
@@ -79,14 +77,14 @@ static inline void* arena_galloc(dnml_arena *a, size_t space, dnml_status *err) 
             if (err != NULL) *err = DNML_ALLOC_OOM;
             return NULL;
         }
-    } void *ptr = a->base + new_offset;
+    } void *ptr = a->base + a->offset + 1;
     a->offset = new_offset;
     if (err != NULL) *err = DARENA_SUCCESS; return ptr;
 }
 static inline void arena_clear(dnml_arena *a) { a->offset = 0; }
 static inline size_t arena_mark(dnml_arena *a) { return a->offset; }
-static inline void arena_reset(dnml_arena *a, size_t mark) {
-    if (mark <= a->offset)  a->offset = mark;
+static inline void arena_rewind(dnml_arena *a, size_t mark) {
+    if (a == NULL) return; /**/ if (mark <= a->offset) a->offset = mark;
 }
 
 //* ================== ADAPTERS ===================== *//
@@ -96,8 +94,8 @@ static inline void *arena_alloc_adapter(void *state, size_t n, dnml_status *err)
 static inline size_t arena_mark_adapter(void *state) {
     return arena_mark((dnml_arena*)state);
 }
-static inline void arena_reset_adapter(void *state, size_t n) {
-    arena_reset((dnml_arena*)state, n);
+static inline void arena_rewind_adapter(void *state, size_t n) {
+    arena_rewind((dnml_arena*)state, n);
 }
 static inline void arena_clear_adapter(void *state) {
     arena_clear((dnml_arena*)state);

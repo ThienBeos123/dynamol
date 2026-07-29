@@ -17,15 +17,38 @@ limitations under the License.
 
 
 #include "../util.h"
+#include "../aconv_macros.h"
 #include "intrinsics.h"
 #include <stdint.h>
-
 const uint64_t inv3 = UINT64_C(0xAAAAAAAAAAAAAAAB);
 
+
 /* Safety & State Utilities */
-void __BIGINT_INTERNAL_FREE__(bigInt *x) {
-    if (x->limbs != NULL) free(x->limbs);
-    x->n = 1; x->cap = 0; x->sign = 0;
+dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k) {
+    k = (k) ? k : 1; // Normalizing the size to always be >= 1
+    limb_t *__BUFFER_P = calloc(k, U64_BYTES);
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P; x->cap = k; x->n = 0; x->sign = 1;
+    return BIGINT_SUCCESS;
+}
+dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k) {
+    if (x->cap >= k) return BIGINT_SUCCESS;
+    size_t new_cap = x->cap; while (new_cap < k) new_cap += new_cap;
+    limb_t *__BUFFER_P = realloc(x->limbs, new_cap * U64_BYTES);
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P ; x->cap = new_cap; return BIGINT_SUCCESS;
+}
+dnml_status __BIGINT_INTERNAL_SHRINK__(bigInt *x, size_t k) {
+    k = (!k) ? 1 : k; if (x->cap <= k) return BIGINT_SUCCESS;
+    limb_t *__BUFFER_P = realloc(x->limbs, k * sizeof(limb_t));
+    if (__BUFFER_P == NULL) return DNML_ALLOC_OOM;
+    x->limbs = __BUFFER_P; x->cap = k;
+    if (x->n < x->cap) x->n = x->cap;
+    return BIGINT_SUCCESS;
+}
+void __BIGINT_INTERNAL_FREE__(bigInt *x) { free(x->limbs); x->n = 1; x->cap = 0; x->sign = 0; }
+void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt) {
+    for (uint8_t i = 0; i < alloc_cnt; ++i) __BIGINT_INTERNAL_FREE__(alloc_list[i]);
 }
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x) { /* BigInt Validity */
     if (x == NULL) return 0;
@@ -59,13 +82,21 @@ bigInt __BIGINT_ERROR_VALUE__(void) {
 
 /* General Utilities */
 void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source) {
+    if (dst == NULL || dst->limbs == NULL) return; // IMPORTANT FOR DIVISION AND MODULO DISTINCTIONS
     if (source->limbs == NULL || !source->n) { __BIGINT_INTERNAL_ZSET__(dst); return; }
     memcpy(dst->limbs, source->limbs, source->n * U64_BYTES);
     dst->n = source->n; /**/ dst->sign = source->sign;
 }
-void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) { while (x->n && x->limbs[x->n - 1] == 0) --(x->n); }
+void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x) { 
+    while (x->n && x->limbs[x->n - 1] == 0) --(x->n);
+    if (!x->n) x->sign = 1;
+}
 void __BIGINT_INTERNAL_ZSET__(bigInt *x) { x->n = 0; x->sign = 1; }
 void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y) { bigInt tmp = *x; *x = *y; *y = tmp; }
+void __BIGINT_INTERNAL_MOVE__(bigInt *dst, bigInt *src) {
+    __BIGINT_INTERNAL_FREE__(dst); *dst = *src; // Assigning the new src struct header into dst
+    src->limbs = NULL; src->n = 0; src->cap = 0; src->sign = 0; // Clearing src's own header
+}
 size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
     if (!x->n || (x->n == 1 && x->limbs[0] == 0)) return 0; 
     size_t leading_bits = BIGINT_LIMBS_BITS - __CLZ_UI64__(x->limbs[x->n - 1]);
@@ -86,7 +117,9 @@ size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base) {
     long double bits_per_digit = log2l(base);
     return (size_t)(total_log2 / bits_per_digit) + 1;
 }
-size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) { return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1; }
+size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base) { 
+    return (size_t)(U64_BITS * lcnt * (log10(2) / log10(base))) + 1; 
+}
 size_t __BIGINT_LIMBS_NEEDED__(size_t bits) { 
     if (!bits) return 0;
     return (size_t)((bits + BIGINT_LIMBS_BITS - 1) / BIGINT_LIMBS_BITS);
@@ -146,7 +179,7 @@ void __BIGINT_DIV3__(bigInt *x) {
         // 0x5555555555555555ULL is floor(2^64 / 3)
         x->limbs[idx] = qa + r * UINT64_C(0x5555555555555555) + flag;
         r = sum_r - (flag ? 3 : 0);
-    } __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+    } __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
     if (val == 1 || !x->n) return 0; uint64_t remainder = 0;
@@ -159,8 +192,7 @@ uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
         uint8_t ovf_check = 0;
         for (size_t i = x->n; i > 0; --i) {
             x->limbs[i - 1] = __DIV_HELPER_UI64__(x->limbs[i - 1], remainder, val, &remainder, &ovf_check);
-            DNML_TEST_ASSERT(!(ovf_check), "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
-        } __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+        } __BIGINT_INTERNAL_TRIM_LZ__(x);
     } return remainder;
 }
 void __BIGINT_INTERNAL_RSHIFT__(bigInt *x, size_t k) { // Assumes k < 64
@@ -189,13 +221,14 @@ void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs) {
     if (!klimbs) return;
     if (klimbs >= x->n) { __BIGINT_INTERNAL_ZSET__(x); return; }
     memcpy(x->limbs, (x->limbs + klimbs), (x->n - klimbs) * U64_BYTES);
-    x->n -= klimbs; __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+    x->n -= klimbs; __BIGINT_INTERNAL_TRIM_LZ__(x);
 }
 void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs) {
     if (!klimbs || !x->n) return;
     if (klimbs >= x->cap) { __BIGINT_INTERNAL_ZSET__(x); return; }
     size_t moved = (x->n + klimbs > x->cap) ? x->cap - klimbs : x->n;
-    memmove(x->limbs + klimbs, x->limbs, moved * U64_BYTES);
+    memmove(x->limbs + klimbs, x->limbs, moved * U64_BYTES); // Moving forward by klimbs
+    memset(x->limbs, 0, klimbs * U64_BYTES); // Zero out the previous klimb memory region
     x->n = (x->n + klimbs > x->cap) ? x->cap : x->n + klimbs;
-    __BIGINT_INTERNAL_TRIM_LZ__(x); if (!x->n) x->sign = 1;
+    __BIGINT_INTERNAL_TRIM_LZ__(x);
 }

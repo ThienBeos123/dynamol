@@ -26,14 +26,13 @@ limitations under the License.
 #include <_libdnml_mem/_ctx.h>
 #include <dnml_status.h>
 #include "../intrinsics/intrinsics.h"
-#include "aconv_macros.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define min(x, y) ( ((x) < (y)) ? (x) : (y) )
-#define max(x, y) ( ((x) > (y)) ? (x) : (y) )
+#define min(x, y) ( ((x) <= (y)) ? (x) : (y) )
+#define max(x, y) ( ((x) >= (y)) ? (x) : (y) )
 
 
 /* ---------------------- */
@@ -80,6 +79,9 @@ uint64_t _dnml_ipower_u64(uint64_t base, uint8_t power);
 /* ---------------------- */
 /* bigNum_utils.c */
 /* ---------------------- */
+dnml_status __BIGINT_INTERNAL_LINIT__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_ENSCAP__(bigInt *x, size_t k);
+dnml_status __BIGINT_INTERNAL_SHRINK__(bigInt *x, size_t k);
 void __BIGINT_INTERNAL_FREE__(bigInt *x);
 uint8_t __BIGINT_INTERNAL_VALID__(const bigInt *x);
 uint8_t __BIGINT_INTERNAL_SVALID__(const bigInt *x);
@@ -90,6 +92,7 @@ void __BIGINT_INTERNAL_COPY__(bigInt *dst, const bigInt *source);
 void __BIGINT_INTERNAL_TRIM_LZ__(bigInt *x);
 void __BIGINT_INTERNAL_ZSET__(bigInt *x);
 void __BIGINT_INTERNAL_SWAP__(bigInt *x, bigInt *y);
+void __BIGINT_INTERNAL_MOVE__(bigInt *dst, bigInt *src);
 size_t __BIGINT_COUNTDB__(const bigInt *x, uint8_t base);
 size_t __BIGINT_MAXCDB__(size_t lcnt, uint8_t base);
 size_t __BIGINT_LIMBS_NEEDED__(size_t bits);
@@ -107,6 +110,14 @@ void __BIGINT_INTERNAL_LSHIFT__(bigInt *x, size_t k);
 void __BIGINT_INTERNAL_RLSHIFT__(bigInt *x, size_t klimbs);
 void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs);
 
+// Cleanup helper for upfront cleanup
+typedef struct list_bi { bigInt *x; uint8_t ret_clean; } list_bi;
+static inline void _FREE_ALL_BI__(list_bi *free_list, uint8_t len) {
+    for (uint8_t i = 0; i < len; ++i) __BIGINT_INTERNAL_FREE__(free_list[i].x);
+}
+static inline void _FREE_RET_BI__(list_bi *free_list, uint8_t len) {
+    for (uint8_t i = 0; i < len; ++i) { if (free_list[i].ret_clean) __BIGINT_INTERNAL_FREE__(free_list[i].x); }
+}
 
 
 #ifdef __cplusplus

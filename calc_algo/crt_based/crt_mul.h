@@ -33,16 +33,10 @@ limitations under the License.
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* CRYPTINT WORKSPACE SIZE */
-size_t __CRINT_NTT_WS__(size_t a_size, size_t b_size);
-size_t __CRINT_MUL_WS__(size_t a_size, size_t b_size);
-
-
-
 /* CRYPTINT ALGORITHMS */
+dnml_status __CRINT_NOP_SCHOOLBOOK__(crint *x, crint *y);
 dnml_status __CRINT_SCHOOLBOOK__(crint *a, crint *b, crint *res);
-dnml_status __CRINT_NTT__(crint *a, crint *b, crint *res);
-dnml_status __CRINT_MUL_DISP__(crint *a, crint *b, crint *res);
+dnml_status __CRINT_MUL_DISP__(crint *a, crint *b, crint *res, bool nop);
 #ifdef __cplusplus
 }
 #endif

@@ -32,8 +32,7 @@ typedef uintptr_t ptr_t;
 
 //* ======================================= DYNAMOL DEFINITION ========================================= *//
 #define BIGINT_LIMBS_BITS 64
-#define DASI_OVERFLOW_THRES10                                                  \
-  1844677407370955161 // 1,844,674,407,370,955,161 (UINT64_MAX / 10)
+#define DASI_OVERFLOW_THRES10 1844677407370955161 // 1,844,674,407,370,955,161 (UINT64_MAX / 10)
 typedef uint64_t limb_t;
 typedef struct {
     size_t n; size_t cap;
@@ -56,7 +55,8 @@ typedef struct {
 typedef struct {
     size_t n; size_t cap;
     limb_t *limbs; int8_t sign;
-    bool poisoned; /*
+    bool poisoned; 
+    /*
         This field is not to be taken the same as crint_validate and its variants.
         crint_validate and its variants check and assert the validity of a cryptInt's
         internal state, following CRYPT_NUM_CONTRACT.txt. This field is specifically

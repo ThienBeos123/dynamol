@@ -5,10 +5,6 @@ if(APPLE)
     # Clear ELF-specific attributes so they don't break AppleClang
     set(CMAKE_EXE_LINKER_FLAGS "" CACHE STRING "" FORCE)
     set(CMAKE_SHARED_LINKER_FLAGS "" CACHE STRING "" FORCE)
-    
-    # Enforce native macOS binary layout protections instead
-    # (ASLR, DEP, and stack guard binding are on by default in AppleClang)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-bind_at_load")
 endif()
 
 
@@ -41,11 +37,13 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
 endif()
 
 
+
+
 # Define the primary static library target
 add_library(dnml_core STATIC
     # 2. System Assembly files
     include/dnml_sys/__hwcaps.c
-    include/char_table.c
+    include/tables.c
 
     # 3. Mathematical Intrinsic Operations Files
     intrinsics/intrin_base.c
@@ -72,14 +70,43 @@ add_library(dnml_core STATIC
     util/crt_util/crt_misc_util.c
     
     calc_algo/algo_base/add_sub.c
-    # 5a. Calculational Algorithms Files - PERF-BASED
+    # 5a. Calculational Algorithms Files - PERF-BASED + ARENA
+    calc_algo/perf_based/mul_fft.c
+    calc_algo/perf_based/mul_toom_45.c
+    calc_algo/perf_based/mul_toom_p5.c
     calc_algo/perf_based/mul.c
+    # Sub-5a. Matrix-Vector Multiplication helpers
+    calc_algo/perf_based/mv_matmul/_matmul_fft.c
+    calc_algo/perf_based/mv_matmul/_matmul_toom.c
+    calc_algo/perf_based/mv_matmul/_mv_matmul_disp.c
+    calc_algo/perf_based/mv_matmul/_mv_matmul_ws.c
+    calc_algo/perf_based/div_newton.c
     calc_algo/perf_based/div.c
     calc_algo/perf_based/mod.c
-    calc_algo/perf_based/mod_op.c
-    calc_algo/perf_based/num_theory.c
+    calc_algo/perf_based/mod_mulexp.c
     calc_algo/perf_based/pow_root.c
-    # 5b. Calculational Algorithms Files - CRYPTO-BASED
+    calc_algo/perf_based/gcd_subq.c
+    calc_algo/perf_based/gcd.c
+    calc_algo/perf_based/ptest_bpsw.c
+    calc_algo/perf_based/prime_test.c
+    # 5b. Calculational Algorithms Files - PERF-BASED + HEAP
+    calc_algo/heap_based/heap_mul_toom.c
+    calc_algo/heap_based/heap_mul_fft.c
+    calc_algo/heap_based/heap_mul.c
+    # Sub-5b. Matrix-Vector Multiplication Helpers
+    calc_algo/heap_based/hmv_matmul/_hmatmul_fft.c
+    calc_algo/heap_based/hmv_matmul/_hmatmul_toom.c
+    calc_algo/heap_based/hmv_matmul/_hmv_matmul.c
+    calc_algo/heap_based/heap_div_newt.c
+    calc_algo/heap_based/heap_div.c
+    calc_algo/heap_based/heap_mod.c
+    calc_algo/heap_based/heap_modmulexp.c
+    calc_algo/heap_based/heap_pow_root.c
+    calc_algo/heap_based/heap_gcd_subq.c
+    calc_algo/heap_based/heap_gcd.c
+    calc_algo/heap_based/heap_ptest_bpsw.c
+    calc_algo/heap_based/heap_ptest.c
+    # 5c. Calculational Algorithms Files - CRYPTO-BASED
     calc_algo/crt_based/crt_mul.c
     calc_algo/crt_based/crt_div.c
     calc_algo/crt_based/crt_mod.c
@@ -155,6 +182,8 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
     )
 endif()
 
+
+
 # -------- TARGET INCLUDE DIRECTORIES MAPPING --------
 # 1. PRIVATE: Used strictly to resolve #include <...> safely inside this project repository.
 # 2. INTERFACE: Exposed strictly to downstream consumers using the installed package tree folder structure.
@@ -176,16 +205,24 @@ target_include_directories(dnml_core
         ${CMAKE_CURRENT_SOURCE_DIR}/util
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_based/mv_matmul
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/perf_float
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_based/hmv_matmul
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/heap_float
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/crt_based
+        ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/crt_float
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_algo/algo_base
         ${CMAKE_CURRENT_SOURCE_DIR}/dynamol
         ${CMAKE_CURRENT_SOURCE_DIR}/dynamol/bigint
         ${CMAKE_CURRENT_SOURCE_DIR}/dynamol/bigfloat
         ${CMAKE_CURRENT_SOURCE_DIR}/drypto/crypt_int
         ${CMAKE_CURRENT_SOURCE_DIR}/drypto/crypt_float
+        ${CMAKE_CURRENT_SOURCE_DIR}/test # Added in for print_bi_limbs and print_ci_limbs
     INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> # Allows downstreams to find <dnml/libdnml.h> safely
 )
+
 
 
 

@@ -20,11 +20,21 @@ limitations under the License.
 #define DNML_CALC
 
 #include "algo_base/add_sub.h"
+
 #include "perf_based/mul.h"
 #include "perf_based/div.h"
 #include "perf_based/mod.h"
-#include "perf_based/mod_op.h"
-#include "perf_based/num_theory.h"
+#include "perf_based/mod_mulexp.h"
+#include "perf_based/prime_test.h"
+#include "perf_based/gcd.h"
 #include "perf_based/pow_root.h"
+
+#include "heap_based/heap_mul.h"
+#include "heap_based/heap_div.h"
+#include "heap_based/heap_mod.h"
+#include "heap_based/heap_modmulexp.h"
+#include "heap_based/heap_gcd.h"
+#include "heap_based/heap_ptest.h"
+#include "heap_based/heap_pow_root.h"
 
 #endif

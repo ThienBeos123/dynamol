@@ -17,10 +17,9 @@ limitations under the License.
 
 
 #include "cryptInt_func.h"
-#include "dnml_status.h"
-#include "include.h"
-#include "intrinsics.h"
-#include "libdnml_types.h"
+#include <debug_util.h>
+#include <tables.h>
+#include "_crint_macros.h"
 
 
 
@@ -39,17 +38,13 @@ dnml_status crint_new(crint *x) {
     /* Actual operation */
     uint64_t oom_mask = UINT64_MAX;  dnml_status ret_stat = CRINT_SUCCESS; limb_t *__BUFFER_P = calloc(1, U64_BYTES);
     DNML_TEST_ASSERT(_lib_crt_neq((ptr_t)__BUFFER_P, (ptr_t)(NULL)), realloc_null, { crint_free(x); });
-    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
-    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), 0, oom_mask);
+    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
+    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), 0, oom_mask);
 
-    uint8_t uninit = _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL));
-    x->limbs = (uninit) ? __BUFFER_P : x->limbs;
-    CHOOSE_OPTION((x->cap), (uninit), (1 & oom_mask), (x->cap));
-    CHOOSE_OPTION((x->n), (uninit), (0 & oom_mask), (x->n));
-    CHOOSE_OPTION((x->sign), (uninit), (1 & oom_mask), (x->sign));
-    CHOOSE_OPTION((x->poisoned), (uninit), (0 & oom_mask), (x->poisoned));
+    x->limbs = __BUFFER_P; /**/ x->cap = 1 & oom_mask;
+    x->n = 0; /**/ x->sign = 1 & oom_mask; /**/ x->poisoned = 0;
     /* Post operation Aggrestive Clearance */ // clang-format off
-    oom_mask = 0; __BUFFER_P = 0; uninit = 0; x = 0; return ret_stat; // clang-format on
+    oom_mask = 0; __BUFFER_P = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_snew(crint *x, size_t n) {
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {;});
@@ -58,17 +53,13 @@ dnml_status crint_snew(crint *x, size_t n) {
     uint64_t oom_mask = UINT64_MAX; dnml_status ret_stat = CRINT_SUCCESS; size_t salloc = (n) | (!(n));
     limb_t *__BUFFER_P = calloc(salloc, U64_BYTES);
     DNML_TEST_ASSERT(_lib_crt_neq((ptr_t)__BUFFER_P, (ptr_t)(NULL)), realloc_null, { crint_free(x); });
-    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
-    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), 0, oom_mask);
+    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
+    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), 0, oom_mask);
 
-    uint8_t uninit = (_lib_crt_eq((ptr_t)(x->limbs), (ptr_t)(NULL)));
-    x->limbs = (uninit) ? __BUFFER_P : x->limbs;
-    CHOOSE_OPTION((x->cap), (uninit), (salloc & oom_mask), (x->cap));
-    CHOOSE_OPTION((x->n), (uninit), (0 & oom_mask), (x->n));
-    CHOOSE_OPTION((x->sign), (uninit), (1 & oom_mask), (x->sign));
-    CHOOSE_OPTION((x->poisoned), (uninit), (0 & oom_mask), (x->poisoned));
+    x->limbs = __BUFFER_P; /**/ x->cap = salloc & oom_mask;
+    x->n = 0; /**/ x->sign = 1 & oom_mask; /**/ x->poisoned = 0;
     /* Post-operation Aggrestive Clearance */ // clang-format off
-    oom_mask = 0; salloc = 0; __BUFFER_P = 0; uninit = 0; x = 0; n = 0; return ret_stat; // clang-format on
+    oom_mask = 0; salloc = 0; __BUFFER_P = 0; x = 0; n = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_cinew(crint *x, crint *y) {
     // Pre-operation Validation & Static Analysis
@@ -85,28 +76,18 @@ dnml_status crint_cinew(crint *x, crint *y) {
     size_t alloc_size; CHOOSE_OPTION((alloc_size), (y->n), (y->n), (1));
     limb_t *__BUFFER_P = calloc(alloc_size, U64_BYTES);
     DNML_TEST_ASSERT(_lib_crt_neq((ptr_t)__BUFFER_P, (ptr_t)(NULL)), realloc_null, { crint_free(y); });
-    CHOOSE_OPTION((ret_stat), (
-        (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))) &
-        _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL)) &
-        (_lib_crt_eq(ret_stat, CRINT_SUCCESS))),
-        DNML_ALLOC_OOM, ret_stat
-    );
+    CHOOSE_OPTION((ret_stat), ((_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)))) & (_lib_crt_eq(ret_stat, CRINT_SUCCESS)), DNML_ALLOC_OOM, ret_stat);
     mask = (uint64_t)(-(int64_t)(!(
-        (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL)) &
+        (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))) &
         (_lib_crt_eq(mask, UINT64_MAX)) & (_lib_crt_neq(ret_stat, CRINT_POISON))
     )));
-    uint8_t uninit = _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL)); limb_t* dst_limbs;
-    dst_limbs = (uninit) ? __BUFFER_P : y->limbs;
+    limb_t* dst_limbs = (_lib_crt_neq((ptr_t)__BUFFER_P, (ptr_t)NULL)) ? __BUFFER_P : y->limbs;
     size_t end; CHOOSE_OPTION((end), (!y->n), (0), (y->n));
     __libdnml_smemcpy_u64(dst_limbs, y->limbs, alloc_size, y->n, 0, end, false);
-    x->limbs = (uninit) ? __BUFFER_P : x->limbs;
-    CHOOSE_OPTION((x->cap), (uninit), (alloc_size & mask), (x->cap));
-    CHOOSE_OPTION((x->sign), (uninit), (y->sign & mask), (x->sign));
-    CHOOSE_OPTION((x->poisoned), (uninit), (y->poisoned & mask), (x->poisoned));
-    CHOOSE_OPTION((x->n), (uninit), (y->n), (x->n)); x->sign = !(!x->n);
+    x->limbs = __BUFFER_P; /**/ x->cap = alloc_size & mask; /**/ x->n = y->n & mask; 
+    x->sign = y->sign & mask; /**/ x->poisoned = y->poisoned & mask;
     /* Post-operation Aggrestive Clearance */ // clang-format off
-    mask = 0; alloc_size = 0; __BUFFER_P = 0; uninit = 0;
-    dst_limbs = 0; x = 0; y = 0; return ret_stat;// clang-format on
+    mask = 0; alloc_size = 0; __BUFFER_P = 0; dst_limbs = 0; x = 0; y = 0; return ret_stat;// clang-format on
 }
 dnml_status crint_new_u64(crint *x, uint64_t in) {
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {;});
@@ -114,18 +95,15 @@ dnml_status crint_new_u64(crint *x, uint64_t in) {
     /* Actual Operation */
     uint64_t oom_mask = UINT64_MAX; dnml_status ret_stat = CRINT_SUCCESS; limb_t *__BUFFER_P = calloc(1, U64_BYTES);
     DNML_TEST_ASSERT(_lib_crt_neq((ptr_t)__BUFFER_P, (ptr_t)(NULL)), realloc_null, {;});
-    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
-    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), 0, oom_mask);
+    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
+    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), 0, oom_mask);
 
-    uint8_t uninit = _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL)); uint64_t first_val = x->limbs[0];
-    x->limbs = (uninit) ? __BUFFER_P : x->limbs;
-    CHOOSE_OPTION((x->limbs[0]), (uninit), (in & oom_mask), (first_val));
-    CHOOSE_OPTION((x->cap), (uninit), (1 & oom_mask), (x->cap));
-    CHOOSE_OPTION((x->n), (uninit), ((!!(in)) & oom_mask), (x->n));
-    CHOOSE_OPTION((x->sign), (uninit), (1 & oom_mask), (x->sign));
-    CHOOSE_OPTION((x->poisoned), (uninit), (0 & oom_mask), (x->poisoned));
+    x->limbs = __BUFFER_P; limb_t dummy = 0; limb_t *write_add;
+    write_add = (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)NULL)) ? &dummy : x->limbs;
+    *write_add = in & oom_mask; /**/ x->cap = 1 & oom_mask;
+    x->n = (!!(in)) & oom_mask; /**/ x->sign = 1 & oom_mask; /**/ x->poisoned = 0;
     /* Post-operation Aggresive Clearance */ // clang-format off
-    oom_mask = 0; __BUFFER_P = 0; uninit = 0; first_val = 0; x = 0; in = 0; return ret_stat; // clang-format on
+    oom_mask = 0; __BUFFER_P = 0; x = 0; in = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_new_i64(crint *x, int64_t in) {
     DNML_TEST_ASSERT((_lib_crt_neq((ptr_t)x, (ptr_t)(NULL))), input_null, {;});
@@ -133,20 +111,16 @@ dnml_status crint_new_i64(crint *x, int64_t in) {
     /* Actual Operation */
     uint64_t oom_mask = UINT64_MAX; dnml_status ret_stat = CRINT_SUCCESS; limb_t *__BUFFER_P = calloc(1, U64_BYTES);
     DNML_TEST_ASSERT(_lib_crt_neq((ptr_t)__BUFFER_P, (ptr_t)(NULL)), realloc_null, {;});
-    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
-    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL)) & _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL))), 0, oom_mask);
+    CHOOSE_OPTION((ret_stat), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), DNML_ALLOC_OOM, ret_stat);
+    CHOOSE_OPTION((oom_mask), (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)(NULL))), 0, oom_mask);
 
-    uint8_t uninit = _lib_crt_eq((ptr_t)x->limbs, (ptr_t)(NULL)); uint64_t first_val = x->limbs[0];
-    int8_t new_sign; CHOOSE_OPTION((new_sign), (_lib_crt_isneg(in)), (-1), (1));
-    x->limbs = (uninit) ? __BUFFER_P : x->limbs;
-    CHOOSE_OPTION((x->limbs[0]), (uninit), (__CRT_MAG_I64__(in) & oom_mask), (first_val));
-    CHOOSE_OPTION((x->cap), (uninit), (1 & oom_mask), (x->cap));
-    CHOOSE_OPTION((x->n), (uninit), ((!!(in)) & oom_mask), (x->n));
-    CHOOSE_OPTION((x->sign), (uninit), (new_sign & oom_mask), (x->sign));
-    CHOOSE_OPTION((x->poisoned), (uninit), (0 & oom_mask), (x->poisoned));
+    x->limbs = __BUFFER_P; limb_t dummy = 0; limb_t *write_add;
+    write_add = (_lib_crt_eq((ptr_t)__BUFFER_P, (ptr_t)NULL)) ? &dummy : x->limbs;
+    *write_add = __CRT_MAG_I64__(in) & oom_mask; /**/ x->cap = 1 & oom_mask;
+    x->n = (!!(in)) & oom_mask; /**/ x->poisoned = 0; 
+    CHOOSE_OPTION((x->sign), (_lib_crt_isneg(in)), (-1 & oom_mask), (1 & oom_mask));
     /* Post-operation Aggrestive Clearance */ // clang-format off
-    oom_mask = 0; __BUFFER_P = 0; uninit = 0; x = 0; in = 0;
-    first_val = 0; new_sign = 0; return ret_stat; // clang-format on
+    oom_mask = 0; __BUFFER_P = 0; x = 0; in = 0; return ret_stat; // clang-format on
 }
 dnml_status crint_new_f128(crint *x, long double in) { return CRINT_SUCCESS; }
 
@@ -1597,10 +1571,8 @@ dnml_status crint_transfer(crint *dst, crint *src) {
     DNML_TEST_ASSERT((__STORAGE_VAL__(dst) & __STORAGE_VAL__(src)), ci_store_inval, { crint_free(dst); crint_free(src); });
     if (_lib_crt_eq((ptr_t)dst, (ptr_t)(NULL)) | _lib_crt_eq((ptr_t)(src), (ptr_t)(NULL))) { dst = 0; src = 0; return CRINT_NULL;}
     if (!__STORAGE_VAL__(dst) | !__STORAGE_VAL__(src)) { dst = 0; src = 0; return CRINT_ERR_SINVAL; } // clang-format off
-    crint_free(dst);
-    dst->limbs = src->limbs; dst->n = src->n; dst->cap = src->cap;
-    dst->sign = src->sign; dst->poisoned = src->poisoned;
-    /* Invalidate src */
+    crint_free(dst); *dst = *src;
+    /* Invalidate src */ // clang-format off
     src->limbs = NULL; src->n = 0; src->cap = 1; src->sign = 1;
     src->poisoned = false; dst = 0; src = 0; return CRINT_SUCCESS; // clang-format on
 }

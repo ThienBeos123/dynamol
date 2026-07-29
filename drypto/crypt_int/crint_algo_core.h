@@ -22,9 +22,7 @@ limitations under the License.
 
 #include <libdnml_types.h>
 #include <include.h>
-#include <char_tables.h>
 #include <dnml_sys/sys.h>
-#include <debug_util.h>
 #include <_libdnml_config/settings.h>
 #include <_libdnml_config/numeric_config.h>
 #include <_libdnml_mem/_ctx.h>
@@ -36,7 +34,7 @@ limitations under the License.
 /* ------------------------ MAGNITUDED ARITHMETIC ------------------------- */
 void __CRINT_MAGADD__(crint *res, crint *a, crint *b);
 void __CRINT_MAGSUB__(crint *res, crint *a, crint *b);
-void __CRINT_MAGMUL___(crint *res, crint *a, crint *b);
+void __CRINT_MAGMUL___(crint *res, crint *a, crint *b, bool nop);
 void __CRINT_MAGDIV__(crint *quot, crint *temp_rem, crint *a, crint *b);
 void __CRINT_MAGMOD__(crint *temp_quot, crint *rem, crint *a, crint *b);
 void __CRINT_MAGMUL_U64__(crint *res, crint *x, uint64_t val);

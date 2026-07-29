@@ -20,7 +20,6 @@ limitations under the License.
 #define DNML_MOD_H
 
 
-#include <debug_util.h>
 #include <dnml_status.h>
 #include <libdnml_types.h>
 #include <include.h>
@@ -39,12 +38,9 @@ extern "C" {
 #endif
 size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size);
 size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size);
-void __BIGINT_BARETT__(const bigInt *a, const bigInt *n, bigInt *rem, calc_ctx barett_ctx);
-void __BIGINT_MONT_REDC__(bigInt *t, mont_ctx mredc_ctx, bigInt *rem);
-void __BIGINT_MOD_DISPATCH__(
-    const bigInt *a, const bigInt *n,
-    bigInt *rem, bigInt *tmp_quot, calc_ctx mod_ctx
-);
+void __BIGINT_BARETT__(const bigInt *const a, const bigInt *const n, bigInt *const rem, calc_ctx *barett_ctx, dnml_status *err);
+void __BIGINT_MONT_REDC__(bigInt *const t, mont_ctx mredc_ctx, bigInt *const rem);
+void __BIGINT_MOD_DISP__(const bigInt *const a, const bigInt *const n, bigInt *const rem, calc_ctx *mod_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

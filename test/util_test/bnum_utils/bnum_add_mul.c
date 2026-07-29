@@ -159,12 +159,12 @@ int main(void) { _libdnml_init();
     struct timespec start, end; clock_gettime(CLOCK_MONOTONIC, &start);
     limb_t *ret_buf = (limb_t *)malloc(12 * U64_BYTES); assert(ret_buf != NULL);
     fputs("====================================================================\n", stdout);
-    fputs("     RUNNING INTEGRATED UNIT TESTS - BIGNUM LIMB-SHIFT UTILITIES    \n", stdout);
+    fputs("       RUNNING INTEGRATED UNIT TESTS - BIGNUM ADD-MUL UTILITIES     \n", stdout);
     fputs("====================================================================\n", stdout);
     fputs("---- __BIGINT_INTERNAL_ADD_UI64__ -----\n", stdout);
     for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
         memset(ret_buf, 0, 12 * U64_BYTES);
-        if (add_case[i].in.limbs && add_case[i].in.n > 0) {
+        if (add_case[i].in.limbs && add_case[i].in.n) {
             memcpy(ret_buf, add_case[i].in.limbs, add_case[i].in.n * U64_BYTES);
         }
         bigInt test_x; test_x.limbs = ret_buf;
@@ -178,7 +178,7 @@ int main(void) { _libdnml_init();
     fputs("---- __BIGINT_INTERNAL_MUL_UI64__ -----\n", stdout);
     for (int i = 0; i < CASE_CNT; i++) { total_tests++; 
         memset(ret_buf, 0, 12 * U64_BYTES);
-        if (mul_case[i].in.limbs && mul_case[i].in.n > 0) {
+        if (mul_case[i].in.limbs && mul_case[i].in.n) {
             memcpy(ret_buf, mul_case[i].in.limbs, mul_case[i].in.n * U64_BYTES);
         }
         bigInt test_x; test_x.limbs = ret_buf;
@@ -201,7 +201,7 @@ int main(void) { _libdnml_init();
     fputs( "=========================================================\n", stdout);
     fputs( "TEST SUMMARY:\n", stdout);
     printf("+) Passed %-4d out of %-4d total compiled checks.\n", passed_tests, total_tests);
-    printf("+) Success rate: %.2f%%\n", (total_tests > 0) ? ((passed_tests * 100.0) / total_tests) : 0.0);
+    printf("+) Success rate: %.2f%%\n", (total_tests) ? ((passed_tests * 100.0) / total_tests) : 0.0);
     printf("+) Total Runtime: %lf ms\n", elapsed_time * 1000.0);
     fputs( "=========================================================\n", stdout);
     _libdnml_cleanup(); return (passed_tests == total_tests) ? 0 : 1;
