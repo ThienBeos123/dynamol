@@ -39,23 +39,21 @@ limitations under the License.
 extern "C" {
 #endif
 size_t __BIGINT_SHORTDIV_WS__(size_t a_size, size_t b_size);
-size_t __BIGINT_KNUTH_WS__(size_t a_size, size_t b_size);
+size_t __BIGINT_BURNIKEL_WS__(size_t a_size, size_t b_size, bool normalize);
 size_t __BIGINT_NEWTON_WS__(size_t a_size, size_t b_size);
-size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size);
+size_t __BIGINT_DIV_WS__(size_t a_size, size_t b_size, bool normalize);
 
 
 void __BIGINT_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const quot, bigInt *const rem);
-void __BIGINT_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, calc_ctx *knuth_ctx, dnml_status *err);
-void __BIGINT_BURNIKEL__(
+void __RBIGINT_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const rem);
+void __BIGINT_BURK__(
     const bigInt *const AH, const bigInt *const AL,
     const bigInt *const b, bigInt *const quot, bigInt *const rem,
-    calc_ctx *burk_ctx, dnml_status *err
+    calc_ctx *burk_ctx, dnml_status *err, FILE *f
 );
+void __BIGINT_BURNIKEL__(const bigInt *const a, const bigInt *const b, bigInt *const quot, calc_ctx *burk_ctx, dnml_status *err, FILE *f);
 void __BIGINT_NEWTON__(const bigInt *const n, const bigInt *const d, bigInt *const quot, bigInt *const rem, calc_ctx *newton_ctx, dnml_status *err);
-void __RBIGINT_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const rem);
-void __RBIGINT_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const rem, calc_ctx *knuth_ctx, dnml_status *err);
-void __RBIGINT_NEWTON__(const bigInt *const a, const bigInt *const b, bigInt *const rem, calc_ctx *newton_ctx, dnml_status *err);
-void __BIGINT_DIV_DISP__(const bigInt *const n, const bigInt *const d, bigInt *const quot, bigInt *const tmp_rem, calc_ctx *div_ctx, dnml_status *err);
+void __BIGINT_DIV_DISP__(const bigInt *const n, const bigInt *const d, bigInt *const quot, calc_ctx *div_ctx, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

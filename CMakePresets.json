@@ -98,7 +98,7 @@
             "displayName": "Drypto Release Build (GCC/Clang) – Secure",
             "description": "Hardened release build for Drypto (cryptography). Secure profile: heap fallback enabled, Baillie-PSW + MR (20 rounds), verified correctness prioritized over speed.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-drt/unix",
+            "binaryDir": "${sourceDir}/build/unix",
             "inherits": "drt-unix-flag"
         },
         { 
@@ -106,7 +106,7 @@
             "displayName": "Drypto Release Build (MSVC) – Secure",
             "description": "Hardened release build for Drypto (cryptography). Secure profile: heap fallback enabled, Baillie-PSW + MR (20 rounds), verified correctness prioritized over speed.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-drt/msvc",
+            "binaryDir": "${sourceDir}/build/msvc",
             "inherits": "drt-msvc-flag"
         },
         {
@@ -114,7 +114,7 @@
             "displayName": "Dynamol Release Build (GCC/Clang) – Max Performance",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-mdnml/unix",
+            "binaryDir": "${sourceDir}/build/unix",
             "inherits": "pdnml-unix-flag"
         },
         { 
@@ -122,7 +122,7 @@
             "displayName": "Dynamol Release Build (MSVC) – Max Performance",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-mdnml/msvc",
+            "binaryDir": "${sourceDir}/build/msvc",
             "inherits": "pdnml-msvc-flag"
         },
         {
@@ -130,7 +130,7 @@
             "displayName": "Dynamol Release Build (GCC/Clang) – Mild Performance, Top Stability",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-pdnml/unix",
+            "binaryDir": "${sourceDir}/build/unix",
             "inherits": "bdnml-unix-flag"
         },
         { 
@@ -138,7 +138,7 @@
             "displayName": "Dynamol Release Build (MSVC) – Mild Performance, Top Stability",
             "description": "Aggressive performance build for Dynamol (scientific). Max performance profile: no heap fallback, pure Miller-Rabin, adaptive primality. Assumes workspace pre-calculations are correct. Use only in trusted/benchmarked environments.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-pdnml/msvc",
+            "binaryDir": "${sourceDir}/build/msvc",
             "inherits": "bdnml-msvc-flag"
         },
         {
@@ -146,7 +146,7 @@
             "displayName": "Dynamol Stable Release Build (GCC/Clang)",
             "description": "Balanced performance build for Dynamol (scientific). Secure profile with aggressive optimizations: heap fallback enabled, adaptive primality, full API stability. Faster than Drypto but safer than Max Performance.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-sdnml/unix",
+            "binaryDir": "${sourceDir}/build/unix",
             "inherits": "sdnml-unix-flag"
         },
         {
@@ -154,7 +154,7 @@
             "displayName": "Dynamol Stable Release Build (MSVC)",
             "description": "Balanced performance build for Dynamol (scientific). Secure profile with aggressive optimizations: heap fallback enabled, adaptive primality, full API stability. Faster than Drypto but safer than Max Performance.",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-sdnml/msvc",
+            "binaryDir": "${sourceDir}/build/msvc",
             "inherits": "sdnml-msvc-flag"
         }
     ],

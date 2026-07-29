@@ -38,13 +38,12 @@ size_t __BIGINT_BARETT_WS__(size_t a_size, size_t n_size) {
     size_t mul_divmod_size = max(
         __BIGINT_MUL_WS__(precomp_size + remlimbs - (n_size - 1), n_size), max(
             __BIGINT_MUL_WS__(remlimbs, precomp_size),
-            __BIGINT_DIV_WS__(precomp_size, n_size)
+            __BIGINT_DIV_WS__(precomp_size, n_size, true)
         )
     ); return 0;
 }
 size_t __BIGINT_MOD_WS__(size_t a_size, size_t n_size) {
     if (n_size < BIGINT_SHORT) return __BIGINT_SHORTDIV_WS__(a_size, n_size);
-    else if (n_size < BIGINT_KNUTH) return __BIGINT_KNUTH_WS__(a_size, n_size);
     else if (n_size < BIGINT_BARETT) return __BIGINT_BARETT_WS__(a_size, n_size);
     else return __BIGINT_NEWTON_WS__(a_size, n_size);
 }
@@ -60,7 +59,7 @@ void __BIGINT_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx 
     BIGINT_TEMP(numer, precomp_size + remlimbs, barett_ctx, barett_mark, echeck, err,); numer.n = precomp_size;
     BIGINT_TEMP(precomp, precomp_size, barett_ctx, barett_mark, echeck, err,);
     BIGINT_TEMP(tmp, max(n->n, precomp_size + remlimbs + 1), barett_ctx, barett_mark, echeck, err,);
-    numer.limbs[(n->n << 1)] = 1; __BIGINT_DIV_DISP__(&numer, n, &precomp, &tmp, barett_ctx, &echeck);
+    numer.limbs[(n->n << 1)] = 1; __BIGINT_DIV_DISP__(&numer, n, &precomp, barett_ctx, &echeck);
     SCRATCH_OVF(echeck, barett_ctx, barett_mark, err,);
 
 
@@ -118,7 +117,6 @@ void __BIGINT_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
 }
 void __BIGINT_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, calc_ctx *mod_ctx, dnml_status *err) {
     if (n->n < BIGINT_SHORT) { __RBIGINT_SHORT_DIVISION__(a, n->limbs[0], rem); *err = BIGINT_SUCCESS; }
-    else if (n->n < BIGINT_KNUTH) __RBIGINT_KNUTH_D__(a, n, rem, mod_ctx, err);
     else if (n->n < BIGINT_BARETT) __BIGINT_BARETT__(a, n, rem, mod_ctx, err);
-    else __RBIGINT_NEWTON__(a, n, rem, mod_ctx, err);
+    else __BIGINT_NEWTON__(a, n, rem, NULL, mod_ctx, err);
 }

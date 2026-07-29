@@ -3158,9 +3158,6 @@ int main(void) { _libdnml_init();
         .clear = arena_clear_adapter, .destruct = arena_destruct_adapter,
         .rewind = arena_rewind_adapter, .state = &mul_arena
     }; dnml_status echeck = BIGINT_SUCCESS;
-
-
-    
     fputs("====================================================================\n", stdout);
     fputs("          LIB-DNML ALGORITHM TESTS - BIGINT MULTIPLICATION          \n", stdout);
     fputs("====================================================================\n", stdout);
@@ -3323,7 +3320,7 @@ int main(void) { _libdnml_init();
     /* Summary output block */
     clock_gettime(CLOCK_MONOTONIC, &test_end); arena_clear(&mul_arena); 
     arena_destruct(&mul_arena); free(ret_buf); close_logs(log_arr, log_cnt);
-    char mem_use[9]; double fsize = (BUF_SIZE << 6) + (arena_size << 6); format_size(mem_use, fsize);
+    char mem_use[9]; double fsize = (BUF_SIZE << 3) + (arena_size << 3); format_size(mem_use, fsize);
     double elapsed_time = (test_end.tv_sec - test_start.tv_sec) + (test_end.tv_nsec - test_start.tv_nsec) / 1e9;
     fputs( "=========================================================\n", stdout);
     fputs( "TEST SUMMARY:\n", stdout);

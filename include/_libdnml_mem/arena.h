@@ -77,7 +77,7 @@ static inline void* arena_galloc(dnml_arena *a, size_t space, dnml_status *err) 
             if (err != NULL) *err = DNML_ALLOC_OOM;
             return NULL;
         }
-    } void *ptr = a->base + a->offset;
+    } void *ptr = a->base + a->offset + 1;
     a->offset = new_offset;
     if (err != NULL) *err = DARENA_SUCCESS; return ptr;
 }

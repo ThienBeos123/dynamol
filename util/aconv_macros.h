@@ -54,6 +54,12 @@ void _free_alloc_list(bigInt **alloc_list, uint8_t alloc_cnt);
         _free_alloc_list((early_list), (early_cnt)); \
         *(err) = DNML_ALLOC_OOM; return ret_val; \
     } (early_list)[(early_cnt)++] = &(name);
+#define BIHEAP_ALLOC(name, size, echeck, err, early_list, early_cnt, ret_val) \
+    echeck = __BIGINT_INTERNAL_LINIT__((name), (size)); \
+    if ((echeck) == (DNML_ALLOC_OOM)) { \
+        _free_alloc_list((early_list), (early_cnt)); \
+        *(err) = DNML_ALLOC_OOM; return ret_val; \
+    } (early_list)[(early_cnt)++] = (name);
 #define HEAP_OOM(echeck, err, early_list, early_cnt, ret_val) if ((echeck) == (DNML_ALLOC_OOM)) { \
     _free_alloc_list((early_list), (early_cnt)); \
     *(err) = DNML_ALLOC_OOM; return ret_val; \

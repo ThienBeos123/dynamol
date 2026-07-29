@@ -36,16 +36,15 @@ limitations under the License.
 extern "C" {
 #endif
 void __BIHEAP_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const quot, bigInt *const rem);
-void __BIHEAP_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err);
-void __BIHEAP_BURNIKEL__(
-    const bigInt *const AH, const bigInt *const AL,
-    const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err
-);
-void __BIHEAP_NEWTON__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err);
 void __RBIHEAP_SHORT_DIVISION__(const bigInt *const a, uint64_t b, bigInt *const rem);
-void __RBIHEAP_KNUTH_D__(const bigInt *const a, const bigInt *const b, bigInt *const rem, dnml_status *err);
-void __RBIHEAP_NEWTON__(const bigInt *const a, const bigInt *const b, bigInt *const rem, dnml_status *err);
-void __BIHEAP_DIV_DISP__(const bigInt *const a, const bigInt *const b, bigInt *const quot, bigInt *const rem, dnml_status *err);
+void __BIHEAP_BURK__(
+    const bigInt *const AH, const bigInt *const AL,
+    const bigInt *const b, bigInt *const quot, bigInt *const rem,
+    dnml_status *err
+);
+void __BIHEAP_BURNIKEL__(const bigInt *const a, const bigInt *const b, bigInt *const quot, dnml_status *err);
+void __BIHEAP_NEWTON__(const bigInt *const n, const bigInt *const d, bigInt *const quot, bigInt *const rem, dnml_status *err);
+void __BIHEAP_DIV_DISP__(const bigInt *const n, const bigInt *const d, bigInt *const quot, dnml_status *err);
 #ifdef __cplusplus
 }
 #endif

@@ -77,28 +77,28 @@ size_t __BIGINT_SLIDIN_WS__(size_t base_size, uint64_t pow, uint8_t ksize) {
 }
 size_t __BIGINT_HERON_WS__(size_t a_size) {
     size_t raw_size = 3 * a_size + 1;
-    size_t fcall = __BIGINT_DIV_WS__(a_size, a_size);
+    size_t fcall = __BIGINT_DIV_WS__(a_size, a_size, true);
     return raw_size + fcall;
 }
 size_t __BIGINT_NEWTON_CBRT_WS__(size_t a_size) {
-    size_t raw_size = 7 * (a_size + 1);
+    size_t raw_size = ((a_size + 1) << 2) + (a_size + 1);
     size_t fcall = max(
         __BIGINT_MUL_WS__(a_size + 1, a_size + 1),
-        __BIGINT_DIV_WS__(a_size, (a_size + 1) << 1)
+        __BIGINT_DIV_WS__(a_size, (a_size + 1) << 1, true)
     ); return raw_size + fcall;
 }
 size_t __BIGINT_NEWTON_2NRT_WS__(size_t a_size, uint64_t root) {
     size_t raw_size = 3 * (a_size * (root - 1));
     size_t fcall = max(
         __BIGINT_EXP_WS__(a_size, root - 1),
-        __BIGINT_DIV_WS__(a_size, a_size * (root - 1))
+        __BIGINT_DIV_WS__(a_size, a_size * (root - 1), true)
     ); return raw_size + a_size + fcall;
 }
 size_t __BIGINT_NEWTON_NRT_WS__(size_t a_size, uint64_t root) {
     size_t raw_size = 3 * (a_size * (root - 1));
     size_t fcall = max(
         __BIGINT_EXP_WS__(a_size, root - 1),
-        __BIGINT_DIV_WS__(a_size, a_size * (root - 1))
+        __BIGINT_DIV_WS__(a_size, a_size * (root - 1), true)
     ); return raw_size + a_size + fcall;
 }
 
@@ -208,8 +208,7 @@ void __BIGINT_HERON__(P_BIGINT res, PCONST_BIGINT a, calc_ctx *heron_ctx, dnml_s
     guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63);
     guess.n = (guess_bits >> 6) + 1;
     for (;;) {
-        // next in DIVMOD_DISPATCH acts as a temporary buffer
-        __BIGINT_DIV_DISP__(a, &guess, &ratio, &next, heron_ctx, &echeck); SCRATCH_OVF(echeck, heron_ctx, heron_mark, err,);
+        __BIGINT_DIV_DISP__(a, &guess, &ratio, heron_ctx, &echeck); SCRATCH_OVF(echeck, heron_ctx, heron_mark, err,);
         __BIGINT_ADD_WC__(&next, &guess, &ratio); __BIGINT_INTERNAL_RSHIFT__(&next, 1);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break; /**/ __BIGINT_INTERNAL_SWAP__(&guess, &next);
@@ -222,11 +221,10 @@ void __BIGINT_NEWTON_CBRT__(P_BIGINT res, PCONST_BIGINT a, calc_ctx *cbrt_ctx, d
     BIGINT_TEMP(guess,  (a->n + 1) << 1,  cbrt_ctx, cbrt_mark, echeck, err,);
     BIGINT_TEMP(ratio,   a->n + 1,        cbrt_ctx, cbrt_mark, echeck, err,);
     BIGINT_TEMP(next,   (a->n + 1) << 1,  cbrt_ctx, cbrt_mark, echeck, err,);
-    BIGINT_TEMP(tmp,    (a->n + 1) << 1,  cbrt_ctx, cbrt_mark, echeck, err,);
     guess.limbs[(guess_bits >> 6)] = UINT64_C(1) << (guess_bits % 63); guess.n = (guess_bits >> 6) + 1;
     for (;;) {
         __BIGINT_MUL_DISP__(&guess, &guess, &next, cbrt_ctx, &echeck); SCRATCH_OVF(echeck, cbrt_ctx, cbrt_mark, err,);
-        __BIGINT_DIV_DISP__(a, &next, &ratio, &tmp, cbrt_ctx, &echeck); SCRATCH_OVF(echeck, cbrt_ctx, cbrt_mark, err,);
+        __BIGINT_DIV_DISP__(a, &next, &ratio, cbrt_ctx, &echeck); SCRATCH_OVF(echeck, cbrt_ctx, cbrt_mark, err,);
         // Can't use move semantics or whatever since we would LOSE next's buffers, losing usable memory,
         // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess); __BIGINT_INTERNAL_LSHIFT__(&next, 1);
@@ -276,8 +274,7 @@ void __BIGINT_NEWTON_2NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_c
     BIGINT_TEMP(xpow, a->n * (root - 1), _2nrt_ctx, _2nrt_mark, echeck, err,);
     __BIGINT_EXP_DISP__(&xpow, &guess, (root - 1), _2nrt_ctx, &echeck); SCRATCH_OVF(echeck, _2nrt_ctx, _2nrt_mark, err,);
     for (;;) {
-        // next in DIVMOD_DISPATCH acts as a temporary buffer;
-        __BIGINT_DIV_DISP__(a, &xpow, &ratio, &next, _2nrt_ctx, &echeck); SCRATCH_OVF(echeck, _2nrt_ctx, _2nrt_mark, err,);
+        __BIGINT_DIV_DISP__(a, &xpow, &ratio, _2nrt_ctx, &echeck); SCRATCH_OVF(echeck, _2nrt_ctx, _2nrt_mark, err,);
         // Can't use move semantics or whatever since we would LOSE next's buffers, losing usable memory,
         // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess); __BIGINT_INTERNAL_MUL_UI64__(&next, (root - 1));
@@ -299,8 +296,7 @@ void __BIGINT_NEWTON_NRT__(P_BIGINT res, PCONST_BIGINT a, uint64_t root, calc_ct
     BIGINT_TEMP(xpow, a->n * (root - 1), nrt_ctx, nrt_mark, echeck, err,);
     __BIGINT_EXP_DISP__(&xpow, &guess, (root - 1), nrt_ctx, &echeck); SCRATCH_OVF(echeck, nrt_ctx, nrt_mark, err,);
     for (;;) {
-        // next in DIVMOD_DISPATCH acts as a temporary buffer;
-        __BIGINT_DIV_DISP__(a, &xpow, &ratio, &next, nrt_ctx, &echeck); SCRATCH_OVF(echeck, nrt_ctx, nrt_mark, err,);
+        __BIGINT_DIV_DISP__(a, &xpow, &ratio, nrt_ctx, &echeck); SCRATCH_OVF(echeck, nrt_ctx, nrt_mark, err,);
         // Can't use move semantics or whatever since we would LOSE next's buffers, losing usable memory,
         // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess);

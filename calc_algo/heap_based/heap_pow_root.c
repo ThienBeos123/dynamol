@@ -126,8 +126,7 @@ void __BIHEAP_HERON__(bigInt *const res, const bigInt *const a, dnml_status *err
     BIHEAP_TEMP(next, a->n + 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     guess.limbs[(guess_bits << 6)] = 1ULL << (guess_bits % 64); /**/ guess.n = (guess_bits << 6) + 1;
     for (;;) {
-        // next in DIVMOD_DISPATCH acts as a temporary buffer
-        __BIHEAP_DIV_DISP__(a, &guess, &ratio, &next, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_DIV_DISP__(a, &guess, &ratio, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         __BIGINT_ADD_WC__(&next, &guess, &ratio); __BIGINT_INTERNAL_RSHIFT__(&next, 1);
         int8_t comp_res = __BIGINT_INTERNAL_COMP__(&next, &guess);
         if (!comp_res || comp_res == 1) break;
@@ -140,11 +139,10 @@ void __BIHEAP_NEWTON_CBRT__(bigInt *const res, const bigInt *const a, dnml_statu
     BIHEAP_RET(guess,   (a->n + 1) << 1, echeck, err, early_free, early_cnt,);
     BIHEAP_TEMP(ratio,   a->n + 1,       echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     BIHEAP_TEMP(next,   (a->n + 1) << 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
-    BIHEAP_TEMP(tmp,    (a->n + 1) << 1, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     guess.limbs[(guess_bits << 6)] = 1ULL << (guess_bits % 64); guess.n = (guess_bits << 6) + 1;
     for (;;) {
         __BIHEAP_MUL_DISP__(&guess, &guess, &next, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
-        __BIHEAP_DIV_DISP__(a, &next, &ratio, &tmp, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_DIV_DISP__(a, &next, &ratio, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         // Can't use move semantics since we would LOSE next's buffers, leaking memory,
         // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess); __BIGINT_INTERNAL_LSHIFT__(&next, 1);
@@ -192,8 +190,7 @@ void __BIHEAP_NEWTON_2NRT__(bigInt *const res, const bigInt *const a, uint64_t r
     BIHEAP_TEMP(xpow, a->n * (root - 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     __BIHEAP_EXP_DISP__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     for (;;) {
-        // next in DIVMOD_DISPATCH acts as a temporary buffer;
-        __BIHEAP_DIV_DISP__(a, &xpow, &ratio, &next, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_DIV_DISP__(a, &xpow, &ratio, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         // Can't use move semantics since we would LOSE next's buffers, leaking memory,
         // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess); __BIGINT_INTERNAL_MUL_UI64__(&next, (root - 1));
@@ -213,8 +210,7 @@ void __BIHEAP_NEWTON_NRT__(bigInt *const res, const bigInt *const a, uint64_t ro
     BIHEAP_TEMP(xpow, a->n * (root - 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     __BIHEAP_EXP_DISP__(&xpow, &guess, (root - 1), &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
     for (;;) {
-        // next in DIVMOD_DISPATCH acts as a temporary buffer;
-        __BIHEAP_DIV_DISP__(a, &xpow, &ratio, &next, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
+        __BIHEAP_DIV_DISP__(a, &xpow, &ratio, &echeck); HEAP_OOM(echeck, err, early_free, early_cnt,);
         // Can't use move semantics since we would LOSE next's buffers, leaking memory,
         // even though we want to do an assignment of next = guess
         __BIGINT_INTERNAL_COPY__(&next, &guess);

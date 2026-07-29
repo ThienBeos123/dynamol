@@ -59,6 +59,7 @@ limitations under the License.
 // }
 /* BIGINT WORKSPACE SIZE */
 size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size) {
+    if (x_size <= BIGINT_SCHOOLBOOK || y_size <= BIGINT_SCHOOLBOOK) return 0;
     size_t m = (size_t)(max(x_size, y_size) >> 1);
     size_t x0_range = min(x_size, m), x1_range = (x_size > m) ? (x_size - m) : 0;
     size_t y0_range = min(y_size, m), y1_range = (y_size > m) ? (y_size - m) : 0;
@@ -67,7 +68,11 @@ size_t __BIGINT_KARATSUBA_WS__(size_t x_size, size_t y_size) {
     size_t tmp1_size = max(x0_range, x1_range) + 1; 
     size_t tmp2_size = max(y0_range, y1_range) + 1;
     size_t z1_size = tmp1_size + tmp2_size; /**/ size_t z2_size = x1_range + y1_range;
-    return (tmp1_size + tmp2_size + z0_size + z1_size + z2_size) << 1;
+    // Recursive Functions calls
+    size_t z0_call = __BIGINT_KARATSUBA_WS__(x0_range, y0_range);
+    size_t z2_call = __BIGINT_KARATSUBA_WS__(x1_range, y1_range);
+    size_t z1_call = __BIGINT_KARATSUBA_WS__(tmp1_size, tmp2_size);
+    return tmp1_size + tmp2_size + z0_size + z1_size + z2_size + max(max(z0_call, z2_call), z1_call);
 }
 size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
     if (m_size <= BIGINT_SCHOOLBOOK || n_size <= BIGINT_SCHOOLBOOK) return 0;
@@ -81,14 +86,15 @@ size_t __BIGINT_TOOM_3_WS__(size_t m_size, size_t n_size) {
 }
 size_t __BIGINT_MUL_WS__(size_t a_size, size_t b_size) {
     if (a_size <= BIGINT_SCHOOLBOOK && b_size <= BIGINT_SCHOOLBOOK) return 0; // Doesn't need any
-    else if (a_size < BIGINT_KARATSUBA && b_size < BIGINT_KARATSUBA) return __BIGINT_KARATSUBA_WS__(a_size, b_size);             
+    else if (a_size < BIGINT_KARATSUBA && b_size < BIGINT_KARATSUBA) return __BIGINT_KARATSUBA_WS__(a_size, b_size);           
     else if (a_size < BIGINT_TOOM_3 && b_size < BIGINT_TOOM_3) return __BIGINT_TOOM_3_WS__(a_size, b_size);
     // else if (a_size <= BIGINT_TOOM_4 && b_size <= BIGINT_TOOM_4) return __BIGINT_TOOM_4_WS__(a_size, b_size);
     // else if (a_size <= BIGINT_TOOM_5 && b_size <= BIGINT_TOOM_5) return __BIGINT_TOOM_5_WS__(a_size, b_size);
     // else if (a_size <= BIGINT_TOOM_6p5 && b_size <= BIGINT_TOOM_6p5) return __BIGINT_TOOM_6p5_WS__(a_size, b_size);           
     // else if (a_size <= BIGINT_TOOM_7p5 && b_size <= BIGINT_TOOM_7p5) return __BIGINT_TOOM_7p5_WS__(a_size, b_size);
     // else if (a_size <= BIGINT_TOOM_8p5 && b_size <= BIGINT_TOOM_8p5) return __BIGINT_TOOM_8p5_WS__(a_size, b_size);
-    else return __BIGINT_FFT_WS__(a_size, b_size);
+    else if (a_size > BIGINT_SSA & b_size > BIGINT_SSA) return __BIGINT_FFT_WS__(a_size, b_size);
+    else return __BIGINT_TOOM_3_WS__(a_size, b_size); // Updated dynamically as more multiplication routines are introduced
 }
 
 
@@ -234,13 +240,14 @@ void __BIGINT_TOOM_3__(PCONST_BIGINT m, PCONST_BIGINT n, P_BIGINT res, calc_ctx 
 
 /* BIGINT MULTIPLICATION ALGORITHM DISPATCHER */
 void __BIGINT_MUL_DISP__(PCONST_BIGINT a, PCONST_BIGINT b, P_BIGINT res, calc_ctx *mul_ctx, dnml_status *err) {
-    if (a->n <= BIGINT_SCHOOLBOOK && b->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
-    else if (a->n <= BIGINT_KARATSUBA && b->n <= BIGINT_KARATSUBA) __BIGINT_KARATSUBA__(a, b, res, mul_ctx, err);
-    else if (a->n <= BIGINT_TOOM_3 && b->n <= BIGINT_TOOM_3) __BIGINT_TOOM_3__(a, b, res, mul_ctx, err);
-    // else if (a->n <= BIGINT_TOOM_4 && b->n <= BIGINT_TOOM_4) __BIGINT_TOOM_4__(a, b, res, mul_ctx);
-    // else if (a->n <= BIGINT_TOOM_5 && b->n <= BIGINT_TOOM_5) __BIGINT_TOOM_5__(a, b, res, mul_ctx);
-    // else if (a->n <= BIGINT_TOOM_6p5 && b->n <= BIGINT_TOOM_6p5) __BIGINT_TOOM_6p5__(a, b, res, mul_ctx);
-    // else if (a->n <= BIGINT_TOOM_7p5 && b->n <= BIGINT_TOOM_7p5) __BIGINT_TOOM_7p5__(a, b, res, mul_ctx);
+    if (a->n <= BIGINT_SCHOOLBOOK || b->n <= BIGINT_SCHOOLBOOK) { __BIGINT_SCHOOLBOOK__(a, b, res); *err = BIGINT_SUCCESS; }
+    else if (a->n <= BIGINT_KARATSUBA || b->n <= BIGINT_KARATSUBA) __BIGINT_KARATSUBA__(a, b, res, mul_ctx, err);
+    else if (a->n <= BIGINT_TOOM_3 || b->n <= BIGINT_TOOM_3) __BIGINT_TOOM_3__(a, b, res, mul_ctx, err);
+    // else if (a->n <= BIGINT_TOOM_4 || b->n <= BIGINT_TOOM_4) __BIGINT_TOOM_4__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_5 || b->n <= BIGINT_TOOM_5) __BIGINT_TOOM_5__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_6p5 || b->n <= BIGINT_TOOM_6p5) __BIGINT_TOOM_6p5__(a, b, res, mul_ctx);
+    // else if (a->n <= BIGINT_TOOM_7p5 || b->n <= BIGINT_TOOM_7p5) __BIGINT_TOOM_7p5__(a, b, res, mul_ctx);
     // else if (a->n <= BIGINT_TOOM_8p5 && b->n <= BIGINT_TOOM_8p5) __BIGINT_TOOM_8p5__(a, b, res, mul_ctx);
-    else __BIGINT_FFT__(a, b, res, mul_ctx, err);
+    else if (a->n > BIGINT_SSA && b->n > BIGINT_SSA) __BIGINT_FFT__(a, b, res, mul_ctx, err);
+    else __BIGINT_TOOM_3__(a, b, res, mul_ctx, err); // Updated dynamically as more multiplication routines are introduced
 }

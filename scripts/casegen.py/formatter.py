@@ -6,10 +6,8 @@ sys.set_int_max_str_digits(123849834)
 def format_struct_field(item):
     v_type = item['type']
     val = item['val']
-    
-    if v_type in ['uint8_t', 'size_t']:
-        return str(val)
-        
+    if v_type == 'uint64_t': return f'UINT64_C({str(val)})'
+    elif v_type == 'uint8_t': return f'UINT8_C({str(val)})'
     elif v_type in ['bigint', 'crint']:
         # ALWAYS derive n from the current value 'val'
         # This fixes the metadata mismatch caused by swaps in generator.py
@@ -25,7 +23,6 @@ def format_struct_field(item):
             base_struct += ", .poisoned = false"
         base_struct += " }"
         return base_struct
-        
     return "0"
 
 def run_formatter(cases, type_name="test_case_t", array_name="generated_cases"):
@@ -39,10 +36,6 @@ def run_formatter(cases, type_name="test_case_t", array_name="generated_cases"):
         output_cnt: int = case[0]['output_count']
         inputs: list = case[1:input_cnt+1]
         outputs: list = case[input_cnt+1:len(case)]
-        if idx == 0:
-            pprint(case)
-            pprint(inputs)
-            pprint(outputs)
         
         # Format input fields
         input_fields: list = [format_struct_field(item) for item in inputs]

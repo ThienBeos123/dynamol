@@ -1669,9 +1669,9 @@ static dnml_status __BIGINT_MAGMUL__(bigInt *const res, bigInt *const a, bigInt 
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGMUL_ARENA
     }; dnml_status echeck = BIGINT_SUCCESS; __BIGINT_MUL_DISP__(a, b, res, &magmul_ctx, &echeck); return echeck;
 }
-static dnml_status __BIGINT_MAGDIV__(bigInt *const quot, bigInt *const tmp_rem, bigInt *const a, bigInt *const b) {
+static dnml_status __BIGINT_MAGDIV__(bigInt *const quot, bigInt *const a, bigInt *const b) {
     dnml_arena *_DASI_MAGDIV_ARENA = _USE_ARENA(); if (_DASI_MAGDIV_ARENA->poisoined) return DARENA_POISON;
-    size_t needed_size = __BIGINT_DIV_WS__(a->n, b->n) + b->n;
+    size_t needed_size = __BIGINT_DIV_WS__(a->n, b->n, !!(__CLZ_UI64__(b->limbs[b->n - 1]))) + b->n;
     if (_DASI_MAGDIV_ARENA->cap < needed_size) {
         dnml_status echeck = arena_grow(_DASI_MAGDIV_ARENA, needed_size);
         if (echeck == DNML_ALLOC_OOM) return DARENA_POISON;
@@ -1680,7 +1680,7 @@ static dnml_status __BIGINT_MAGDIV__(bigInt *const quot, bigInt *const tmp_rem, 
         .alloc = &arena_alloc_adapter, .mark = &arena_mark_adapter,
         .rewind = &arena_rewind_adapter, .clear = &arena_clear_adapter,
         .destruct = &arena_destruct_adapter, .state = _DASI_MAGDIV_ARENA
-    }; dnml_status echeck = BIGINT_SUCCESS; __BIGINT_DIV_DISP__(a, b, quot, tmp_rem, &magdivmod_ctx, &echeck); return echeck;
+    }; dnml_status echeck = BIGINT_SUCCESS; __BIGINT_DIV_DISP__(a, b, quot, &magdivmod_ctx, &echeck); return echeck;
 }
 static dnml_status __BIGINT_MAGMOD__(bigInt *const rem, bigInt *const a, bigInt *const b) {
     dnml_arena *_DASI_MAGDIV_ARENA = _USE_ARENA(); if (_DASI_MAGDIV_ARENA->poisoined) return DARENA_POISON;
@@ -1749,7 +1749,10 @@ static dnml_status __BIGINT_MAGLCM__(bigInt *const res, bigInt *const a, bigInt 
         /* THESE CALCULATIONS ARE MOST CERTAINLY THE UPPERBOUND */
         __BIGINT_GCD_WS__(a->n, b->n) +
         ((a->n << 1) + b->n) + // The upfront allocated bigInts of __BIGINT_MAGLCM__
-        __BIGINT_DIV_WS__(a->n, min(a->n, b->n)) +
+        __BIGINT_DIV_WS__(a->n, min(a->n, b->n), (a->n <= b->n) ? 
+            !!(__CLZ_UI64__(a->limbs[a->n - 1])) : !
+            !(__CLZ_UI64__(b->limbs[b->n - 1]))
+        ) +
         __BIGINT_MUL_WS__(a->n, b->n)
     );
     if (_DASI_MAGLCM_ARENA->cap < low_needed) {
@@ -1767,9 +1770,7 @@ static dnml_status __BIGINT_MAGLCM__(bigInt *const res, bigInt *const a, bigInt 
     bigInt gcd_res = { .limbs = gcdres_limbs, /**/ .n = 0, /**/ .cap = a->n + b->n, .sign = 1 };
     bigInt tmp_quot = { .limbs = tmpq_limbs, /**/ .n = 0, /**/ .cap = a->n, .sign = 1 };
     __BIGINT_GCD_DISP__(&gcd_res, a, b, &_maglcm_ctx, &echeck); 
-    // Aliasing both rem and quot is (presumably to be) safe here due to the fact that  __BIGINT_DIV_DISP__ 
-    // is designe quotient-biased, making the final outcome the quotient in such double-aliasing case
-    __BIGINT_DIV_DISP__(a, &gcd_res, &tmp_quot, &tmp_quot, &_maglcm_ctx, &echeck); mag_ovf(echeck, _DASI_MAGLCM_ARENA, maglcm_mark);
+    __BIGINT_DIV_DISP__(a, &gcd_res, &tmp_quot, &_maglcm_ctx, &echeck); mag_ovf(echeck, _DASI_MAGLCM_ARENA, maglcm_mark);
     __BIGINT_MUL_DISP__(&tmp_quot, b, &gcd_res, &_maglcm_ctx, &echeck); mag_ovf(echeck, _DASI_MAGLCM_ARENA, maglcm_mark);
     echeck = __BIGINT_INTERNAL_LINIT__(res, gcd_res.n); mag_oom(echeck, _DASI_MAGLCM_ARENA, maglcm_mark);
     echeck = bigInt_mut_ocopy(res, gcd_res); arena_rewind(_DASI_MAGLCM_ARENA, maglcm_mark); return BIGINT_SUCCESS;
@@ -1781,9 +1782,7 @@ static dnml_status __BIHEAP_MAGLCM__(bigInt *const a, bigInt *const b, bigInt *c
     bigInt tmp_quot; echeck = __BIGINT_INTERNAL_LINIT__(&tmp_quot, a->n);
     mag_heap_oom(echeck, free_list, free_cnt); free_list[free_cnt++] = &tmp_quot;
     __BIHEAP_GCD_DISP__(&gcd_res, a, b, &echeck); mag_heap_oom(echeck, free_list, free_cnt);
-    // Aliasing both rem and quot is (presumably to be) safe here due to the fact that  __BIGINT_DIV_DISP__ 
-    // is designe quotient-biased, making the final outcome the quotient in such double-aliasing case
-    __BIHEAP_DIV_DISP__(a, &gcd_res, &tmp_quot, &tmp_quot, &echeck); mag_heap_oom(echeck, free_list, free_cnt);
+    __BIHEAP_DIV_DISP__(a, &gcd_res, &tmp_quot, &echeck); mag_heap_oom(echeck, free_list, free_cnt);
     __BIHEAP_MUL_DISP__(&tmp_quot, b, &gcd_res, &echeck); mag_heap_oom(echeck, free_list, free_cnt);
     __BIGINT_INTERNAL_MOVE__(res, &gcd_res); __BIGINT_INTERNAL_FREE__(&gcd_res); 
     __BIGINT_INTERNAL_FREE__(&tmp_quot); return BIGINT_SUCCESS;
@@ -2058,22 +2057,12 @@ dnml_status bigInt_mut_div(bigInt *const x, bigInt y) {
     else if (y.n == 1 && y.limbs[0] == 1) x->sign *= y.sign;
     else if (x->n == 1 && x->limbs[0] == 1) bigInt_reset(x);
     else if (x->n) {
-        /**
-         * The double aliasing for __BIHEAP_DIV_DISP__ and __BIGINT_DIV_DISP__ is safe due
-         * to their dispatched aglorithms either finishing off quotient-based (short division, Knuth-D, ...),
-         * or don't modify/tamper with any remainder components at all (Burnikel-Ziegler), making the output
-         * being the remainder in such double-aliasing case.
-         *
-         * Additionally, Division Algorithms used in both dispatchers is safe to 
-         * have the dividend and the result buffers be aliased of each other, since they never mutate the
-         * operands, and only mutate the result buffers at the end (through copies or move-semantics)
-         */
         list_bi free_list[2] = {(list_bi){x,0},(list_bi){&y,0}}; dnml_status echeck = BIGINT_SUCCESS;
-        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGDIV__(x, x, x, &y); darena_assert(echeck, free_list, 2); } 
-        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGDIV__(x, x, x, &y);
+        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGDIV__(x, x, &y); darena_assert(echeck, free_list, 2); } 
+        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGDIV__(x, x, &y);
             if (echeck == DARENA_OVERFLOW) goto heap_mut_div;
         } else if (_DNML_ALLOC_STRAT == 2) goto heap_mut_div;
-        heap_mut_div: { __BIHEAP_DIV_DISP__(x, &y, x, x, &echeck); heap_alloc_oom(echeck, free_list, 2); }
+        heap_mut_div: { __BIHEAP_DIV_DISP__(x, &y, x, &echeck); heap_alloc_oom(echeck, free_list, 2); }
 
         x->sign *= y.sign; bigInt_normalize(x);
     } return BIGINT_SUCCESS;
@@ -2304,14 +2293,11 @@ bigInt bigInt_div(bigInt x, bigInt y, dnml_status *err) {
         bigInt tmp_rem = {0};
         _tmp_heap_mut(quot, x.n, echeck, err, free_list, free_cnt);
         _tmp_heap_mut(tmp_rem, y.n, echeck, err, free_list, free_cnt);
-        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGDIV__(&quot, &tmp_rem, &x, &y); darena_biassert(echeck, err, free_list, free_cnt); }
-        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGDIV__(&quot, &tmp_rem, &x, &y); 
+        if (!_DNML_ALLOC_STRAT) { echeck = __BIGINT_MAGDIV__(&quot, &x, &y); darena_biassert(echeck, err, free_list, free_cnt); }
+        else if (_DNML_ALLOC_STRAT == 1) { echeck = __BIGINT_MAGDIV__(&quot, &x, &y); 
             if (echeck == DARENA_OVERFLOW) goto heap_div_block;
         } else if (_DNML_ALLOC_STRAT == 2) goto heap_div_block;
-        heap_div_block: { 
-            __BIHEAP_DIV_DISP__(&x, &y, &quot, &tmp_rem, &echeck); 
-            heap_alloc_oom_bi(echeck, err, free_list, free_cnt);
-        }
+        heap_div_block: { __BIHEAP_DIV_DISP__(&x, &y, &quot, &echeck); heap_alloc_oom_bi(echeck, err, free_list, free_cnt); }
 
         __BIGINT_INTERNAL_FREE__(&tmp_rem);
     } *err = BIGINT_SUCCESS; return quot;

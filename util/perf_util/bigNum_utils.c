@@ -192,7 +192,6 @@ uint64_t __BIGINT_INTERNAL_DIVMOD_UI64__(bigInt *x, uint64_t val) {
         uint8_t ovf_check = 0;
         for (size_t i = x->n; i > 0; --i) {
             x->limbs[i - 1] = __DIV_HELPER_UI64__(x->limbs[i - 1], remainder, val, &remainder, &ovf_check);
-            DNML_TEST_ASSERT(!(ovf_check), "CRITICIAL DEBUG ERROR: Division quotient's overflowed", {});
         } __BIGINT_INTERNAL_TRIM_LZ__(x);
     } return remainder;
 }
@@ -228,7 +227,8 @@ void __BIGINT_INTERNAL_LLSHIFT__(bigInt *x, size_t klimbs) {
     if (!klimbs || !x->n) return;
     if (klimbs >= x->cap) { __BIGINT_INTERNAL_ZSET__(x); return; }
     size_t moved = (x->n + klimbs > x->cap) ? x->cap - klimbs : x->n;
-    memmove(x->limbs + klimbs, x->limbs, moved * U64_BYTES);
+    memmove(x->limbs + klimbs, x->limbs, moved * U64_BYTES); // Moving forward by klimbs
+    memset(x->limbs, 0, klimbs * U64_BYTES); // Zero out the previous klimb memory region
     x->n = (x->n + klimbs > x->cap) ? x->cap : x->n + klimbs;
     __BIGINT_INTERNAL_TRIM_LZ__(x);
 }

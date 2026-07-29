@@ -38,7 +38,7 @@ void __BIHEAP_BARETT__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, dnml_stat
     BIHEAP_TEMP(numer, precomp_size + remlimbs, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,); numer.n = precomp_size;
     BIHEAP_TEMP(precomp, precomp_size, echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
     BIHEAP_TEMP(tmp, max(n->n, precomp_size + remlimbs + 1), echeck, err, early_free, early_cnt, alloc_list, alloc_cnt,);
-    numer.limbs[(n->n << 1)] = 1; __BIHEAP_DIV_DISP__(&numer, n, &precomp, &tmp, &echeck);
+    numer.limbs[(n->n << 1)] = 1; __BIHEAP_DIV_DISP__(&numer, n, &precomp, &echeck);
 
 
     //* ---- 2. NUMERATOR CALCULATION ---- *// 
@@ -98,7 +98,6 @@ void __BIHEAP_MONT_REDC__(P_BIGINT t, mont_ctx mredc_ctx, P_BIGINT rem) {
 /* Modular Reduction Algorithm Dispatcher */
 void __BIHEAP_MOD_DISP__(PCONST_BIGINT a, PCONST_BIGINT n, P_BIGINT rem, dnml_status *err) {
     if (n->n < BIGINT_SHORT) { __RBIHEAP_SHORT_DIVISION__(a, n->limbs[0], rem); *err = BIGINT_SUCCESS; }
-    else if (n->n < BIGINT_KNUTH) __RBIHEAP_KNUTH_D__(a, n, rem, err);
     else if (n->n < BIGINT_BARETT) __BIHEAP_BARETT__(a, n, rem, err);
-    else __RBIHEAP_NEWTON__(a, n, rem, err);
+    else __BIHEAP_NEWTON__(a, n, NULL, rem, err);
 }

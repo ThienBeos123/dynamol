@@ -7,7 +7,7 @@ def evaluate_logic(inputs) -> tuple:
     MANUAL TWEAK ZONE: Modify this function based on the operation you are testing.
     'inputs' is a list of integer values corresponding to the current case.
     """
-    return (inputs[0] * inputs[1], inputs[2] * inputs[3]);
+    return (inputs[0] // inputs[1],);
 
 def run_evaluator(cases):
     exp_limb_cache: dict = {}
@@ -23,7 +23,7 @@ def run_evaluator(cases):
         raw_vals = [case[i]['val'] for i in range(1, len(case), 1)]
         
         # Calculate expected result
-        exp_val = evaluate_logic(raw_vals)
+        exp_val: tuple = evaluate_logic(raw_vals)
         case[0]['output_count'] = len(exp_val)
         
         abs_exp = tuple(abs(val) for val in exp_val)
